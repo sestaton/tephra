@@ -1,0 +1,80 @@
+#!/usr/bin/env perl
+
+use 5.010;
+use strict;
+use warnings;
+use Tephra;
+
+our $VERSION = '0.01';
+
+#my $cmd = Tephra->new({ no_help_plugin => 1, no_commands_plugin => 1 });
+#$cmd->default_command( $cmd->help ) and exit unless @ARGV;
+#$cmd->run;
+
+
+__END__
+
+=head1 NAME
+
+Tephra - Transposable element paleontology
+
+=head1 SYNOPSIS    
+
+=head1 DESCRIPTION
+     
+
+=head1 DEPENDENCIES
+
+The Perl dependencies and the specific versions are listed below.
+
+Module                Version
+Parallel::ForkManager 1.05
+IPC::System::Simple   1.21
+Try::Tiny
+
+=head1 LICENSE
+ 
+The MIT License should included with the project. 
+If not, it can be found at: L<http://opensource.org/licenses/mit-license.php>
+
+Copyright (C) 2015 S. Evan Staton
+ 
+=head1 TESTED WITH:
+
+=over
+
+=item *
+Perl 5.20.1 (Red Hat Enterprise Linux Server release 5.9 (Tikanga); Mac OS X 10.6.8)
+
+=back
+
+=head1 AUTHOR 
+
+S. Evan Staton, C<< <statonse at gmail.com> >>
+
+=head1 REQUIRED ARGUMENTS
+
+=over 2
+
+=item The method to perform. Must be one of the following:
+
+      findtirs: Find TIRs...
+      findltrs: Find LTR-RTs...
+
+=back
+
+=head1 OPTIONS
+
+=over 2
+
+=item -h, --help
+
+  Print a usage statement for a specific command. 
+
+=item -m, --man
+  
+  Print the full documentation for a specific command.
+
+=back
+
+=cut
