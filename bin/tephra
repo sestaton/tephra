@@ -7,9 +7,9 @@ use Tephra;
 
 our $VERSION = '0.01';
 
-#my $cmd = Tephra->new({ no_help_plugin => 1, no_commands_plugin => 1 });
+my $cmd = Tephra->new({ no_help_plugin => 1, no_commands_plugin => 1 });
 #$cmd->default_command( $cmd->help ) and exit unless @ARGV;
-#$cmd->run;
+$cmd->run;
 
 
 __END__

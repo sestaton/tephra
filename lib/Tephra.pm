@@ -3,9 +3,10 @@ package Tephra;
 use Moo;
 use YAML::Tiny;
 use Log::Any qw($log);
+use App::Cmd::Setup -app;
 use namespace::clean;
 
-with 'Tephra::Role::Config';
+#with 'Tephra::Role::Config';
 
 =head1 NAME
 
@@ -26,19 +27,19 @@ our $VERSION = '0.01';
 
 =cut
 
-has 'config' => (
-    is            => 'ro',
-    isa           => 'Str',
-    required      => 0,
-    documentation => qq{The Tephra configuration file},
-);
+#has 'config' => (
+#    is            => 'ro',
+#    isa           => 'Str',
+#    required      => 0,
+#    documentation => qq{The Tephra configuration file},
+#);
 
-sub get_configuration {
-    my $self = shift;
-    my $configfile   = YAML::Tiny->read( $self->config );
-    my $valid_config = $self->parse_configuration( $configfile );
-    return $valid_config;
-}
+#sub get_configuration {
+#    my $self = shift;
+#    my $configfile   = YAML::Tiny->read( $self->config );
+#    my $valid_config = $self->parse_configuration( $configfile );
+#    return $valid_config;
+#}
 
 =head1 AUTHOR
 

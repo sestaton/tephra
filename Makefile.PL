@@ -9,12 +9,12 @@ if (eval ($ExtUtils::MakeMaker::VERSION) <= 6.55) {
     exit(1);
 }
 
-BEGIN {
-    system("chmod +x bin/tephra") == 0 or die $!;
-    if (! -d 'src') {
-	system("./install_deps.sh") == 0 or die $!;
-    }
-}
+#BEGIN {
+#    system("chmod +x bin/tephra") == 0 or die $!;
+#    if (! -d 'src') {
+#	system("./install_deps.sh") == 0 or die $!;
+#    }
+#}
 
 WriteMakefile(
     NAME             => 'Tephra',
@@ -38,6 +38,6 @@ WriteMakefile(
     INST_SCRIPT => 'bin',
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     test  => { TESTS => 't/*.t' },
-    clean => { FILES => ['bin/tephra', 'src'] },
+    #clean => { FILES => ['bin/tephra', 'src'] },
 );
 
