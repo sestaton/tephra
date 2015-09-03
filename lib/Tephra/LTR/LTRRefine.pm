@@ -28,7 +28,7 @@ has genome => (
 has outfile => (
     is       => 'ro',
     isa      => 'Path::Class::File',
-    required => 1,
+    required => 0,
     coerce   => 1,
 );
 
@@ -39,13 +39,28 @@ has clean => (
       default  => 1,
 );
 
+has n_threshold => (
+      is       => 'ro',
+      isa      => 'Num',
+      required => 0,
+      default  => 0.30,
+);
 
 #
 # methods
 #
 sub reduce_features {
     my $self = shift;
-    my ($all_feats, $part_feats, $best_elements, $all_stats, $part_stats) = @_;
+
+    my ($feature_ref) = @_;
+    my ($relaxed_features, $strict_features, $best_elements)
+	= @{$feature_ref}{qw(relaxed_features strict_features best_elements)};
+
+    my $all_feats  = $relaxed_features->{collected_features};
+    my $part_feats = $strict_features->{collected_features};
+    my $all_stats  = $relaxed_features->{stats};
+    my $part_stats = $strict_features->{stats};
+    
     my ($all, $best, $part, $comb) = (0, 0, 0, 0);
     my $fasta = $self->genome;
     $self->index_ref($fasta);
@@ -93,7 +108,7 @@ sub reduce_features {
     }
 
     my $n_perc_filtered = 0;
-    my $n_thresh = 0.30;
+    my $n_thresh = $self->n_threshold;
 
     for my $source (keys %best_features) {
 	for my $element (keys %{$best_features{$source}}) {
@@ -135,12 +150,16 @@ sub reduce_features {
 
 sub sort_features {
     my $self = shift;
-    my ($gff, $combined_features) = @_;
+    my ($feature_ref) = @_;
+    my ($gff, $combined_features) = @{$feature_ref}{qw(gff combined_features)};
+
     my $fasta   = $self->genome;
-    my $outfile = $self->outfile;
+    #my $outfile = $self->outfile;
     
-    my ($name, $path, $suffix) = fileparse($outfile, qr/\.[^.]*/);
-    my $outfasta = $name.".fasta";
+    my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
+    my $outfasta = File::Spec->catfile($path, $name."_combined_filtered.fasta");
+    my $outfile  = File::Spec->catfile($path, $name."_combined_filtered.gff3");
+    
     open my $ogff, '>', $outfile;
     open my $ofas, '>>', $outfasta;
 
@@ -211,7 +230,9 @@ sub sort_features {
     
 sub collect_features {
     my $self = shift;
-    my ($gff, $which) = @_;
+    my ($gff_thresh_ref) = @_;
+    my ($gff, $pid_thresh) = @{$gff_thresh_ref}{qw(gff pid_threshold)};
+
     my %intervals;
     my $fasta = $self->genome;
     my $gffio = Bio::Tools::GFF->new( -file => $gff, -gff_version => 3 );
@@ -228,12 +249,12 @@ sub collect_features {
 	next $feature unless defined $start && defined $end;
 	if ($feature->primary_tag ne 'repeat_region') {
 	    if ($feature->start >= $start && $feature->end <= $end) {
-		$intervals{$region."_".$which} = join ".", $start, $end, $length;
-		my $region_key = join ".", $region."_".$which, $start, $end, $length;
+		$intervals{$region."_".$pid_thresh} = join ".", $start, $end, $length;
+		my $region_key = join ".", $region."_".$pid_thresh, $start, $end, $length;
 		my @feats = split /\t/, $feature->gff_string;
 		if ($feats[8] =~ /(repeat_region\d+)/) {
 		    my $old_parent = $1;
-		    my $new_parent = $old_parent."_".$which;
+		    my $new_parent = $old_parent."_".$pid_thresh;
 		    $feats[8] =~ s/$old_parent/$new_parent/g;
 		}
 		push @{$features{$source}{$region_key}}, join "||", @feats;
@@ -242,14 +263,19 @@ sub collect_features {
     }
 
     my ($filtered, $stats) = $self->filter_compound_elements(\%features, $fasta);
-    return $filtered, $stats, \%intervals;
+    return ({ collected_features => $filtered, stats => $stats, intervals => \%intervals });
 }
 
 sub get_overlaps {
     my $self = shift;
-    my ($allfeatures, $partfeatures, $intervals) = @_;
+    my ($feature_ref) = @_;
+    my ($relaxed_features, $strict_features) = @{$feature_ref}{qw(relaxed_features strict_features)};
+    my $allfeatures  = $relaxed_features->{collected_features};
+    my $partfeatures = $strict_features->{collected_features}; 
+    my $intervals    = $relaxed_features->{intervals};
+    
     my (@best_elements, %chr_intervals);
-
+  
     for my $source (keys %$allfeatures) {
 	my $tree = Set::IntervalTree->new;
 	
@@ -449,11 +475,9 @@ sub filter_compound_elements {
     }
     
     for my $source (keys %$features) {
-	#for my $ltr (nsort_by { m/repeat_region(\d+)/ and $1 } keys %{$features->{$source}}) {
 	for my $ltr (keys %{$features->{$source}}) {
 	    $curct++;
 	    my ($rreg, $s, $e, $l) = split /\./, $ltr;
-	    #my $region = @{$features->{$source}{$ltr}}[0];
 	    
 	    for my $feat (@{$features->{$source}{$ltr}}) {
 		my @feats = split /\|\|/, $feat;
