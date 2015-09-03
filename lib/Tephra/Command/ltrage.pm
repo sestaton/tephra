@@ -1,5 +1,5 @@
 package Tephra::Command::ltrage;
-# ABSTRACT: Find LTR retrotransposons in a genome assembly.
+# ABSTRACT: Calculate the age distribution of LTR retrotransposons..
 
 use 5.010;
 use strict;
