@@ -76,7 +76,9 @@ sub ltr_search_strict {
  
     my $ltr_dig   = $self->_run_ltrdigest($gt, $ltrd_args);
     $self->_clean_index if $self->clean;
-
+    unlink $ltrh_gff;
+    unlink $gffh_sort;
+    
     return $ltrg_gff;
 }
 
@@ -114,6 +116,8 @@ sub ltr_search_relaxed {
  
     my $ltr_dig   = $self->_run_ltrdigest($gt, $ltrd_args);
     $self->_clean_index if $self->clean;
+    unlink $ltrh_gff;
+    unlink $gffh_sort;
 
     return $ltrg_gff;
 }
@@ -141,8 +145,9 @@ sub _run_ltrharvest {
     my $self = shift;
     my ($gt, $args) = @_;
 
-    my $ltrh_cmd = "$gt ltrharvest $args";
-    say STDERR $ltrh_cmd;
+    my $ltrh_cmd = "$gt ltrharvest $args 2>&1 > /dev/null";
+    #say STDERR $ltrh_cmd;
+
     try {
         system([0..5], $ltrh_cmd);
     }
@@ -173,7 +178,7 @@ sub _sort_gff {
     my ($gt, $gff) = @_;
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $gff_sort = $name."_".$suffix;
+    my $gff_sort = File::Spec->catfile($path, $name."_sort.".$suffix);
     #my $gt = $self->get_gt_exec;
 
     my $sort_cmd = "$gt gff3 -sort $gff > $gff_sort";
