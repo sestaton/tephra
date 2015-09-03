@@ -5,7 +5,8 @@ use 5.010;
 use strict;
 use warnings;
 use Tephra -command;
-use Tephra::Search::LTR;
+use Tephra::LTR::LTRSearch;
+use Tephra::LTR::LTRRefine;
 use Cwd                 qw(abs_path);
 use IPC::System::Simple qw(system);
 use Capture::Tiny       qw(:all);
@@ -14,10 +15,11 @@ use File::Spec;
 
 sub opt_spec {
     return (    
-	[ "genome|g=s", "The genome sequences in FASTA format to search for LTR-RTs "   ],
-	[ "trandb|t=s", "The file of tRNA sequences in FASTA format to search for PBS " ], 
-	[ "hmmdb|m=i",  "The HMM db in HMMERv3 format to search for coding domains "    ],
-	[ "clean",      "Clean up the index files (Default: yes) "                      ],
+	[ "genome|g=s",  "The genome sequences in FASTA format to search for LTR-RTs "   ],
+	[ "trnadb|t=s",  "The file of tRNA sequences in FASTA format to search for PBS " ], 
+	[ "hmmdb|p=s",   "The HMM db in HMMERv3 format to search for coding domains "    ],
+	[ "outfile|o=s", "The final combined and filtered GFF3 file of LTR-RTs "         ],
+	[ "clean",       "Clean up the index files (Default: yes) "                      ],
     );
 }
 
@@ -31,7 +33,7 @@ sub validate_args {
     elsif ($self->app->global_options->{help}) {
 	$self->help;
     }
-    elsif (!$opt->{qw(genome trnadb hmmdb)}) {
+    elsif (!$opt->{genome} || !$opt->{outfile}) { # || !$opt->{hmmdb}) {
 	say "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
@@ -43,10 +45,32 @@ sub execute {
     exit(0) if $self->app->global_options->{man} ||
 	$self->app->global_options->{help};
 
-    my $something = Tephra::Search::LTR->new( );
-    my $result = _run_ltr_search($opt);
+    my ($relaxed_gff, $strict_gff) = _run_ltr_search($opt);
+    my $some = _refine_ltr_predictions($relaxed_gff, $strict_gff, $opt->{genome}, $opt->{outfile});
 }
 
+sub _refine_ltr_predictions {
+    my ($relaxed_gff, $strict_gff, $fasta, $outfile) = @_;
+
+    my $refine_obj = Tephra::LTR::LTRRefine->new(
+	genome  => $fasta,
+	outfile => $outfile,
+    );
+
+    my ($all_feats, $all_stats, $intervals)
+	= $refine_obj->collect_features($relaxed_gff, '85');
+    my ($part_feats, $part_stats, $part_int) 
+	= $refine_obj->collect_features($strict_gff, '99');
+
+    my $best_elements = $refine_obj->get_overlaps($all_feats, $part_feats, $intervals);
+    
+    my $combined_features = $refine_obj->reduce_features($all_feats, $part_feats, $best_elements, 
+					                 $all_stats, $part_stats);
+
+    # and return something
+    $refine_obj->sort_features($relaxed_gff, $combined_features, $outfile);
+
+}
 
 sub _run_ltr_search {
     my ($opt) = @_;
@@ -55,19 +79,22 @@ sub _run_ltr_search {
     my $hmmdb  = $opt->{hmmdb};
     my $trnadb = $opt->{trnadb};
     my $clean  = $opt->{clean};
+    $clean //= 0;
     
-    my $ltr_search = Tephra::Search::LTR->new( 
+    #say "testing clean: $clean" and exit;
+    
+    my $ltr_search = Tephra::LTR::LTRSearch->new( 
 	genome => $genome, 
 	hmmdb  => $hmmdb,
 	trnadb => $trnadb, 
 	clean  => $clean );
 
-    $ltr_search->ltr_search_strict;
-    $ltr_search->ltr_search_relaxed;
+    my $strict_gff  = $ltr_search->ltr_search_strict;
+    my $relaxed_gff = $ltr_search->ltr_search_relaxed;
 
-    my $exit_value = 1;
+    #my $exit_value = 1;
 
-    return $exit_value;
+    return ($relaxed_gff, $strict_gff);
 }
 
 sub help {
@@ -80,7 +107,7 @@ USAGE: tephra findltrs [-h] [-m]
 Required:
     -g|genome     :   The genome sequences in FASTA format to search for LTR-RTs. 
     -t|trnadb     :   The file of tRNA sequences in FASTA format to search for PBS. 
-    -m|hmmdb      :   The HMM db in HMMERv3 format to search for coding domains.
+    -p|hmmdb      :   The HMM db in HMMERv3 format to search for coding domains.
 
 Options:
     -c|clean      :   Clean up the index files (Default: yes).
