@@ -26,20 +26,19 @@ my @assemb_results = capture { system([0..5], "$cmd findltrs -h") };
 
 ok(@assemb_results, 'Can execute findltrs subcommand');
 
-my $find_cmd = "$cmd findltrs -g $genome -t $trnas -p $model -o filtered.gff3 --clean";
-#say STDERR $find_cmd;
+my $find_cmd = "$cmd findltrs -g $genome -t $trnas -p $model --clean";
+say STDERR $find_cmd;
 
 my @ret = capture { system([0..5], $find_cmd) };
 #dd \@ret;
 
 my @files;
-find( sub { push @files, $File::Find::name if /\.gff3/ }, $testdir);
-ok( @files == 4, 'Can find some ltrs' );
+find( sub { push @files, $File::Find::name if /\.gff3$/ }, $testdir);
+ok( @files == 3, 'Can find some ltrs' ); # 2 ltrdigest files + combined file
 
 ## clean up
 my @outfiles;
 find( sub { push @outfiles, $File::Find::name if /^ref_ltr/ }, $testdir);
 unlink @outfiles;
-unlink glob("*.gff3"); # TODO
     
 done_testing();
