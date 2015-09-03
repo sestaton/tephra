@@ -33,7 +33,7 @@ sub validate_args {
     elsif ($self->app->global_options->{help}) {
 	$self->help;
     }
-    elsif (!$opt->{genome} || !$opt->{outfile}) { # || !$opt->{hmmdb}) {
+    elsif (!$opt->{genome}) { # || !$opt->{outfile}) { # || !$opt->{hmmdb}) {
 	say "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
@@ -52,23 +52,22 @@ sub execute {
 sub _refine_ltr_predictions {
     my ($relaxed_gff, $strict_gff, $fasta, $outfile) = @_;
 
-    my $refine_obj = Tephra::LTR::LTRRefine->new(
-	genome  => $fasta,
-	outfile => $outfile,
-    );
+    my $refine_obj = Tephra::LTR::LTRRefine->new( genome  => $fasta );
 
-    my ($all_feats, $all_stats, $intervals)
-	= $refine_obj->collect_features($relaxed_gff, '85');
-    my ($part_feats, $part_stats, $part_int) 
-	= $refine_obj->collect_features($strict_gff, '99');
+    my $relaxed_features
+	= $refine_obj->collect_features({ gff => $relaxed_gff, pid_threshold => 85 });
+    my $strict_features
+	= $refine_obj->collect_features({ gff => $strict_gff,  pid_threshold => 99 });
 
-    my $best_elements = $refine_obj->get_overlaps($all_feats, $part_feats, $intervals);
+    my $best_elements = $refine_obj->get_overlaps({ relaxed_features => $relaxed_features, 
+						    strict_features  => $strict_features });
     
-    my $combined_features = $refine_obj->reduce_features($all_feats, $part_feats, $best_elements, 
-					                 $all_stats, $part_stats);
+    my $combined_features = $refine_obj->reduce_features({ relaxed_features => $relaxed_features, 
+							   strict_features  => $strict_features,
+							   best_elements    => $best_elements });
 
-    # and return something
-    $refine_obj->sort_features($relaxed_gff, $combined_features, $outfile);
+    $refine_obj->sort_features({ gff               => $relaxed_gff, 
+				 combined_features => $combined_features });
 
 }
 
