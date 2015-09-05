@@ -35,9 +35,10 @@ WriteMakefile(
 	'Parallel::ForkManager' => 0,
 	'Try::Tiny'             => 0,
     },
-    INST_SCRIPT => 'bin',
+    INST_SCRIPT => 'blib/bin',
+    EXE_FILES   => [ 'bin/tephra' ],
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     test  => { TESTS => 't/*.t' },
-    #clean => { FILES => ['bin/tephra', 'src'] },
+    clean => { FILES => [ 't/test_data/*.fai' ] },
 );
 
