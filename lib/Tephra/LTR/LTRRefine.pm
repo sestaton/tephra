@@ -18,6 +18,8 @@ use Try::Tiny;
 use Data::Printer;
 use namespace::autoclean;
 
+with 'Tephra::Role::Util';
+
 has genome => (
       is       => 'ro',
       isa      => 'Path::Class::File',
@@ -49,6 +51,99 @@ has n_threshold => (
 #
 # methods
 #
+sub collect_features {
+    my $self = shift;
+    my ($gff_thresh_ref) = @_;
+    my ($gff, $pid_thresh) = @{$gff_thresh_ref}{qw(gff pid_threshold)};
+
+    my %intervals;
+    my $fasta = $self->genome;
+    my $gffio = Bio::Tools::GFF->new( -file => $gff, -gff_version => 3 );
+
+    my ($source, $start, $end, $length, $region, %features);
+    while (my $feature = $gffio->next_feature()) {
+	if ($feature->primary_tag eq 'repeat_region') {
+	    my @string = split /\t/, $feature->gff_string;
+	    $source = $string[0];
+	    ($region) = ($string[8] =~ /ID=?\s+?(repeat_region\d+)/);
+	    ($start, $end) = ($feature->start, $feature->end);
+	    $length = $end - $start + 1;
+	}
+	next $feature unless defined $start && defined $end;
+	if ($feature->primary_tag ne 'repeat_region') {
+	    if ($feature->start >= $start && $feature->end <= $end) {
+		$intervals{$region."_".$pid_thresh} = join ".", $start, $end, $length;
+		my $region_key = join ".", $region."_".$pid_thresh, $start, $end, $length;
+		my @feats = split /\t/, $feature->gff_string;
+		if ($feats[8] =~ /(repeat_region\d+)/) {
+		    my $old_parent = $1;
+		    my $new_parent = $old_parent."_".$pid_thresh;
+		    $feats[8] =~ s/$old_parent/$new_parent/g;
+		}
+		push @{$features{$source}{$region_key}}, join "||", @feats;
+	    }
+	}
+    }
+
+    my ($filtered, $stats) = $self->_filter_compound_elements(\%features, $fasta);
+    return ({ collected_features => $filtered, stats => $stats, intervals => \%intervals });
+}
+
+sub get_overlaps {
+    my $self = shift;
+    my ($feature_ref) = @_;
+    my ($relaxed_features, $strict_features) = @{$feature_ref}{qw(relaxed_features strict_features)};
+    my $allfeatures  = $relaxed_features->{collected_features};
+    my $partfeatures = $strict_features->{collected_features}; 
+    my $intervals    = $relaxed_features->{intervals};
+    
+    my (@best_elements, %chr_intervals);
+  
+    for my $source (keys %$allfeatures) {
+	my $tree = Set::IntervalTree->new;
+	
+	for my $rregion (keys %{$allfeatures->{$source}}) {
+	    my ($reg, $start, $end, $length) = split /\./, $rregion;
+	    $tree->insert($reg, $start, $end);
+	    $chr_intervals{$source} = $tree;
+	}
+    }
+
+    for my $source (keys %$partfeatures) {
+	for my $rregion (keys %{$partfeatures->{$source}}) {
+	    my (%scores, %sims);
+
+	    if (exists $chr_intervals{$source}) {
+		my ($reg, $start, $end, $length) = split /\./, $rregion;
+		my $res = $chr_intervals{$source}->fetch($start, $end);
+
+		my ($score99, $sim99) = $self->_summarize_features($partfeatures->{$source}{$rregion});
+		
+		$scores{$source}{$rregion} = $score99;
+		$sims{$source}{$rregion} = $sim99;
+		
+		## collect all features, then compare scores/sim...
+		for my $over (@$res) {
+		    my ($s, $e, $l) = split /\./, $intervals->{$over};
+		    my $region_key = join ".", $over, $s, $e, $l;
+		    my ($score85, $sim85) = $self->_summarize_features($allfeatures->{$source}{$region_key});
+		    
+		    $scores{$source}{$region_key} = $score85;
+		    $sims{$source}{$region_key} = $sim85;
+		}
+
+		if (@$res > 0) {
+		    my $best_element 
+			= $self->_get_ltr_score_dups(\%scores, \%sims, $allfeatures, $partfeatures);
+		    push @best_elements, $best_element;
+		}
+	    }
+	}
+    }
+    
+    return \@best_elements;
+}
+
 sub reduce_features {
     my $self = shift;
 
@@ -63,7 +158,7 @@ sub reduce_features {
     
     my ($all, $best, $part, $comb) = (0, 0, 0, 0);
     my $fasta = $self->genome;
-    $self->index_ref($fasta);
+    $self->_index_ref($fasta);
     
     my (%best_features, %all_features, %best_stats);
 
@@ -116,7 +211,7 @@ sub reduce_features {
 	    my ($region, $start, $end, $length) = split /\./, $element;
 	    my $key = join "||", $region, $start, $end;
 
-	    my $n_perc = $self->filterNpercent($source, $key, $fasta);
+	    my $n_perc = $self->_filterNpercent($source, $key, $fasta);
 	    if ($n_perc >= $n_thresh) {
 		#say STDERR "=====> Over thresh: $n_perc";
 		delete $best_features{$source}{$element};
@@ -206,17 +301,12 @@ sub sort_features {
 		    my $cmd = "samtools faidx $fasta $chromosome:$start-$end > $tmp";
 		    $self->run_cmd($cmd);
 
-		    #my @aux = undef;
-		    #my ($name, $comm, $seq, $qual);
-		    #open my $in, '<', $tmp;
-		    #while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
 		    my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
 		    while (my $seqobj = $seqio->next_seq) {
 			my $seq = $seqobj->seq;
 			$seq =~ s/.{60}\K/\n/g;
-			say $ofas join "\n", ">".$seqobj->id, $seq;
+			say $ofas join "\n", ">".$id, $seq;
 		    }   
-		    #close $in;
 		    unlink $tmp;
 		} 
 	    }
@@ -228,100 +318,7 @@ sub sort_features {
     say STDERR "Total elements written: $elem_tot";
 }
     
-sub collect_features {
-    my $self = shift;
-    my ($gff_thresh_ref) = @_;
-    my ($gff, $pid_thresh) = @{$gff_thresh_ref}{qw(gff pid_threshold)};
-
-    my %intervals;
-    my $fasta = $self->genome;
-    my $gffio = Bio::Tools::GFF->new( -file => $gff, -gff_version => 3 );
-
-    my ($source, $start, $end, $length, $region, %features);
-    while (my $feature = $gffio->next_feature()) {
-	if ($feature->primary_tag eq 'repeat_region') {
-	    my @string = split /\t/, $feature->gff_string;
-	    $source = $string[0];
-	    ($region) = ($string[8] =~ /ID=?\s+?(repeat_region\d+)/);
-	    ($start, $end) = ($feature->start, $feature->end);
-	    $length = $end - $start + 1;
-	}
-	next $feature unless defined $start && defined $end;
-	if ($feature->primary_tag ne 'repeat_region') {
-	    if ($feature->start >= $start && $feature->end <= $end) {
-		$intervals{$region."_".$pid_thresh} = join ".", $start, $end, $length;
-		my $region_key = join ".", $region."_".$pid_thresh, $start, $end, $length;
-		my @feats = split /\t/, $feature->gff_string;
-		if ($feats[8] =~ /(repeat_region\d+)/) {
-		    my $old_parent = $1;
-		    my $new_parent = $old_parent."_".$pid_thresh;
-		    $feats[8] =~ s/$old_parent/$new_parent/g;
-		}
-		push @{$features{$source}{$region_key}}, join "||", @feats;
-	    }
-	}
-    }
-
-    my ($filtered, $stats) = $self->filter_compound_elements(\%features, $fasta);
-    return ({ collected_features => $filtered, stats => $stats, intervals => \%intervals });
-}
-
-sub get_overlaps {
-    my $self = shift;
-    my ($feature_ref) = @_;
-    my ($relaxed_features, $strict_features) = @{$feature_ref}{qw(relaxed_features strict_features)};
-    my $allfeatures  = $relaxed_features->{collected_features};
-    my $partfeatures = $strict_features->{collected_features}; 
-    my $intervals    = $relaxed_features->{intervals};
-    
-    my (@best_elements, %chr_intervals);
-  
-    for my $source (keys %$allfeatures) {
-	my $tree = Set::IntervalTree->new;
-	
-	for my $rregion (keys %{$allfeatures->{$source}}) {
-	    my ($reg, $start, $end, $length) = split /\./, $rregion;
-	    $tree->insert($reg, $start, $end);
-	    $chr_intervals{$source} = $tree;
-	}
-    }
-
-    for my $source (keys %$partfeatures) {
-	for my $rregion (keys %{$partfeatures->{$source}}) {
-	    my (%scores, %sims);
-
-	    if (exists $chr_intervals{$source}) {
-		my ($reg, $start, $end, $length) = split /\./, $rregion;
-		my $res = $chr_intervals{$source}->fetch($start, $end);
-
-		my ($score99, $sim99) = $self->summarize_features($partfeatures->{$source}{$rregion});
-		
-		$scores{$source}{$rregion} = $score99;
-		$sims{$source}{$rregion} = $sim99;
-		
-		## collect all features, then compare scores/sim...
-		for my $over (@$res) {
-		    my ($s, $e, $l) = split /\./, $intervals->{$over};
-		    my $region_key = join ".", $over, $s, $e, $l;
-		    my ($score85, $sim85) = $self->summarize_features($allfeatures->{$source}{$region_key});
-		    
-		    $scores{$source}{$region_key} = $score85;
-		    $sims{$source}{$region_key} = $sim85;
-		}
-
-		if (@$res > 0) {
-		    my $best_element 
-			= $self->get_ltr_score_dups(\%scores, \%sims, $allfeatures, $partfeatures);
-		    push @best_elements, $best_element;
-		}
-	    }
-	}
-    }
-    
-    return \@best_elements;
-}
-
-sub get_ltr_score_dups {
+sub _get_ltr_score_dups {
     my $self = shift;
     my ($scores, $sims, $allfeatures, $partfeatures) = @_;
     my %sccounts;
@@ -422,7 +419,7 @@ sub get_ltr_score_dups {
     return \%best_element;
 }
 
-sub summarize_features {
+sub _summarize_features {
     my $self = shift;
     my ($feature) = @_;
     my ($three_pr_tsd, $five_pr_tsd, $ltr_sim);
@@ -453,7 +450,7 @@ sub summarize_features {
     return ($ltr_score, $ltr_sim);
 }
 
-sub filter_compound_elements {
+sub _filter_compound_elements {
     my $self = shift;
     my ($features, $fasta) = @_;
     my @pdoms;
@@ -462,7 +459,6 @@ sub filter_compound_elements {
     my $has_tpase  = 0;
     my $has_pdoms  = 0;
     my $len_thresh = 25000; # are elements > 25kb real? probably not
-    my $n_thresh   = 0.30;
 
     my ($allct, $curct) = (0, 0);
     my ($gyp_cop_filtered, $dup_pdoms_filtered, $len_filtered, 
@@ -543,7 +539,7 @@ sub filter_compound_elements {
     return $features, \%stats;
 }
 
-sub filterNpercent {
+sub _filterNpercent {
     my $self = shift;
     my ($source, $key, $fasta) = @_;
     my $n_perc = 0;
@@ -552,25 +548,20 @@ sub filterNpercent {
     my $cmd = "samtools faidx $fasta $source:$start-$end > $tmp";
     $self->run_cmd($cmd);
     
-    #my @aux = undef;
-    #my ($name, $comm, $seq, $qual);
-    #open my $in, '<', $tmp;
     my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
     while (my $seqobj = $seqio->next_seq) {
-	#while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
 	my $seq = $seqobj->seq;
-	my $ltrlength = length($seq);
+	my $ltrlength = $seqobj->length;
+	die unless length($seq) == $ltrlength;
 	my $n_count = ($seq =~ tr/Nn//);
 	$n_perc  = sprintf("%.2f",$n_count/$ltrlength);
-	#say STDERR join q{ }, $source, $ltr, $start, $end, $ltrlength, $n_perc;
     }
-    #close $in;
     unlink $tmp;
 
     return $n_perc;
 }
 
-sub get_source {
+sub _get_source {
     my $self = shift;
     my ($ref) = @_;
     for my $feat (@$ref) {
@@ -579,25 +570,13 @@ sub get_source {
     }
 }
 
-sub index_ref {
+sub _index_ref {
     my $self = shift;
     my ($fasta) = @_;
     #my $bgzip_cmd = "bgzip $fasta";
     my $faidx_cmd = "samtools faidx $fasta";
     #run_cmd($bgzip_cmd);
     $self->run_cmd($faidx_cmd);
-}
-
-sub run_cmd {
-    my $self = shift;
-    my ($cmd) = @_;
-
-    try {
-	system([0..5], $cmd);
-    }
-    catch {
-	die "\nERROR: $cmd failed. Here is the exception: $_\n";
-    };
 }
 
 __PACKAGE__->meta->make_immutable;
