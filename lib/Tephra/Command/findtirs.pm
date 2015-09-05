@@ -1,10 +1,12 @@
-package Tephra::Command::findtirs;
-# ABSTRACT: Find TIR transposons in a genome assembly.
+package Tephra::Command::findltrs;
+# ABSTRACT: Find LTR retrotransposons in a genome assembly.
 
 use 5.010;
 use strict;
 use warnings;
 use Tephra -command;
+use Tephra::LTR::LTRSearch;
+use Tephra::LTR::LTRRefine;
 use Cwd                 qw(abs_path);
 use IPC::System::Simple qw(system);
 use Capture::Tiny       qw(:all);
@@ -13,11 +15,11 @@ use File::Spec;
 
 sub opt_spec {
     return (    
-	[ "paired|p=s",   "A file of paired, interleaved chlorplast sequences to be assembled"        ],
-	[ "unpaired|u=s", "The file of unpaired, singleton sequences"                                 ], 
-	[ "threads|t=i",  "The number of threads (hash steps) to execute simultaneously (Default: 1)" ],
-	[ "hashs|s=i",    "The starting hash size (Default: 59)"                                      ],
-	[ "hashe|e=i",    "The maximum hash size (Default: 89)"                                       ],
+	[ "genome|g=s",  "The genome sequences in FASTA format to search for LTR-RTs "   ],
+	[ "trnadb|t=s",  "The file of tRNA sequences in FASTA format to search for PBS " ], 
+	[ "hmmdb|p=s",   "The HMM db in HMMERv3 format to search for coding domains "    ],
+	[ "outfile|o=s", "The final combined and filtered GFF3 file of LTR-RTs "         ],
+	[ "clean",       "Clean up the index files (Default: yes) "                      ],
     );
 }
 
@@ -31,7 +33,7 @@ sub validate_args {
     elsif ($self->app->global_options->{help}) {
 	$self->help;
     }
-    elsif (!$opt->{paired} && !$opt->{unpaired}) {
+    elsif (!$opt->{genome}) { # || !$opt->{outfile}) { # || !$opt->{hmmdb}) {
 	say "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
@@ -43,78 +45,71 @@ sub execute {
     exit(0) if $self->app->global_options->{man} ||
 	$self->app->global_options->{help};
 
-    my $result = _run_assembly($opt);
+    my ($relaxed_gff, $strict_gff) = _run_ltr_search($opt);
+    my $some = _refine_ltr_predictions($relaxed_gff, $strict_gff, $opt->{genome}, $opt->{outfile});
 }
 
-sub _run_assembly {
-    my ($opt) = @_;
-    my $pairfile   = abs_path($opt->{paired});
-    my $singletons = abs_path($opt->{unpaired}); 
-    my $hashs      = $opt->{hashs};
-    my $hashe      = $opt->{hashe};
-    my $thread     = $opt->{threads};
+sub _refine_ltr_predictions {
+    my ($relaxed_gff, $strict_gff, $fasta, $outfile) = @_;
 
-    my $file = __FILE__;
-    my $cmd_dir = basename(dirname(abs_path($file)));
-    my $hmm_dir = basename(dirname($cmd_dir));
-    my $chl_dir = basename(dirname($hmm_dir));
-    my $vel_dir = File::Spec->catdir($chl_dir, 'src', 'velvet');
-    my $velveth = File::Spec->catfile($chl_dir, 'src', 'velvet', 'velveth');
-    my $velvetg = File::Spec->catfile($chl_dir, 'src', 'velvet', 'velvetg');
-    my $vo      = File::Spec->catfile(abs_path($chl_dir), 'src', 'VelvetOptimiser', 'VelvetOptimiser.pl');
+    my $refine_obj = Tephra::LTR::LTRRefine->new( genome  => $fasta );
 
-    local $ENV{PATH} = "$vel_dir:$ENV{PATH}";
+    my $relaxed_features
+	= $refine_obj->collect_features({ gff => $relaxed_gff, pid_threshold => 85 });
+    my $strict_features
+	= $refine_obj->collect_features({ gff => $strict_gff,  pid_threshold => 99 });
 
-    unless (-e $vo) {
-        die "\nERROR: 'VelvetOptimiser' not found. Please run the 'install_deps.sh' script before proceeding. Exiting.\n";
-    }
-
-    unless (-e $velveth && -e $velvetg) {
-        die "\nERROR: Velvet executables not found. Please run the 'install_deps.sh' script before proceeding. Exiting.\n";
-    }
-
-    my $exit_value;
-    $hashs  //= 59;
-    $hashe  //= 89;
-    $thread //= 1;
-    my ($ifile, $idir, $iext) = fileparse($pairfile, qr/\.[^.]*/);
-    my $dirname = "VelvetOpt_k$hashs-k$hashe";
-
-    my @vo_cmd = "$vo ".
-	         "-s $hashs ".
-		 "-e $hashe ".
-		 "-t $thread ".
-		 "-p $dirname ".
-		 "-d $dirname ".
-		 "-f '-fasta -shortPaired $pairfile -fasta -short $singletons'";
-
-    my ($stdout, $stderr, @res) = capture { system([0..5], @vo_cmd); };
-
-    unless (-d $dirname) {
-	say "\nERROR: VelvetOptimiser seems to have exited. Here is the message:\n$stderr" if $stderr;
-    }
+    my $best_elements = $refine_obj->get_overlaps({ relaxed_features => $relaxed_features, 
+						    strict_features  => $strict_features });
     
-    say "\nAssembly results can be found in 'contigs.fa' in the directory: $dirname.\n".
-	"See '${dirname}_logfile.txt' for assembly details.\n";
+    my $combined_features = $refine_obj->reduce_features({ relaxed_features => $relaxed_features, 
+							   strict_features  => $strict_features,
+							   best_elements    => $best_elements });
 
-    return $exit_value;
+    $refine_obj->sort_features({ gff               => $relaxed_gff, 
+				 combined_features => $combined_features });
+
+}
+
+sub _run_ltr_search {
+    my ($opt) = @_;
+    
+    my $genome = $opt->{genome};
+    my $hmmdb  = $opt->{hmmdb};
+    my $trnadb = $opt->{trnadb};
+    my $clean  = $opt->{clean};
+    $clean //= 0;
+    
+    #say "testing clean: $clean" and exit;
+    
+    my $ltr_search = Tephra::LTR::LTRSearch->new( 
+	genome => $genome, 
+	hmmdb  => $hmmdb,
+	trnadb => $trnadb, 
+	clean  => $clean );
+
+    my $strict_gff  = $ltr_search->ltr_search_strict;
+    my $relaxed_gff = $ltr_search->ltr_search_relaxed;
+
+    #my $exit_value = 1;
+
+    return ($relaxed_gff, $strict_gff);
 }
 
 sub help {
     print STDERR<<END
 
-USAGE: tephra findtirs [-h] [-m]
+USAGE: tephra findltrs [-h] [-m]
     -m --man      :   Get the manual entry for a command.
     -h --help     :   Print the command usage.
 
 Required:
-    -p|paired     :   A file of paired, interleaved chlorplast sequences to be assembled.
-    -u|unpaired   :   The file of unpaired, singleton sequences.
+    -g|genome     :   The genome sequences in FASTA format to search for LTR-RTs. 
+    -t|trnadb     :   The file of tRNA sequences in FASTA format to search for PBS. 
+    -p|hmmdb      :   The HMM db in HMMERv3 format to search for coding domains.
 
 Options:
-    -t|threads    :   The number of threads (hash steps) to execute simultaneously (Default: 1).
-    -s|hashs      :   The starting hash size (Default: 59).
-    -e|hashe      :   The maximum hash size (Default: 89).
+    -c|clean      :   Clean up the index files (Default: yes).
 
 END
 }
@@ -127,11 +122,11 @@ __END__
 
 =head1 NAME
                                                                        
- tephra findtirs  - 
+ tephra findltrs - 
 
 =head1 SYNOPSIS    
 
- tephra findirs -i ... -n 
+ tephra findltrs -i .. -n
 
 =head1 DESCRIPTION
 
