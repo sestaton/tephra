@@ -14,7 +14,7 @@ BEGIN {
 
 diag( "Testing Tephra $Tephra::VERSION, Perl $], $^X" );
 
-my $cmd = File::Spec->catfile('bin', 'tephra');
+my $cmd = File::Spec->catfile('blib', 'bin', 'tephra');
 ok( -x $cmd, 'Can execute tephra' );
 
 chdir 't' or die $!;
