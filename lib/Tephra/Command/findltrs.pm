@@ -53,7 +53,7 @@ sub _refine_ltr_predictions {
     my ($relaxed_gff, $strict_gff, $fasta, $outfile) = @_;
 
     my $refine_obj = Tephra::LTR::LTRRefine->new( genome  => $fasta );
-
+	
     my $relaxed_features
 	= $refine_obj->collect_features({ gff => $relaxed_gff, pid_threshold => 85 });
     my $strict_features
@@ -88,8 +88,15 @@ sub _run_ltr_search {
 	trnadb => $trnadb, 
 	clean  => $clean );
 
-    my $strict_gff  = $ltr_search->ltr_search_strict;
-    my $relaxed_gff = $ltr_search->ltr_search_relaxed;
+    my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
+    #my $index = File::Spec->catfile($path, $genome.".index");
+    my $index = $genome.".index";
+    
+    my @suff_args = qq(-db $genome -indexname $index -tis -suf -lcp -ssp -sds -des -dna);
+    $ltr_search->create_ltr_index(\@suff_args);
+    
+    my $strict_gff  = $ltr_search->ltr_search_strict($index);
+    my $relaxed_gff = $ltr_search->ltr_search_relaxed($index);
 
     #my $exit_value = 1;
 
