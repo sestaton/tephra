@@ -1,5 +1,5 @@
-package Tephra::Command::findltrs;
-# ABSTRACT: Find LTR retrotransposons in a genome assembly.
+package Tephra::Command::findtirs;
+# ABSTRACT: Find TIR transposons in a genome assembly.
 
 use 5.010;
 use strict;
