@@ -6,10 +6,13 @@ use MooseX::Types::Path::Class;
 use IPC::System::Simple qw(system);
 use Try::Tiny;
 use File::Spec;
+use File::Find;
 use File::Basename;
-#use Log::Any        qw($log);
+use Log::Any        qw($log);
 use Cwd;
 use namespace::autoclean;
+
+use Data::Dump;
 
 has gt_exec => (
     is        => 'rw',
@@ -22,41 +25,57 @@ has gt_exec => (
     builder   => '_build_gt_exec',
 );
 
-sub _create_ltr_index {
+sub create_ltr_index {
     my $self = shift;
-    my ($gt, $genome, $args) = @_;
+    my ($args) = @_;
 
-    #my $gt = $self->get_gt_exec;
+    my $gt = $self->get_gt_exec;
     ##TODO
-    my @ltrh_args;
-    push @ltrh_args, 'suffixerator';
-    for my $opt (keys %$args) {
-	push @ltrh_args, $opt.q{ }.$args->{$opt};
-    }
-    my $index = File::Spec->catfile($path, $genome.".index");
-    push @ltrh_args, "-indexname $index";
+    #my @ltrh_args;
+    unshift @$args, 'suffixerator';
+    unshift @$args, $gt;
+    my $cmd = join qq{ }, @$args;
+    #for my $opt (keys %$args) {
+	#push @ltrh_args, $opt.q{ }.$args->{$opt};
+    #}
+    #my $index = File::Spec->catfile($path, $genome.".index");
+    #push @ltrh_args, "-indexname $index";
     #my $index_cmd = "$gt suffixerator ";
     #$index_cmd .= "-db $genome -indexname $index -tis -suf -lcp -ssp -sds -des -dna";
+    #say STDERR join qq{ }, $cmd;
     try {
-	system([0..5], $gt, @ltrh_args);
+	system([0..5], $cmd);
     }
     catch {
 	$log->error("Unable to make suffixerator index. Here is the exception: $_\nExiting.");
 	exit(1);
     };
 
-    return $index;
+    #return $index;
 }
 
-sub _run_ltrharvest {
+sub run_ltrharvest {
     my $self = shift;
-    my ($gt, $args) = @_;
+    my ($args) = @_;
 
-    my $ltrh_cmd = "$gt ltrharvest $args 2>&1 > /dev/null";
+    #dd $args and exit;
+    my $gt = $self->get_gt_exec;
+    my @ltrh_args;
+    push @ltrh_args, "$gt ltrharvest";
+    #push @ltrh_args, 'ltrharves
+    for my $opt (keys %$args) {
+	if (defined $args->{$opt}) {
+	    push @ltrh_args, $opt.q{ }.$args->{$opt};
+	}
+    } 
+    #my $ltrh_cmd = "$gt ltrharvest $args 2>&1 > /dev/null";
     #say STDERR $ltrh_cmd;
-
+    #unshift @$args, 'ltrharvest';
+    #unshift @$args, $gt;
+    my $cmd = join qq{ }, @ltrh_args;
+    #say STDERR $cmd and exit;
     try {
-	system([0..5], $ltrh_cmd);
+	system([0..5], $cmd);
     }
     catch {
 	$log->error("LTRharvest failed. Here is the exception: $_\nExiting.");
@@ -65,13 +84,27 @@ sub _run_ltrharvest {
 
 }
 
-sub _run_ltrdigest {
+sub run_ltrdigest {
     my $self = shift;
-    my ($gt, $args) = @_;
+    my ($args, $gff) = @_;
 
-    my $ltrd_cmd = "$gt ltrdigest $args";
+    my $gt = $self->get_gt_exec;
+    #my $ltrd_cmd = "$gt ltrdigest $args";
+    my @ltrd_args;
+    push @ltrd_args, "$gt ltrdigest";
+    for my $opt (keys %$args) {
+	if (defined $args->{$opt}) {
+	    push @ltrd_args, $opt.q{ }.$args->{$opt};
+	}
+    }
+    
+    #unshift @$args, 'ltrdigest';
+    #unshift @$args, $gt;
+
+    my $cmd = join qq{ }, @ltrd_args, $gff;
+    #say STDERR $cmd and exit;
     try {
-	system([0..5], $ltrd_cmd);
+	system([0..5], $cmd);
     }
     catch {
 	$log->error("LTRdigest failed. Here is the exception: $_\nExiting.");
@@ -80,13 +113,13 @@ sub _run_ltrdigest {
 
 }
 
-sub _sort_gff {
+sub sort_gff {
     my $self = shift;
-    my ($gt, $gff) = @_;
+    my ($gff) = @_;
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $gff_sort = File::Spec->catfile($path, $name."_sort.".$suffix);
-    #my $gt = $self->get_gt_exec;
+    my $gff_sort = File::Spec->catfile($path, $name."_sort".$suffix);
+    my $gt = $self->get_gt_exec;
 
     my $sort_cmd = "$gt gff3 -sort $gff > $gff_sort";
     try {
@@ -100,7 +133,7 @@ sub _sort_gff {
     return $gff_sort;
 }
 
-sub _clean_index {
+sub clean_index {
     my $self = shift;
 
     my $dir = getcwd();
