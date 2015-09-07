@@ -48,13 +48,18 @@ sub execute {
 sub _classify_ltr_predictions {
     my ($opt) = @_;
 
+    my $genome   = $opt->{genome};
+    my $repeatdb = $opt->{repeatdb};
+    my $gff      = $opt->{gff};
+
     my $classify_obj = Tephra::Classify::LTRSfams->new( 
-	genome   => $opt->{genome}, 
-	repeatdb => $opt->{repeatdb}, 
-	gff      => $opt->{gff} 
+	genome   => $genome, 
+	repeatdb => $repeatdb, 
+	gff      => $gff 
     );
+
     
-    my ($header, $features) = $classify_obj->collect_gff_features;
+    my ($header, $features) = $classify_obj->collect_gff_features($gff);
 
     #my $all_ct  = (keys %$features);
     my ($gypsy, $copia) = $classify_obj->find_gypsy_copia($features);
