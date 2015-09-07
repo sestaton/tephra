@@ -25,6 +25,34 @@ has gt_exec => (
     builder   => '_build_gt_exec',
 );
 
+has genome => (
+    is       => 'ro',
+    isa      => 'Path::Class::File',
+    required => 1,
+    coerce   => 1,
+    );
+
+has hmmdb => (
+    is       => 'ro',
+    isa      => 'Path::Class::File',
+    required => 0,
+    coerce   => 1,
+    );
+
+has trnadb => (
+    is       => 'ro',
+    isa      => 'Path::Class::File',
+    required => 0,
+    coerce   => 1,
+    );
+
+has clean => (
+    is       => 'ro',
+    isa      => 'Bool',
+    required => 0,
+    default  => 1,
+    );
+
 sub create_index {
     my $self = shift;
     my ($args) = @_;
