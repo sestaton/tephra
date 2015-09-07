@@ -25,7 +25,7 @@ has gt_exec => (
     builder   => '_build_gt_exec',
 );
 
-sub create_ltr_index {
+sub create_index {
     my $self = shift;
     my ($args) = @_;
 
@@ -111,6 +111,26 @@ sub run_ltrdigest {
 	exit(1);
     };
 
+}
+
+sub run_tirvish {
+    my $self = shift;
+    my ($args) = @_;
+
+    my $hmms  = $args->{hmms};
+    my $index = $args->{index};
+    my $gff   = $args->{gff};
+    my $gt    = $self->get_gt_exec;
+    my $cmd = "$gt tirvish -index $index -hmms $hmms > $gff";
+    try {
+	system([0..5], $cmd);
+    }
+    catch {
+	$log->error("'gt tirvish' failed. Here is the exception: $_\nExiting.");
+	exit(1);
+    };
+
+    #return $gff;
 }
 
 sub sort_gff {
