@@ -14,34 +14,6 @@ use namespace::autoclean;
 
 with 'Tephra::Role::GT';
 
-has genome => (
-      is       => 'ro',
-      isa      => 'Path::Class::File',
-      required => 1,
-      coerce   => 1,
-);
-
-has hmmdb => (
-      is       => 'ro',
-      isa      => 'Path::Class::File',
-      required => 0,
-      coerce   => 1,
-);
-
-has trnadb => (
-      is       => 'ro',
-      isa      => 'Path::Class::File',
-      required => 0,
-      coerce   => 1,
-);
-
-has clean => (
-      is       => 'ro',
-      isa      => 'Bool',
-      required => 0,
-      default  => 1,
-);
-
 sub ltr_search_strict {
     my $self = shift;
     my ($index) = @_;
