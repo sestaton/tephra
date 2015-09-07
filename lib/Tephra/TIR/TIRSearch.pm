@@ -1,4 +1,4 @@
-package Tephra::LTR::LTRSearch;
+package Tephra::TIR::TIRSearch;
 
 use 5.010;
 use Moose;
@@ -7,12 +7,14 @@ use File::Spec;
 use File::Find;
 use File::Basename;
 use IPC::System::Simple qw(system EXIT_ANY);
+use Sort::Naturally;
 use Path::Class::File;
 use Log::Any            qw($log);
 use Try::Tiny;
 use namespace::autoclean;
 
-with 'Tephra::Role::GT';
+with 'Tephra::Role::GT',
+     'Tephra::Role::GFF';
 
 has genome => (
       is       => 'ro',
@@ -28,13 +30,6 @@ has hmmdb => (
       coerce   => 1,
 );
 
-has trnadb => (
-      is       => 'ro',
-      isa      => 'Path::Class::File',
-      required => 0,
-      coerce   => 1,
-);
-
 has clean => (
       is       => 'ro',
       isa      => 'Bool',
@@ -42,166 +37,144 @@ has clean => (
       default  => 1,
 );
 
-sub ltr_search_strict {
+sub tir_search {
     my $self = shift;
+    my ($index) = @_;
+    
     my $genome = $self->genome->absolute;
     my $hmmdb  = $self->hmmdb;
-    my $trnadb = $self->trnadb;
-    my $gt = $self->get_gt_exec;
+    my (%suf_args, %ltrh_cmd, %ltrd_cmd);
     
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
     if ($name =~ /(\.fa.*)/) {
 	$name =~ s/$1//;
     }
     
-    my $ltrh_out = File::Spec->catfile($path, $name."_ltrharvest99_pred-all");
-    my $ltrh_out_inner = File::Spec->catfile($path, $name."_ltrharvest99_pred-inner");
-    my $ltrh_gff = File::Spec->catfile($path, $name."_ltrharvest99.gff3");
-    my $ltrg_gff = File::Spec->catfile($path, $name."_ltrdigest99.gff3");
-    my $ltrg_out = File::Spec->catfile($path, $name."_ltrdigest99");
+    my $gff = File::Spec->catfile($path, $name."_tirs.gff3");
+    $self->run_tirvish({ index => $index, hmms => $hmmdb, gff => $gff });
 
-    my $index = $self->_create_ltr_index($gt, $genome);
+    my $filtered = $self->_filter_tir_gff($gff);
+    my $fixgff   = $self->_fix_tir_gff($filtered, $genome);
+    my $gff_sort = $self->sort_gff($fixgff);
 
-    my $ltrh_args = "-longoutput no -seqids yes -tabout no -mintsd 4 -maxtsd 6 ";
-    $ltrh_args   .= "-minlenltr 100 -maxlenltr 6000 -mindistltr 1500 -maxdistltr 25000 ";
-    $ltrh_args   .= "-motif tgca -similar 99 -vic 10 -index $index ";
-    $ltrh_args   .= "-out $ltrh_out -outinner $ltrh_out_inner -gff3 $ltrh_gff";
-
-    my $ltr_succ  = $self->_run_ltrharvest($gt, $ltrh_args);
-    my $gffh_sort = $self->_sort_gff($gt, $ltrh_gff);
-
-    my $ltrd_args = "-trnas $trnadb -hmms $hmmdb -aliout no -aaout no -seqfile $genome ";
-    $ltrd_args   .= "-matchdescstart yes -seqnamelen 50 -o $ltrg_gff ";
-    $ltrd_args   .= "-outfileprefix $ltrg_out $gffh_sort";
- 
-    my $ltr_dig   = $self->_run_ltrdigest($gt, $ltrd_args);
-    $self->_clean_index if $self->clean;
-    unlink $ltrh_gff;
-    unlink $gffh_sort;
+    $self->clean_index if $self->clean;
+    #unlink $gff;
     
-    return $ltrg_gff;
-}
-
-sub ltr_search_relaxed {
-    my $self = shift;
-    my $genome = $self->genome->absolute;
-    my $hmmdb  = $self->hmmdb;
-    my $trnadb = $self->trnadb;
-    my $gt = $self->get_gt_exec;
-
-    my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
-    if ($name =~ /(\.fa.*)/) {
-	$name =~ s/$1//;
-    }
-    
-    my $ltrh_out = File::Spec->catfile($path, $name."_ltrharvest85_pred-all");
-    my $ltrh_out_inner = File::Spec->catfile($path, $name."_ltrharvest85_pred-inner");
-    my $ltrh_gff = File::Spec->catfile($path, $name."_ltrharvest85.gff3");
-    my $ltrg_gff = File::Spec->catfile($path, $name."_ltrdigest85.gff3");
-    my $ltrg_out = File::Spec->catfile($path, $name."_ltrdigest85");
-
-    my $index = $self->_create_ltr_index($gt, $genome);
-
-    my $ltrh_args = "-longoutput no -seqids yes -tabout no -mintsd 4 -maxtsd 6 ";
-    $ltrh_args   .= "-minlenltr 100 -maxlenltr 6000 -mindistltr 1500 -maxdistltr 25000 ";
-    $ltrh_args   .= "-similar 85 -vic 10 -index $index ";
-    $ltrh_args   .= "-out $ltrh_out -outinner $ltrh_out_inner -gff3 $ltrh_gff";
-
-    my $ltr_succ  = $self->_run_ltrharvest($gt, $ltrh_args);
-    my $gffh_sort = $self->_sort_gff($gt, $ltrh_gff);
-
-    my $ltrd_args = "-trnas $trnadb -hmms $hmmdb -aliout no -aaout no -seqfile $genome ";
-    $ltrd_args   .= "-matchdescstart yes -seqnamelen 50 -o $ltrg_gff ";
-    $ltrd_args   .= "-outfileprefix $ltrg_out $gffh_sort";
- 
-    my $ltr_dig   = $self->_run_ltrdigest($gt, $ltrd_args);
-    $self->_clean_index if $self->clean;
-    unlink $ltrh_gff;
-    unlink $gffh_sort;
-
-    return $ltrg_gff;
-}
-
-sub _create_ltr_index {
-    my $self = shift;
-    my ($gt, $genome) = @_;
-
-    #my $gt = $self->get_gt_exec;
-    my $index = $genome.".index";
-    my $index_cmd = "$gt suffixerator ";
-    $index_cmd .= "-db $genome -indexname $index -tis -suf -lcp -ssp -sds -des -dna";
-    try {
-	system([0..5], $index_cmd);
-    }
-    catch {
-	$log->error("Unable to make suffixerator index. Here is the exception: $_\nExiting.");
-        exit(1);
-    };
-
-    return $index;
-}
-
-sub _run_ltrharvest {
-    my $self = shift;
-    my ($gt, $args) = @_;
-
-    my $ltrh_cmd = "$gt ltrharvest $args 2>&1 > /dev/null";
-    #say STDERR $ltrh_cmd;
-
-    try {
-        system([0..5], $ltrh_cmd);
-    }
-    catch {
-        $log->error("LTRharvest failed. Here is the exception: $_\nExiting.");
-        exit(1);
-    };
-
-}
-
-sub _run_ltrdigest {
-    my $self = shift;
-    my ($gt, $args) = @_;
-
-    my $ltrd_cmd = "$gt ltrdigest $args";
-    try {
-        system([0..5], $ltrd_cmd);
-    }
-    catch {
-        $log->error("LTRdigest failed. Here is the exception: $_\nExiting.");
-        exit(1);
-    };
-
-}
-
-sub _sort_gff {
-    my $self = shift;
-    my ($gt, $gff) = @_;
-
-    my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $gff_sort = File::Spec->catfile($path, $name."_sort.".$suffix);
-    #my $gt = $self->get_gt_exec;
-
-    my $sort_cmd = "$gt gff3 -sort $gff > $gff_sort";
-    try {
-        system([0..5], $sort_cmd);
-    }
-    catch {
-        $log->error("'gt gff3 -sort' failed. Here is the exception: $_\nExiting.");
-        exit(1);
-    };
-
     return $gff_sort;
 }
 
-sub _clean_index {
+sub _filter_tir_gff {
     my $self = shift;
+    my ($gff) = @_;
 
-    my $dir = getcwd();
-    my @files;
-    find( sub { push @files, $File::Find::name 
-		    if /\.llv|\.md5|\.prf|\.tis|\.suf|\.lcp|\.ssp|\.sds|\.des|\.dna|\.esq|\.prj|\.ois/ 
-	  }, $dir);
-    unlink @files;
+    my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
+    my $outfile = File::Spec->catfile($path, $name."_filtered.gff3");
+    open my $out, '>', $outfile;
+
+    my ($header, $features) = $self->collect_gff_features($gff);
+    say $out $header;
+
+    my $ltrrt = 0;
+    my @rt = qw(rve rvt rvp gag chromo);
+    
+    for my $tir (nsort keys %$features) {
+	#$tirct++;
+	for my $feat (@{$features->{$tir}}) {
+	    my @feats = split /\|\|/, $feat;
+	    if ($feats[2] eq 'protein_match') {
+		my ($type, $pdom) = ($feats[8] =~ /(name) ("?\w+"?)/);
+		$pdom =~ s/"//g;
+		my $dom = lc($pdom);
+		if ($dom =~ /rve|rvt|rvp|gag|chromo|rnase|athila|zf/) {
+		    delete $features->{$tir};
+		}
+	    }
+	}
+    }
+
+    for my $tir (keys %$features) {
+	my ($rreg, $s, $e) = split /\./, $tir;
+	my $len = ($e - $s);
+	#push @lengths, $len;
+	my $region = @{$features->{$tir}}[0];
+	my ($loc, $source) = (split /\|\|/, $region)[0..1];
+	say $out join "\t", $loc, $source, 'repeat_region', $s, $e, '.', '?', '.', "ID=$rreg";
+	for my $feat (@{$features->{$tir}}) {
+	    my @feats = split /\|\|/, $feat;
+	    #$feats[8] =~ s/\s\;\s/\;/g;
+	    #$feats[8] =~ s/\s+/=/g;
+	    $feats[8] =~ s/\s\;\s/\;/g;
+	    $feats[8] =~ s/\s+$//;
+	    $feats[8] =~ s/\"//g;
+	    $feats[8] =~ s/(\;\w+)\s/$1=/g;
+	    $feats[8] =~ s/\s;/;/;
+	    $feats[8] =~ s/^(\w+)\s/$1=/;
+	    say $out join "\t", @feats;
+	}
+    }
+    return $outfile;
+}
+
+sub _fix_tir_gff {
+    my $self = shift;
+    my ($gff, $genome) = @_;
+
+    my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
+    my $outfile = File::Spec->catfile($path, $name."_id.gff3");
+    open my $out, '>', $outfile;
+    open my $in, '<', $gff;
+
+    my $seqio = Bio::SeqIO->new( -file => $genome, -format => 'fasta' );
+
+    my (%md5, %name_map, $seqid, $seqlen, $first_id);
+    my $write_id = 1;
+    while (<$in>) {
+	chomp;
+	if (/^##gff/) {
+	    say $out $_;
+	}
+	elsif (/^##sequence-region/) {
+	    ##sequence-region   md5:faf622ff75def8ca86a6ac12894a87dc:seq0 1 119871
+	    my @regs = split /\s+/;
+	    $md5{$regs[1]} = $regs[3];
+	}
+	elsif (/^#[^#]/) {
+	    say STDERR $_;
+	    s/#//g;
+	    my $len;
+	    my @name = split /\s+/;
+	    if ($name[1] =~ /len=(\d+)/) {
+		$len = $1;
+	    }
+	    my ($key) = grep { $md5{$_} eq $len } keys %md5;
+	    $name_map{$key} = $name[0];
+	    say $out join q{ }, "##sequence-region", $name[0], "1", $len;
+	}
+	elsif (/^md5/ && (keys %md5) == 1 && $write_id) {
+	    my @f = split /\t/;
+	    my $len; for my $k (keys %md5) { $len = $md5{$k} }
+	    while (my $seqobj = $seqio->next_seq) {
+		my $seq = $seqobj->seq;
+		my $seql = length($seq);
+		if ($len == $seql) {
+		    $seqlen = $seql;
+		    $seqid  = $seqobj->id;
+		}
+	    }
+	    say $out join q{ }, "##sequence-region", $seqid, "1", $seqlen;
+	    say $out join "\t", $seqid, @f[1..$#f];
+	    $write_id = 0;
+	    
+	}
+	elsif (/^md5/ && (keys %md5) == 1 && !$write_id) {
+	    my @f = split /\t/;
+	    say $out join "\t", $seqid, @f[1..$#f];
+	}
+    }
+    close $in;
+    close $out;
+
+    return $outfile;
 }
 
 __PACKAGE__->meta->make_immutable;
