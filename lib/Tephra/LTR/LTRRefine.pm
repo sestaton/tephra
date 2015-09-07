@@ -34,13 +34,6 @@ has outfile => (
     coerce   => 1,
 );
 
-has clean => (
-      is       => 'ro',
-      isa      => 'Bool',
-      required => 0,
-      default  => 1,
-);
-
 has n_threshold => (
       is       => 'ro',
       isa      => 'Num',
