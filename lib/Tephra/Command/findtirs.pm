@@ -5,8 +5,7 @@ use 5.010;
 use strict;
 use warnings;
 use Tephra -command;
-use Tephra::LTR::LTRSearch;
-use Tephra::LTR::LTRRefine;
+use Tephra::TIR::TIRSearch;
 use Cwd                 qw(abs_path);
 use IPC::System::Simple qw(system);
 use Capture::Tiny       qw(:all);
@@ -16,7 +15,6 @@ use File::Spec;
 sub opt_spec {
     return (    
 	[ "genome|g=s",  "The genome sequences in FASTA format to search for LTR-RTs "   ],
-	[ "trnadb|t=s",  "The file of tRNA sequences in FASTA format to search for PBS " ], 
 	[ "hmmdb|p=s",   "The HMM db in HMMERv3 format to search for coding domains "    ],
 	[ "outfile|o=s", "The final combined and filtered GFF3 file of LTR-RTs "         ],
 	[ "clean",       "Clean up the index files (Default: yes) "                      ],
@@ -33,7 +31,7 @@ sub validate_args {
     elsif ($self->app->global_options->{help}) {
 	$self->help;
     }
-    elsif (!$opt->{genome}) { # || !$opt->{outfile}) { # || !$opt->{hmmdb}) {
+    elsif (!$opt->{genome} || !$opt->{hmmdb}) {
 	say "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
@@ -45,67 +43,47 @@ sub execute {
     exit(0) if $self->app->global_options->{man} ||
 	$self->app->global_options->{help};
 
-    my ($relaxed_gff, $strict_gff) = _run_ltr_search($opt);
-    my $some = _refine_ltr_predictions($relaxed_gff, $strict_gff, $opt->{genome}, $opt->{outfile});
+    my $gff = _run_tir_search($opt);
 }
 
-sub _refine_ltr_predictions {
-    my ($relaxed_gff, $strict_gff, $fasta, $outfile) = @_;
-
-    my $refine_obj = Tephra::LTR::LTRRefine->new( genome  => $fasta );
-
-    my $relaxed_features
-	= $refine_obj->collect_features({ gff => $relaxed_gff, pid_threshold => 85 });
-    my $strict_features
-	= $refine_obj->collect_features({ gff => $strict_gff,  pid_threshold => 99 });
-
-    my $best_elements = $refine_obj->get_overlaps({ relaxed_features => $relaxed_features, 
-						    strict_features  => $strict_features });
-    
-    my $combined_features = $refine_obj->reduce_features({ relaxed_features => $relaxed_features, 
-							   strict_features  => $strict_features,
-							   best_elements    => $best_elements });
-
-    $refine_obj->sort_features({ gff               => $relaxed_gff, 
-				 combined_features => $combined_features });
-
-}
-
-sub _run_ltr_search {
+sub _run_tir_search {
     my ($opt) = @_;
     
     my $genome = $opt->{genome};
     my $hmmdb  = $opt->{hmmdb};
-    my $trnadb = $opt->{trnadb};
     my $clean  = $opt->{clean};
     $clean //= 0;
     
     #say "testing clean: $clean" and exit;
     
-    my $ltr_search = Tephra::LTR::LTRSearch->new( 
+    my $tir_search = Tephra::TIR::TIRSearch->new( 
 	genome => $genome, 
 	hmmdb  => $hmmdb,
-	trnadb => $trnadb, 
-	clean  => $clean );
+	clean  => $clean 
+    );
 
-    my $strict_gff  = $ltr_search->ltr_search_strict;
-    my $relaxed_gff = $ltr_search->ltr_search_relaxed;
+    my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
+    my $index = $genome.".index";
+
+    my @suff_args = qq(-db $genome -indexname $index -tis -suf -lcp -des -ssp -dna -mirrored -v);
+    $tir_search->create_index(\@suff_args);
+
+    my $gff  = $tir_search->tir_search($index);
 
     #my $exit_value = 1;
 
-    return ($relaxed_gff, $strict_gff);
+    return $gff;
 }
 
 sub help {
     print STDERR<<END
 
-USAGE: tephra findltrs [-h] [-m]
+USAGE: tephra findtirs [-h] [-m]
     -m --man      :   Get the manual entry for a command.
     -h --help     :   Print the command usage.
 
 Required:
-    -g|genome     :   The genome sequences in FASTA format to search for LTR-RTs. 
-    -t|trnadb     :   The file of tRNA sequences in FASTA format to search for PBS. 
+    -g|genome     :   The genome sequences in FASTA format to search for TIR TEs. 
     -p|hmmdb      :   The HMM db in HMMERv3 format to search for coding domains.
 
 Options:
