@@ -93,7 +93,7 @@ sub _run_ltr_search {
     my $index = $genome.".index";
     
     my @suff_args = qq(-db $genome -indexname $index -tis -suf -lcp -ssp -sds -des -dna);
-    $ltr_search->create_ltr_index(\@suff_args);
+    $ltr_search->create_index(\@suff_args);
     
     my $strict_gff  = $ltr_search->ltr_search_strict($index);
     my $relaxed_gff = $ltr_search->ltr_search_relaxed($index);
