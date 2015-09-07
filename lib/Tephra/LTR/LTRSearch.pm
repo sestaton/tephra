@@ -49,7 +49,6 @@ sub ltr_search_strict {
     my $genome = $self->genome->absolute;
     my $hmmdb  = $self->hmmdb;
     my $trnadb = $self->trnadb;
-    #my $gt = $self->get_gt_exec;
     my (%suf_args, %ltrh_cmd, %ltrd_cmd);
     
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
@@ -62,22 +61,12 @@ sub ltr_search_strict {
     my $ltrh_gff = File::Spec->catfile($path, $name."_ltrharvest99.gff3");
     my $ltrg_gff = File::Spec->catfile($path, $name."_ltrdigest99.gff3");
     my $ltrg_out = File::Spec->catfile($path, $name."_ltrdigest99");
-    #my $index    = File::Spec->catfile($path, $genome.".index");
-
-    #my @suf_opts = qw(-db $genome -indexname $index -tis -suf -lcp -ssp -sds -des -dna);
-    #my @suf_args = qq(-db $genome -indexname $index -tis -suf -lcp -ssp -sds -des -dna);
-    
-    #my $index = $self->create_ltr_index($genome, \@suff_args);
 
     my @ltrh_opts = qw(-longoutput -seqids -tabout -mintsd -maxtsd -minlenltr -maxlenltr -mindistltr 
                        -maxdistltr -motif -similar -vic -index -out -outinner -gff3);
 
     my @ltrh_args = ("no","yes","no","4","6","100","6000","1500","25000","tgca","99",
 		     "10",$index,$ltrh_out,$ltrh_out_inner,$ltrh_gff);
-    #my $ltrh_args = "-longoutput no -seqids yes -tabout no -mintsd 4 -maxtsd 6 ";
-    #$ltrh_args   .= "-minlenltr 100 -maxlenltr 6000 -mindistltr 1500 -maxdistltr 25000 ";
-    #$ltrh_args   .= "-motif tgca -similar 99 -vic 10 -index $index ";
-    #$ltrh_args   .= "-out $ltrh_out -outinner $ltrh_out_inner -gff3 $ltrh_gff";
     @ltrh_cmd{@ltrh_opts} = @ltrh_args;
     
     my $ltr_succ  = $self->run_ltrharvest(\%ltrh_cmd);
@@ -85,13 +74,9 @@ sub ltr_search_strict {
 
     my @ltrd_opts = qw(-trnas -hmms -aliout -aaout -seqfile -matchdescstart -seqnamelen -o -outfileprefix);
     my @ltrd_args = ($trnadb,$hmmdb,"no","no",$genome,"yes","50",$ltrg_gff,$ltrg_out);
-    #my $ltrd_args = "-trnas $trnadb -hmms $hmmdb -aliout no -aaout no -seqfile $genome ";
-    #$ltrd_args   .= "-matchdescstart yes -seqnamelen 50 -o $ltrg_gff ";
-    #$ltrd_args   .= "-outfileprefix $ltrg_out $gffh_sort";
     @ltrd_cmd{@ltrd_opts} = @ltrd_args;
     
     my $ltr_dig = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort);
-    #$self->clean_index if $self->clean;
     unlink $ltrh_gff;
     unlink $gffh_sort;
     
@@ -118,16 +103,11 @@ sub ltr_search_relaxed {
     my $ltrg_gff = File::Spec->catfile($path, $name."_ltrdigest85.gff3");
     my $ltrg_out = File::Spec->catfile($path, $name."_ltrdigest85");
 
-    #my $index = $self->_create_ltr_index($gt, $genome);
     my @ltrh_opts = qw(-longoutput -seqids -tabout -mintsd -maxtsd -minlenltr -maxlenltr 
                        -mindistltr -maxdistltr -similar -vic -index -out -outinner -gff3);
 
     my @ltrh_args = ("no","yes","no","4","6","100","6000","1500","25000","85","10",
 		     $index,$ltrh_out,$ltrh_out_inner,$ltrh_gff);
-    #my $ltrh_args = "-longoutput no -seqids yes -tabout no -mintsd 4 -maxtsd 6 ";
-    #$ltrh_args   .= "-minlenltr 100 -maxlenltr 6000 -mindistltr 1500 -maxdistltr 25000 ";
-    #$ltrh_args   .= "-similar 85 -vic 10 -index $index ";
-    #$ltrh_args   .= "-out $ltrh_out -outinner $ltrh_out_inner -gff3 $ltrh_gff";
     @ltrh_cmd{@ltrh_opts} = @ltrh_args;
     
     my $ltr_succ  = $self->run_ltrharvest(\%ltrh_cmd);
@@ -135,9 +115,6 @@ sub ltr_search_relaxed {
 
     my @ltrd_opts = qw(-trnas -hmms -aliout -aaout -seqfile -matchdescstart -seqnamelen -o -outfileprefix);
     my @ltrd_args = ($trnadb,$hmmdb,"no","no",$genome,"yes","50",$ltrg_gff,$ltrg_out);
-    #my $ltrd_args = "-trnas $trnadb -hmms $hmmdb -aliout no -aaout no -seqfile $genome ";
-    #$ltrd_args   .= "-matchdescstart yes -seqnamelen 50 -o $ltrg_gff ";
-    #$ltrd_args   .= "-outfileprefix $ltrg_out $gffh_sort";
     @ltrd_cmd{@ltrd_opts} = @ltrd_args;
     
     my $ltr_dig = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort);
