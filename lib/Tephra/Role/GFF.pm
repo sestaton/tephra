@@ -11,11 +11,12 @@ use namespace::autoclean;
 #
 sub collect_gff_features {
     my $self = shift;
-    my $gff = $self->gff;
+    my ($gff) = @_;
+    #my $gff = $self->gff;
 
     my $header;
-    #open my $in, '<', $gff;
-    my $in = $gff->open('r') or die "\n[ERROR]: Could not open file: $gff\n";
+    open my $in, '<', $gff;
+    #my $in = $gff->open('r') or die "\n[ERROR]: Could not open file: $gff\n";
     while (<$in>) {
 	chomp;
 	if (/^#/) {
@@ -25,7 +26,8 @@ sub collect_gff_features {
 	    last;
 	}
     }
-    $in->close;
+    close $gff;
+    #$in->close;
     chomp $header;
 
     my $gffio = Bio::Tools::GFF->new( -file => $gff, -gff_version => 3 );
