@@ -214,24 +214,24 @@ sub reduce_features {
 	}
     }
 
-    say STDERR "all stats: ";
-    p $all_stats;
-    say STDERR "part stats: ";
-    p $part_stats;
-    say STDERR "best stats: ";
-    p %best_stats;
+    #say STDERR "Stats for relaxed constraints: ";
+    #p $all_stats;
+    #say STDERR "Stats for strict constraints: ";
+    #p $part_stats;
+    #say STDERR "Stats for best elements: ";
     $best_stats{n_perc_filtered} = $n_perc_filtered;
-    say STDERR "best stats: ";
-    p %best_stats;
+    #p %best_stats;
     
 
-    say STDERR join q{ }, "filtered_type", "num_filtered";
+    print STDERR join q{ }, "Number of elements filtered by type:";
+    #say STDERR join q{ }, "filtered_type", "num_filtered";
     for my $s (keys %best_stats) {
-	say STDERR join q{ }, $s, $best_stats{$s};
+	print STDERR " $s=$best_stats{$s}";
     }
 
-    say STDERR join q{ }, "All", "part", "best", "combined";
-    say STDERR join q{ }, $all, $part, $best, $comb;
+    say STDERR join q{ }, "\nNumber of elements found under what constraints:", "Relaxed=$all", "Strict=$part", "Best=$best", "Combined=$comb";
+    #say STDERR join q{ }, "Relaxed", "Strict", "Best", "Combined";
+    #say STDERR join q{ }, $all, $part, $best, $comb;
 
     return \%best_features;
 }
@@ -308,7 +308,7 @@ sub sort_features {
     close $ogff;
     close $ofas;
 
-    say STDERR "Total elements written: $elem_tot";
+    say STDERR "\nTotal elements written: $elem_tot";
 }
     
 sub _get_ltr_score_dups {
