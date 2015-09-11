@@ -11,4 +11,4 @@ requires 'Try::Tiny';
 requires 'Capture::Tiny';
 requires 'BioPerl';
 requires 'Data::Dump';    # for testing
-requires 'Data::Printer'; # for testing
+#requires 'Data::Printer'; # for testing
