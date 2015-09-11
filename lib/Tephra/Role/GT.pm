@@ -4,6 +4,7 @@ use 5.010;
 use Moose::Role;
 use MooseX::Types::Path::Class;
 use IPC::System::Simple qw(system);
+use Capture::Tiny       qw(capture);
 use Try::Tiny;
 use File::Spec;
 use File::Find;
@@ -58,24 +59,17 @@ sub create_index {
     my ($args) = @_;
 
     my $gt = $self->get_gt_exec;
-    ##TODO
-    #my @ltrh_args;
     unshift @$args, 'suffixerator';
     unshift @$args, $gt;
     my $cmd = join qq{ }, @$args;
-    #for my $opt (keys %$args) {
-	#push @ltrh_args, $opt.q{ }.$args->{$opt};
-    #}
-    #my $index = File::Spec->catfile($path, $genome.".index");
-    #push @ltrh_args, "-indexname $index";
-    #my $index_cmd = "$gt suffixerator ";
-    #$index_cmd .= "-db $genome -indexname $index -tis -suf -lcp -ssp -sds -des -dna";
-    #say STDERR join qq{ }, $cmd;
+
+    my ($stdout, $stderr, $exit);
     try {
-	system([0..5], $cmd);
+	#my @out = capture { system([0..5], $cmd) };
+	($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
     }
     catch {
-	$log->error("Unable to make suffixerator index. Here is the exception: $_\nExiting.");
+	$log->error("Unable to make suffixerator index. Error: $stderr. Here is the exception: $_\nExiting.");
 	exit(1);
     };
 
@@ -90,23 +84,22 @@ sub run_ltrharvest {
     my $gt = $self->get_gt_exec;
     my @ltrh_args;
     push @ltrh_args, "$gt ltrharvest";
-    #push @ltrh_args, 'ltrharves
+
     for my $opt (keys %$args) {
 	if (defined $args->{$opt}) {
 	    push @ltrh_args, $opt.q{ }.$args->{$opt};
 	}
     } 
-    #my $ltrh_cmd = "$gt ltrharvest $args 2>&1 > /dev/null";
-    #say STDERR $ltrh_cmd;
-    #unshift @$args, 'ltrharvest';
-    #unshift @$args, $gt;
+
     my $cmd = join qq{ }, @ltrh_args;
     #say STDERR $cmd and exit;
+    my ($stdout, $stderr, $exit);
     try {
-	system([0..5], $cmd);
+	#my @out = capture { system([0..5], $cmd) };
+	($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
     }
     catch {
-	$log->error("LTRharvest failed. Here is the exception: $_\nExiting.");
+	$log->error("LTRharvest failed. Error: $stderr. Here is the exception: $_\nExiting.");
 	exit(1);
     };
 
@@ -117,7 +110,6 @@ sub run_ltrdigest {
     my ($args, $gff) = @_;
 
     my $gt = $self->get_gt_exec;
-    #my $ltrd_cmd = "$gt ltrdigest $args";
     my @ltrd_args;
     push @ltrd_args, "$gt ltrdigest";
     for my $opt (keys %$args) {
@@ -126,16 +118,14 @@ sub run_ltrdigest {
 	}
     }
     
-    #unshift @$args, 'ltrdigest';
-    #unshift @$args, $gt;
-
     my $cmd = join qq{ }, @ltrd_args, $gff;
-    #say STDERR $cmd and exit;
+    my ($stdout, $stderr, $exit);
     try {
-	system([0..5], $cmd);
+	#my @out = capture { system([0..5], $cmd) };
+	($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
     }
     catch {
-	$log->error("LTRdigest failed. Here is the exception: $_\nExiting.");
+	$log->error("LTRdigest failed. Error: $stderr. Here is the exception: $_\nExiting.");
 	exit(1);
     };
 
@@ -150,11 +140,13 @@ sub run_tirvish {
     my $gff   = $args->{gff};
     my $gt    = $self->get_gt_exec;
     my $cmd = "$gt tirvish -index $index -hmms $hmms > $gff";
+    my ($stdout, $stderr, $exit);
     try {
-	system([0..5], $cmd);
+	#my @out = capture { system([0..5], $cmd) };
+	($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
     }
     catch {
-	$log->error("'gt tirvish' failed. Here is the exception: $_\nExiting.");
+	$log->error("'gt tirvish' failed. Error: $stderr. Here is the exception: $_\nExiting.");
 	exit(1);
     };
 
@@ -169,12 +161,15 @@ sub sort_gff {
     my $gff_sort = File::Spec->catfile($path, $name."_sort".$suffix);
     my $gt = $self->get_gt_exec;
 
-    my $sort_cmd = "$gt gff3 -sort $gff > $gff_sort";
+    my $cmd = "$gt gff3 -sort $gff > $gff_sort";
+    my ($stdout, $stderr, $exit);
     try {
-	system([0..5], $sort_cmd);
+	#system([0..5], $sort_cmd);
+	($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
     }
     catch {
-	$log->error("'gt gff3 -sort' failed. Here is the exception: $_\nExiting.");
+	$log->error("'gt gff3 -sort' failed with exit status: $exit. Error: $stderr ". 
+                    "Here is the exception: $_\nExiting.");
 	exit(1);
     };
 
@@ -195,7 +190,6 @@ sub clean_index {
 sub _build_gt_exec {
     my $self  = shift;
     my $gtexe = $self->get_gt_exec; # set during class initialization
-    #my $gtexe = '/home';
     
     # check if the executable path was set first
     if (defined $gtexe && -e $gtexe && -x $gtexe) {
@@ -213,8 +207,7 @@ sub _build_gt_exec {
 	}
     }
     else {
-        #$log->error(
-	say STDERR "Unable to find 'gt' executable. Make sure genometools is installed. Exiting."; #);
+        $log->error("Unable to find 'gt' executable. Make sure genometools is installed. Exiting.");
         exit(1);
     }
 }
