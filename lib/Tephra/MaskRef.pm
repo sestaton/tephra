@@ -52,7 +52,7 @@ sub mask_reference {
     my $vmatch_log = File::Spec->catfile($path, $name."_vmatch.err");
     my $mkvtree = "mkvtree -db $repeatdb -indexname $index -dna -allout -v -pl 2>&1 > /dev/null";
     my $vmatch  = "vmatch -q $genome -l 50 -s 90 -qmaskmatch N $index 1> $masked_ref 2> $vmatch_log";
-    $self->run_cmd($mkvtree);
+    $self->run_cmd($mkvtree); # need to warn here, not just log errors
     $self->run_cmd($vmatch);
 
     $self->clean_index($path) if $self->clean;
