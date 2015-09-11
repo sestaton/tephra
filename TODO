@@ -1,0 +1,3 @@
+- collect counts of domain organizations in LTR and TIR elements and log it
+- compare domain organization in LTRs to what is expected per superfamily; incorporate this into the classification scheme
+- add masking command
