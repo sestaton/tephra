@@ -17,7 +17,7 @@ sub opt_spec {
     return (    
 	[ "genome|g=s",  "The genome sequences in FASTA format to search for LTR-RTs "   ],
 	[ "trnadb|t=s",  "The file of tRNA sequences in FASTA format to search for PBS " ], 
-	[ "hmmdb|p=s",   "The HMM db in HMMERv3 format to search for coding domains "    ],
+	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains "    ],
 	[ "outfile|o=s", "The final combined and filtered GFF3 file of LTR-RTs "         ],
 	[ "clean",       "Clean up the index files (Default: yes) "                      ],
     );
@@ -113,7 +113,7 @@ USAGE: tephra findltrs [-h] [-m]
 Required:
     -g|genome     :   The genome sequences in FASTA format to search for LTR-RTs. 
     -t|trnadb     :   The file of tRNA sequences in FASTA format to search for PBS. 
-    -p|hmmdb      :   The HMM db in HMMERv3 format to search for coding domains.
+    -d|hmmdb      :   The HMM db in HMMERv3 format to search for coding domains.
 
 Options:
     -c|clean      :   Clean up the index files (Default: yes).
