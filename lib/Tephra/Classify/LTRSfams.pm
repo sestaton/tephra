@@ -13,6 +13,7 @@ use IPC::System::Simple qw(capture);
 use Sort::Naturally     qw(nsort);
 use List::UtilsBy       qw(nsort_by);
 use List::Util          qw(sum max);
+use List::MoreUtils     qw(any none);
 use Path::Class::File;
 use Try::Tiny;
 use Cwd;
@@ -53,29 +54,120 @@ sub find_gypsy_copia {
     my %gypsy;
     my %copia;
 
+    my %pdom_index;
+    my $pdom_org;
+    my @all_pdoms;
+
+    my @cop_exp = qw(gag asp rve UBN2 UBN2_2 UBN2_3 RVT_2 RNase_H);
+    my @gyp_exp = qw(gag asp RVT_1 RNash_H rve Chromo);
+	
     for my $ltr (keys %$features) {
+	my $region = @{$features->{$ltr}}[0];
+	my ($loc, $source, $strand) = (split /\|\|/, $region)[0,1,6];
 	for my $feat (@{$features->{$ltr}}) {
 	    my @feats = split /\|\|/, $feat;
-	    if ($feats[2] =~ /protein_match/ && $feats[8] =~ /RVT_1|Chromo/i) {
-		$is_gypsy = 1;
+	    if ($feats[2] eq 'protein_match') {
+		my ($doms) = ($feats[8] =~ /name \"?(\w+)\"?/);
+		#say STDERR "feats8: $feats[8]";
+		push @all_pdoms, $doms;
+		#if ($feats[8] =~ /RVT_1|Chromo/i) {
+		    #$is_gypsy = 1;
+		#}
+		#elsif ($feats[2] =~ /protein_match/ && $feats[8] =~ /RVT_2/i) {
+		    #$is_copia = 1;
+		#}
 	    }
-	    elsif ($feats[2] =~ /protein_match/ && $feats[8] =~ /RVT_2/i) {
-		$is_copia = 1;
-	    }
+	    #if ($is_gypsy) {
+		#$gypsy{$ltr} = $features->{$ltr};
+		#delete $features->{$ltr};
+	    #}
+	    #elsif ($is_copia) {
+		#$copia{$ltr} = $features->{$ltr};
+		#delete $features->{$ltr};
+	    #}
 	}
-	if ($is_gypsy) {
-	    $gypsy{$ltr} = $features->{$ltr};
-	    delete $features->{$ltr};
-	}
-	elsif ($is_copia) {
-	    $copia{$ltr} = $features->{$ltr};
-	    delete $features->{$ltr};
-	}
+	#$is_gypsy  = 0;
+	#$is_copia  = 0;
+	if (@all_pdoms) {
+	    $pdom_org = join ",", @all_pdoms;
 
-	$is_gypsy  = 0;
-	$is_copia  = 0;
+	    @all_pdoms = reverse @all_pdoms if $strand eq '-';
+	    # gypsy -> gag,ap,int,rt,rh
+	    # copia -> gag,ap,rt,rh,int
+	    #
+	    # model names: gag|retrotransposon_gag
+	    # NAME  UBN2_2
+	    # DESC  gag-polypeptide of LTR copia-type
+	    #NAME  UBN2_3
+	    #DESC  gag-polypeptide of LTR copia-type
+	    #NAME  UBN2
+	    #DESC  gag-polypeptide of LTR copia-type
+	    #NAME  Retrotrans_gag
+	    #DESC  Retrotransposon gag protein
+
+	    # NAME  gag-asp_proteas
+	    # DESC  gag-polyprotein putative aspartyl protease
+	    
+	    #NAME  gag_pre-integrs
+	    #DESC  GAG-pre-integrase domain
+	    #NAME  rve
+	    #DESC  Integrase core domain
+
+	    # NAME  RVT_1
+	    # DESC  Reverse transcriptase (RNA-dependent DNA polymerase)
+	    # NAME  RVT_2
+	    # DESC  Reverse transcriptase (RNA-dependent DNA polymerase)
+	    # NAME  RVT_3
+	    # DESC  Reverse transcriptase-like
+
+	    # NAME  RNase_H
+	    # DESC  RNase H
+
+	    # NAME  Chromo
+	    # DESC  Chromo (CHRromatin Organisation MOdifier) domain
+	    #say STDERR join q{ }, "strand: $strand", $pdom_org;
+	    my ($gyp_org, $cop_org);
+	    my ($gyp_dom_ct, $cop_dom_ct) = (0, 0);
+	    if (none { $_ =~ /rvt_1|chromo/i } @all_pdoms) {
+		#my @doms = any { $_ =~ @all_poms } @gyp_exp;
+		
+		for my $d (@cop_exp) {
+		    for my $p (@all_pdoms) {
+			$cop_dom_ct++ if $p =~ /$d/i;
+		    }
+		}
+	    }
+
+	    if (none { $_ =~ /rvt_2|ubn/i } @all_pdoms) {
+		for my $d (@gyp_exp) {
+		    for my $p (@all_pdoms) {
+			$gyp_dom_ct++ if $p =~ /$d/i;
+		    }
+		}
+	    }
+
+	    if ($gyp_dom_ct > 1) {
+		#say STDERR join q{ }, "Gypsy strand: $strand", $pdom_org;
+		$gypsy{$ltr} = $features->{$ltr};
+		delete $features->{$ltr};
+	    }
+	    elsif ($cop_dom_ct > 1) {
+		#say STDERR join q{ }, "Copia strand:$strand", $pdom_org;
+		$copia{$ltr} = $features->{$ltr};
+		delete $features->{$ltr};
+	    }
+
+	    $gyp_dom_ct = 0;
+	    $cop_dom_ct = 0;
+	    $is_gypsy  = 0;
+	    $is_copia  = 0;
+	}
+	undef $pdom_org;
+	@all_pdoms = ();
     }
 
+    
+    
     return (\%gypsy, \%copia);
 }
 
@@ -135,13 +227,6 @@ sub search_unclassified {
 
     $self->run_cmd($blastcmd);
 
-    #try {
-	#my @blasts_out = system(EXIT_ANY, @blastcmd);
-    #}
-    #catch {
-	#say STDERR "blastn failed. Caught error: $_.";
-	#exit(1);
-    #};
     unlink glob("$blastdb*");
 
     return $outfile;
@@ -156,7 +241,8 @@ sub annotate_unclassified {
     while (<$in>) {
 	chomp;
 	my @f = split /\t/;
-	if ($f[2] >= 80 && $f[3] >= 80) { #make thresholds options
+ 
+	if ($f[2] >= 80 && $f[3] >= 80) { #make length and pid thresholds options
 	    my ($family) = ($f[1] =~ /(^RL[GCX][_-][a-zA-Z]*\d*?)/);
 	    if ($family =~ /^RLG/) {
 		$gypsy->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
@@ -186,7 +272,9 @@ sub write_gypsy {
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name."_gypsy.gff3");
+    my $domoutfile = File::Spec->catfile($path, $name."_gypsy_domain_org.tsv");
     open my $out, '>>', $outfile;
+    open my $domf, '>>', $domoutfile;
     say $out $header;
 
     my @all_pdoms;
@@ -222,7 +310,7 @@ sub write_gypsy {
 	say $out $gyp_feats;
 
 	$pdom_org = join ",", @all_pdoms;
-	push @{$pdom_index{$strand}}, $pdom_org if $pdom_org;
+	$pdom_index{$strand}{$pdom_org}++ if $pdom_org;
 	$pdoms++ if $has_pdoms;
 	undef $gyp_feats;
 	undef $pdom_org;
@@ -232,6 +320,14 @@ sub write_gypsy {
     close $out;
 
     #dd \%pdom_index and exit;
+    say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
+    for my $strand (keys %pdom_index) {
+	for my $org (keys %{$pdom_index{$strand}}) {
+	    say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
+	}
+    }
+    close $domf;
+    
     say STDERR join "\t", "gypsy_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
     my $stat = Statistics::Descriptive::Full->new;
     $stat->add_data(@lengths);
@@ -240,6 +336,8 @@ sub write_gypsy {
     my $mean  = $stat->mean;
     my $count = $stat->count;
     say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+
+    #dd \%pdom_index;
 }
 
 sub write_copia {
@@ -257,7 +355,9 @@ sub write_copia {
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name."_copia.gff3");
+    my $domoutfile = File::Spec->catfile($path, $name."_copia_domain_org.tsv");
     open my $out, '>>', $outfile;
+    open my $domf, '>>', $domoutfile;
     say $out $header;
 
     for my $ltr (nsort_by { m/repeat_region\d+\.(\d+)\.\d+/ and $1 } keys %$copia) {
@@ -292,7 +392,7 @@ sub write_copia {
 	say $out $cop_feats;
 
 	$pdom_org = join ",", @all_pdoms;
-	push @{$pdom_index{$strand}}, $pdom_org if $pdom_org;
+	$pdom_index{$strand}{$pdom_org}++ if $pdom_org;
 	$pdoms++ if $has_pdoms;
 	undef $cop_feats;
 	undef $pdom_org;
@@ -301,6 +401,14 @@ sub write_copia {
     }
     close $out;
 
+    say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
+    for my $strand (keys %pdom_index) {
+	for my $org (keys %{$pdom_index{$strand}}) {
+	    say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
+	}
+    }
+    close $domf;
+    
     say STDERR join "\t", "copia_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
     my $stat = Statistics::Descriptive::Full->new;
     $stat->add_data(@lengths);
@@ -315,7 +423,10 @@ sub write_unclassified {
     my $self = shift;
     my ($features, $header) = @_;
     my $gff = $self->gff;
-    
+
+    my %pdom_index;
+    my @all_pdoms;
+    my $pdom_org;
     my @lengths;
     my $unc_feats;
     my $has_pdoms = 0;
@@ -323,7 +434,9 @@ sub write_unclassified {
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name."_unclassified.gff3");
+    my $domoutfile = File::Spec->catfile($path, $name."_unclassified_domain_org.tsv");
     open my $out, '>>', $outfile;
+    open my $domf, '>>', $domoutfile;
     say $out $header;
 
     for my $ltr (nsort_by { m/repeat_region\d+\.(\d+)\.\d+/ and $1 } keys %$features) {
@@ -341,7 +454,11 @@ sub write_unclassified {
 	    if ($feats[8] =~ /Parent=repeat_region\d+(_\d+)/i) {
 		$feats[8] =~ s/$1//g;
 	    }
-	    $has_pdoms = 1 if $feats[2] =~ /protein_match/;
+	    if ($feats[2] =~ /protein_match/) {
+		my ($doms) = ($feats[8] =~ /name=(\w+)/);
+		push @all_pdoms, $doms;
+		$has_pdoms = 1;
+	    }
 	    if ($feats[2] =~ /LTR_retrotransposon/) {
 		my $ltrlen = $feats[4] - $feats[3] + 1;
 		push @lengths, $ltrlen;
@@ -352,12 +469,25 @@ sub write_unclassified {
 	say $out join "\t", $loc, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg";
 	say $out $unc_feats;
 
+	$pdom_org = join ",", @all_pdoms;
+	$pdom_index{$strand}{$pdom_org}++ if $pdom_org;
 	$pdoms++ if $has_pdoms;
+	@all_pdoms = ();
+
 	$has_pdoms = 0;
 	undef $unc_feats;
+	undef $pdom_org;
     }
     close $out;
 
+    say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
+    for my $strand (keys %pdom_index) {
+	for my $org (keys %{$pdom_index{$strand}}) {
+	    say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
+	}
+    }
+    close $domf;
+    
     say STDERR join "\t", "unclassified_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
     my $stat = Statistics::Descriptive::Full->new;
     $stat->add_data(@lengths);
