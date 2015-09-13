@@ -68,29 +68,11 @@ sub find_gypsy_copia {
 	    my @feats = split /\|\|/, $feat;
 	    if ($feats[2] eq 'protein_match') {
 		my ($doms) = ($feats[8] =~ /name \"?(\w+)\"?/);
-		#say STDERR "feats8: $feats[8]";
 		push @all_pdoms, $doms;
-		#if ($feats[8] =~ /RVT_1|Chromo/i) {
-		    #$is_gypsy = 1;
-		#}
-		#elsif ($feats[2] =~ /protein_match/ && $feats[8] =~ /RVT_2/i) {
-		    #$is_copia = 1;
-		#}
 	    }
-	    #if ($is_gypsy) {
-		#$gypsy{$ltr} = $features->{$ltr};
-		#delete $features->{$ltr};
-	    #}
-	    #elsif ($is_copia) {
-		#$copia{$ltr} = $features->{$ltr};
-		#delete $features->{$ltr};
-	    #}
 	}
-	#$is_gypsy  = 0;
-	#$is_copia  = 0;
 	if (@all_pdoms) {
 	    $pdom_org = join ",", @all_pdoms;
-
 	    @all_pdoms = reverse @all_pdoms if $strand eq '-';
 	    # gypsy -> gag,ap,int,rt,rh
 	    # copia -> gag,ap,rt,rh,int
@@ -98,20 +80,20 @@ sub find_gypsy_copia {
 	    # model names: gag|retrotransposon_gag
 	    # NAME  UBN2_2
 	    # DESC  gag-polypeptide of LTR copia-type
-	    #NAME  UBN2_3
-	    #DESC  gag-polypeptide of LTR copia-type
-	    #NAME  UBN2
-	    #DESC  gag-polypeptide of LTR copia-type
-	    #NAME  Retrotrans_gag
-	    #DESC  Retrotransposon gag protein
-
+	    # NAME  UBN2_3
+	    # DESC  gag-polypeptide of LTR copia-type
+	    # NAME  UBN2
+	    # DESC  gag-polypeptide of LTR copia-type
+	    # NAME  Retrotrans_gag
+	    # DESC  Retrotransposon gag protein
+	    
 	    # NAME  gag-asp_proteas
 	    # DESC  gag-polyprotein putative aspartyl protease
 	    
-	    #NAME  gag_pre-integrs
-	    #DESC  GAG-pre-integrase domain
-	    #NAME  rve
-	    #DESC  Integrase core domain
+	    # NAME  gag_pre-integrs
+	    # DESC  GAG-pre-integrase domain
+	    # NAME  rve
+	    # DESC  Integrase core domain
 
 	    # NAME  RVT_1
 	    # DESC  Reverse transcriptase (RNA-dependent DNA polymerase)
@@ -129,8 +111,7 @@ sub find_gypsy_copia {
 	    my ($gyp_org, $cop_org);
 	    my ($gyp_dom_ct, $cop_dom_ct) = (0, 0);
 	    if (none { $_ =~ /rvt_1|chromo/i } @all_pdoms) {
-		#my @doms = any { $_ =~ @all_poms } @gyp_exp;
-		
+		#my @doms = any { $_ =~ @all_poms } @gyp_exp;	
 		for my $d (@cop_exp) {
 		    for my $p (@all_pdoms) {
 			$cop_dom_ct++ if $p =~ /$d/i;
