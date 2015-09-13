@@ -1,2 +1,2 @@
-- collect counts of domain organizations in LTR and TIR elements and log it DONE (ADD TESTS)
 - compare domain organization in LTRs to what is expected per superfamily; incorporate this into the classification scheme
+- remove duplication filter because these may represent fragmented alignments
