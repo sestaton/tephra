@@ -145,9 +145,7 @@ sub find_gypsy_copia {
 	}
 	undef $pdom_org;
 	@all_pdoms = ();
-    }
-
-    
+    }    
     
     return (\%gypsy, \%copia);
 }
@@ -266,12 +264,7 @@ sub write_gypsy {
 
 	for my $feat (@{$gypsy->{$ltr}}) {
 	    my @feats = split /\|\|/, $feat;
-	    $feats[8] =~ s/\s\;\s/\;/g;
-	    $feats[8] =~ s/\s+/=/g;
-	    $feats[8] =~ s/\s+$//;
-	    $feats[8] =~ s/=$//;
-	    $feats[8] =~ s/=\;/;/g;
-	    $feats[8] =~ s/\"//g;
+	    $feats[8] = $self->_format_attribute($feats[8]);
 	    if ($feats[8] =~ /Parent=repeat_region\d+(_\d+)/i) {
 		$feats[8] =~ s/$1//g;
 	    }
@@ -317,8 +310,6 @@ sub write_gypsy {
     my $mean  = $stat->mean;
     my $count = $stat->count;
     say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
-
-    #dd \%pdom_index;
 }
 
 sub write_copia {
@@ -347,12 +338,7 @@ sub write_copia {
 	my ($loc, $source, $strand) = (split /\|\|/, $region)[0,1,6];
 	for my $feat (@{$copia->{$ltr}}) {
 	    my @feats = split /\|\|/, $feat;
-	    $feats[8] =~ s/\s\;\s/\;/g;
-	    $feats[8] =~ s/\s+/=/g;
-	    $feats[8] =~ s/\s+$//;
-	    $feats[8] =~ s/=$//;
-	    $feats[8] =~ s/=\;/;/g;
-	    $feats[8] =~ s/\"//g;
+	    $feats[8] = $self->_format_attribute($feats[8]);
 	    if ($feats[8] =~ /Parent=repeat_region\d+(_\d+)/i) {
 		$feats[8] =~ s/$1//g;
 	    }
@@ -426,12 +412,7 @@ sub write_unclassified {
 	my ($loc, $source, $strand) = (split /\|\|/, $region)[0,1,6];
 	for my $feat (@{$features->{$ltr}}) {
 	    my @feats = split /\|\|/, $feat;
-	    $feats[8] =~ s/\s\;\s/\;/g;
-	    $feats[8] =~ s/\s+/=/g;
-	    $feats[8] =~ s/\s+$//;
-	    $feats[8] =~ s/=$//;
-	    $feats[8] =~ s/=\;/;/g;
-	    $feats[8] =~ s/\"//g;
+	    $feats[8] = $self->_format_attribute($feats[8]);
 	    if ($feats[8] =~ /Parent=repeat_region\d+(_\d+)/i) {
 		$feats[8] =~ s/$1//g;
 	    }
@@ -500,6 +481,20 @@ sub _make_blastdb {
     };
 
     return $db_path;
+}
+
+sub _format_attribute {
+    my $self = shift;
+    my ($str) = @_;
+
+    $str =~ s/\s\;\s/\;/g;
+    $str =~ s/\s+/=/g;
+    $str =~ s/\s+$//;
+    $str =~ s/=$//;
+    $str =~ s/=\;/;/g;
+    $str =~ s/\"//g;
+    
+    return $str;
 }
 
 __PACKAGE__->meta->make_immutable;
