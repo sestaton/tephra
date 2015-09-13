@@ -49,26 +49,30 @@ sub find_tc1_mariner {
     my $is_mariner = 0;
     my $has_pdoms  = 0;
     my $pdoms      = 0;
-
+    my %pdom_index;
+    my $pdom_org;
+    my @all_pdoms;
+    
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name."_tc1-mariner.gff3");
+    my $domoutfile = File::Spec->catfile($path, $name."_tc1-mariner_domain_org.tsv");
     open my $out, '>>', $outfile;
+    open my $domf, '>>', $domoutfile;
     say $out $header;
 
     for my $tir (nsort_by { m/repeat_region(\d+)/ and $1 } keys %$feature) {
 	my ($rreg, $s, $e) = split /\./, $tir;
 	my $len = ($e - $s) + 1;
 	my $region = @{$feature->{$tir}}[0];
-	my ($loc, $source) = (split /\|\|/, $region)[0..1];
+	my ($loc, $source, $strand) = (split /\|\|/, $region)[0,1,6];
 	for my $feat (@{$feature->{$tir}}) {
 	    my @feats = split /\|\|/, $feat;
-	    $feats[8] =~ s/\s\;\s/\;/g;
-	    $feats[8] =~ s/\s+/=/g;
-	    $feats[8] =~ s/\s+$//;
-	    $feats[8] =~ s/=$//;
-	    $feats[8] =~ s/=\;/;/g;
-	    $feats[8] =~ s/\"//g;
-	    $has_pdoms = 1 if $feats[2] =~ /protein_match/;
+	    $feats[8] = $self->_format_attribute($feats[8]);
+	    if ($feats[2] =~ /protein_match/) {
+		$has_pdoms = 1;
+		my ($doms) = ($feats[8] =~ /name=\"?(\w+)\"?/);
+		push @all_pdoms, $doms;
+	    }
 	    if ($feats[2] eq 'target_site_duplication') {
 		my $tsd_len = ($feats[4] - $feats[3]) + 1;
 		if ($tsd_len == 2) {
@@ -96,22 +100,36 @@ sub find_tc1_mariner {
 	    say $out $mar_feats;
 	    delete $feature->{$tir};
 	    push @lengths, $len;
+	    $pdom_org = join ",", @all_pdoms;
+	    $pdom_index{$strand}{$pdom_org}++ if $pdom_org;
 	    $pdoms++ if $has_pdoms;
 	}
 	undef $mar_feats;
+	undef $pdom_org;
+	@all_pdoms = ();
 	$is_mariner = 0;
 	$has_pdoms  = 0;
     }
     close $out;
 
-    #if ($count > 0) {
-	#say STDERR join "\t", "mariner_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
-	my $stat = Statistics::Descriptive::Full->new;
-	$stat->add_data(@lengths);
-	my $min   = $stat->min;
-	my $max   = $stat->max;
-	my $mean  = $stat->mean;
-	my $count = $stat->count;
+    if (%pdom_index) {
+	say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
+	for my $strand (keys %pdom_index) {
+	    for my $org (keys %{$pdom_index{$strand}}) {
+		say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
+	    }
+	}
+    }
+    close $domf;
+    unlink $domoutfile unless -s $domoutfile;
+    
+    my $stat = Statistics::Descriptive::Full->new;
+    $stat->add_data(@lengths);
+    my $min   = $stat->min;
+    my $max   = $stat->max;
+    my $mean  = $stat->mean;
+    my $count = $stat->count;
+
     if ($count > 0) {
 	say STDERR join "\t", "mariner_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
 		
@@ -132,26 +150,30 @@ sub find_hat {
     my $is_hat = 0;
     my $has_pdoms = 0;
     my $pdoms = 0;
-
+    my %pdom_index;
+    my $pdom_org;
+    my @all_pdoms;
+    
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name."_hAT.gff3");
+    my $domoutfile = File::Spec->catfile($path, $name."_hAT_domain_org.tsv");
     open my $out, '>>', $outfile;
+    open my $domf, '>>', $domoutfile;
     say $out $header;
 
     for my $tir (nsort_by { m/repeat_region(\d+)/ and $1 } keys %$feature) {
 	my ($rreg, $s, $e) = split /\./, $tir;
 	my $len = ($e - $s) + 1;
 	my $region = @{$feature->{$tir}}[0];
-	my ($loc, $source) = (split /\|\|/, $region)[0..1];
+	my ($loc, $source, $strand) = (split /\|\|/, $region)[0,1,6];
 	for my $feat (@{$feature->{$tir}}) {
 	    my @feats = split /\|\|/, $feat;
-	    $feats[8] =~ s/\s\;\s/\;/g;
-	    $feats[8] =~ s/\s+/=/g;
-	    $feats[8] =~ s/\s+$//;
-	    $feats[8] =~ s/=$//;
-	    $feats[8] =~ s/=\;/;/g;
-	    $feats[8] =~ s/\"//g;
-	    $has_pdoms = 1 if $feats[2] =~ /protein_match/;
+	    $feats[8] =$self->_format_attribute($feats[8]);
+	    if ($feats[2] =~ /protein_match/) {
+		$has_pdoms = 1;
+		my ($doms) = ($feats[8] =~ /name=\"?(\w+)\"?/);
+		push @all_pdoms, $doms;
+	    }
 	    if ($feats[2] eq 'target_site_duplication') {
 		my $tsd_len = ($feats[4] - $feats[3]) + 1;
 		$is_hat = 1 if $tsd_len == 8;
@@ -164,22 +186,36 @@ sub find_hat {
 	    say $out $hat_feats;
 	    delete $feature->{$tir};
 	    push @lengths, $len;
+	    $pdom_org = join ",", @all_pdoms;
+	    $pdom_index{$strand}{$pdom_org}++ if $pdom_org;
 	    $pdoms++ if $has_pdoms;
 	}
 	undef $hat_feats;
+	undef $pdom_org;
+	@all_pdoms = ();
 	$is_hat = 0;
 	$has_pdoms = 0;
     }
     close $out;
 
-    #if ($count > 0) {
-    #say STDERR join "\t", "hat_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
-	my $stat = Statistics::Descriptive::Full->new;
-	$stat->add_data(@lengths);
-	my $min   = $stat->min;
-	my $max   = $stat->max;
-	my $mean  = $stat->mean;
-	my $count = $stat->count;
+    if (%pdom_index) {
+	say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
+	for my $strand (keys %pdom_index) {
+	    for my $org (keys %{$pdom_index{$strand}}) {
+		say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
+	    }
+	}
+    }
+    close $domf;
+    unlink $domoutfile unless -s $domoutfile;    
+
+    my $stat = Statistics::Descriptive::Full->new;
+    $stat->add_data(@lengths);
+    my $min   = $stat->min;
+    my $max   = $stat->max;
+    my $mean  = $stat->mean;
+    my $count = $stat->count;
+
     if ($count > 0) {
 	say STDERR join "\t", "mariner_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
 	
@@ -200,26 +236,30 @@ sub find_mutator {
     my $is_mutator = 0;
     my $has_pdoms = 0;
     my $pdoms = 0;
-
+    my %pdom_index;
+    my $pdom_org;
+    my @all_pdoms;
+    
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name."_mutator.gff3");
+    my $domoutfile = File::Spec->catfile($path, $name."_mutator_domain_org.tsv");
     open my $out, '>>', $outfile;
+    open my $domf, '>>', $domoutfile;
     say $out $header;
 
     for my $tir (nsort_by { m/repeat_region(\d+)/ and $1 } keys %$feature) {
 	my ($rreg, $s, $e) = split /\./, $tir;
 	my $len = ($e - $s) + 1;
 	my $region = @{$feature->{$tir}}[0];
-	my ($loc, $source) = (split /\|\|/, $region)[0..1];
+	my ($loc, $source, $strand) = (split /\|\|/, $region)[0,1,6];
 	for my $feat (@{$feature->{$tir}}) {
 	    my @feats = split /\|\|/, $feat;
-	    $feats[8] =~ s/\s\;\s/\;/g;
-	    $feats[8] =~ s/\s+/=/g;
-	    $feats[8] =~ s/\s+$//;
-	    $feats[8] =~ s/=$//;
-	    $feats[8] =~ s/=\;/;/g;
-	    $feats[8] =~ s/\"//g;
-	    $has_pdoms = 1 if $feats[2] =~ /protein_match/;
+	    $feats[8] =$self->_format_attribute($feats[8]);
+	    if ($feats[2] =~ /protein_match/) {
+		$has_pdoms = 1;
+		my ($doms) = ($feats[8] =~ /name=\"?(\w+)\"?/);
+		push @all_pdoms, $doms;
+	    }
 	    if ($feats[2] eq 'target_site_duplication') {
 		my $tsd_len = ($feats[4] - $feats[3]) + 1;
 		if ($tsd_len >= 8 && $tsd_len <= 11) {
@@ -234,22 +274,36 @@ sub find_mutator {
 	    say $out join "\t", $loc, $source, 'repeat_region', $s, $e, '.', '?', '.', "ID=$rreg";
 	    delete $feature->{$tir};
 	    push @lengths, $len;
+	    $pdom_org = join ",", @all_pdoms;
+	    $pdom_index{$strand}{$pdom_org}++ if $pdom_org;
 	    $pdoms++ if $has_pdoms;
 	}
 	undef $mut_feats;
+	undef $pdom_org;
+	@all_pdoms = ();
 	$is_mutator = 0;
 	$has_pdoms = 0;
     }
     close $out;
 
-    #if ($count > 0) {
-	#say STDERR join "\t", "mutator_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
-	my $stat = Statistics::Descriptive::Full->new;
-	$stat->add_data(@lengths);
-	my $min   = $stat->min;
-	my $max   = $stat->max;
-	my $mean  = $stat->mean;
-	my $count = $stat->count;
+    if (%pdom_index) {
+	say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
+	for my $strand (keys %pdom_index) {
+	    for my $org (keys %{$pdom_index{$strand}}) {
+		say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
+	    }
+	}
+    }
+    close $domf;
+    unlink $domoutfile unless -s $domoutfile;
+    
+    my $stat = Statistics::Descriptive::Full->new;
+    $stat->add_data(@lengths);
+    my $min   = $stat->min;
+    my $max   = $stat->max;
+    my $mean  = $stat->mean;
+    my $count = $stat->count;
+
     if ($count > 0) {
 	say STDERR join "\t", "mariner_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
 		
@@ -271,26 +325,30 @@ sub find_cacta {
     my $is_cacta = 0;
     my $has_pdoms = 0;
     my $pdoms = 0;
-
+    my %pdom_index;
+    my $pdom_org;
+    my @all_pdoms;
+    
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name."_cacta.gff3");
+    my $domoutfile = File::Spec->catfile($path, $name."_cacta_domain_org.tsv");
     open my $out, '>>', $outfile;
+    open my $domf, '>>', $domoutfile;
     say $out $header;
 
     for my $tir (nsort_by { m/repeat_region(\d+)/ and $1 } keys %$feature) {
 	my ($rreg, $s, $e) = split /\./, $tir;
 	my $len = ($e - $s) + 1;
 	my $region = @{$feature->{$tir}}[0];
-	my ($loc, $source) = (split /\|\|/, $region)[0..1];
+	my ($loc, $source, $strand) = (split /\|\|/, $region)[0,1,6];
 	for my $feat (@{$feature->{$tir}}) {
 	    my @feats = split /\|\|/, $feat;
-	    $feats[8] =~ s/\s\;\s/\;/g;
-	    $feats[8] =~ s/\s+/=/g;
-	    $feats[8] =~ s/\s+$//;
-	    $feats[8] =~ s/=$//;
-	    $feats[8] =~ s/=\;/;/g;
-	    $feats[8] =~ s/\"//g;
-	    $has_pdoms = 1 if $feats[2] =~ /protein_match/;
+	    $feats[8] =$self->_format_attribute($feats[8]);
+	    if ($feats[2] =~ /protein_match/) {
+		$has_pdoms = 1;
+		my ($doms) = ($feats[8] =~ /name=\"?(\w+)\"?/);
+		push @all_pdoms, $doms;
+	    }
 	    if ($feats[2] eq 'target_site_duplication') {
 		my $tsd_len = ($feats[4] - $feats[3]) + 1;
 		if ($tsd_len >= 2 && $tsd_len <= 3) {
@@ -318,22 +376,36 @@ sub find_cacta {
 	    say $out join "\t", $loc, $source, 'repeat_region', $s, $e, '.', '?', '.', "ID=$rreg";
 	    delete $feature->{$tir};
 	    push @lengths, $len;
+	    $pdom_org = join ",", @all_pdoms;
+	    $pdom_index{$strand}{$pdom_org}++ if $pdom_org;
 	    $pdoms++ if $has_pdoms;
 	}
 	undef $cac_feats;
+	undef $pdom_org;
+	@all_pdoms = ();
 	$is_cacta = 0;
 	$has_pdoms = 0;
     }
     close $out;
 
-    #if ($count > 0) {
-	#say STDERR join "\t", "cacta_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
-	my $stat = Statistics::Descriptive::Full->new;
-	$stat->add_data(@lengths);
-	my $min   = $stat->min;
-	my $max   = $stat->max;
-	my $mean  = $stat->mean;
-	my $count = $stat->count;
+    if (%pdom_index) {
+	say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
+	for my $strand (keys %pdom_index) {
+	    for my $org (keys %{$pdom_index{$strand}}) {
+		say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
+	    }
+	}
+    }
+    close $domf;
+    unlink $domoutfile unless -s $domoutfile;
+    
+    my $stat = Statistics::Descriptive::Full->new;
+    $stat->add_data(@lengths);
+    my $min   = $stat->min;
+    my $max   = $stat->max;
+    my $mean  = $stat->mean;
+    my $count = $stat->count;
+
     if ($count > 0) {
 	say STDERR join "\t", "mariner_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
 		
@@ -354,44 +426,60 @@ sub write_unclassified_tirs {
     my $is_unclass = 0;
     my $has_pdoms = 0;
     my $pdoms = 0;
-
+    my %pdom_index;
+    my $pdom_org;
+    my @all_pdoms;
+    
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name."_unclassified.gff3");
+    my $domoutfile = File::Spec->catfile($path, $name."_unclassified_domain_org.tsv");
     open my $out, '>>', $outfile;
+    open my $domf, '>>', $domoutfile;
     say $out $header;
 
     for my $tir (nsort_by { m/repeat_region(\d+)/ and $1 } keys %$feature) {
 	my ($rreg, $s, $e) = split /\./, $tir;
 	my $len = ($e - $s) + 1;
 	my $region = @{$feature->{$tir}}[0];
-	my ($loc, $source) = (split /\|\|/, $region)[0..1];
+	my ($loc, $source, $strand) = (split /\|\|/, $region)[0,1,6];
 	for my $feat (@{$feature->{$tir}}) {
 	    my @feats = split /\|\|/, $feat;
-	    $feats[8] =~ s/\s\;\s/\;/g;
-	    $feats[8] =~ s/\s+/=/g;
-	    $feats[8] =~ s/\s+$//;
-	    $feats[8] =~ s/=$//;
-	    $feats[8] =~ s/=\;/;/g;
-	    $feats[8] =~ s/\"//g;
-	    $has_pdoms = 1 if $feats[2] =~ /protein_match/;
+	    $feats[8] =$self->_format_attribute($feats[8]);
+	    if ($feats[2] =~ /protein_match/) {
+		$has_pdoms = 1;
+		my ($doms) = ($feats[8] =~ /name=\"?(\w+)\"?/);
+		push @all_pdoms, $doms;
+	    }
 	    say $out join "\t", $loc, $source, 'repeat_region', $s, $e, '.', '?', '.', "ID=$rreg";
 	    say $out join "\t", @feats;
 	}
 	delete $feature->{$tir};
 	push @lengths, $len;
+	$pdom_org = join ",", @all_pdoms;
+	$pdom_index{$strand}{$pdom_org}++ if $pdom_org;
 	$pdoms++ if $has_pdoms;
 	$has_pdoms = 0;
     }
     close $out;
 
-    #if ($count > 0) {
-	#say STDERR join "\t", "unclassified_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
-	my $stat = Statistics::Descriptive::Full->new;
-	$stat->add_data(@lengths);
-	my $min   = $stat->min;
-	my $max   = $stat->max;
-	my $mean  = $stat->mean;
-	my $count = $stat->count;
+    if (%pdom_index) {
+	say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
+	for my $strand (keys %pdom_index) {
+	    for my $org (keys %{$pdom_index{$strand}}) {            
+		say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
+	    }
+	}
+    }
+    close $domf;
+    unlink $domoutfile unless -s $domoutfile;
+    
+    my $stat = Statistics::Descriptive::Full->new;
+    $stat->add_data(@lengths);
+    my $min   = $stat->min;
+    my $max   = $stat->max;
+    my $mean  = $stat->mean;
+    my $count = $stat->count;
+
     if ($count > 0) {
 	say STDERR join "\t", "mariner_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";		
 	say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
@@ -401,6 +489,19 @@ sub write_unclassified_tirs {
     }
 }
 
+sub _format_attribute {
+    my $self = shift;
+    my ($str) = @_;
+
+    $str =~ s/\s\;\s/\;/g;
+    $str =~ s/\s+/=/g;
+    $str =~ s/\s+$//;
+    $str =~ s/=$//;
+    $str =~ s/=\;/;/g;
+    $str =~ s/\"//g;
+    
+    return $str;
+}
 __PACKAGE__->meta->make_immutable;
 
 1;
