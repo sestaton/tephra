@@ -85,6 +85,11 @@ sub _classify_ltr_predictions {
     $classify_fams_obj->extract_features($gyp_gff);
     $classify_fams_obj->extract_features($cop_gff);
     $classify_fams_obj->extract_features($unc_gff);
+
+    #my $vmatch_args = $classify_fams_obj->collect_feature_args;
+    #dd $vmatch_args and exit;
+    my $vmatch_clusters = $classify_fams_obj->cluster_features;
+    #$classify_fams_obj->parse_clusters($vmatch_clusters);
 }
 
 sub help {
