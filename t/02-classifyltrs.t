@@ -18,6 +18,7 @@ local $ENV{PATH} = "$bindir:$ENV{PATH}";
 
 my $cmd      = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir  = File::Spec->catdir('t', 'test_data');
+my $outdir   = File::Spec->catfile($testdir, 't_family_domains');
 my $genome   = File::Spec->catfile($testdir, 'ref.fas');
 my $gff      = File::Spec->catfile($testdir, 'ref_ltrdigest85_combined_filtered.gff3');
 my $repeatdb = File::Spec->catfile($testdir, 'repdb.fas');
@@ -26,7 +27,7 @@ my @assemb_results = capture { system([0..5], "$cmd classifyltrs -h") };
 
 ok(@assemb_results, 'Can execute classifyltrs subcommand');
 
-my $find_cmd = "$cmd classifyltrs -g $genome -d $repeatdb -f $gff";
+my $find_cmd = "$cmd classifyltrs -g $genome -d $repeatdb -f $gff -o $outdir";
 say STDERR $find_cmd;
 
 my @ret = capture { system([0..5], $find_cmd) };
@@ -40,6 +41,6 @@ ok( @files == 3, 'Correctly classified Copia and others (with alliteration!)' );
 ## clean up
 my @outfiles;
 find( sub { push @outfiles, $File::Find::name if /^ref_ltr/ }, $testdir);
-unlink @outfiles;
+#unlink @outfiles;
     
 done_testing();
