@@ -9,13 +9,8 @@ use File::Find;
 use File::Basename;
 use Bio::SeqIO;
 use Bio::Tools::GFF;
-use IPC::System::Simple qw(capture);
-use Sort::Naturally     qw(nsort);
-use List::UtilsBy       qw(nsort_by);
-use List::Util          qw(sum max);
-use List::MoreUtils     qw(any none);
-use Path::Class::File;
-use Try::Tiny;
+use Time::HiRes qw(gettimeofday);
+use Parallel::ForkManager;
 use Cwd;
 use namespace::autoclean;
 
@@ -23,10 +18,10 @@ with 'Tephra::Role::GFF',
      'Tephra::Role::Util';
 
 has genome => (
-      is       => 'ro',
-      isa      => 'Path::Class::File',
-      required => 1,
-      coerce   => 1,
+    is       => 'ro',
+    isa      => 'Path::Class::File',
+    required => 1,
+    coerce   => 1,
 );
 
 has outdir => (
@@ -36,12 +31,13 @@ has outdir => (
     coerce   => 1,
 );
 
-#has gff => (
-#      is       => 'ro',
-#      isa      => 'Path::Class::File',
-#      required => 1,
-#      coerce   => 1,
-#);
+has threads => (
+    is        => 'ro',
+    isa       => 'Int',
+    predicate => 'has_threads',
+    lazy      => 1,
+    default   => 1,
+);
 
 #
 # methods
@@ -52,7 +48,6 @@ sub extract_features {
     my $dir    = $self->outdir;
     my ($infile) = @_;
     
-    #my ($fasta, $dir, $infile) = @_;
     my ($name, $path, $suffix) = fileparse($infile, qr/\.[^.]*/);
     my $comp = File::Spec->catfile($dir, $name."_complete.fasta");
     my $ppts = File::Spec->catfile($dir, $name."_ppt.fasta");
@@ -177,6 +172,127 @@ sub extract_features {
     }
 }
 
+sub collect_feature_args {
+    my $self = shift;
+    my $dir = $self->outdir;
+    my (@fiveltrs, @threeltrs, @ppt, @pbs, @pdoms, %vmatch_args);
+    find( sub { push @fiveltrs, $File::Find::name if -f and /5prime-ltrs.fasta$/ }, $dir);
+    find( sub { push @threeltrs, $File::Find::name if -f and /3prime-ltrs.fasta$/ }, $dir);
+    find( sub { push @ppt, $File::Find::name if -f and /ppts.fasta$/ }, $dir);
+    find( sub { push @pbs, $File::Find::name if -f and /pbs.fasta$/ }, $dir);
+    find( sub { push @pdoms, $File::Find::name if -f and /pdom.fasta$/ }, $dir);
+
+    # ltr
+    my $ltr5name = File::Spec->catfile($dir, 'dbcluster-5primeseqs');
+    my $fiveargs = "-dbcluster 80 20 $ltr5name -s -p -d -seedlength 10 ";
+    $fiveargs .= "-exdrop 7 -l 80 -showdesc 0 -sort ld -best 100 -identity 80";
+    $vmatch_args{fiveltr} = { seqs => \@fiveltrs, args => $fiveargs };
+
+    my $ltr3name  = File::Spec->catfile($dir, 'dbcluster-3primeseqs');
+    my $threeargs = "-dbcluster 80 20 $ltr3name -s -p -d -seedlength 10 ";
+    $threeargs .= "-exdrop 7 -l 80 -showdesc 0 -sort ld -best 100 -identity 80";
+    $vmatch_args{threeltr} = { seqs => \@threeltrs, args => $threeargs };
+
+    # pbs/ppt
+    my $pbsname = File::Spec->catfile($dir, 'dbcluster-pbs');
+    my $pbsargs = "-dbcluster 90 90 $pbsname -s -p -d -seedlength 5 -exdrop 2 ";
+    $pbsargs .= "-l 3 -showdesc 0 -sort ld -best 100";
+    $vmatch_args{pbs} = { seqs => \@pbs, args => $pbsargs, prefixlen => 5 };
+
+    my $pptname = File::Spec->catfile($dir, 'dbcluster-ppt');
+    my $pptargs = "-dbcluster 90 90 $pptname -s -p -d -seedlength 5 -exdrop 2 ";
+    $pptargs .= "-l 3 -showdesc 0 -sort ld -best 100";
+    $vmatch_args{ppt} = { seqs => \@ppt, args => $pptargs, prefixlen => 5 };
+
+    # pdoms
+    my $pdomname = File::Spec->catfile($dir, 'dbcluster-pdoms');
+    my $pdomargs = "-dbcluster 80 80 $pdomname -s -p -d -seedlength 10 -exdrop 3 ";
+    $pdomargs .= "-l 40 -showdesc 0 -sort ld -best 100";
+    $vmatch_args{pdoms} = { seqs => \@pdoms, args => $pdomargs };
+
+    return \%vmatch_args;
+}
+
+sub cluster_features {
+    my $self = shift;
+    my $dir  = $self->outdir;
+    my $threads = $self->threads;
+    #my ($args) = @_;
+
+    my $args = $self->collect_feature_args;
+    $self->_remove_singletons($args);
+    
+    my $t0 = gettimeofday();
+    my $doms = 0;
+    my %reports;
+    my $outfile = File::Spec->catfile($dir, 'all_vmatch_reports.txt');
+    my $logfile = File::Spec->catfile($dir, 'all_vmatch_reports.log');
+    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    open my $log, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
+    
+    my $pm = Parallel::ForkManager->new($threads);
+    $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
+			      for my $bl (sort keys %$data_ref) {
+				  open my $report, '<', $bl or die "\nERROR: Could not open file: $bl\n";
+				  print $out $_ while <$report>;
+				  close $report;
+				  unlink $bl;
+			      }
+			      my $t1 = gettimeofday();
+			      my $elapsed = $t1 - $t0;
+			      my $time = sprintf("%.2f",$elapsed/60);
+			      say $log basename($ident),
+			      " just finished with PID $pid and exit code: $exit_code in $time minutes";
+			} );
+
+    for my $type (keys %$args) {
+	for my $db (@{$args->{$type}{seqs}}) {
+	    $doms++;
+	    $pm->start($db) and next;
+	    my $vmrep = $self->process_cluster_args($args, $type, $db);
+	    $reports{$vmrep} = 1;
+
+	    $pm->finish(0, \%reports);
+	}
+    }
+
+    $pm->wait_all_children;
+    close $out;
+
+    my $t2 = gettimeofday();
+    my $total_elapsed = $t2 - $t0;
+    my $final_time = sprintf("%.2f",$total_elapsed/60);
+
+    say $log "\n========> Finished running vmatch on $doms domains in $final_time minutes";
+    close $log;
+
+    return $outfile;
+}
+
+sub process_cluster_args {
+    my $self = shift;
+    my ($args, $type, $db) = @_;
+
+    my ($name, $path, $suffix) = fileparse($db, qr/\.[^.]*/);
+    my $index = File::Spec->catfile($path, $name.".index");
+    my $vmrep = File::Spec->catfile($path, $name."_vmatch-out.txt");
+    my $log   = File::Spec->catfile($path, $name."_vmatch-out.log");;
+
+    my $mkvtreecmd = "time mkvtree -db $db -dna -indexname $index -allout -v -pl ";
+    if (defined $args->{$type}{prefixlen}) {
+	$mkvtreecmd .= "$args->{$type}{prefixlen} ";
+    }
+    $mkvtreecmd .= "2>&1 > $log";
+    my $vmatchcmd  = "time vmatch $args->{$type}{args} $index > $vmrep";
+    #say STDERR "=====> Running mkvtree on $type";
+    $self->run_cmd($mkvtreecmd);
+    #say STDERR "=====> Running vmatch on $type";
+    $self->run_cmd($vmatchcmd);
+    unlink glob "$index*";
+
+    return $vmrep;
+}
+
 sub subseq {
     my $self = shift;
     my ($fasta, $loc, $elem, $start, $end, $tmp, $out) = @_;
@@ -197,6 +313,26 @@ sub subseq {
     unlink $tmp;
 }
 
+sub _remove_singletons {
+    my $self = shift;
+    my ($args) = @_;
+
+    my ($index, $seqct) = (0, 0);
+    for my $type (keys %$args) {
+	for my $db (@{$args->{$type}{seqs}}) {
+	    my $seqio = Bio::SeqIO->new( -file => $db, -format => 'fasta' );
+	    #while (my $seqobj = $seqio->next_seq) {
+	    $seqct++ while ($seqio->next_seq);
+	    if ($seqct < 2) {
+		#splice @{$args->{$type}{seqs}}, $index, 1;
+		delete $args->{$type};
+	    }
+	    #$index++;
+	    $seqct = 0;
+	}
+    }
+}
+	
 __PACKAGE__->meta->make_immutable;
 
 1;
