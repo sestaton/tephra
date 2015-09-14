@@ -310,6 +310,8 @@ sub write_gypsy {
     my $mean  = $stat->mean;
     my $count = $stat->count;
     say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+
+    return $outfile;
 }
 
 sub write_copia {
@@ -384,6 +386,8 @@ sub write_copia {
     my $mean  = $stat->mean;
     my $count = $stat->count;
     say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+
+    return $outfile;
 }
 
 sub write_unclassified {
@@ -458,6 +462,8 @@ sub write_unclassified {
     my $mean  = $stat->mean;
     my $count = $stat->count;
     say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+
+    return $outfile;
 }
 
 sub _make_blastdb {
