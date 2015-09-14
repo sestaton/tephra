@@ -6,9 +6,11 @@ use strict;
 use warnings;
 use Tephra -command;
 use Tephra::Classify::LTRSfams;
+use Tephra::Classify::LTRFams;
 use Cwd                 qw(abs_path);
 use IPC::System::Simple qw(system);
 use Capture::Tiny       qw(:all);
+use File::Path          qw(make_path remove_tree);
 use File::Basename;
 use File::Spec;
 
@@ -17,6 +19,7 @@ sub opt_spec {
 	[ "genome|g=s",   "The genome sequences in FASTA format to search for LTR-RTs "   ],
 	[ "repeatdb|d=s", "The file of repeat sequences in FASTA format to use for classification " ], 
 	[ "gff|f=s",      "The GFF3 file of LTR-RTs in <genome> "    ],
+	[ "outdir|o=s",   "The output directory for placing categorized elements " ],
     );
 }
 
@@ -51,26 +54,37 @@ sub _classify_ltr_predictions {
     my $genome   = $opt->{genome};
     my $repeatdb = $opt->{repeatdb};
     my $gff      = $opt->{gff};
+    my $outdir   = $opt->{outdir};
 
+    unless ( -d $outdir ) {
+	make_path( $outdir, {verbose => 0, mode => 0771,} );
+    }
+    
     my $classify_obj = Tephra::Classify::LTRSfams->new( 
 	genome   => $genome, 
 	repeatdb => $repeatdb, 
 	gff      => $gff 
     );
 
-    
     my ($header, $features) = $classify_obj->collect_gff_features($gff);
 
-    #my $all_ct  = (keys %$features);
     my ($gypsy, $copia) = $classify_obj->find_gypsy_copia($features);
     my ($unc_fas, $ltr_rregion_map) = $classify_obj->find_unclassified($features);
 
-    #my $blastdb   = make_blastdb($repeatdb);
     my $blast_out = $classify_obj->search_unclassified($unc_fas);
     $classify_obj->annotate_unclassified($blast_out, $gypsy, $copia, $features, $ltr_rregion_map);
-    $classify_obj->write_gypsy($gypsy, $header);
-    $classify_obj->write_copia($copia, $header);
-    $classify_obj->write_unclassified($features, $header);
+    my $gyp_gff = $classify_obj->write_gypsy($gypsy, $header);
+    my $cop_gff = $classify_obj->write_copia($copia, $header);
+    my $unc_gff = $classify_obj->write_unclassified($features, $header);
+
+    my $classify_fams_obj = Tephra::Classify::LTRFams->new(
+	genome   => $genome,
+	outdir   => $outdir,
+    );
+
+    $classify_fams_obj->extract_features($gyp_gff);
+    $classify_fams_obj->extract_features($cop_gff);
+    $classify_fams_obj->extract_features($unc_gff);
 }
 
 sub help {
