@@ -41,6 +41,14 @@ has n_threshold => (
       default  => 0.30,
 );
 
+has remove_dup_domains => (
+    is        => 'ro',
+    isa       => 'Bool',
+    predicate => 'has_remove_dup_domains',
+    lazy      => 1,
+    default   => 0,
+);
+
 #
 # methods
 #
@@ -511,11 +519,13 @@ sub _filter_compound_elements {
 	    }
 	    
 	    my %uniq;
-	    if ($has_pdoms) {
-		for my $element (@pdoms) {
-		    $element =~ s/\;.*//;
-		    next if $element =~ /chromo/i; # we expect these elements to be duplicated
-		    delete $features->{$source}{$ltr} && $dup_pdoms_filtered++ if $uniq{$element}++;
+	    if ($self->has_remove_dup_domains) {
+		if ($has_pdoms) {
+		    for my $element (@pdoms) {
+			$element =~ s/\;.*//;
+			next if $element =~ /chromo/i; # we expect these elements to be duplicated
+			delete $features->{$source}{$ltr} && $dup_pdoms_filtered++ if $uniq{$element}++;
+		    }
 		}
 	    }
 	    
@@ -534,9 +544,12 @@ sub _filter_compound_elements {
 
     my %stats = ( gyp_cop_filtered   => $gyp_cop_filtered, 
 		  len_filtered       => $len_filtered, 
-		  dup_pdoms_filtered => $dup_pdoms_filtered,
 	          class_II_filtered  => $classII_filtered );
 
+    if ($self->has_remove_dup_domains) {
+	$stats{dup_pdoms_filtered} = $dup_pdoms_filtered;
+    }
+    
     return $features, \%stats;
 }
 

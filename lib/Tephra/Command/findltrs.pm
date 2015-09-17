@@ -20,7 +20,8 @@ sub opt_spec {
 	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains "    ],
 	[ "outfile|o=s", "The final combined and filtered GFF3 file of LTR-RTs "         ],
 	[ "index|i=s",   "The suffixerator index to use for the LTR search "             ],
-	[ "clean",       "Clean up the index files (Default: yes) "                      ],
+	[ "dedup|r",     "Discard elements with duplicate coding domains (Default: no) " ],
+	[ "clean|c",     "Clean up the index files (Default: yes) "                      ],
     );
 }
 
@@ -47,13 +48,16 @@ sub execute {
 	$self->app->global_options->{help};
 
     my ($relaxed_gff, $strict_gff) = _run_ltr_search($opt);
-    my $some = _refine_ltr_predictions($relaxed_gff, $strict_gff, $opt->{genome}, $opt->{outfile});
+    my $some = _refine_ltr_predictions($relaxed_gff, $strict_gff, $opt);
 }
 
 sub _refine_ltr_predictions {
-    my ($relaxed_gff, $strict_gff, $fasta, $outfile) = @_;
-
-    my $refine_obj = Tephra::LTR::LTRRefine->new( genome  => $fasta );
+    my ($relaxed_gff, $strict_gff, $opt) = @_;
+    my $fasta   = $opt->{genome};
+    my $outfile = $opt->{outfile};
+    my $dedup   = $opt->{dedup};
+    
+    my $refine_obj = Tephra::LTR::LTRRefine->new( genome  => $fasta, remove_dup_domains => 1 );
 	
     my $relaxed_features
 	= $refine_obj->collect_features({ gff => $relaxed_gff, pid_threshold => 85 });
@@ -120,6 +124,7 @@ Required:
 
 Options:
     -i|index      :   The suffixerator index to use for the LTR search.
+    -r|dedup      :   Discard elements with duplicate coding domains (Default: no).
     -c|clean      :   Clean up the index files (Default: yes).
 
 END
