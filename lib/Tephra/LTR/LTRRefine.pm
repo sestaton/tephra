@@ -49,6 +49,13 @@ has remove_dup_domains => (
     default   => 0,
 );
 
+has remove_tnp_domains => (
+    is        => 'ro',
+    isa       => 'Bool',
+    predicate => 'has_remove_tnp_domains',
+    lazy      => 1,
+    default   => 0,
+);
 #
 # methods
 #
@@ -513,19 +520,17 @@ sub _filter_compound_elements {
 		$gyp_cop_filtered++;
 	    }
 
-	    if ($has_tpase) {
+	    if ($self->remove_tnp_domains && $has_tpase) {
 		delete $features->{$source}{$ltr};
 		$classII_filtered++;
 	    }
 	    
 	    my %uniq;
-	    if ($self->has_remove_dup_domains) {
-		if ($has_pdoms) {
-		    for my $element (@pdoms) {
-			$element =~ s/\;.*//;
-			next if $element =~ /chromo/i; # we expect these elements to be duplicated
-			delete $features->{$source}{$ltr} && $dup_pdoms_filtered++ if $uniq{$element}++;
-		    }
+	    if ($self->remove_dup_domains && $has_pdoms) {
+		for my $element (@pdoms) {
+		    $element =~ s/\;.*//;
+		    next if $element =~ /chromo/i; # we expect these elements to be duplicated
+		    delete $features->{$source}{$ltr} && $dup_pdoms_filtered++ if $uniq{$element}++;
 		}
 	    }
 	    
@@ -542,12 +547,14 @@ sub _filter_compound_elements {
 	}
     }
 
-    my %stats = ( gyp_cop_filtered   => $gyp_cop_filtered, 
-		  len_filtered       => $len_filtered, 
-	          class_II_filtered  => $classII_filtered );
+    my %stats = ( compound_gyp_cop_filtered   => $gyp_cop_filtered, 
+		  length_filtered             => $len_filtered );
 
-    if ($self->has_remove_dup_domains) {
+    if ($self->remove_dup_domains) {
 	$stats{dup_pdoms_filtered} = $dup_pdoms_filtered;
+    }
+    if ($self->remove_tnp_domains) {
+	$stats{class_II_filtered}  = $classII_filtered;
     }
     
     return $features, \%stats;
