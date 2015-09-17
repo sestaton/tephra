@@ -201,7 +201,7 @@ sub collect_feature_args {
     my $pbsname = File::Spec->catfile($dir, 'dbcluster-pbs');
     my $pbsargs = "-dbcluster 90 90 $pbsname -p -d -seedlength 5 -exdrop 2 ";
     $pbsargs .= "-l 3 -showdesc 0 -sort ld -best 100";
-    $vmatch_args{pbs} = { seqs => \@pbs, args => $pbsargs, prefixlen => 5 };
+    $vmatch_args{pbs} = { seqs => \@pbs, args => $pbsargs, prefixlen => 3 };
 
     my $pptname = File::Spec->catfile($dir, 'dbcluster-ppt');
     my $pptargs = "-dbcluster 90 90 $pptname -p -d -seedlength 5 -exdrop 2 ";
@@ -225,7 +225,11 @@ sub cluster_features {
 
     my $args = $self->collect_feature_args;
     $self->_remove_singletons($args);
-    
+
+    #use Data::Dump;
+    #say STDERR "DEBUG: ";
+    #dd $args;
+
     my $t0 = gettimeofday();
     my $doms = 0;
     my %reports;
@@ -280,28 +284,18 @@ sub process_cluster_args {
     my ($name, $path, $suffix) = fileparse($db, qr/\.[^.]*/);
     my $index = File::Spec->catfile($path, $name.".index");
     my $vmrep = File::Spec->catfile($path, $name."_vmatch-out.txt");
-    #my $log   = File::Spec->catfile($path, $name."_vmatch-out.log");;
+    my $log   = File::Spec->catfile($path, $name."_vmatch-out.log");;
 
-    my $mkvtreecmd = "mkvtree -db $db -dna -indexname $index -allout -pl ";
+    my $mkvtreecmd = "mkvtree -db $db -dna -indexname $index -allout -v -pl ";
     if (defined $args->{$type}{prefixlen}) {
 	$mkvtreecmd .= "$args->{$type}{prefixlen} ";
     }
-    #$mkvtreecmd .= "2>&1 > $log";
+    $mkvtreecmd .= "2>&1 > $log";
     my $vmatchcmd  = "vmatch $args->{$type}{args} $index > $vmrep";
-    #say STDERR "=====> Running mkvtree on $type";
     $self->run_cmd($mkvtreecmd);
-    #say STDERR "=====> Running vmatch on $type";
-    try {
-	$self->run_cmd($vmatchcmd);
-    }
-    catch {
-	say STDERR "vmatch cmd : $vmatchcmd";
-	"Here is the exception: $_";
-    };
+    $self->run_cmd($vmatchcmd);
     unlink glob "$index*";
 
-    #say STDERR "mkvtree cmd: $mkvtreecmd";
-    #say STDERR "vmatch cmd : $vmatchcmd";
     return $vmrep;
 }
 
@@ -345,7 +339,7 @@ sub _remove_singletons {
 	    $seqct = 0;
 	}
 
-	if (@{$args->{$type}{seqs}} && @singles) {
+	if (@{$args->{$type}{seqs}}) {
 	    #p @{$args->{$type}{seqs}};
 	    #p @singles;
 	    if (@singles > 1) {
@@ -365,7 +359,6 @@ sub _remove_singletons {
 	$index = 0;
 	@singles = ();
     }
-
     #p $args;
 }
 	
