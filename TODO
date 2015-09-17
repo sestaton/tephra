@@ -1,2 +1,5 @@
 - compare domain organization in LTRs to what is expected per superfamily; incorporate this into the classification scheme
 - remove duplication filter because these may represent fragmented alignments
+- re-evaluate transposase filtering
+- clean up logs and intermediate files from vmatch
+- update retrotransposon ids to be unique
