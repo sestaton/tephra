@@ -30,7 +30,7 @@ my $find_cmd = "$cmd findltrs -g $genome -t $trnas -d $model --clean";
 say STDERR $find_cmd;
 
 my ($stdout, $stderr, @ret) = capture { system([0..5], $find_cmd) };
-
+       
 my @files;
 find( sub { push @files, $File::Find::name if /\.gff3$/ }, $testdir);
 ok( @files == 3, 'Can find some ltrs' ); # 2 ltrdigest files + combined file
@@ -39,7 +39,7 @@ my $combined;
 for my $line (split /^/, $stderr) {
     if ($line =~ /Number of elements filtered/) {
 	my @tot = ($line =~ /=(\d)/g);
-	ok( @tot == 5, 'Correct number of filters applied to results' );
+	ok( @tot == 3, 'Correct number of filters applied to results' );
 	my $sum = sum(@tot);
 	ok( $sum == 0, 'Correct number of elements filtered' );
     }
