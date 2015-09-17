@@ -20,6 +20,7 @@ sub opt_spec {
 	[ "repeatdb|d=s", "The file of repeat sequences in FASTA format to use for classification " ], 
 	[ "gff|f=s",      "The GFF3 file of LTR-RTs in <genome> "    ],
 	[ "outdir|o=s",   "The output directory for placing categorized elements " ],
+	[ "threads|t=i",  "The number of threads to use for clustering coding domains " ],
     );
 }
 
@@ -55,6 +56,7 @@ sub _classify_ltr_predictions {
     my $repeatdb = $opt->{repeatdb};
     my $gff      = $opt->{gff};
     my $outdir   = $opt->{outdir};
+    my $threads  = $opt->{threads};
 
     unless ( -d $outdir ) {
 	make_path( $outdir, {verbose => 0, mode => 0771,} );
@@ -80,14 +82,13 @@ sub _classify_ltr_predictions {
     my $classify_fams_obj = Tephra::Classify::LTRFams->new(
 	genome   => $genome,
 	outdir   => $outdir,
+	threads  => $threads,
     );
 
     $classify_fams_obj->extract_features($gyp_gff);
     $classify_fams_obj->extract_features($cop_gff);
     $classify_fams_obj->extract_features($unc_gff);
 
-    #my $vmatch_args = $classify_fams_obj->collect_feature_args;
-    #dd $vmatch_args and exit;
     my $vmatch_clusters = $classify_fams_obj->cluster_features;
     #$classify_fams_obj->parse_clusters($vmatch_clusters);
 }
@@ -103,6 +104,10 @@ Required:
     -g|genome     :   The genome sequences in FASTA format to search for LTR-RTs. 
     -d|repeatdb   :   The file of repeat sequences in FASTA format to use for classification. 
     -f|gff        :   The GFF3 file of LTR-RTs in <--genome>.
+    -o|outdir     :   The output directory for placing categorized elements.
+
+Options:
+    -t|threads    :   The number of threads to use for clustering coding domains (Default: 1).    
 
 END
 }
