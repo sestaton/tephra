@@ -12,7 +12,10 @@ use Bio::Tools::GFF;
 use Time::HiRes qw(gettimeofday);
 use Parallel::ForkManager;
 use Cwd;
+use Try::Tiny;
 use namespace::autoclean;
+
+use Data::Printer;
 
 with 'Tephra::Role::GFF',
      'Tephra::Role::Util';
@@ -63,13 +66,13 @@ sub extract_features {
 
     my $gffio = Bio::Tools::GFF->new( -file => $infile, -gff_version => 3 );
 
-    my ($start, $end, $region, $key, %feature, %ltrs);
+    my ($start, $end, $elem_id, $key, %feature, %ltrs);
     while (my $feature = $gffio->next_feature()) {
 	if ($feature->primary_tag eq 'LTR_retrotransposon') {
 	    my @string = split /\t/, $feature->gff_string;
-	    ($region) = ($string[8] =~ /ID=?\s+?(LTR_retrotransposon\d+)/);
+	    ($elem_id) = ($string[8] =~ /ID=?\s+?(LTR_retrotransposon\d+)/);
 	    ($start, $end) = ($feature->start, $feature->end);
-	    $key = join ".", $region, $start, $end;
+	    $key = join ".", $elem_id, $start, $end;
 	    $ltrs{$key}{'full'} = join "-", $string[0], $feature->primary_tag, @string[3..4];
 	}
 	next unless defined $start && defined $end;
@@ -108,34 +111,35 @@ sub extract_features {
     my %pdoms;
     my $ltrct = 0;
     for my $ltr (sort keys %ltrs) {
+	my ($element, $rstart, $rend) = split /\./, $ltr;
 	# full element
-	my ($source, $element, $start, $end) = split /\-/, $ltrs{$ltr}{'full'};
+	my ($source, $prim_tag, $start, $end) = split /\-/, $ltrs{$ltr}{'full'};
 	my $outfile = File::Spec->catfile($dir, $ltr.".fasta");
 	$self->subseq($fasta, $source, $element, $start, $end, $outfile, $allfh);
 
 	# pbs
 	if ($ltrs{$ltr}{'pbs'}) {
-	    my ($pbssource, $pbselement, $trna, $pbsstart, $pbsend) = split /\|\|/, $ltrs{$ltr}{'pbs'};
+	    my ($pbssource, $pbstag, $trna, $pbsstart, $pbsend) = split /\|\|/, $ltrs{$ltr}{'pbs'};
 	    my $pbs_tmp = File::Spec->catfile($dir, $ltr."_pbs.fasta");
-	    $self->subseq($fasta, $pbssource, $pbselement, $pbsstart, $pbsend, $pbs_tmp, $pbsfh);
+	    $self->subseq($fasta, $pbssource, $element, $pbsstart, $pbsend, $pbs_tmp, $pbsfh);
 	}
 
 	# ppt
 	if ($ltrs{$ltr}{'ppt'}) {
-	    my ($pptsource, $pptelement, $pptstart, $pptend) = split /\|\|/, $ltrs{$ltr}{'ppt'};
+	    my ($pptsource, $ppttag, $pptstart, $pptend) = split /\|\|/, $ltrs{$ltr}{'ppt'};
 	    my $ppt_tmp = File::Spec->catfile($dir, $ltr."_ppt.fasta");
-	    $self->subseq($fasta, $source, $pptelement, $pptstart, $pptend, $ppt_tmp, $pptfh);
+	    $self->subseq($fasta, $source, $element, $pptstart, $pptend, $ppt_tmp, $pptfh);
 	}
 
 	for my $ltr_repeat (@{$ltrs{$ltr}{'ltrs'}}) {
-	    my ($src, $ltre, $s, $e) = split /\|\|/, $ltr_repeat;
+	    my ($src, $ltrtag, $s, $e) = split /\|\|/, $ltr_repeat;
 	    if ($ltrct) {
 		my $fiveprime_tmp = File::Spec->catfile($dir, $ltr."_5prime-ltr.fasta");
-		$self->subseq($fasta, $src, $ltre, $s, $e, $fiveprime_tmp, $fivefh);
+		$self->subseq($fasta, $src, $element, $s, $e, $fiveprime_tmp, $fivefh);
 	    }
 	    else {
 		my $threeprime_tmp = File::Spec->catfile($dir, $ltr."_3prime-ltr.fasta");
-		$self->subseq($fasta, $src, $ltre, $s, $e, $threeprime_tmp, $threfh);
+		$self->subseq($fasta, $src, $element, $s, $e, $threeprime_tmp, $threfh);
 		$ltrct++;
 	    }
 	}
@@ -143,7 +147,7 @@ sub extract_features {
 
 	if ($ltrs{$ltr}{'pdoms'}) {
 	    for my $ltr_repeat (@{$ltrs{$ltr}{'pdoms'}}) {
-		my ($src, $what, $name, $s, $e ) = split /\|\|/, $ltr_repeat;
+		my ($src, $pdomtag, $name, $s, $e ) = split /\|\|/, $ltr_repeat;
 		#"Ha10||protein_match||UBN2||132013916||132014240",
 		push @{$pdoms{$name}}, join "||", $src, $element, $s, $e;
 	    }
@@ -278,18 +282,26 @@ sub process_cluster_args {
     my $vmrep = File::Spec->catfile($path, $name."_vmatch-out.txt");
     my $log   = File::Spec->catfile($path, $name."_vmatch-out.log");;
 
-    my $mkvtreecmd = "time mkvtree -db $db -dna -indexname $index -allout -v -pl ";
+    my $mkvtreecmd = "mkvtree -db $db -dna -indexname $index -allout -v -pl ";
     if (defined $args->{$type}{prefixlen}) {
 	$mkvtreecmd .= "$args->{$type}{prefixlen} ";
     }
     $mkvtreecmd .= "2>&1 > $log";
-    my $vmatchcmd  = "time vmatch $args->{$type}{args} $index > $vmrep";
+    my $vmatchcmd  = "vmatch $args->{$type}{args} $index > $vmrep";
     #say STDERR "=====> Running mkvtree on $type";
     $self->run_cmd($mkvtreecmd);
     #say STDERR "=====> Running vmatch on $type";
-    $self->run_cmd($vmatchcmd);
+    try {
+	$self->run_cmd($vmatchcmd);
+    }
+    catch {
+	say STDERR "vmatch cmd : $vmatchcmd";
+	"Here is the exception: $_";
+    };
     unlink glob "$index*";
 
+    #say STDERR "mkvtree cmd: $mkvtreecmd";
+    #say STDERR "vmatch cmd : $vmatchcmd";
     return $vmrep;
 }
 
@@ -317,20 +329,44 @@ sub _remove_singletons {
     my $self = shift;
     my ($args) = @_;
 
+    my @singles;
     my ($index, $seqct) = (0, 0);
     for my $type (keys %$args) {
+	delete $args->{$type} if ! @{$args->{$type}{seqs}};
 	for my $db (@{$args->{$type}{seqs}}) {
 	    my $seqio = Bio::SeqIO->new( -file => $db, -format => 'fasta' );
-	    #while (my $seqobj = $seqio->next_seq) {
-	    $seqct++ while ($seqio->next_seq);
+	    while (my $seqobj = $seqio->next_seq) { $seqct++ if defined $seqobj->seq; }
 	    if ($seqct < 2) {
-		#splice @{$args->{$type}{seqs}}, $index, 1;
-		delete $args->{$type};
+		push @singles, $index;
+		#say STDERR "under 2: $db";
+		unlink $db;
 	    }
-	    #$index++;
+	    $index++;
 	    $seqct = 0;
 	}
+
+	if (@{$args->{$type}{seqs}} && @singles) {
+	    #p @{$args->{$type}{seqs}};
+	    #p @singles;
+	    if (@singles > 1) {
+		for (@singles) {
+		    splice @{$args->{$type}{seqs}}, $_, 1;
+		    @singles = map { $_ - 1 } @singles; # array length is changing after splice so we need to adjust offsets
+		}
+	    }
+	    else {
+		splice @{$args->{$type}{seqs}}, $_, 1 for @singles;
+	    }
+	    #p @{$args->{$type}{seqs}};
+	}
+	else {
+	    delete $args->{$type};
+	}
+	$index = 0;
+	@singles = ();
     }
+
+    #p $args;
 }
 	
 __PACKAGE__->meta->make_immutable;
