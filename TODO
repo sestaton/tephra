@@ -1,4 +1,12 @@
 - compare domain organization in LTRs to what is expected per superfamily; incorporate this into the classification scheme
-- remove duplication filter because these may represent fragmented alignments
-- re-evaluate transposase filtering
-- clean up logs and intermediate files from vmatch
+- remove duplication filter because these may represent fragmented alignments (make optional) DONE
+- re-evaluate transposase filtering DONE
+- clean up logs and intermediate files from vmatch (dbluster-*)
+- reporting of superfamilies after ltr search?.. better to do that at classification stage
+- combine domain organization from both strands (if the same)?
+- check for index (if given) with findltrs cmd
+- change header format to be ">id_source_range"
+
+- reduce LTRs/TRIMs....perhaps when combining all GFFs
+- logging results/progress
+- documentation
