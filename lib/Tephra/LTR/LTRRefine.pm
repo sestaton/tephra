@@ -266,15 +266,18 @@ sub sort_features {
     chomp $header;
     say $ogff $header;
 
-    my $elem_tot = 0;
+    my ($elem_tot, $index) = (0, 1);
     for my $chromosome (nsort keys %$combined_features) {
 	for my $ltr (nsort_by { m/repeat_region\d+\_\d+\.(\d+)\.\d+/ and $1 }
 		     keys %{$combined_features->{$chromosome}}) {
 	    my ($rreg, $rreg_start, $rreg_end, $rreg_length) = split /\./, $ltr;
+	    my $new_rreg = $rreg;
+	    $new_rreg =~ s/\d+.*/$index/;
+	    #$new_rreg .= $index;
 	    my ($first) = @{$combined_features->{$chromosome}{$ltr}}[0];
 	    my ($source, $strand) = (split /\|\|/, $first)[1,6];
 	    say $ogff join "\t", $chromosome, $source, 'repeat_region', 
-	        $rreg_start, $rreg_end, '.', $strand, '.', "ID=$rreg";
+	        $rreg_start, $rreg_end, '.', $strand, '.', "ID=$new_rreg";
 	    for my $entry (@{$combined_features->{$chromosome}{$ltr}}) {
 		my @feats = split /\|\|/, $entry;
 		$feats[8] =~ s/\s\;\s/\;/g;
@@ -283,12 +286,16 @@ sub sort_features {
 		$feats[8] =~ s/(\;\w+)\s/$1=/g;
 		$feats[8] =~ s/\s;/;/;
 		$feats[8] =~ s/^(\w+)\s/$1=/;
+		$feats[8] =~ s/repeat_region\d+_\d+/$new_rreg/g;
+		$feats[8] =~ s/LTR_retrotransposon\d+/LTR_retrotransposon$index/g;
 		say $ogff join "\t", @feats;
 
 		if ($feats[2] eq 'LTR_retrotransposon') {
 		    $elem_tot++;
 		    my ($start, $end) = @feats[3..4];
 		    my ($elem) = ($feats[8] =~ /(LTR_retrotransposon\d+)/);
+		    $elem =~ s/\d+.*//;
+		    $elem .= $index;
 		    my $id = $elem."_".$chromosome."_".$start."_".$end;
 		    my $tmp = $elem.".fasta";
 		    my $cmd = "samtools faidx $fasta $chromosome:$start-$end > $tmp";
@@ -303,6 +310,7 @@ sub sort_features {
 		    unlink $tmp;
 		} 
 	    }
+	    $index++;
 	}
     }
     close $ogff;
