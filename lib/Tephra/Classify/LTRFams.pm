@@ -188,29 +188,29 @@ sub collect_feature_args {
 
     # ltr
     my $ltr5name = File::Spec->catfile($dir, 'dbcluster-5primeseqs');
-    my $fiveargs = "-dbcluster 80 20 $ltr5name -s -p -d -seedlength 10 ";
+    my $fiveargs = "-dbcluster 80 20 $ltr5name -p -d -seedlength 10 ";
     $fiveargs .= "-exdrop 7 -l 80 -showdesc 0 -sort ld -best 100 -identity 80";
     $vmatch_args{fiveltr} = { seqs => \@fiveltrs, args => $fiveargs };
 
     my $ltr3name  = File::Spec->catfile($dir, 'dbcluster-3primeseqs');
-    my $threeargs = "-dbcluster 80 20 $ltr3name -s -p -d -seedlength 10 ";
+    my $threeargs = "-dbcluster 80 20 $ltr3name -p -d -seedlength 10 ";
     $threeargs .= "-exdrop 7 -l 80 -showdesc 0 -sort ld -best 100 -identity 80";
     $vmatch_args{threeltr} = { seqs => \@threeltrs, args => $threeargs };
 
     # pbs/ppt
     my $pbsname = File::Spec->catfile($dir, 'dbcluster-pbs');
-    my $pbsargs = "-dbcluster 90 90 $pbsname -s -p -d -seedlength 5 -exdrop 2 ";
+    my $pbsargs = "-dbcluster 90 90 $pbsname -p -d -seedlength 5 -exdrop 2 ";
     $pbsargs .= "-l 3 -showdesc 0 -sort ld -best 100";
     $vmatch_args{pbs} = { seqs => \@pbs, args => $pbsargs, prefixlen => 5 };
 
     my $pptname = File::Spec->catfile($dir, 'dbcluster-ppt');
-    my $pptargs = "-dbcluster 90 90 $pptname -s -p -d -seedlength 5 -exdrop 2 ";
+    my $pptargs = "-dbcluster 90 90 $pptname -p -d -seedlength 5 -exdrop 2 ";
     $pptargs .= "-l 3 -showdesc 0 -sort ld -best 100";
     $vmatch_args{ppt} = { seqs => \@ppt, args => $pptargs, prefixlen => 5 };
 
     # pdoms
     my $pdomname = File::Spec->catfile($dir, 'dbcluster-pdoms');
-    my $pdomargs = "-dbcluster 80 80 $pdomname -s -p -d -seedlength 10 -exdrop 3 ";
+    my $pdomargs = "-dbcluster 80 80 $pdomname -p -d -seedlength 10 -exdrop 3 ";
     $pdomargs .= "-l 40 -showdesc 0 -sort ld -best 100";
     $vmatch_args{pdoms} = { seqs => \@pdoms, args => $pdomargs };
 
@@ -280,13 +280,13 @@ sub process_cluster_args {
     my ($name, $path, $suffix) = fileparse($db, qr/\.[^.]*/);
     my $index = File::Spec->catfile($path, $name.".index");
     my $vmrep = File::Spec->catfile($path, $name."_vmatch-out.txt");
-    my $log   = File::Spec->catfile($path, $name."_vmatch-out.log");;
+    #my $log   = File::Spec->catfile($path, $name."_vmatch-out.log");;
 
-    my $mkvtreecmd = "mkvtree -db $db -dna -indexname $index -allout -v -pl ";
+    my $mkvtreecmd = "mkvtree -db $db -dna -indexname $index -allout -pl ";
     if (defined $args->{$type}{prefixlen}) {
 	$mkvtreecmd .= "$args->{$type}{prefixlen} ";
     }
-    $mkvtreecmd .= "2>&1 > $log";
+    #$mkvtreecmd .= "2>&1 > $log";
     my $vmatchcmd  = "vmatch $args->{$type}{args} $index > $vmrep";
     #say STDERR "=====> Running mkvtree on $type";
     $self->run_cmd($mkvtreecmd);
