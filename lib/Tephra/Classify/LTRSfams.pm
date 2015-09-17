@@ -263,9 +263,9 @@ sub write_gypsy {
 	for my $feat (@{$gypsy->{$ltr}}) {
 	    my @feats = split /\|\|/, $feat;
 	    $feats[8] = $self->_format_attribute($feats[8]);
-	    if ($feats[8] =~ /Parent=repeat_region\d+(_\d+)/i) {
-		$feats[8] =~ s/$1//g;
-	    }
+	    #if ($feats[8] =~ /Parent=repeat_region\d+(_\d+)/i) {
+		#$feats[8] =~ s/$1//g;
+	    #}
 	    if ($feats[2] =~ /protein_match/) {
 		$has_pdoms = 1;
 		my ($doms) = ($feats[8] =~ /name=(\w+)/);
@@ -339,9 +339,9 @@ sub write_copia {
 	for my $feat (@{$copia->{$ltr}}) {
 	    my @feats = split /\|\|/, $feat;
 	    $feats[8] = $self->_format_attribute($feats[8]);
-	    if ($feats[8] =~ /Parent=repeat_region\d+(_\d+)/i) {
-		$feats[8] =~ s/$1//g;
-	    }
+	    #if ($feats[8] =~ /Parent=repeat_region\d+(_\d+)/i) {
+		#$feats[8] =~ s/$1//g;
+	    #}
 	    if ($feats[2] =~ /protein_match/) {
 		$has_pdoms = 1;
 		my ($doms) = ($feats[8] =~ /name=(\w+)/);
@@ -415,9 +415,9 @@ sub write_unclassified {
 	for my $feat (@{$features->{$ltr}}) {
 	    my @feats = split /\|\|/, $feat;
 	    $feats[8] = $self->_format_attribute($feats[8]);
-	    if ($feats[8] =~ /Parent=repeat_region\d+(_\d+)/i) {
-		$feats[8] =~ s/$1//g;
-	    }
+	    #if ($feats[8] =~ /Parent=repeat_region\d+(_\d+)/i) {
+		#$feats[8] =~ s/$1//g;
+	    #}
 	    if ($feats[2] =~ /protein_match/) {
 		my ($doms) = ($feats[8] =~ /name=(\w+)/);
 		push @all_pdoms, $doms;
