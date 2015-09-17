@@ -494,7 +494,7 @@ sub _filter_compound_elements {
 		    elsif ($feats[8] =~ /name=RVT_2/i) {
 			$is_copia  = 1;
 		    }
-		    elsif ($feats[8] =~ /transpos|mule|dde/i) {
+		    elsif ($feats[8] =~ /transpos|mule|dde|tnp_/i) {
 			$has_tpase = 1;
 		    }
 		}
