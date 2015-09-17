@@ -15,13 +15,14 @@ use File::Spec;
 
 sub opt_spec {
     return (    
-	[ "genome|g=s",  "The genome sequences in FASTA format to search for LTR-RTs "   ],
-	[ "trnadb|t=s",  "The file of tRNA sequences in FASTA format to search for PBS " ], 
-	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains "    ],
-	[ "outfile|o=s", "The final combined and filtered GFF3 file of LTR-RTs "         ],
-	[ "index|i=s",   "The suffixerator index to use for the LTR search "             ],
-	[ "dedup|r",     "Discard elements with duplicate coding domains (Default: no) " ],
-	[ "clean|c",     "Clean up the index files (Default: yes) "                      ],
+	[ "genome|g=s",  "The genome sequences in FASTA format to search for LTR-RTs "    ],
+	[ "trnadb|t=s",  "The file of tRNA sequences in FASTA format to search for PBS "  ], 
+	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains "     ],
+	[ "outfile|o=s", "The final combined and filtered GFF3 file of LTR-RTs "          ],
+	[ "index|i=s",   "The suffixerator index to use for the LTR search "              ],
+	[ "dedup|r",     "Discard elements with duplicate coding domains (Default: no) "  ],
+	[ "tnpfilter",   "Discard elements containing transposase domains (Default: no) " ],
+	[ "clean|c",     "Clean up the index files (Default: yes) "                       ],
     );
 }
 
@@ -55,9 +56,14 @@ sub _refine_ltr_predictions {
     my ($relaxed_gff, $strict_gff, $opt) = @_;
     my $fasta   = $opt->{genome};
     my $outfile = $opt->{outfile};
-    my $dedup   = $opt->{dedup};
+    my $dedup   = defined $opt->{dedup} ? 1 : 0;
+    my $detnp   = defined $opt->{tnpfilter} ? 1 : 0;
     
-    my $refine_obj = Tephra::LTR::LTRRefine->new( genome  => $fasta, remove_dup_domains => 1 );
+    my $refine_obj = Tephra::LTR::LTRRefine->new( 
+	genome             => $fasta, 
+	remove_dup_domains => $dedup,
+	remove_tnp_domains => $detnp,
+    );
 	
     my $relaxed_features
 	= $refine_obj->collect_features({ gff => $relaxed_gff, pid_threshold => 85 });
@@ -92,7 +98,8 @@ sub _run_ltr_search {
 	genome => $genome, 
 	hmmdb  => $hmmdb,
 	trnadb => $trnadb, 
-	clean  => $clean );
+	clean  => $clean 
+    );
 
     unless (defined $index) {
 	my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
@@ -125,6 +132,7 @@ Required:
 Options:
     -i|index      :   The suffixerator index to use for the LTR search.
     -r|dedup      :   Discard elements with duplicate coding domains (Default: no).
+    --tnpfilter   :   Discard elements containing transposase domains (Default: no).
     -c|clean      :   Clean up the index files (Default: yes).
 
 END
