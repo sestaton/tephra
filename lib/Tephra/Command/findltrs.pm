@@ -19,6 +19,7 @@ sub opt_spec {
 	[ "trnadb|t=s",  "The file of tRNA sequences in FASTA format to search for PBS " ], 
 	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains "    ],
 	[ "outfile|o=s", "The final combined and filtered GFF3 file of LTR-RTs "         ],
+	[ "index|i=s",   "The suffixerator index to use for the LTR search "             ],
 	[ "clean",       "Clean up the index files (Default: yes) "                      ],
     );
 }
@@ -78,6 +79,7 @@ sub _run_ltr_search {
     my $hmmdb  = $opt->{hmmdb};
     my $trnadb = $opt->{trnadb};
     my $clean  = $opt->{clean};
+    my $index  = $opt->{index};
     $clean //= 0;
     
     #say "testing clean: $clean" and exit;
@@ -88,12 +90,13 @@ sub _run_ltr_search {
 	trnadb => $trnadb, 
 	clean  => $clean );
 
-    my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
-    #my $index = File::Spec->catfile($path, $genome.".index");
-    my $index = $genome.".index";
+    unless (defined $index) {
+	my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
+	$index = $genome.".index";
     
-    my @suff_args = qq(-db $genome -indexname $index -tis -suf -lcp -ssp -sds -des -dna);
-    $ltr_search->create_index(\@suff_args);
+	my @suff_args = qq(-db $genome -indexname $index -tis -suf -lcp -ssp -sds -des -dna);
+	$ltr_search->create_index(\@suff_args);
+    }
     
     my $strict_gff  = $ltr_search->ltr_search_strict($index);
     my $relaxed_gff = $ltr_search->ltr_search_relaxed($index);
@@ -116,6 +119,7 @@ Required:
     -d|hmmdb      :   The HMM db in HMMERv3 format to search for coding domains.
 
 Options:
+    -i|index      :   The suffixerator index to use for the LTR search.
     -c|clean      :   Clean up the index files (Default: yes).
 
 END
