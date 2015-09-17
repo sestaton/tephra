@@ -56,7 +56,7 @@ sub _classify_ltr_predictions {
     my $repeatdb = $opt->{repeatdb};
     my $gff      = $opt->{gff};
     my $outdir   = $opt->{outdir};
-    my $threads  = $opt->{threads};
+    my $threads  = defined $opt->{threads} ? $opt->{threads} : 1;
 
     unless ( -d $outdir ) {
 	make_path( $outdir, {verbose => 0, mode => 0771,} );
