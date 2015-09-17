@@ -2,4 +2,3 @@
 - remove duplication filter because these may represent fragmented alignments
 - re-evaluate transposase filtering
 - clean up logs and intermediate files from vmatch
-- update retrotransposon ids to be unique
