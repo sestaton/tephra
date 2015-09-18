@@ -61,6 +61,7 @@ sub _refine_ltr_predictions {
     
     my $refine_obj = Tephra::LTR::LTRRefine->new( 
 	genome             => $fasta, 
+	outfile            => $outfile,
 	remove_dup_domains => $dedup,
 	remove_tnp_domains => $detnp,
     );
@@ -125,6 +126,7 @@ Required:
     -d|hmmdb      :   The HMM db in HMMERv3 format to search for coding domains.
 
 Options:
+    -o|outfile    :   The final combined and filtered GFF3 file of LTR-RTs.
     -i|index      :   The suffixerator index to use for the LTR search.
     -r|dedup      :   Discard elements with duplicate coding domains (Default: no).
     --tnpfilter   :   Discard elements containing transposase domains (Default: no).
@@ -178,6 +180,10 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =head1 OPTIONS
 
 =over 2
+
+=item -o, --outfile
+
+ The final combined and filtered GFF3 file of LTR-RTs.
 
 =item -i, --index
 
