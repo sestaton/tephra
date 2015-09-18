@@ -44,8 +44,13 @@ sub ltr_search_strict {
     my $ltr_succ  = $self->run_ltrharvest(\%ltrh_cmd);
     my $gffh_sort = $self->sort_gff($ltrh_gff);
 
-    my @ltrd_opts = qw(-trnas -hmms -aliout -aaout -seqfile -matchdescstart -seqnamelen -o -outfileprefix);
-    my @ltrd_args = ($trnadb,$hmmdb,"no","no",$genome,"yes","50",$ltrg_gff,$ltrg_out);
+#    -pdomevalcutoff    global E-value cutoff for pHMM search
+#	default 1E-6
+#	-pdomcutoff
+
+    my @ltrd_opts = qw(-trnas -hmms -aliout -aaout -seqfile -matchdescstart -seqnamelen -o -outfileprefix
+                       -pdomevalcutoff -pdomcutoff);
+    my @ltrd_args = ($trnadb,$hmmdb,"no","no",$genome,"yes","50",$ltrg_gff,$ltrg_out,'1E-10','TC');
     @ltrd_cmd{@ltrd_opts} = @ltrd_args;
     
     my $ltr_dig = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort);
