@@ -18,19 +18,10 @@ __END__
 
 Tephra - Transposable element paleontology
 
-=head1 SYNOPSIS    
-
 =head1 DESCRIPTION
-     
 
-=head1 DEPENDENCIES
-
-The Perl dependencies and the specific versions are listed below.
-
-Module                Version
-Parallel::ForkManager 1.05
-IPC::System::Simple   1.21
-Try::Tiny
+ This is an application to Find transposable elements based on structural and sequence similarity features,
+ group those elements into recognized superfamilies and infer patterns of evolution.     
 
 =head1 LICENSE
  
@@ -44,7 +35,10 @@ Copyright (C) 2015 S. Evan Staton
 =over
 
 =item *
-Perl 5.20.1 (Red Hat Enterprise Linux Server release 5.9 (Tikanga); Mac OS X 10.6.8)
+Perl 5.20.1 (Mac OS X 10.6.8)
+
+=item *
+Perl 5.22.0 (Fedora 21)
 
 =back
 
@@ -57,9 +51,13 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =over 2
 
 =item The method to perform. Must be one of the following:
-
-      findtirs: Find TIRs...
-      findltrs: Find LTR-RTs...
+    
+    classifyltrs: Classify LTR retrotransposons into superfamilies.
+  classifytirs: Classify TIR transposons into superfamilies.
+      findltrs: Find LTR retrotransposons in a genome assembly.
+      findtirs: Find TIR transposons in a genome assembly.
+     findtrims: Find TRIM retrotransposons in a genome assembly.
+       maskref: Mask a reference genome with transposons
 
 =back
 
