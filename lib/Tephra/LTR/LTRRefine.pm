@@ -16,7 +16,7 @@ use List::Util          qw(sum max);
 use Set::IntervalTree;
 use Path::Class::File;
 use Try::Tiny;
-use Data::Printer;
+#use Data::Printer;
 use namespace::autoclean;
 
 with 'Tephra::Role::Util';
@@ -467,7 +467,8 @@ sub _summarize_features {
 	$has_ir  = 1 if $part[2] eq 'inverted_repeat';
 	$has_pdoms++ if $part[2] eq 'protein_match';
     }
-    p $feature and exit(1) unless defined $ltr_sim;
+    #p $feature and exit(1) 
+    die unless defined $ltr_sim;
     $tsd_eq = 1 if $five_pr_tsd == $three_pr_tsd;
 
     my $ltr_score = sum($has_pbs, $has_ppt, $has_pdoms, $has_ir, $tsd_eq);
@@ -477,7 +478,7 @@ sub _summarize_features {
 sub _filter_compound_elements {
     my $self = shift;
     my ($features, $fasta) = @_;
-    my @pdoms;
+    my (@pdoms, %classII);
     my $is_gypsy   = 0;
     my $is_copia   = 0;
     my $has_tpase  = 0;
@@ -524,13 +525,17 @@ sub _filter_compound_elements {
 	    }
 	    
 	    if ($is_gypsy && $is_copia) {
-		delete $features->{$source}{$ltr};
-		$gyp_cop_filtered++;
+		if (exists $features->{$source}{$ltr}) {
+		    delete $features->{$source}{$ltr};
+		    $gyp_cop_filtered++;
+		}
 	    }
 
 	    if ($self->remove_tnp_domains && $has_tpase) {
-		delete $features->{$source}{$ltr};
-		$classII_filtered++;
+		if (exists $features->{$source}{$ltr}) {
+		    delete $features->{$source}{$ltr};
+		    $classII_filtered++;
+		}
 	    }
 	    
 	    my %uniq;
@@ -538,13 +543,18 @@ sub _filter_compound_elements {
 		for my $element (@pdoms) {
 		    $element =~ s/\;.*//;
 		    next if $element =~ /chromo/i; # we expect these elements to be duplicated
-		    delete $features->{$source}{$ltr} && $dup_pdoms_filtered++ if $uniq{$element}++;
+		    if (exists $features->{$source}{$ltr} && $uniq{$element}++) {
+			delete $features->{$source}{$ltr};
+			$dup_pdoms_filtered++;# if $uniq{$element}++;
+		    }
 		}
 	    }
 	    
 	    if ($l >= $len_thresh) {
-		delete $features->{$source}{$ltr};
-		$len_filtered++;
+		if (exists $features->{$source}{$ltr}) {
+		    delete $features->{$source}{$ltr};
+		    $len_filtered++;
+		}
 	    }
 
 	    @pdoms = ();
