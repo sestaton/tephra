@@ -88,11 +88,8 @@ sub _run_ltr_search {
     my $genome = $opt->{genome};
     my $hmmdb  = $opt->{hmmdb};
     my $trnadb = $opt->{trnadb};
-    my $clean  = $opt->{clean};
+    my $clean  = defined $opt->{clean} ? $opt->{clean} : 0;
     my $index  = $opt->{index};
-    $clean //= 0;
-    
-    #say "testing clean: $clean" and exit;
     
     my $ltr_search = Tephra::LTR::LTRSearch->new( 
 	genome => $genome, 
@@ -111,8 +108,6 @@ sub _run_ltr_search {
     
     my $strict_gff  = $ltr_search->ltr_search_strict($index);
     my $relaxed_gff = $ltr_search->ltr_search_relaxed($index);
-
-    #my $exit_value = 1;
 
     return ($relaxed_gff, $strict_gff);
 }
@@ -146,14 +141,17 @@ __END__
 
 =head1 NAME
                                                                        
- tephra findltrs - 
+ tephra findltrs - Find LTR retrotransposons in a genome assembly.
 
 =head1 SYNOPSIS    
 
- tephra findltrs -i .. -n
+ tephra findltrs -g ref.fas -t trnadb.fas -d te_models.hmm --tnpfilter --clean
 
 =head1 DESCRIPTION
-
+ 
+ Search a reference genome and find LTR-RTs under relaxed and strict conditions (more on
+ this later...), filter all predictions by a number of criteria, and generate a consensus
+ set of the best scoring elements.
 
 =head1 AUTHOR 
 
@@ -163,13 +161,17 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =over 2
 
-=item -p, --paired
+=item -g, --genome
 
-A file of interleaved, paired reads in FASTA format.
+ The genome sequences in FASTA format used to search for LTR-RTs.
 
-=item -u, --unpaired
+=item -t, --trnadb
 
-A file of unpaired reads in FASTA format.
+ The file of tRNA sequences in FASTA format to search for PBS.
+
+=item -d, --hmmdb
+
+ The HMM db in HMMERv3 format to search for coding domains.
 
 =back
 
@@ -177,25 +179,29 @@ A file of unpaired reads in FASTA format.
 
 =over 2
 
-=item -t, --treads
+=item -i, --index
 
-The number of threads to use with VelvetOptimiser (Default: 1).
+ The suffixerator index to use for the LTR search.
 
-=item -s, --hashs
+=item -r, --dedup
 
-The starting hash length for Velvet (Default: 59).
+ Discard elements with duplicate coding domains (Default: no).
 
-=item -e, --hashe
+=item --tnpfilter
 
-The ending hash length for Velvet (Default: 89).
+ Discard elements containing transposase domains (Default: no).
+
+=item -c, --clean
+
+ Clean up the index files (Default: yes).
 
 =item -h, --help
 
-Print a usage statement. 
+ Print a usage statement. 
 
 =item -m, --man
 
-Print the full documentation.
+ Print the full documentation.
 
 =back
 

@@ -68,17 +68,6 @@ sub _classify_tir_predictions {
 
     say STDERR join "\t", "all", "after_tc1", "after_hat", "after_mut", "after_cacta", "after_rem";
     say STDERR join "\t", $all_ct, $tc1_ct, $hat_ct, $mut_ct, $cacta_ct, $rem_ct;
-    
-    #my $all_ct  = (keys %$features);
-    #my ($gypsy, $copia) = $classify_obj->find_gypsy_copia($features);
-    #my ($unc_fas, $ltr_rregion_map) = $classify_obj->find_unclassified($features);
-
-    #my $blastdb   = make_blastdb($repeatdb);
-    #my $blast_out = $classify_obj->search_unclassified($unc_fas);
-    #$classify_obj->annotate_unclassified($blast_out, $gypsy, $copia, $features, $ltr_rregion_map);
-    #$classify_obj->write_gypsy($gypsy, $header);
-    #$classify_obj->write_copia($copia, $header);
-    #$classify_obj->write_unclassified($features, $header);
 }
 
 sub help {
@@ -103,14 +92,16 @@ __END__
 
 =head1 NAME
                                                                        
- tephra classifyltrs - 
+ tephra classifytirs - Classify TIR transposons into superfamilies.
 
 =head1 SYNOPSIS    
 
- tephra findltrs -i .. -n
+ tephra findltrs -g ref.fas -f ref_tephra_tirs.gff3
 
 =head1 DESCRIPTION
-
+ 
+ This subcommand takes a GFF3 as input from Tephra and classifies the TIR TEs into
+ superfamilies.
 
 =head1 AUTHOR 
 
@@ -120,13 +111,13 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =over 2
 
-=item -p, --paired
+=item -g, --genome
 
-A file of interleaved, paired reads in FASTA format.
+ The genome sequences in FASTA format used to search for LTR-RTs.
 
-=item -u, --unpaired
+=item -f, --gff
 
-A file of unpaired reads in FASTA format.
+ The GFF3 file of LTR-RTs in <--genome> as output by the 'tephra findtirs' command.
 
 =back
 
@@ -134,25 +125,13 @@ A file of unpaired reads in FASTA format.
 
 =over 2
 
-=item -t, --treads
-
-The number of threads to use with VelvetOptimiser (Default: 1).
-
-=item -s, --hashs
-
-The starting hash length for Velvet (Default: 59).
-
-=item -e, --hashe
-
-The ending hash length for Velvet (Default: 89).
-
 =item -h, --help
 
-Print a usage statement. 
+ Print a usage statement. 
 
 =item -m, --man
 
-Print the full documentation.
+ Print the full documentation.
 
 =back
 

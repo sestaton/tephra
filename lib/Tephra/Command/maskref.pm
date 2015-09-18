@@ -1,5 +1,5 @@
 package Tephra::Command::maskref;
-# ABSTRACT: Mask a reference genome with transposons
+# ABSTRACT: Mask a reference genome with transposons.
 
 use 5.010;
 use strict;
@@ -50,17 +50,15 @@ sub _run_masking {
     
     my $genome   = $opt->{genome};
     my $repeatdb = $opt->{repeatdb};
-    my $clean    = $opt->{clean};
-    $clean //= 0;
+    my $clean    = defined $opt->{clean} ? $opt->{clean} : 0;
 
     my $mask_obj = Tephra::MaskRef->new( 
 	genome   => $genome, 
 	repeatdb => $repeatdb, 
 	clean    => $clean 
-	);
+    );
     
     my $masked_ref = $mask_obj->mask_reference;
-    
 }
 
 sub help {
@@ -88,14 +86,16 @@ __END__
 
 =head1 NAME
                                                                        
- tephra findltrs - 
+ tephra maskref - Mask a reference genome with transposons.
 
 =head1 SYNOPSIS    
 
- tephra findltrs -i .. -n
+ tephra maskref -g ref.fas -d repeatdb.fas
 
 =head1 DESCRIPTION
 
+ Mask a reference genome with one type of transposons to reduce false positives, and
+ search time, in subsequent searches for other transposon types.
 
 =head1 AUTHOR 
 
@@ -105,13 +105,13 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =over 2
 
-=item -p, --paired
+=item -g, --genome
 
-A file of interleaved, paired reads in FASTA format.
+ The genome sequences in FASTA format to search for TIR TEs.
 
-=item -u, --unpaired
+=item -d, --repeatdb
 
-A file of unpaired reads in FASTA format.
+ The database of repeat sequences to use for masking.
 
 =back
 
@@ -119,25 +119,17 @@ A file of unpaired reads in FASTA format.
 
 =over 2
 
-=item -t, --treads
+=item -c, --clean
 
-The number of threads to use with VelvetOptimiser (Default: 1).
-
-=item -s, --hashs
-
-The starting hash length for Velvet (Default: 59).
-
-=item -e, --hashe
-
-The ending hash length for Velvet (Default: 89).
+ Clean up the index files (Default: yes).
 
 =item -h, --help
 
-Print a usage statement. 
+ Print a usage statement. 
 
 =item -m, --man
 
-Print the full documentation.
+ Print the full documentation.
 
 =back
 

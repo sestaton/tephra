@@ -51,10 +51,7 @@ sub _run_tir_search {
     
     my $genome = $opt->{genome};
     my $hmmdb  = $opt->{hmmdb};
-    my $clean  = $opt->{clean};
-    $clean //= 0;
-    
-    #say "testing clean: $clean" and exit;
+    my $clean  = defined $opt->{clean} ? $opt->{clean} : 0;
     
     my $tir_search = Tephra::TIR::TIRSearch->new( 
 	genome => $genome, 
@@ -69,8 +66,6 @@ sub _run_tir_search {
     $tir_search->create_index(\@suff_args);
 
     my $gff  = $tir_search->tir_search($index);
-
-    #my $exit_value = 1;
 
     return $gff;
 }
@@ -100,14 +95,15 @@ __END__
 
 =head1 NAME
                                                                        
- tephra findltrs - 
+ tephra findtirs - Find TIR transposons in a genome assembly.
 
 =head1 SYNOPSIS    
 
- tephra findltrs -i .. -n
+ tephra findtirs -g ref.fas -d te_models.hmm
 
 =head1 DESCRIPTION
 
+ Find TIR transposons in a reference genome assembly.
 
 =head1 AUTHOR 
 
@@ -117,13 +113,13 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =over 2
 
-=item -p, --paired
+=item -g, --genome
 
-A file of interleaved, paired reads in FASTA format.
+ The genome sequences in FASTA format to search for TIR TEs.
 
-=item -u, --unpaired
+=item -p, --hmmdb
 
-A file of unpaired reads in FASTA format.
+ The HMM db in HMMERv3 format to search for coding domains.
 
 =back
 
@@ -131,25 +127,17 @@ A file of unpaired reads in FASTA format.
 
 =over 2
 
-=item -t, --treads
+=item -c, --clean
 
-The number of threads to use with VelvetOptimiser (Default: 1).
-
-=item -s, --hashs
-
-The starting hash length for Velvet (Default: 59).
-
-=item -e, --hashe
-
-The ending hash length for Velvet (Default: 89).
+ Clean up the index files (Default: yes).
 
 =item -h, --help
 
-Print a usage statement. 
+ Print a usage statement. 
 
 =item -m, --man
 
-Print the full documentation.
+ Print the full documentation.
 
 =back
 

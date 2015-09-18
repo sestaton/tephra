@@ -16,7 +16,7 @@ use File::Spec;
 
 sub opt_spec {
     return (    
-	[ "genome|g=s",   "The genome sequences in FASTA format to search for LTR-RTs "   ],
+	[ "genome|g=s",   "The genome sequences in FASTA format used to search for LTR-RTs "   ],
 	[ "repeatdb|d=s", "The file of repeat sequences in FASTA format to use for classification " ], 
 	[ "gff|f=s",      "The GFF3 file of LTR-RTs in <genome> "    ],
 	[ "outdir|o=s",   "The output directory for placing categorized elements " ],
@@ -101,7 +101,7 @@ USAGE: tephra classifyltrs [-h] [-m]
     -h --help     :   Print the command usage.
 
 Required:
-    -g|genome     :   The genome sequences in FASTA format to search for LTR-RTs. 
+    -g|genome     :   The genome sequences in FASTA format used to search for LTR-RTs. 
     -d|repeatdb   :   The file of repeat sequences in FASTA format to use for classification. 
     -f|gff        :   The GFF3 file of LTR-RTs in <--genome>.
     -o|outdir     :   The output directory for placing categorized elements.
@@ -120,14 +120,16 @@ __END__
 
 =head1 NAME
                                                                        
- tephra classifyltrs - 
+ tephra classifyltrs - Classify LTR retrotransposons into superfamilies 
 
 =head1 SYNOPSIS    
 
- tephra findltrs -i .. -n
+ tephra classifyltrs -g ref.fas -d repeatdb.fas -f ref_tephra.gff3 -o ref_classified_ltrs -t 12
 
 =head1 DESCRIPTION
 
+ This subcommand takes a GFF3 as input from Tephra and classifies the LTR-RTs first into
+ superfamilies, then into families based on shared features.
 
 =head1 AUTHOR 
 
@@ -137,13 +139,21 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =over 2
 
-=item -p, --paired
+=item -g, --genome
 
-A file of interleaved, paired reads in FASTA format.
+ The genome sequences in FASTA format used to search for LTR-RTs.
 
-=item -u, --unpaired
+=item -d, --repeatdb
 
-A file of unpaired reads in FASTA format.
+ The file of repeat sequences in FASTA format to use for classification.
+
+=item -f, --gff
+
+ The GFF3 file of LTR-RTs in <--genome> as output by the 'tephra findltrs' command.
+
+=item -o, --outdir
+
+ The output directory for placing categorized elements.
 
 =back
 
@@ -151,25 +161,17 @@ A file of unpaired reads in FASTA format.
 
 =over 2
 
-=item -t, --treads
+=item -t, --threads
 
-The number of threads to use with VelvetOptimiser (Default: 1).
-
-=item -s, --hashs
-
-The starting hash length for Velvet (Default: 59).
-
-=item -e, --hashe
-
-The ending hash length for Velvet (Default: 89).
+ The number of threads to use for clustering coding domains (Default: 1).
 
 =item -h, --help
 
-Print a usage statement. 
+ Print a usage statement. 
 
 =item -m, --man
 
-Print the full documentation.
+ Print the full documentation.
 
 =back
 

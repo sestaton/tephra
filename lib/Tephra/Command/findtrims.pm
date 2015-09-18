@@ -78,19 +78,16 @@ sub _run_trim_search {
     my $genome = $opt->{genome};
     my $hmmdb  = $opt->{hmmdb};
     my $trnadb = $opt->{trnadb};
-    my $clean  = $opt->{clean};
-    $clean //= 0;
-    
-    #say "testing clean: $clean" and exit;
+    my $clean  = defined $opt->{clean} ? $opt->{clean} : 0;
     
     my $trim_search = Tephra::TRIM::TRIMSearch->new( 
 	genome => $genome, 
 	hmmdb  => $hmmdb,
 	trnadb => $trnadb, 
-	clean  => $clean );
+	clean  => $clean
+    );
 
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
-    #my $index = File::Spec->catfile($path, $genome.".index");
     my $index = $genome.".index";
 
     my @suff_args = qq(-db $genome -indexname $index -tis -suf -lcp -ssp -sds -des -dna);
@@ -98,8 +95,6 @@ sub _run_trim_search {
     
     my $strict_gff  = $trim_search->trim_search_strict($index);
     my $relaxed_gff = $trim_search->trim_search_relaxed($index);
-
-    #my $exit_value = 1;
 
     return ($relaxed_gff, $strict_gff);
 }
@@ -130,11 +125,11 @@ __END__
 
 =head1 NAME
                                                                        
- tephra findltrs - 
+ tephra findtrims - Find TRIM retrotransposons in a genome assembly.
 
 =head1 SYNOPSIS    
 
- tephra findltrs -i .. -n
+ tephra findtrims -g ref.fas -t trnadb.fas -p te_models.hmm
 
 =head1 DESCRIPTION
 
@@ -147,13 +142,17 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =over 2
 
-=item -p, --paired
+=item -g, --genome
 
-A file of interleaved, paired reads in FASTA format.
+ The genome sequences in FASTA format to search for LTR-RTs.
 
-=item -u, --unpaired
+=item -t, --trnadb
 
-A file of unpaired reads in FASTA format.
+ The file of tRNA sequences in FASTA format to search for PBS.
+
+=item -p, --hmmdb
+
+ The HMM db in HMMERv3 format to search for coding domains.
 
 =back
 
@@ -161,25 +160,17 @@ A file of unpaired reads in FASTA format.
 
 =over 2
 
-=item -t, --treads
+=item -c, --clean
 
-The number of threads to use with VelvetOptimiser (Default: 1).
-
-=item -s, --hashs
-
-The starting hash length for Velvet (Default: 59).
-
-=item -e, --hashe
-
-The ending hash length for Velvet (Default: 89).
+ Clean up the index files (Default: yes).
 
 =item -h, --help
 
-Print a usage statement. 
+ Print a usage statement. 
 
 =item -m, --man
 
-Print the full documentation.
+ Print the full documentation.
 
 =back
 
