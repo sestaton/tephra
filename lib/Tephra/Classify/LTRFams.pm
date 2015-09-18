@@ -15,6 +15,7 @@ use Cwd;
 use Try::Tiny;
 use namespace::autoclean;
 
+use Data::Dump;
 use Data::Printer;
 
 with 'Tephra::Role::GFF',
@@ -66,7 +67,7 @@ sub extract_features {
 
     my $gffio = Bio::Tools::GFF->new( -file => $infile, -gff_version => 3 );
 
-    my ($start, $end, $elem_id, $key, %feature, %ltrs);
+    my ($start, $end, $elem_id, $key, %feature, %ltrs, %seen);
     while (my $feature = $gffio->next_feature()) {
 	if ($feature->primary_tag eq 'LTR_retrotransposon') {
 	    my @string = split /\t/, $feature->gff_string;
@@ -79,8 +80,9 @@ sub extract_features {
 	if ($feature->primary_tag eq 'long_terminal_repeat') {
 	    my @string = split /\t/, $feature->gff_string;
 	    if ($feature->start >= $start && $feature->end <= $end) {
-		push @{$ltrs{$key}{'ltrs'}},
-		join "||", $string[0], $feature->primary_tag, @string[3..4];
+		my $ltrkey = join "||", $string[0], $feature->primary_tag, @string[3..4];
+		push @{$ltrs{$key}{'ltrs'}}, $ltrkey unless exists $seen{$ltrkey};
+		$seen{$ltrkey} = 1;
 	    }
 	}
 	elsif ($feature->primary_tag eq 'primer_binding_site') {
@@ -95,8 +97,9 @@ sub extract_features {
 	    my @string = split /\t/, $feature->gff_string;
 	    if ($feature->start >= $start && $feature->end <= $end) {
 		my ($name) = ($string[8] =~ /name \"?(\w+)\"?/);
-		push @{$ltrs{$key}{'pdoms'}},
-		join "||", $string[0], $feature->primary_tag, $name, @string[3..4];
+		my $pdomkey = join "||", $string[0], $feature->primary_tag, $name, @string[3..4];
+		push @{$ltrs{$key}{'pdoms'}}, $pdomkey unless exists $seen{$pdomkey};
+		$seen{$pdomkey} = 1;
 	    }
 	}
 	elsif ($feature->primary_tag eq 'RR_tract') {
@@ -108,6 +111,8 @@ sub extract_features {
 	}
     }
 
+    #dd \%ltrs;
+    
     my %pdoms;
     my $ltrct = 0;
     for my $ltr (sort keys %ltrs) {
