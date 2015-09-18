@@ -17,6 +17,7 @@ sub opt_spec {
 	[ "genome|g=s",  "The genome sequences in FASTA format to search for LTR-RTs "   ],
 	[ "hmmdb|p=s",   "The HMM db in HMMERv3 format to search for coding domains "    ],
 	[ "outfile|o=s", "The final combined and filtered GFF3 file of LTR-RTs "         ],
+	[ "index|i=s",   "The suffixerator index to use for the TIR search "             ],
 	[ "clean",       "Clean up the index files (Default: yes) "                      ],
     );
 }
@@ -51,6 +52,7 @@ sub _run_tir_search {
     
     my $genome = $opt->{genome};
     my $hmmdb  = $opt->{hmmdb};
+    my $index  = $opt->{index};
     my $clean  = defined $opt->{clean} ? $opt->{clean} : 0;
     
     my $tir_search = Tephra::TIR::TIRSearch->new( 
@@ -59,13 +61,15 @@ sub _run_tir_search {
 	clean  => $clean 
     );
 
-    my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
-    my $index = $genome.".index";
+    unless (defined $index) {
+	my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
+	$index = $genome.".index";
 
-    my @suff_args = qq(-db $genome -indexname $index -tis -suf -lcp -des -ssp -dna -mirrored -v);
-    $tir_search->create_index(\@suff_args);
-
-    my $gff  = $tir_search->tir_search($index);
+	my @suff_args = qq(-db $genome -indexname $index -tis -suf -lcp -des -ssp -dna -mirrored);
+	$tir_search->create_index(\@suff_args);
+    }
+    
+    my $gff = $tir_search->tir_search($index);
 
     return $gff;
 }
@@ -82,6 +86,7 @@ Required:
     -p|hmmdb      :   The HMM db in HMMERv3 format to search for coding domains.
 
 Options:
+    -i|index      :   The suffixerator index to use for the LTR search.
     -c|clean      :   Clean up the index files (Default: yes).
 
 END
@@ -126,6 +131,10 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =head1 OPTIONS
 
 =over 2
+
+=item -i, --index
+
+ The suffixerator index to use for the LTR search.
 
 =item -c, --clean
 
