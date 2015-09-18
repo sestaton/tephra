@@ -4,14 +4,10 @@ package Tephra::Command::findltrs;
 use 5.010;
 use strict;
 use warnings;
+use File::Basename;
 use Tephra -command;
 use Tephra::LTR::LTRSearch;
 use Tephra::LTR::LTRRefine;
-use Cwd                 qw(abs_path);
-use IPC::System::Simple qw(system);
-use Capture::Tiny       qw(:all);
-use File::Basename;
-use File::Spec;
 
 sub opt_spec {
     return (    
@@ -36,7 +32,7 @@ sub validate_args {
     elsif ($self->app->global_options->{help}) {
 	$self->help;
     }
-    elsif (!$opt->{genome}) { # || !$opt->{outfile}) { # || !$opt->{hmmdb}) {
+    elsif (!$opt->{genome}) {
 	say "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
