@@ -1,8 +1,6 @@
 package Tephra;
 
 use Moose;
-#use YAML::Tiny;
-#use Log::Any qw($log);
 use App::Cmd::Setup -app;
 use namespace::clean;
 
@@ -23,23 +21,11 @@ our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
-    tephra --config tephra_config.yml
+    tephra <command> [-h] [-m]
 
 =cut
 
-#has 'config' => (
-#    is            => 'ro',
-#    isa           => 'Str',
-#    required      => 0,
-#    documentation => qq{The Tephra configuration file},
-#);
 
-#sub get_configuration {
-#    my $self = shift;
-#    my $configfile   = YAML::Tiny->read( $self->config );
-#    my $valid_config = $self->parse_configuration( $configfile );
-#    return $valid_config;
-#}
 
 =head1 AUTHOR
 
