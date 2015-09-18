@@ -2,6 +2,7 @@ package Tephra::LTR::LTRRefine;
 
 use 5.010;
 use Moose;
+use autodie;
 use Cwd;
 use File::Spec;
 use File::Find;
@@ -257,11 +258,18 @@ sub sort_features {
     my ($gff, $combined_features) = @{$feature_ref}{qw(gff combined_features)};
 
     my $fasta   = $self->genome;
-    #my $outfile = $self->outfile;
+    my $outfile = $self->outfile;
+    my $outfasta;
     
-    my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $outfasta = File::Spec->catfile($path, $name."_combined_filtered.fasta");
-    my $outfile  = File::Spec->catfile($path, $name."_combined_filtered.gff3");
+    if (defined $outfile) {
+	my ($name, $path, $suffix) = fileparse($outfile, qr/\.[^.]*/);
+	$outfasta = File::Spec->catfile($path, $name.".fasta");
+    }
+    else {
+	my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
+	$outfasta = File::Spec->catfile($path, $name."_combined_filtered.fasta");
+	$outfile  = File::Spec->catfile($path, $name."_combined_filtered.gff3");
+    }
     
     open my $ogff, '>', $outfile;
     open my $ofas, '>>', $outfasta;
