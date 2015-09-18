@@ -4,13 +4,9 @@ package Tephra::Command::findtirs;
 use 5.010;
 use strict;
 use warnings;
+use File::Basename;
 use Tephra -command;
 use Tephra::TIR::TIRSearch;
-use Cwd                 qw(abs_path);
-use IPC::System::Simple qw(system);
-use Capture::Tiny       qw(:all);
-use File::Basename;
-use File::Spec;
 
 sub opt_spec {
     return (    
