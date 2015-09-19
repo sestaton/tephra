@@ -19,11 +19,11 @@ my $testdir = File::Spec->catdir('t', 'test_data');
 my $genome  = File::Spec->catfile($testdir, 'ref.fas');
 my $model   = File::Spec->catfile($testdir, 'te.hmm');
 
-my @assemb_results = capture { system([0..5], "$cmd findtirs -h") };
+my @results = capture { system([0..5], "$cmd findtirs -h") };
 
-ok(@assemb_results, 'Can execute findtirs subcommand');
+ok(@results, 'Can execute findtirs subcommand');
 
-my $find_cmd = "$cmd findtirs -g $genome -p $model --clean";
+my $find_cmd = "$cmd findtirs -g $genome -d $model --clean";
 say STDERR $find_cmd;
 
 my @ret = capture { system([0..5], $find_cmd) };
