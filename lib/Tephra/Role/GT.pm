@@ -13,7 +13,8 @@ use Log::Any        qw($log);
 use Cwd;
 use namespace::autoclean;
 
-use Data::Dump;
+#use Data::Dump;
+#use Data::Printer;
 
 has gt_exec => (
     is        => 'rw',
@@ -31,28 +32,28 @@ has genome => (
     isa      => 'Path::Class::File',
     required => 1,
     coerce   => 1,
-    );
+);
 
 has hmmdb => (
     is       => 'ro',
     isa      => 'Path::Class::File',
     required => 0,
     coerce   => 1,
-    );
+);
 
 has trnadb => (
     is       => 'ro',
     isa      => 'Path::Class::File',
     required => 0,
     coerce   => 1,
-    );
+);
 
 has clean => (
     is       => 'ro',
     isa      => 'Bool',
     required => 0,
     default  => 1,
-    );
+);
 
 sub create_index {
     my $self = shift;
@@ -133,13 +134,21 @@ sub run_ltrdigest {
 
 sub run_tirvish {
     my $self = shift;
-    my ($args) = @_;
+    my ($args, $gff) = @_;
 
-    my $hmms  = $args->{hmms};
-    my $index = $args->{index};
-    my $gff   = $args->{gff};
-    my $gt    = $self->get_gt_exec;
-    my $cmd = "$gt tirvish -index $index -hmms $hmms > $gff";
+    my $gt = $self->get_gt_exec;
+    
+    my @tirv_args;
+    push @tirv_args, "$gt tirvish";
+    for my $opt (keys %$args) {
+	if (defined $args->{$opt}) {
+	    push @tirv_args, $opt.q{ }.$args->{$opt};
+	}
+    }
+
+    my $cmd = join qq{ }, @tirv_args, ">", $gff;
+    #my $cmd = "$gt tirvish -seqids no -md5 yes -mintirlen 27 -mintirdist 100 -index $index -hmms $hmms > $gff";
+    #p $cmd;
     my ($stdout, $stderr, $exit);
     try {
 	#my @out = capture { system([0..5], $cmd) };
