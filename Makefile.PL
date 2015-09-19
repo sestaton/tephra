@@ -9,13 +9,6 @@ if (eval ($ExtUtils::MakeMaker::VERSION) <= 6.55) {
     exit(1);
 }
 
-#BEGIN {
-#    system("chmod +x bin/tephra") == 0 or die $!;
-#    if (! -d 'src') {
-#	system("./install_deps.sh") == 0 or die $!;
-#    }
-#}
-
 WriteMakefile(
     NAME             => 'Tephra',
     AUTHOR           => q{S. Evan Staton <statonse@gmail.com>},
