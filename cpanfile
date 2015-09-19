@@ -12,5 +12,7 @@ requires 'Log::Any;
 requires 'Try::Tiny';
 requires 'Capture::Tiny';
 requires 'BioPerl';
+requires 'HTTP::Tiny';
+requires 'HTML::TreeBuilder';
 requires 'Data::Dump';    # for testing
 #requires 'Data::Printer'; # for testing
