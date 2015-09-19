@@ -29,10 +29,9 @@ has genome => (
 );
 
 has outfile => (
-    is       => 'ro',
-    isa      => 'Path::Class::File',
-    required => 0,
-    coerce   => 1,
+      is        => 'ro',
+      isa       => 'Str',
+      predicate => 'has_outfile',
 );
 
 has n_threshold => (
@@ -257,11 +256,12 @@ sub sort_features {
     my ($feature_ref) = @_;
     my ($gff, $combined_features) = @{$feature_ref}{qw(gff combined_features)};
 
-    my $fasta   = $self->genome;
-    my $outfile = $self->outfile;
+    my $fasta = $self->genome;
+    my $outfile;
     my $outfasta;
     
-    if (defined $outfile) {
+    if ($self->has_outfile) {
+	$outfile = $self->outfile;
 	my ($name, $path, $suffix) = fileparse($outfile, qr/\.[^.]*/);
 	$outfasta = File::Spec->catfile($path, $name.".fasta");
     }
@@ -270,6 +270,12 @@ sub sort_features {
 	$outfasta = File::Spec->catfile($path, $name."_combined_filtered.fasta");
 	$outfile  = File::Spec->catfile($path, $name."_combined_filtered.gff3");
     }
+
+    #use Data::Printer;
+    #p $outfile;
+    #p $outfasta;
+    #p $gff;
+    #exit;
     
     open my $ogff, '>', $outfile;
     open my $ofas, '>>', $outfasta;
