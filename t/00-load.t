@@ -3,6 +3,8 @@
 use 5.010;
 use strict;
 use warnings FATAL => 'all';
+use HTTP::Tiny;
+use HTML::TreeBuilder;
 use File::Spec;
 use File::Copy qw(move);
 
@@ -18,23 +20,52 @@ my $cmd = File::Spec->catfile('blib', 'bin', 'tephra');
 ok( -x $cmd, 'Can execute tephra' );
 
 chdir 't' or die $!;
-# need to make this version agnostic
+
 my $host = 'http://genometools.org';
 my $dir  = 'pub/binary_distributions';
-my $dist = 'gt-1.5.6-Linux_x86_64-64bit-barebone.tar.gz';
-my $ldist = $dist;
-$ldist =~ s/\.tar.gz$//;
-my $ldir = 'gt';
-my $archive = join "/", $host, $dir, $dist;
+my $file = 'gt_distlisting.html';
+fetch_file($file, $host."/".$dir);
 
-system("wget $archive 2>&1 > /dev/null")
-    == 0 or die $!;
-system("tar xzf $dist") 
-    == 0 or die $!;
+my $tree = HTML::TreeBuilder->new;
+$tree->parse_file($file);
 
-move $ldist, $ldir or die "Copy failed: $!";
+my ($dist, $ldist, $ldir);
+for my $tag ($tree->look_down(_tag => 'a')) {
+    if ($tag->attr('href')) {
+	if ($tag->as_text =~ /Linux_x86_64-64bit-barebone.tar.gz\z/) {
+	    $dist = $tag->as_text;
+	    my $archive = join "/", $host, $dir, $dist;
+	    fetch_file($dist, $archive);
+
+	    $ldist = $dist;
+	    $ldist =~ s/\.tar.gz\z//;
+	    $ldir = 'gt';
+
+	    system("tar xzf $dist") == 0 or die $!;
+
+	    move $ldist, $ldir or die "Move failed: $!";
+	    unlink $dist;
+	}
+    }
+}
+
 my $gt = File::Spec->catfile($ldir, 'bin', 'gt');
 ok( -x $gt, 'Can execute gt for testing' );
 
-unlink $dist;
+unlink $file;
+
 done_testing();
+## methods
+sub fetch_file {
+    my ($file, $endpoint) = @_;
+    unless (-e $file) {
+	my $response = HTTP::Tiny->new->get($endpoint);
+	unless ($response->{success}) {
+	    die "Can't get url $endpoint -- Status: ", $response->{status}, " -- Reason: ", $response->{reason};
+	}
+	open my $out, '>', $file;
+	print $out $response->{content};
+	#sleep 1;
+	close $out;
+    }
+}
