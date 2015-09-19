@@ -16,34 +16,13 @@ use namespace::autoclean;
 with 'Tephra::Role::GT',
      'Tephra::Role::GFF';
 
-has genome => (
-      is       => 'ro',
-      isa      => 'Path::Class::File',
-      required => 1,
-      coerce   => 1,
-);
-
-has hmmdb => (
-      is       => 'ro',
-      isa      => 'Path::Class::File',
-      required => 0,
-      coerce   => 1,
-);
-
-has clean => (
-      is       => 'ro',
-      isa      => 'Bool',
-      required => 0,
-      default  => 1,
-);
-
 sub tir_search {
     my $self = shift;
     my ($index) = @_;
     
     my $genome = $self->genome->absolute;
     my $hmmdb  = $self->hmmdb;
-    my (%suf_args, %ltrh_cmd, %ltrd_cmd);
+    my (%suf_args, %tirv_cmd);
     
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
     if ($name =~ /(\.fa.*)/) {
@@ -51,14 +30,18 @@ sub tir_search {
     }
     
     my $gff = File::Spec->catfile($path, $name."_tirs.gff3");
-    $self->run_tirvish({ index => $index, hmms => $hmmdb, gff => $gff });
+    my @tirv_opts = qw(-seqids -md5 -mintirlen -mintirdist -index -hmms);
+
+    my @tirv_args = ("no","yes","27","100",$index,$hmmdb);
+    @tirv_cmd{@tirv_opts} = @tirv_args;
+    
+    $self->run_tirvish(\%tirv_cmd, $gff);
 
     my $filtered = $self->_filter_tir_gff($gff);
     my $fixgff   = $self->_fix_tir_gff($filtered, $genome);
     my $gff_sort = $self->sort_gff($fixgff);
 
     $self->clean_index if $self->clean;
-    #unlink $gff;
     
     return $gff_sort;
 }
@@ -85,7 +68,7 @@ sub _filter_tir_gff {
 		my ($type, $pdom) = ($feats[8] =~ /(name) ("?\w+"?)/);
 		$pdom =~ s/"//g;
 		my $dom = lc($pdom);
-		if ($dom =~ /rve|rvt|rvp|gag|chromo|rnase|athila|zf/) {
+		if ($dom =~ /rve|rvt|rvp|gag|chromo|rnase|athila|zf/i) {
 		    delete $features->{$tir};
 		}
 	    }
