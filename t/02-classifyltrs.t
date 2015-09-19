@@ -41,6 +41,7 @@ ok( @files == 3, 'Correctly classified Copia and others (with alliteration!)' );
 ## clean up
 my @outfiles;
 find( sub { push @outfiles, $File::Find::name if /^ref_ltr/ }, $testdir);
-#unlink @outfiles;
+unlink @outfiles;
+remove_tree( $outdir, { safe => 1 } );
     
 done_testing();
