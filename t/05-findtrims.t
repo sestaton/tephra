@@ -24,7 +24,7 @@ my @assemb_results = capture { system([0..5], "$cmd findtrims -h") };
 
 ok(@assemb_results, 'Can execute findtrims subcommand');
 
-my $find_cmd = "$cmd findtrims -g $genome -t $trnas -p $model --clean";
+my $find_cmd = "$cmd findtrims -g $genome -t $trnas -d $model --clean";
 say STDERR $find_cmd;
 
 my @ret = capture { system([0..5], $find_cmd) };
