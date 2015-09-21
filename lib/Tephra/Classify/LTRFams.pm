@@ -4,6 +4,8 @@ use 5.010;
 use Moose;
 use MooseX::Types::Path::Class;
 use Statistics::Descriptive;
+use Sort::Naturally;
+use List::MoreUtils qw(indexes any);
 use File::Spec;
 use File::Find;
 use File::Basename;
@@ -141,6 +143,7 @@ sub extract_features {
 	    if ($ltrct) {
 		my $fiveprime_tmp = File::Spec->catfile($dir, $ltr."_5prime-ltr.fasta");
 		$self->subseq($fasta, $src, $element, $s, $e, $fiveprime_tmp, $fivefh);
+		$ltrct = 0;
 	    }
 	    else {
 		my $threeprime_tmp = File::Spec->catfile($dir, $ltr."_3prime-ltr.fasta");
@@ -148,7 +151,7 @@ sub extract_features {
 		$ltrct++;
 	    }
 	}
-	$ltrct = 0;
+	#$ltrct = 0;
 
 	if ($ltrs{$ltr}{'pdoms'}) {
 	    for my $ltr_repeat (@{$ltrs{$ltr}{'pdoms'}}) {
@@ -322,6 +325,89 @@ sub subseq {
 	}
     }
     unlink $tmp;
+}
+
+sub parse_clusters {
+    my $self = shift;
+    my ($clsfile) = @_;
+    my $genome = $self->genome;
+    
+    my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
+    if ($name =~ /(\.fa.*)/) {
+	$name =~ s/$1//;
+    }
+
+    my (%cls, %all_seqs, %all_pdoms, $clusnum, $dom);
+    open my $in, '<', $clsfile;
+    while (my $line = <$in>) {
+	chomp $line;
+	if ($line =~ /^# args=/) {
+	    my ($type) = ($line =~ /\/(\S+).index\z/);
+	    $dom = basename($type);
+	    $dom =~ s/${name}_//;
+	    $dom =~ s/_pdom//;
+	    $all_pdoms{$dom} = 1;
+	}
+	next if $line =~ /^# \d+/;
+	if ($line =~ /^(\d+):/) {
+	    $clusnum = $1;
+	}
+	elsif ($line =~ /^\s+(\S+)/) {
+	    push @{$cls{$dom}{$clusnum}}, $1;
+	}
+    }
+
+    my (%elem_sorted, %multi_cluster_elem);
+    for my $pdom (keys %cls) {
+	for my $clsnum (keys %{$cls{$pdom}}) {
+	    for my $elem (@{$cls{$pdom}{$clsnum}}) {
+		push @{$elem_sorted{$elem}}, { $pdom => $clsnum };
+	    }
+	}
+    }
+
+    my (%seen, %dom_orgs);
+    for my $element (keys %elem_sorted) {
+	my $string;
+	for my $pdomh (@{$elem_sorted{$element}}) {
+	    for my $pdom (nsort keys %cls) {
+		if (exists $pdomh->{$pdom}) {
+		    $string .= length($string) ? "|$pdomh->{$pdom}" : $pdomh->{$pdom};
+		}
+		else {
+		    $string .= length($string) ? "|N" : "N";
+		}
+	    }
+	    push @{$dom_orgs{$string}}, $element;
+	    undef $string;
+	}
+    }
+
+    ## loop through writing each seq to a list, then use faidx to
+    ## generate family
+    ## * store seen seq ids, skip those when writing out unclustered sequences
+    
+    #say join "\t", "DomainOrg", "DomainCt", "IndexOffsets", "ClusterIDs(values)";
+    my %ind;
+    for my $org (sort keys %dom_orgs) {
+	#say $org;
+	my @ar = split /\|/, $org;
+	my @i  = indexes { $_ =~ /\d+/ } @ar;  # indexes with a domain cluster id
+	my $k  = join "||", @i;                # as a string
+	my $vc = @i;                           # the count of domains assigned to a cluster
+	my $v  = join "||", @ar[@i];           # the cluster IDs as a string
+
+	if (exists $ind{$k}) {
+	    #say "same position: $k";
+	    #say $org;
+	    #say join "\n", @{$ind{$k}};
+	    #say "same cluster: $v";
+	}
+	else {
+	    push @{$ind{$k}}, $org;
+	}
+    }
+    
 }
 
 sub _remove_singletons {
