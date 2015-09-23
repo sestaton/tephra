@@ -85,11 +85,16 @@ sub _classify_ltr_predictions {
 	threads  => $threads,
     );
 
-    $classify_fams_obj->extract_features($gyp_gff);
-    $classify_fams_obj->extract_features($cop_gff);
-    $classify_fams_obj->extract_features($unc_gff);
+    my $gyp_dir = $classify_fams_obj->extract_features($gyp_gff);
+    my $gyp_clusters = $classify_fams_obj->cluster_features($gyp_dir);
+    
+    my $cop_dir = $classify_fams_obj->extract_features($cop_gff);
+    my $cop_clusters = $classify_fams_obj->cluster_features($cop_dir);
 
-    my $vmatch_clusters = $classify_fams_obj->cluster_features;
+    my $unc_dir = $classify_fams_obj->extract_features($unc_gff);
+    my $unc_clusters = $classify_fams_obj->cluster_features($unc_dir);
+
+    #my $vmatch_clusters = $classify_fams_obj->cluster_features;
     #$classify_fams_obj->parse_clusters($vmatch_clusters);
 }
 
