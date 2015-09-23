@@ -229,24 +229,15 @@ sub reduce_features {
 	}
     }
 
-    #say STDERR "Stats for relaxed constraints: ";
-    #p $all_stats;
-    #say STDERR "Stats for strict constraints: ";
-    #p $part_stats;
-    #say STDERR "Stats for best elements: ";
     $best_stats{n_perc_filtered} = $n_perc_filtered;
-    #p %best_stats;
-    
 
     print STDERR join q{ }, "Number of elements filtered by type:";
-    #say STDERR join q{ }, "filtered_type", "num_filtered";
     for my $s (keys %best_stats) {
 	print STDERR " $s=$best_stats{$s}";
     }
 
-    say STDERR join q{ }, "\nNumber of elements found under what constraints:", "Relaxed=$all", "Strict=$part", "Best=$best", "Combined=$comb";
-    #say STDERR join q{ }, "Relaxed", "Strict", "Best", "Combined";
-    #say STDERR join q{ }, $all, $part, $best, $comb;
+    say STDERR join q{ }, "\nNumber of elements found under what constraints:", 
+        "Relaxed=$all", "Strict=$part", "Best=$best", "Combined=$comb";
 
     return \%best_features;
 }
@@ -320,6 +311,7 @@ sub sort_features {
 		say $ogff join "\t", @feats;
 
 		if ($feats[2] eq 'LTR_retrotransposon') {
+		    #$feats[8] .= ";SO:0000186";
 		    $elem_tot++;
 		    my ($start, $end) = @feats[3..4];
 		    my ($elem) = ($feats[8] =~ /(LTR_retrotransposon\d+)/);
@@ -337,7 +329,14 @@ sub sort_features {
 			say $ofas join "\n", ">".$id, $seq;
 		    }   
 		    unlink $tmp;
-		} 
+		}
+		#if ($feats[2] eq 'long_terminal_repeat' && $strand eq '+') {
+
+		#}
+		#if ($feats[2] eq 'long_terminal_repeat' && $strand eq '-') {
+
+		#}
+		
 	    }
 	    $index++;
 	}
@@ -473,7 +472,7 @@ sub _summarize_features {
 	$has_ir  = 1 if $part[2] eq 'inverted_repeat';
 	$has_pdoms++ if $part[2] eq 'protein_match';
     }
-    #p $feature and exit(1) 
+
     die unless defined $ltr_sim;
     $tsd_eq = 1 if $five_pr_tsd == $three_pr_tsd;
 
@@ -606,6 +605,29 @@ sub _filterNpercent {
     return $n_perc;
 }
 
+sub _get_SO_terms {
+    my $self = shift;
+
+    my %table = (
+	'LTR_retrotransposon'     => 'SO:0000186',
+	'non_LTR_retrotransposon' => 'SO:0000189',
+	
+	'U_box'                => 'SO:0001788',
+	'RR_tract'             => 'SO:0000435',
+	'long_terminal_repeat' => 'SO:0000286',
+	'inverted_repeat'      => 'SO:0000294',
+	'primer_binding_site'  => 'SO:0005850',
+	'protein_match'        => 'SO:0000349',
+	
+	'terminal_inverted_repeat_element' => 'SO:0000208',
+	'terminal_inverted_repeat'         => 'SO:0000481',
+	'helitron'                         => 'SO:0000544',
+	'MITE'                             => 'SO:0000338',
+	'DNA_transposon'                   => 'SO:0000182' );
+
+    return \%table;
+}
+    
 sub _get_source {
     my $self = shift;
     my ($ref) = @_;
