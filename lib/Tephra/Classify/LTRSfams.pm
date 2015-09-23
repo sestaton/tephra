@@ -108,7 +108,8 @@ sub find_gypsy_copia {
 	    #say STDERR join q{ }, "strand: $strand", $pdom_org;
 	    my ($gyp_org, $cop_org);
 	    my ($gyp_dom_ct, $cop_dom_ct) = (0, 0);
-	    if (none { $_ =~ /rvt_1|chromo/i } @all_pdoms) {
+	    if (grep { /rvt_2|ubn/i && ! /rvt_1|chromo/i } @all_pdoms) { # &&
+		#grep { ! /rvt_1|chromo/i } @all_pdoms) {
 		#my @doms = any { $_ =~ @all_poms } @gyp_exp;	
 		for my $d (@cop_exp) {
 		    for my $p (@all_pdoms) {
@@ -117,7 +118,8 @@ sub find_gypsy_copia {
 		}
 	    }
 
-	    if (none { $_ =~ /rvt_2|ubn/i } @all_pdoms) {
+	    if (grep { /rvt_1|chromo/i && ! /rvt_2|ubn/i } @all_pdoms) { # &&
+		#none { /rvt_2|ubn/i } @all_pdoms) {
 		for my $d (@gyp_exp) {
 		    for my $p (@all_pdoms) {
 			$gyp_dom_ct++ if $p =~ /$d/i;
@@ -125,12 +127,12 @@ sub find_gypsy_copia {
 		}
 	    }
 
-	    if ($gyp_dom_ct > 1) {
+	    if ($gyp_dom_ct >= 1) {
 		#say STDERR join q{ }, "Gypsy strand: $strand", $pdom_org;
 		$gypsy{$ltr} = $features->{$ltr};
 		delete $features->{$ltr};
 	    }
-	    elsif ($cop_dom_ct > 1) {
+	    elsif ($cop_dom_ct >= 1) {
 		#say STDERR join q{ }, "Copia strand:$strand", $pdom_org;
 		$copia{$ltr} = $features->{$ltr};
 		delete $features->{$ltr};
@@ -138,11 +140,14 @@ sub find_gypsy_copia {
 
 	    $gyp_dom_ct = 0;
 	    $cop_dom_ct = 0;
-	    $is_gypsy  = 0;
-	    $is_copia  = 0;
+	    $is_gypsy   = 0;
+	    $is_copia   = 0;
+
+	    undef $pdom_org;
+	    @all_pdoms = ();
 	}
-	undef $pdom_org;
-	@all_pdoms = ();
+	#undef $pdom_org;
+	#@all_pdoms = ();
     }    
     
     return (\%gypsy, \%copia);
@@ -292,11 +297,19 @@ sub write_gypsy {
     close $out;
 
     #dd \%pdom_index and exit;
+    my %tot_dom_ct;
     say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
     for my $strand (keys %pdom_index) {
 	for my $org (keys %{$pdom_index{$strand}}) {
+	    $tot_dom_ct{$org} += $pdom_index{$strand}{$org};
 	    say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
 	}
+    }
+
+    say $domf "==========";
+    say $domf join "\t", "Domain_organization", "Domain_count";
+    for my $domorg (keys %tot_dom_ct) {
+	say $domf join "\t", $domorg, $tot_dom_ct{$domorg};
     }
     close $domf;
     
@@ -368,11 +381,19 @@ sub write_copia {
     }
     close $out;
 
+    my %tot_dom_ct;
     say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
     for my $strand (keys %pdom_index) {
 	for my $org (keys %{$pdom_index{$strand}}) {
+	    $tot_dom_ct{$org} += $pdom_index{$strand}{$org};
 	    say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
 	}
+    }
+
+    say $domf "==========";
+    say $domf join "\t", "Domain_organization", "Domain_count";
+    for my $domorg (keys %tot_dom_ct) {
+	say $domf join "\t", $domorg, $tot_dom_ct{$domorg};
     }
     close $domf;
     
@@ -444,11 +465,19 @@ sub write_unclassified {
     }
     close $out;
 
+    my %tot_dom_ct;
     say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
     for my $strand (keys %pdom_index) {
 	for my $org (keys %{$pdom_index{$strand}}) {
+	    $tot_dom_ct{$org} += $pdom_index{$strand}{$org};
 	    say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
 	}
+    }
+
+    say $domf "==========";
+    say $domf join "\t", "Domain_organization", "Domain_count";
+    for my $domorg (keys %tot_dom_ct) {
+	say $domf join "\t", $domorg, $tot_dom_ct{$domorg};
     }
     close $domf;
     
