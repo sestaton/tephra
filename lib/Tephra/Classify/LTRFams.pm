@@ -12,6 +12,7 @@ use File::Basename;
 use Bio::SeqIO;
 use Bio::Tools::GFF;
 use Time::HiRes qw(gettimeofday);
+use File::Path  qw(make_path);
 use Parallel::ForkManager;
 use Cwd;
 use Try::Tiny;
@@ -55,11 +56,20 @@ sub extract_features {
     my ($infile) = @_;
     
     my ($name, $path, $suffix) = fileparse($infile, qr/\.[^.]*/);
-    my $comp = File::Spec->catfile($dir, $name."_complete.fasta");
-    my $ppts = File::Spec->catfile($dir, $name."_ppt.fasta");
-    my $pbs  = File::Spec->catfile($dir, $name."_pbs.fasta");
-    my $five_pr_ltrs  = File::Spec->catfile($dir, $name."_5prime-ltrs.fasta");
-    my $three_pr_ltrs = File::Spec->catfile($dir, $name."_3prime-ltrs.fasta");
+    my $type = ($name =~ /(?:gypsy|copia|unclassified)$/i);
+    die "\nERROR: Unexpected input. Should match /gypsy|copia|unclassified$/i. Exiting."
+	unless defined $type;
+
+    my $resdir = File::Spec->catdir($dir, $name);
+    unless ( -d $resdir ) {
+	make_path( $resdir, {verbose => 0, mode => 0771,} );
+    }
+    
+    my $comp = File::Spec->catfile($resdir, $name."_complete.fasta");
+    my $ppts = File::Spec->catfile($resdir, $name."_ppt.fasta");
+    my $pbs  = File::Spec->catfile($resdir, $name."_pbs.fasta");
+    my $five_pr_ltrs  = File::Spec->catfile($resdir, $name."_5prime-ltrs.fasta");
+    my $three_pr_ltrs = File::Spec->catfile($resdir, $name."_3prime-ltrs.fasta");
 
     open my $allfh, '>>', $comp;
     open my $pptfh, '>>', $ppts;
@@ -121,32 +131,32 @@ sub extract_features {
 	my ($element, $rstart, $rend) = split /\./, $ltr;
 	# full element
 	my ($source, $prim_tag, $start, $end) = split /\-/, $ltrs{$ltr}{'full'};
-	my $outfile = File::Spec->catfile($dir, $ltr.".fasta");
+	my $outfile = File::Spec->catfile($resdir, $ltr.".fasta");
 	$self->subseq($fasta, $source, $element, $start, $end, $outfile, $allfh);
 
 	# pbs
 	if ($ltrs{$ltr}{'pbs'}) {
 	    my ($pbssource, $pbstag, $trna, $pbsstart, $pbsend) = split /\|\|/, $ltrs{$ltr}{'pbs'};
-	    my $pbs_tmp = File::Spec->catfile($dir, $ltr."_pbs.fasta");
+	    my $pbs_tmp = File::Spec->catfile($resdir, $ltr."_pbs.fasta");
 	    $self->subseq($fasta, $pbssource, $element, $pbsstart, $pbsend, $pbs_tmp, $pbsfh);
 	}
 
 	# ppt
 	if ($ltrs{$ltr}{'ppt'}) {
 	    my ($pptsource, $ppttag, $pptstart, $pptend) = split /\|\|/, $ltrs{$ltr}{'ppt'};
-	    my $ppt_tmp = File::Spec->catfile($dir, $ltr."_ppt.fasta");
+	    my $ppt_tmp = File::Spec->catfile($resdir, $ltr."_ppt.fasta");
 	    $self->subseq($fasta, $source, $element, $pptstart, $pptend, $ppt_tmp, $pptfh);
 	}
 
 	for my $ltr_repeat (@{$ltrs{$ltr}{'ltrs'}}) {
 	    my ($src, $ltrtag, $s, $e) = split /\|\|/, $ltr_repeat;
 	    if ($ltrct) {
-		my $fiveprime_tmp = File::Spec->catfile($dir, $ltr."_5prime-ltr.fasta");
+		my $fiveprime_tmp = File::Spec->catfile($resdir, $ltr."_5prime-ltr.fasta");
 		$self->subseq($fasta, $src, $element, $s, $e, $fiveprime_tmp, $fivefh);
 		$ltrct = 0;
 	    }
 	    else {
-		my $threeprime_tmp = File::Spec->catfile($dir, $ltr."_3prime-ltr.fasta");
+		my $threeprime_tmp = File::Spec->catfile($resdir, $ltr."_3prime-ltr.fasta");
 		$self->subseq($fasta, $src, $element, $s, $e, $threeprime_tmp, $threfh);
 		$ltrct++;
 	    }
@@ -168,11 +178,11 @@ sub extract_features {
     close $threfh;
 
     for my $pdom_type (keys %pdoms) {
-	my $pdom_file = File::Spec->catfile($dir, $pdom_type."_pdom.fasta");
+	my $pdom_file = File::Spec->catfile($resdir, $pdom_type."_pdom.fasta");
 	open my $fh, '>>', $pdom_file;
 	for my $ltrpdom (@{$pdoms{$pdom_type}}) {
 	    my ($src, $elem, $s, $e) = split /\|\|/, $ltrpdom;
-	    my $tmp = File::Spec->catfile($dir, $elem."_".$pdom_type.".fasta");
+	    my $tmp = File::Spec->catfile($resdir, $elem."_".$pdom_type.".fasta");
 	    $self->subseq($fasta, $src, $elem, $s, $e, $tmp, $fh);
 	}
 	close $fh;
@@ -182,11 +192,13 @@ sub extract_features {
     for my $file ($comp, $ppts, $pbs, $five_pr_ltrs, $three_pr_ltrs) {
 	unlink $file if ! -s $file;
     }
+
+    return $resdir
 }
 
 sub collect_feature_args {
     my $self = shift;
-    my $dir = $self->outdir;
+    my ($dir) = @_; #$self->outdir;
     my (@fiveltrs, @threeltrs, @ppt, @pbs, @pdoms, %vmatch_args);
     find( sub { push @fiveltrs, $File::Find::name if -f and /5prime-ltrs.fasta$/ }, $dir);
     find( sub { push @threeltrs, $File::Find::name if -f and /3prime-ltrs.fasta$/ }, $dir);
@@ -227,11 +239,11 @@ sub collect_feature_args {
 
 sub cluster_features {
     my $self = shift;
-    my $dir  = $self->outdir;
+    #my $dir  = $self->outdir;
     my $threads = $self->threads;
-    #my ($args) = @_;
+    my ($dir) = @_;
 
-    my $args = $self->collect_feature_args;
+    my $args = $self->collect_feature_args($dir);
     $self->_remove_singletons($args);
 
     #use Data::Dump;
@@ -303,6 +315,7 @@ sub process_cluster_args {
     $self->run_cmd($mkvtreecmd);
     $self->run_cmd($vmatchcmd);
     unlink glob "$index*";
+    unlink glob "$path/*.match";
 
     return $vmrep;
 }
