@@ -11,7 +11,7 @@ use File::Find;
 use File::Spec;
 use Data::Dump;
 
-use Test::More tests => 2;
+use Test::More tests => 4;
 
 my $bindir = File::Spec->catdir('t', 'gt', 'bin');
 local $ENV{PATH} = "$bindir:$ENV{PATH}";
@@ -28,7 +28,7 @@ my @assemb_results = capture { system([0..5], "$cmd classifyltrs -h") };
 ok(@assemb_results, 'Can execute classifyltrs subcommand');
 
 my $find_cmd = "$cmd classifyltrs -g $genome -d $repeatdb -f $gff -o $outdir";
-say STDERR $find_cmd;
+#say STDERR $find_cmd;
 
 my @ret = capture { system([0..5], $find_cmd) };
 
@@ -36,9 +36,26 @@ my @files;
 find( sub { 
     push @files, $File::Find::name if /(?:gypsy|copia|unclassified).gff3$/ }, 
       $testdir );
-ok( @files == 3, 'Correctly classified Copia and others (with alliteration!)' ); # 2 ltrdigest files + combined file
+ok( @files == 3, 'Correctly generated GFF3 files for LTR superfamilies' ); # 2 ltrdigest files + combined file
 
-##TODO test results in output directory...there is so much more then just the GFFs generated now
+my @dirs;
+find( sub { 
+    push @dirs, $File::Find::name if -d && /(?:gypsy|copia|unclassified)$/ }, 
+      $outdir );
+ok( @files == 3, 'Correctly generated subdirectories for family level classification' );
+
+my @all;
+find( sub {
+    push @all, $File::Find::name if /ref_combined_LTR_families.fasta/ },
+      $outdir );
+
+my $combined = shift @all;
+open my $in, '<', $combined;
+my $ct = 0;
+while (<$in>) { $ct++ if /^>/; }
+close $in;
+
+ok( $ct == 6, 'Correct number of classified elements in combined family file' );
 
 ## clean up
 my @outfiles;
