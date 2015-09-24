@@ -86,13 +86,13 @@ sub extract_features {
 	    ($elem_id) = ($string[8] =~ /ID=?\s+?(LTR_retrotransposon\d+)/);
 	    ($start, $end) = ($feature->start, $feature->end);
 	    $key = join ".", $elem_id, $start, $end;
-	    $ltrs{$key}{'full'} = join "-", $string[0], $feature->primary_tag, @string[3..4];
+	    $ltrs{$key}{'full'} = join "||", $string[0], $feature->primary_tag, @string[3..4];
 	}
 	next unless defined $start && defined $end;
 	if ($feature->primary_tag eq 'long_terminal_repeat') {
 	    my @string = split /\t/, $feature->gff_string;
 	    if ($feature->start >= $start && $feature->end <= $end) {
-		my $ltrkey = join "||", $string[0], $feature->primary_tag, @string[3..4];
+		my $ltrkey = join "||", $string[0], $feature->primary_tag, @string[3,4,6];
 		push @{$ltrs{$key}{'ltrs'}}, $ltrkey unless exists $seen{$ltrkey};
 		$seen{$ltrkey} = 1;
 	    }
@@ -130,9 +130,9 @@ sub extract_features {
     for my $ltr (sort keys %ltrs) {
 	my ($element, $rstart, $rend) = split /\./, $ltr;
 	# full element
-	my ($source, $prim_tag, $start, $end) = split /\-/, $ltrs{$ltr}{'full'};
-	my $outfile = File::Spec->catfile($resdir, $ltr.".fasta");
-	$self->subseq($fasta, $source, $element, $start, $end, $outfile, $allfh);
+	my ($source, $prim_tag, $start, $end) = split /\|\|/, $ltrs{$ltr}{'full'};
+	my $full_tmp = File::Spec->catfile($resdir, $ltr.".fasta");
+	$self->subseq($fasta, $source, $element, $start, $end, $full_tmp, $allfh);
 
 	# pbs
 	if ($ltrs{$ltr}{'pbs'}) {
@@ -149,14 +149,20 @@ sub extract_features {
 	}
 
 	for my $ltr_repeat (@{$ltrs{$ltr}{'ltrs'}}) {
-	    my ($src, $ltrtag, $s, $e) = split /\|\|/, $ltr_repeat;
+	    my ($src, $ltrtag, $s, $e, $strand) = split /\|\|/, $ltr_repeat;
+	    ##TODO fix strand issue
+	    my $lfname = $ltr;
 	    if ($ltrct) {
-		my $fiveprime_tmp = File::Spec->catfile($resdir, $ltr."_5prime-ltr.fasta");
+		$lfname .= "_5prime-ltr.fasta" if $strand eq '+';
+		$lfname .= "_3prime-ltr.fasta" if $strand eq '-';
+		my $fiveprime_tmp = File::Spec->catfile($resdir, $lfname);
 		$self->subseq($fasta, $src, $element, $s, $e, $fiveprime_tmp, $fivefh);
 		$ltrct = 0;
 	    }
 	    else {
-		my $threeprime_tmp = File::Spec->catfile($resdir, $ltr."_3prime-ltr.fasta");
+		$lfname .= "_3prime-ltr.fasta" if $strand eq '+';
+		$lfname .= "_5prime-ltr.fasta" if $strand eq '-';
+		my $threeprime_tmp = File::Spec->catfile($resdir, $lfname);
 		$self->subseq($fasta, $src, $element, $s, $e, $threeprime_tmp, $threfh);
 		$ltrct++;
 	    }
@@ -198,7 +204,7 @@ sub extract_features {
 
 sub collect_feature_args {
     my $self = shift;
-    my ($dir) = @_; #$self->outdir;
+    my ($dir) = @_;
     my (@fiveltrs, @threeltrs, @ppt, @pbs, @pdoms, %vmatch_args);
     find( sub { push @fiveltrs, $File::Find::name if -f and /5prime-ltrs.fasta$/ }, $dir);
     find( sub { push @threeltrs, $File::Find::name if -f and /3prime-ltrs.fasta$/ }, $dir);
@@ -239,16 +245,11 @@ sub collect_feature_args {
 
 sub cluster_features {
     my $self = shift;
-    #my $dir  = $self->outdir;
     my $threads = $self->threads;
     my ($dir) = @_;
 
     my $args = $self->collect_feature_args($dir);
     $self->_remove_singletons($args);
-
-    #use Data::Dump;
-    #say STDERR "DEBUG: ";
-    #dd $args;
 
     my $t0 = gettimeofday();
     my $doms = 0;
@@ -333,7 +334,7 @@ sub subseq {
 	    my $seq = $seqobj->seq;
 	    if ($seq) {
 		$seq =~ s/.{60}\K/\n/g;
-		say $out join "\n", ">".$id, $seq;
+		say $out join "\n", ">$id", $seq;
 	    }
 	}
     }
@@ -350,8 +351,22 @@ sub parse_clusters {
 	$name =~ s/$1//;
     }
 
+    my ($cname, $cpath, $csuffix) = fileparse($clsfile, qr/\.[^.]*/);
+    my $dir = basename($cpath);
+    my ($sf)  = ($dir =~ /_(\w+)$/);
+    my $sfname;
+    $sfname = 'RLG' if $sf =~ /gypsy/i;
+    $sfname = 'RLC' if $sf =~ /copia/i;
+    $sfname = 'RLX' if $sf =~ /unclassified/i;
+
+    my @compfiles;
+    find( sub { push @compfiles, $File::Find::name if /complete.fasta$/ }, $cpath );
+    my $ltrfas = shift @compfiles;
+    my $seqstore = $self->_store_seq($ltrfas);
+    
     my (%cls, %all_seqs, %all_pdoms, $clusnum, $dom);
     open my $in, '<', $clsfile;
+
     while (my $line = <$in>) {
 	chomp $line;
 	if ($line =~ /^# args=/) {
@@ -366,7 +381,9 @@ sub parse_clusters {
 	    $clusnum = $1;
 	}
 	elsif ($line =~ /^\s+(\S+)/) {
-	    push @{$cls{$dom}{$clusnum}}, $1;
+	    my $element = $1;
+	    $element =~ s/_\d+-\d+$//;
+	    push @{$cls{$dom}{$clusnum}}, $element;
 	}
     }
 
@@ -379,48 +396,96 @@ sub parse_clusters {
 	}
     }
 
-    my (%seen, %dom_orgs);
+    #print join q{ }, (nsort keys %cls);
+    #print "\n";
+
+    my %dom_orgs;
     for my $element (keys %elem_sorted) {
 	my $string;
-	for my $pdomh (@{$elem_sorted{$element}}) {
-	    for my $pdom (nsort keys %cls) {
-		if (exists $pdomh->{$pdom}) {
-		    $string .= length($string) ? "|$pdomh->{$pdom}" : $pdomh->{$pdom};
-		}
-		else {
-		    $string .= length($string) ? "|N" : "N";
-		}
+	my %pdomh;
+	@pdomh{keys %$_} = values %$_ for @{$elem_sorted{$element}};
+	for my $pdom (nsort keys %cls) {
+	    if (exists $pdomh{$pdom}) {
+		$string .= length($string) ? "|$pdomh{$pdom}" : $pdomh{$pdom};
 	    }
-	    push @{$dom_orgs{$string}}, $element;
-	    undef $string;
+	    else {
+		$string .= length($string) ? "|N" : "N";
+	    }
 	}
+	push @{$dom_orgs{$string}}, $element;
+	undef $string;
     }
 
-    ## loop through writing each seq to a list, then use faidx to
-    ## generate family
-    ## * store seen seq ids, skip those when writing out unclustered sequences
-    
-    #say join "\t", "DomainOrg", "DomainCt", "IndexOffsets", "ClusterIDs(values)";
-    my %ind;
-    for my $org (sort keys %dom_orgs) {
-	#say $org;
-	my @ar = split /\|/, $org;
-	my @i  = indexes { $_ =~ /\d+/ } @ar;  # indexes with a domain cluster id
-	my $k  = join "||", @i;                # as a string
-	my $vc = @i;                           # the count of domains assigned to a cluster
-	my $v  = join "||", @ar[@i];           # the cluster IDs as a string
-
-	if (exists $ind{$k}) {
-	    #say "same position: $k";
-	    #say $org;
-	    #say join "\n", @{$ind{$k}};
-	    #say "same cluster: $v";
+    my $idx = 0;
+    my %fastas;
+    for my $str (reverse sort { @{$dom_orgs{$a}} <=> @{$dom_orgs{$b}} } keys %dom_orgs) {
+	my $famfile = $sf."_family$idx".".fasta";
+	my $outfile = File::Spec->catfile($cpath, $famfile);
+	open my $out, '>>', $outfile;
+	for my $elem (@{$dom_orgs{$str}}) {
+	    if (exists $seqstore->{$elem}) {
+		say $out join "\n", ">$sfname"."_family$idx"."_$elem", $seqstore->{$elem};
+		delete $seqstore->{$elem};
+	    }
+	    else {
+		die "\nERROR: $elem not found in store. Exiting.";
+	    }
 	}
-	else {
-	    push @{$ind{$k}}, $org;
+	close $out;
+	$idx++;
+	$fastas{$outfile} = 1;
+    }
+
+    my $famxfile = $sf."_singleton_families.fasta";
+    my $xoutfile = File::Spec->catfile($cpath, $famxfile);
+    open my $outx, '>', $xoutfile;
+    for my $k (keys %$seqstore) {
+	my $seq = $seqstore->{$k};
+	$seq =~ s/.{60}\K/\n/g;
+	say $outx join "\n", ">$sfname"."_singleton_family_$k", $seq;
+    }
+    close $outx;
+    $fastas{$xoutfile} = 1;
+
+    return \%fastas;
+}
+
+sub combine_families {
+    my ($self) = shift;
+    my ($outfiles) = @_;
+    my $genome = $self->genome;
+    my $outdir = $self->outdir;
+    
+    my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
+    my $outfile = File::Spec->catfile($outdir, $name."_combined_LTR_families.fasta");
+    open my $out, '>', $outfile;
+
+    for my $file (nsort keys %$outfiles) {
+	my $seqio = Bio::SeqIO->new( -file => $file, -format => 'fasta' );
+	while (my $seqobj = $seqio->next_seq) {
+	    my $id  = $seqobj->id;
+	    my $seq = $seqobj->seq;
+	    $seq =~ s/.{60}\K/\n/g;
+	    say $out join "\n", ">$id", $seq;
 	}
     }
-    
+    close $outfile;
+}
+
+sub _store_seq {
+    my $self = shift;
+    my ($file) = @_;
+
+    my %hash;
+    my $seqio = Bio::SeqIO->new( -file => $file, -format => 'fasta' );
+    while (my $seqobj = $seqio->next_seq) {
+	my $id  = $seqobj->id;
+	$id =~ s/_\d+-\d+$//;
+	my $seq = $seqobj->seq;
+	$hash{$id} = $seq;
+    }
+
+    return \%hash;
 }
 
 sub _remove_singletons {

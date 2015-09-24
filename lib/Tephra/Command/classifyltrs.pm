@@ -7,10 +7,7 @@ use warnings;
 use Tephra -command;
 use Tephra::Classify::LTRSfams;
 use Tephra::Classify::LTRFams;
-use Cwd                 qw(abs_path);
-use IPC::System::Simple qw(system);
-use Capture::Tiny       qw(:all);
-use File::Path          qw(make_path remove_tree);
+use File::Path qw(make_path remove_tree);
 use File::Basename;
 use File::Spec;
 
@@ -87,15 +84,19 @@ sub _classify_ltr_predictions {
 
     my $gyp_dir = $classify_fams_obj->extract_features($gyp_gff);
     my $gyp_clusters = $classify_fams_obj->cluster_features($gyp_dir);
+    my $gyp_fams = $classify_fams_obj->parse_clusters($gyp_clusters);
     
     my $cop_dir = $classify_fams_obj->extract_features($cop_gff);
     my $cop_clusters = $classify_fams_obj->cluster_features($cop_dir);
-
+    my $cop_fams = $classify_fams_obj->parse_clusters($cop_clusters);
+    
     my $unc_dir = $classify_fams_obj->extract_features($unc_gff);
     my $unc_clusters = $classify_fams_obj->cluster_features($unc_dir);
+    my $unc_fams = $classify_fams_obj->parse_clusters($unc_clusters);
 
-    #my $vmatch_clusters = $classify_fams_obj->cluster_features;
-    #$classify_fams_obj->parse_clusters($vmatch_clusters);
+    my %outfiles;
+    @outfiles{keys %$_} = values %$_ for ($gyp_fams, $cop_fams, $unc_fams);
+    $classify_fams_obj->combine_families(\%outfiles);
 }
 
 sub help {
