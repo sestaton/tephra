@@ -38,9 +38,11 @@ find( sub {
       $testdir );
 ok( @files == 3, 'Correctly classified Copia and others (with alliteration!)' ); # 2 ltrdigest files + combined file
 
+##TODO test results in output directory...there is so much more then just the GFFs generated now
+
 ## clean up
 my @outfiles;
-find( sub { push @outfiles, $File::Find::name if /^ref_ltr/ }, $testdir);
+find( sub { push @outfiles, $File::Find::name if /^ref_ltr/ && ! /$gff/ }, $testdir);
 unlink @outfiles;
 remove_tree( $outdir, { safe => 1 } );
     
