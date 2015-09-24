@@ -27,7 +27,7 @@ my @results = capture { system([0..5], "$cmd findltrs -h") };
 ok(@results, 'Can execute findltrs subcommand');
 
 my $find_cmd = "$cmd findltrs -g $genome -t $trnas -d $model --clean";
-say STDERR $find_cmd;
+#say STDERR $find_cmd;
 
 my ($stdout, $stderr, @ret) = capture { system([0..5], $find_cmd) };
        
