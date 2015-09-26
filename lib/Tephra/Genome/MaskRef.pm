@@ -6,11 +6,8 @@ use Cwd;
 use File::Spec;
 use File::Find;
 use File::Basename;
-use IPC::System::Simple qw(system EXIT_ANY);
-use Sort::Naturally;
 use Path::Class::File;
-use Log::Any            qw($log);
-use Try::Tiny;
+use Log::Any qw($log);
 use namespace::autoclean;
 
 with 'Tephra::Role::Util';
