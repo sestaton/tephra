@@ -1,4 +1,4 @@
-package Tephra::MaskRef;;
+package Tephra::Genome::MaskRef;
 
 use 5.010;
 use Moose;
