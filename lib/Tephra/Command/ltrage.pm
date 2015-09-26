@@ -76,7 +76,6 @@ sub help {
     
   Required:
       -g|genome     :   The genome sequences in FASTA format used to search for LTR-RTs.
-      -d|repeatdb   :   The file of repeat sequences in FASTA format to use for classification.
       -f|gff        :   The GFF3 file of LTR-RTs in <--genome>.
       -o|outdir     :   The output directory for placing categorized elements.
     
@@ -95,16 +94,16 @@ __END__
 
 =head1 NAME
                                                                        
- tephra classifyltrs - Classify LTR retrotransposons into superfamilies 
+ tephra ltrage - Calculate the age distribution of LTR retrotransposons.
 
 =head1 SYNOPSIS    
 
- tephra classifyltrs -g ref.fas -d repeatdb.fas -f ref_tephra.gff3 -o ref_classified_ltrs -t 12
+ tephra ltrage -g ref.fas -f ref_tephra_gypsy.gff3 -o ref_classified_ltrs -t 12 --clean
 
 =head1 DESCRIPTION
 
- This subcommand takes a GFF3 as input from Tephra and classifies the LTR-RTs first into
- superfamilies, then into families based on shared features.
+ This subcommand takes a GFF3 of LTR retrotransposons as input from Tephra and calculates
+ the insertion time and age of each element using a substitution rate and model of evolution.
 
 =head1 AUTHOR 
 
@@ -118,16 +117,11 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
  The genome sequences in FASTA format used to search for LTR-RTs.
 
-=item -d, --repeatdb
-
- The file of repeat sequences in FASTA format to use for classification.
-
 =item -f, --gff
 
- The GFF3 file of LTR-RTs in <--genome> as output by the 'tephra findltrs' command.
+ The GFF3 file of LTR-RTs in <--genome> as output by the 'tephra classifyltrs' command.
 
 =item -o, --outdir
-
 
  The output directory for placing categorized elements.
 
@@ -140,6 +134,10 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =item -t, --threads
 
  The number of threads to use for clustering coding domains (Default: 1).
+
+=item -c, --clean
+
+ Clean up all the intermediate files from PAML and clustalw (Default: yes).
 
 =item -h, --help
 
