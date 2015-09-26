@@ -59,8 +59,11 @@ ok( $ct == 6, 'Correct number of classified elements in combined family file' );
 
 ## clean up
 my @outfiles;
-find( sub { push @outfiles, $File::Find::name if /^ref_ltr/ && ! /$gff/ }, $testdir);
-unlink @outfiles;
-remove_tree( $outdir, { safe => 1 } );
+find( sub { 
+    push @outfiles, $File::Find::name 
+	if /^ref_ltr/ && ! /(?:gypsy|copia|unclassified).gff3$/ && ! /$gff/ }, $testdir);
+
+#unlink @outfiles;
+#remove_tree( $outdir, { safe => 1 } );
     
 done_testing();
