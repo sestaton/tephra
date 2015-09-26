@@ -13,7 +13,7 @@ use Log::Any            qw($log);
 use Try::Tiny;
 use namespace::autoclean;
 
-with 'Tephra::Role::GT',
+with 'Tephra::Role::Run::GT',
      'Tephra::Role::GFF';
 
 sub tir_search {
