@@ -3,7 +3,7 @@ package Tephra::Role::Util;
 use 5.010;
 use Moose::Role;
 use IPC::System::Simple qw(system);
-use Capture::Tiny;
+use Capture::Tiny       qw(capture);
 use Try::Tiny;
 use namespace::autoclean;
 
