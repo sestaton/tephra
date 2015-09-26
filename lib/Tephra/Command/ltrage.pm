@@ -14,6 +14,7 @@ sub opt_spec {
 	[ "gff|f=s",      "The GFF3 file of LTR-RTs in <genome> "    ],
 	[ "outdir|o=s",   "The output directory for placing categorized elements " ],
 	[ "threads|t=i",  "The number of threads to use for clustering coding domains " ],
+	[ "clean|c",      "Clean up all the intermediate files from PAML and clustalw (Default: yes) " ],
 	);
 }
 
@@ -49,6 +50,7 @@ sub _calculate_ltr_stats {
     my $gff      = $opt->{gff};
     my $outdir   = $opt->{outdir};
     my $threads  = defined $opt->{threads} ? $opt->{threads} : 1;
+    my $clean    = defined $opt->{clean} ? 1 : 0;
 
     unless ( -d $outdir ) {
 	make_path( $outdir, {verbose => 0, mode => 0771,} );
@@ -58,10 +60,11 @@ sub _calculate_ltr_stats {
 	genome   => $genome,
 	gff      => $gff,
 	outdir   => $outdir,
+	clean    => $clean,
     );
 
-    my ($header, $features) = $stats_obj->collect_ltr_features;
-
+    $stats_obj->extract_ltr_features;
+    $stats_obj->align_features;
 }
 
 sub help {
@@ -79,7 +82,8 @@ sub help {
     
   Options:
       -t|threads    :   The number of threads to use for clustering coding domains (Default: 1).
-     
+      -c|clean      :   Clean up all the intermediate files from PAML and clustalw (Default: yes).
+    
 END
 }
 
@@ -88,34 +92,63 @@ END
 __END__
 
 =pod
+
 =head1 NAME
                                                                        
  tephra classifyltrs - Classify LTR retrotransposons into superfamilies 
+
 =head1 SYNOPSIS    
+
  tephra classifyltrs -g ref.fas -d repeatdb.fas -f ref_tephra.gff3 -o ref_classified_ltrs -t 12
+
 =head1 DESCRIPTION
+
  This subcommand takes a GFF3 as input from Tephra and classifies the LTR-RTs first into
  superfamilies, then into families based on shared features.
+
 =head1 AUTHOR 
+
 S. Evan Staton, C<< <statonse at gmail.com> >>
+
 =head1 REQUIRED ARGUMENTS
+
 =over 2
+
 =item -g, --genome
+
  The genome sequences in FASTA format used to search for LTR-RTs.
+
 =item -d, --repeatdb
+
  The file of repeat sequences in FASTA format to use for classification.
+
 =item -f, --gff
+
  The GFF3 file of LTR-RTs in <--genome> as output by the 'tephra findltrs' command.
+
 =item -o, --outdir
+
+
  The output directory for placing categorized elements.
+
 =back
+
 =head1 OPTIONS
+
 =over 2
+
 =item -t, --threads
+
  The number of threads to use for clustering coding domains (Default: 1).
+
 =item -h, --help
+
  Print a usage statement. 
+
 =item -m, --man
+
  Print the full documentation.
+
 =back
+
 =cut
