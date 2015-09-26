@@ -228,7 +228,7 @@ sub process_align_args {
     my $log = File::Spec->catfile($path, $name."_clustal-out.log");
 
     my $clwcmd  = "clustalw2 -infile=$db -outfile=$aln 2>$log";
-    $self->run_cmd($clwcmd);
+    $self->capture_cmd($clwcmd);
     my $phy = $self->parse_aln($aln, $tre, $dnd);
     $self->process_baseml_args($phy, $dnd, $resdir);
     
