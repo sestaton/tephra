@@ -15,6 +15,9 @@
 - adjust filtering command to not increment if element has been deleted (inflated filtering stats)
 - reporting of superfamilies after ltr search?.. better to do that at classification stage
 
+-- ltrage
+- make subs. rate a class attribute / option
+
 -- meta
 - logging results/progress
 - documentation
