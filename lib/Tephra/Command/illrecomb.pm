@@ -9,10 +9,13 @@ use Tephra::Genome::IllRecombination;
 
 sub opt_spec {
     return (
-	[ "infile|i=s",    "An alignment file in FASTA format. " ],
-	[ "outfile|o=s",   "The filename to write the extracted sequences to " ],
-	[ "statsfile=s",   "The file to write the alignment stats to " ],
-	[ "repeatpid|p=i", "The percent identity threshold for retaining repeats that flank gaps. " ],
+	[ "indir|i=s",       "The directory of LTR families in FASTA format. " ],
+	[ "outfile|o=s",     "The filename to write the extracted sequences to " ],
+	[ "statsfile|s=s",   "The file to write the alignment stats for all gaps to " ],
+	[ "recombstats|r=s", "The file to write the alignment stats for illegetimate recombination sites " ],
+	[ "repeatpid|p=i",   "The percent identity threshold for retaining repeats that flank gaps. " ],
+	[ "threads|t=i",     "The number of threads to use for alignments (Default: 1) " ],
+	[ "clean|c",         "Clean up the intermediate alignment files (Default: yes) " ],
 	);
 }
 
@@ -26,7 +29,7 @@ sub validate_args {
     elsif ($self->app->global_options->{help}) {
 	$self->help;
     }
-    elsif (!$opt->{genome} || !$opt->{gff}) {
+    elsif (!$opt->{indir} || !$opt->{outfile} || !$opt->{statsfile}) {
 	say "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
@@ -44,6 +47,23 @@ sub execute {
 sub _calculate_ill_recomb {
     my ($opt) = @_;
 
+    my $dir          = $opt->{indir};
+    my $outfile      = $opt->{outfile};
+    my $allstatsfile = $opt->{statsfile};
+    my $illrecstats  = $opt->{recombstats};
+    my $threads      = defined $opt->{threads} ? $opt->{threads} : 1;
+    my $clean        = defined $opt->{clean} ? 1 : 0;
+
+    my $ill_obj = Tephra::Genome::IllRecombination->new(
+	dir             => $dir,
+	outfile         => $outfile,
+	allstatsfile    => $allstatsfile,
+	illrecstatsfile => $illrecstats,
+	threads         => $threads,
+	clean           => $clean,
+    );
+    
+    $ill_obj->find_illigetimate_recombination;
 
 }
 
@@ -55,14 +75,17 @@ USAGE: tephra illrecomb [-h] [-m]
     -h --help        :   Print the command usage.
 
 Required:
-    -i|infile        :    An alignment file in FASTA format.
+    -i|indir         :    The directory of LTR families in FASTA format.
     -o|outfile       :    File name to write the extracted sequences to.
 
 Options:
+    -t|threads       :    The number of threads to use for alignments (Default: 1).    
+    -r|recombstats   :    The file to write the alignment stats for illegetimate recombination sites.    
     -s|statsfile     :    A file to write alignment stats to.
     -p|repeat_pid    :    The percent identity threshold for retaining repeats that flank gaps. 
                           (Default: 10, which is a 2 bp match).
-
+    -c|clean         :     Clean up the intermediate alignment files (Default: yes).
+			  
 END
 }
 
