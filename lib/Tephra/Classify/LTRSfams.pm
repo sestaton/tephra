@@ -128,12 +128,10 @@ sub find_gypsy_copia {
 	    }
 
 	    if ($gyp_dom_ct >= 1) {
-		#say STDERR join q{ }, "Gypsy strand: $strand", $pdom_org;
 		$gypsy{$ltr} = $features->{$ltr};
 		delete $features->{$ltr};
 	    }
 	    elsif ($cop_dom_ct >= 1) {
-		#say STDERR join q{ }, "Copia strand:$strand", $pdom_org;
 		$copia{$ltr} = $features->{$ltr};
 		delete $features->{$ltr};
 	    }
@@ -146,8 +144,6 @@ sub find_gypsy_copia {
 	    undef $pdom_org;
 	    @all_pdoms = ();
 	}
-	#undef $pdom_org;
-	#@all_pdoms = ();
     }    
     
     return (\%gypsy, \%copia);
@@ -268,9 +264,6 @@ sub write_gypsy {
 	for my $feat (@{$gypsy->{$ltr}}) {
 	    my @feats = split /\|\|/, $feat;
 	    $feats[8] = $self->_format_attribute($feats[8]);
-	    #if ($feats[8] =~ /Parent=repeat_region\d+(_\d+)/i) {
-		#$feats[8] =~ s/$1//g;
-	    #}
 	    if ($feats[2] =~ /protein_match/) {
 		$has_pdoms = 1;
 		my ($doms) = ($feats[8] =~ /name=(\w+)/);
@@ -332,8 +325,8 @@ sub write_copia {
     
     my @lengths;
     my $cop_feats;
-    my $has_pdoms  = 0;
-    my $pdoms      = 0;
+    my $has_pdoms = 0;
+    my $pdoms     = 0;
     my $pdom_org;
     my @all_pdoms;
     my %pdom_index;
@@ -352,14 +345,10 @@ sub write_copia {
 	for my $feat (@{$copia->{$ltr}}) {
 	    my @feats = split /\|\|/, $feat;
 	    $feats[8] = $self->_format_attribute($feats[8]);
-	    #if ($feats[8] =~ /Parent=repeat_region\d+(_\d+)/i) {
-		#$feats[8] =~ s/$1//g;
-	    #}
 	    if ($feats[2] =~ /protein_match/) {
 		$has_pdoms = 1;
 		my ($doms) = ($feats[8] =~ /name=(\w+)/);
 		push @all_pdoms, $doms;
-		#push @{$pdom_index{$strand}}, $pdom_org;
 	    }
 	    if ($feats[2] =~ /LTR_retrotransposon/) {
 		my $ltrlen = $feats[4] - $feats[3] + 1;
@@ -436,9 +425,6 @@ sub write_unclassified {
 	for my $feat (@{$features->{$ltr}}) {
 	    my @feats = split /\|\|/, $feat;
 	    $feats[8] = $self->_format_attribute($feats[8]);
-	    #if ($feats[8] =~ /Parent=repeat_region\d+(_\d+)/i) {
-		#$feats[8] =~ s/$1//g;
-	    #}
 	    if ($feats[2] =~ /protein_match/) {
 		my ($doms) = ($feats[8] =~ /name=(\w+)/);
 		push @all_pdoms, $doms;

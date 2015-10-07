@@ -18,9 +18,6 @@ use Cwd;
 use Try::Tiny;
 use namespace::autoclean;
 
-use Data::Dump;
-use Data::Printer;
-
 with 'Tephra::Role::GFF',
      'Tephra::Role::Util';
 
@@ -123,8 +120,6 @@ sub extract_features {
 	}
     }
 
-    #dd \%ltrs;
-    
     my %pdoms;
     my $ltrct = 0;
     for my $ltr (sort keys %ltrs) {
@@ -150,7 +145,6 @@ sub extract_features {
 
 	for my $ltr_repeat (@{$ltrs{$ltr}{'ltrs'}}) {
 	    my ($src, $ltrtag, $s, $e, $strand) = split /\|\|/, $ltr_repeat;
-	    ##TODO fix strand issue
 	    my $lfname = $ltr;
 	    if ($ltrct) {
 		$lfname .= "_5prime-ltr.fasta" if $strand eq '+';
@@ -167,7 +161,6 @@ sub extract_features {
 		$ltrct++;
 	    }
 	}
-	#$ltrct = 0;
 
 	if ($ltrs{$ltr}{'pdoms'}) {
 	    for my $ltr_repeat (@{$ltrs{$ltr}{'pdoms'}}) {
@@ -396,9 +389,6 @@ sub parse_clusters {
 	}
     }
 
-    #print join q{ }, (nsort keys %cls);
-    #print "\n";
-
     my %dom_orgs;
     for my $element (keys %elem_sorted) {
 	my $string;
@@ -501,7 +491,6 @@ sub _remove_singletons {
 	    while (my $seqobj = $seqio->next_seq) { $seqct++ if defined $seqobj->seq; }
 	    if ($seqct < 2) {
 		push @singles, $index;
-		#say STDERR "under 2: $db";
 		unlink $db;
 	    }
 	    $index++;
@@ -509,8 +498,6 @@ sub _remove_singletons {
 	}
 
 	if (@{$args->{$type}{seqs}}) {
-	    #p @{$args->{$type}{seqs}};
-	    #p @singles;
 	    if (@singles > 1) {
 		for (@singles) {
 		    splice @{$args->{$type}{seqs}}, $_, 1;
@@ -520,7 +507,6 @@ sub _remove_singletons {
 	    else {
 		splice @{$args->{$type}{seqs}}, $_, 1 for @singles;
 	    }
-	    #p @{$args->{$type}{seqs}};
 	}
 	else {
 	    delete $args->{$type};
@@ -528,7 +514,6 @@ sub _remove_singletons {
 	$index = 0;
 	@singles = ();
     }
-    #p $args;
 }
 	
 __PACKAGE__->meta->make_immutable;
