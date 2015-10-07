@@ -7,6 +7,7 @@ use warnings;
 use Tephra -command;
 use Tephra::Classify::LTRSfams;
 use Tephra::Classify::LTRFams;
+use Tephra::LTR::MakeExemplars;
 use File::Path qw(make_path remove_tree);
 use File::Basename;
 use File::Spec;
@@ -97,6 +98,22 @@ sub _classify_ltr_predictions {
     my %outfiles;
     @outfiles{keys %$_} = values %$_ for ($gyp_fams, $cop_fams, $unc_fams);
     $classify_fams_obj->combine_families(\%outfiles);
+
+    my $gyp_exm_obj = Tephra::LTR::MakeExemplars->new(
+	genome => $genome,
+	dir    => $gyp_dir,
+	gff    => $gyp_gff
+    );
+
+    my ($gyp_exem_comp, $gyp_exem_lts) = $gyp_exm_obj->make_exemplars;
+
+    my $cop_exm_obj = Tephra::LTR::MakeExemplars->new(
+	genome => $genome,
+	dir    => $cop_dir,
+	gff    => $cop_gff
+    );
+
+    my ($cop_exem_comp, $cop_exem_lts) = $cop_exm_obj->make_exemplars;
 }
 
 sub help {
