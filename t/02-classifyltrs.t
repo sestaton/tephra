@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+## todo: add test for exemplars
+
 use 5.010;
 use strict;
 use warnings FATAL => 'all';
