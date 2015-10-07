@@ -14,6 +14,7 @@
 - change header format to be ">id_source_range"
 - adjust filtering command to not increment if element has been deleted (inflated filtering stats)
 - reporting of superfamilies after ltr search?.. better to do that at classification stage
+- add options for LTR size parameters
 
 -- ltrage
 - make subs. rate a class attribute / option
