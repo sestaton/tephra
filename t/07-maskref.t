@@ -35,6 +35,6 @@ ok( -e $masked, 'Can mask reference' );
 ok( -e $log, 'Can mask reference' );
 
 ## clean up
-unlink $masked, $log;
+unlink $log;
     
 done_testing();
