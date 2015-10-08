@@ -6,6 +6,7 @@ use Cwd;
 use File::Spec;
 use File::Find;
 use File::Basename;
+use Sort::Naturally;
 use IPC::System::Simple qw(system EXIT_ANY);
 use Path::Class::File;
 use Log::Any            qw($log);
@@ -31,16 +32,12 @@ sub find_helitrons {
     my $g_taillcvs = File::Spec->catfile($path, $name."_hscan_tail.lcvs");
     my $g_paired   = File::Spec->catfile($path, $name."_hscan_paired.txt");
     my $g_helname  = File::Spec->catfile($path, $name."_tephra_hscan_helitrons");
-    
-    my $jar  = File::Spec->catfile($hscan_dir, "HelitronScanner.jar");
-    my $lcvs = File::Spec->catfile($hscan_dir, "TrainingSet", "head.lcvs");
-    my $rcvs = File::Spec->catfile($hscan_dir, "TrainingSet", "tail.lcvs");
+    my $full_hels  = $g_helname.".hel.fa";
 
-    #java -jar $jar scanHead -g $db -lf $lcvs -o $g_headlcvs --rc -tl 10 -buffer_size 1000000
-    #java -jar $jar scanTail -g $db -lf $rcvs -o $g_taillcvs --rc -tl 10 -buffer_size 1000000
-    #java -jar $jar pairends -hs $g_headlcvs -ts $g_taillcvs --rc -o $g_paired
-    #java -jar $jar draw -p $g_paired -g $db -o bronze_helitrons_hscan --pure --flanking --ext 
-    #-ext5 100 -ext3 100
+    my $jar  = File::Spec->catfile($hscan_dir, "HelitronScanner.jar");
+    my $parent = $hscan_dir->parent; # unfortunately, the dist does not unpack in a separate dir
+    my $lcvs = File::Spec->catfile($parent, "TrainingSet", "head.lcvs");
+    my $rcvs = File::Spec->catfile($parent, "TrainingSet", "tail.lcvs");
 
     my @scanh_opts = qw(-g -lf -o -tl -buffer_size);
     my @scanh_args = ($genome, $lcvs, $g_headlcvs, '10', '1000000');
@@ -63,7 +60,58 @@ sub find_helitrons {
     $self->run_hscan_pair(\%pair_cmd, $jar);
     $self->run_hscan_draw(\%draw_cmd, $jar);
 
-    #$self->make_hscan_gff;
+    return $full_hels;
+}
+
+sub make_hscan_gff {
+    my $self = shift;
+    my ($helitrons) = @_;
+    my $gff = $self->outfile;
+    my $genome = $self->genome;
+    open my $out, '>', $gff;
+    
+    my %refs;
+    my %seqsin = (
+	'genome'    =>  Bio::SeqIO->new( -file => $genome,    -format => 'fasta' ),
+	'helitrons' =>  Bio::SeqIO->new( -file => $helitrons, -format => 'fasta' ),
+    );
+
+    while (my $gseqs = $seqsin{genome}->next_seq) {
+	$refs{$gseqs->id} = $gseqs->length;
+    }
+
+    my $header = "##gff-version 3";
+    say $out $header;
+    for my $ref (nsort keys %refs) {
+	say $out join q{ }, "##sequence-region", $ref, '1', $refs{$ref};
+    }
+    
+    my %strand = ( forward => '+', reverse => '-' );
+    
+    my %hel;
+    my $helct = 0;
+    my $seqin = Bio::SeqIO->new( -file => $helitrons, -format => 'fasta' );
+    while (my $seqobj = $seqin->next_seq) {
+	$helct++;
+	my $id   = $seqobj->id;
+	my $desc = $seqobj->description;
+	my ($ref, $start, $stop) = ($id =~ /(^\S+)_\#SUB_(\d+)-(\d+)/);
+	my ($str) = ($desc =~ /^\[(forward|reverse)\]/);
+	my $strand = $strand{$str};
+
+	# seqid source type start end score strand phase attribs
+	my $gff_str = join "||", $ref, "HelitronScanner", 'helitron', $start, $stop, '.', 
+	    $strand, '.', "ID=helitron$helct;Ontology_term=SO:0000544";
+	push @{$hel{$ref}}, $gff_str;
+    }
+
+    for my $ref (nsort keys %hel) {
+	for my $feature (@{$hel{$ref}}) {
+	    my @feats = split /\|\|/, $feature;
+	    say $out join "\t", @feats;
+	}
+    }
+    close $out;
 }
 
 __PACKAGE__->meta->make_immutable;
