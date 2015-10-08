@@ -54,7 +54,8 @@ sub _run_helitron_search {
 	outfile => $gff
     );
 
-    $hel_search->find_helitrons;
+    my $hel_seqs = $hel_search->find_helitrons;
+    $hel_search->make_hscan_gff($hel_seqs);
     
     return $gff;
 }
