@@ -49,9 +49,9 @@ sub _run_helitron_search {
     my $gff        = $opt->{outfile};
     
     my $hel_search = Tephra::Hel::HelSearch->new( 
-	genome => $genome, 
+	genome  => $genome, 
 	helitronscanner_dir => $hscan_dir,
-	gff    => $gff
+	outfile => $gff
     );
 
     $hel_search->find_helitrons;
