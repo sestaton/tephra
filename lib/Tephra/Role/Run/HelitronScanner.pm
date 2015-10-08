@@ -21,21 +21,21 @@ has genome => (
     isa      => 'Path::Class::File',
     required => 1,
     coerce   => 1,
-    );
+);
 
 has helitronscanner_dir => (
     is       => 'ro',
     isa      => 'Path::Class::Dir',
     required => 1,
     coerce   => 1,
-    );
+);
 
 has outfile => (
     is       => 'ro',
     isa      => 'Path::Class::File',
     required => 1,
     coerce   => 1,
-    );
+);
 
 sub run_hscan_headtail {
     my $self = shift;
@@ -53,7 +53,8 @@ sub run_hscan_headtail {
     push @scan_args, "--rc";
     
     my $cmd = join qq{ }, @scan_args;
-    #say STDERR $cmd and exit;
+    say STDERR $cmd;# and exit;
+
     my ($stdout, $stderr, $exit);
     try {
 	my @out = capture { system([0..5], $cmd) };
@@ -81,7 +82,7 @@ sub run_hscan_pair {
     push @pair_args, "--rc";
 
     my $cmd = join qq{ }, @pair_args;
-    #say STDERR $cmd and exit;
+    say STDERR $cmd; # and exit;
     my ($stdout, $stderr, $exit);
     try {
 	my @out = capture { system([0..5], $cmd) };
@@ -107,8 +108,8 @@ sub run_hscan_draw {
     }
 
     my $cmd = join qq{ }, @draw_args;
-    $cmd .= "--pure --flanking --ext";
-    #say STDERR $cmd and exit;
+    $cmd .= " --pure --flanking --ext";
+    say STDERR $cmd; # and exit;
     my ($stdout, $stderr, $exit);
     try {
 	my @out = capture { system([0..5], $cmd) };
