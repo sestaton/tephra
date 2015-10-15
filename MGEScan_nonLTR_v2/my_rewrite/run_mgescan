@@ -1,0 +1,139 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use File::Spec;
+use File::Find;
+use Getopt::Long;
+
+############################################
+# INPUT
+############################################
+my $conf_file;
+my $main_data_dir;
+my $plus_dna_dir;
+my $plus_out_dir;
+my $minus_dna_dir;
+my $minus_out_dir;
+my $phmm_dir;
+my $program_dir;
+my $genome_dir;
+
+print "\n\n";
+GetOptions(
+           'data=s'    => \$main_data_dir,
+           'genome=s'  => \$genome_dir,
+           'program=s' => \$program_dir,
+           );
+
+die "no input" if !$main_data_dir or !$genome_dir or !$program_dir;
+
+my $conf_file     = File::Spec->catfile($program_dir, "path_conf");
+my $phmm_dir      = File::Spec->catdir($program_dir, "pHMM");
+my $plus_out_dir  = File::Spec->catdir($main_data_dir, "f");
+my $minus_out_dir = File::Spec->catdir($main_data_dir, "b");
+
+# say STDERR "DEBUG: $conf_file $phmm_dir $plus_out_dir $minus_out_dir";
+# DEBUG: ./path_conf ./pHMM/ test/f/ test/b/
+
+############################################
+# Forward strand
+############################################ 
+my @fasfiles;
+find( sub { push @fasfiles, $File::Find::name if -f and /\.fa.*$/ }, $genome_dir );
+
+printf "Running forward...\n";
+
+for my $file (@fasfiles) {
+    
+    my $plus_dna_file = $plus_dna_dir.$name;
+    my $command = $program_dir."run_hmm.pl --dna=".$plus_dna_file."  --out=".$plus_out_dir." --phmm=".$phmm_dir." --pdir=".$program_dir;
+    system($command);
+
+}
+system("rm ".$plus_out_dir."out1/aaaaa"); 
+system("rm ".$plus_out_dir."out1/bbbbb");
+system("rm ".$plus_out_dir."out1/ppppp");
+system("rm ".$plus_out_dir."out1/qqqqq");
+
+my $command = $program_dir."post_process.pl --dna=".$plus_dna_dir." --out=".$plus_out_dir." --rev=0";
+#print $command."\n";
+system($command);
+
+
+############################################
+#Backward strand
+############################################
+printf "Running backward...\n";
+invert_seq($plus_dna_dir, $minus_dna_dir);
+opendir(DIRHANDLE, $minus_dna_dir) || die ("Cannot open directory ".$minus_dna_dir);
+foreach my $name (sort readdir(DIRHANDLE)) {
+
+    if ($name !~ /^\./){  
+	my $minus_dna_file = $minus_dna_dir.$name;
+	my $command = $program_dir."run_hmm.pl --dna=".$minus_dna_file." --out=".$minus_out_dir." --phmm=".$phmm_dir." --pdir=".$program_dir;
+	system($command);
+    }
+}
+
+system("rm ".$minus_out_dir."out1/aaaaa");
+system("rm ".$minus_out_dir."out1/bbbbb");
+system("rm ".$minus_out_dir."out1/ppppp");
+system("rm ".$minus_out_dir."out1/qqqqq");
+
+my $command = $program_dir."post_process.pl --dna=".$minus_dna_dir." --out=".$minus_out_dir." --rev=1";
+#print $command."\n";
+system($command);
+
+###########################################
+#validation for Q value
+###########################################
+
+my $command = $program_dir."post_process2.pl --data_dir=".$main_data_dir." --phmm_dir=".$phmm_dir;
+system($command);
+
+
+
+sub invert_seq{
+
+    if (!-e $_[1]){
+	system("mkdir ".$_[1]);
+    }    
+
+    opendir(DIRHANDLE, $_[0]) || die ("Cannot open directory ".$_[0]);
+    foreach my $name1 (sort readdir(DIRHANDLE)) {
+
+	my $file = $_[0].$name1;
+	open (IN, $file)||die "Couldn't open ".$file;
+	my @temp=<IN>;
+	close(IN);
+
+	if ($temp[0] =~ /\>/){
+	    shift(@temp);
+	}
+	chomp(@temp);
+	my $seq1 = join("", @temp);
+	my $seq2 = reverse($seq1);
+	$seq2 =~ tr/[A,C,G,T,a,c,g,t]/[T,G,C,A,t,g,c,a]/;
+	
+	my $head = ">".$name1;
+	my $file2 = $_[1].$name1;
+	open OUT, ">$file2";
+	print OUT $head."\n";
+
+	my $i=0;
+	my $seq_len = length($seq2);
+
+	while($i<$seq_len-60){
+	    print OUT substr($seq2, $i, 60)."\n";
+	    $i += 60;
+	}
+	print OUT substr($seq2, $i, $seq_len-$i)."\n";
+	close(OUT);
+    }
+}
+sub print_usage{
+
+    print "USAGE: ./run_MGEScan.pl -genome=[a directory name for genome sequences] -data=[a directory name for output files]  -program=[a directory name for MGEScan-nonLTR]\n\n\n\n";
+
+}

@@ -1,0 +1,71 @@
+Installation
+===============
+
+To install MGEScan-nonLTR, follow the steps below:
+
+1. Go to http://darwin.informatics.indiana.edu/cgi-bin/evolution/nonltr/nonltr.pl to find
+the "Software" on the left bottom of the page.
+
+2. Click "Software" to download the program.
+
+3. Untar the downloaded file "MGEScan_nonLTR.tar". This will automatically generate the
+directory "MGEScan_nonLTR".
+Command: tar -xvf MGEScan_nonLTR.tar
+
+4. Install HMMER package and add the path of "hmmsearch" in your shell file such as
+.bashrc. To make sure that "hmmsearch" is accessible by our program, type "hmmsearch" in
+the directories "MGEScan_nonLTR".
+
+5. Install EMBOSS package and add the path of "transeq" in your shell file such as
+.bashrc. To make sure that "transeq" is accessible by our program, type "transeq" in
+the directories "MGEScan_nonLTR".
+
+6. Make sure you have a Perl Interpreter and C compiler such as g++.
+
+7. Run "makefile" to compile "translate" and "MGEScan".
+       - In the  MGEScan_nonLTR directory
+         Command: make clean
+         Command: make translate
+       - In the MGEScan_nonLTR/hmm directory
+         Command: make clean
+         Command: make MGEScan
+
+Running the program
+====================
+
+To run MGEScan-nonLTR, follow the steps below:
+
+1. Put genome files in a directory. You can put them in any directory since you will
+specify the directory when you run the program.
+
+2. Run run_MGEScane.pl. This perl script reads your genome files and runs the whole
+process. You can type the following commands in a line. You need three parameters (genome
+directory, output data directory, program directory for MGEScan-nonLTR). Using full paths
+such as "/home/Workshop/software/MGEScan-nonLTR/" is required.
+
+command: ./run_MGEScan.pl genome=[directory that has genomes] -data=[directory where the 
+	 output will be saved] -program=[directory that has all the files of MGEScan-nonLTR]
+
+Example: ./run_MGEScan.pl -genome=/data/MGEScan_nonLTR_v2/example/seq/ 
+          -data=/data/MGEScan_nonLTR_v2/example/data/  -program=/data/MGEScan_nonLTR_v2/
+
+Output
+============
+Upon completion, MGEScan-nonLTR generates the directory, "info" in the data directory you
+specified. In this "info" directory, two sub-directories ("full" and "validation") are
+generated.
+
+- The "full" directory is for storing sequences of elements. Each subdirectory in "full" 
+is the name of clade. In each directory of clade, the DNA sequences of nonLTRs identified
+are listed. Each sequence is in fasta format. The header contains the position
+information of TEs identified:
+[genome_file_name]_[start position in the sequence]
+For example, >chr1_333 means that this element start at 333bp in the "chr1" file.
+- The "validation" directory is for storing Q values. In the files "en" and "rt", the
+first column corresponds to the element name and the last column Q value. 
+
+
+License
+============
+Copyright (C) 2009 Mina Rho & Haixu Tang.
+You may redistribute this software under the terms of the GNU General Public License.
