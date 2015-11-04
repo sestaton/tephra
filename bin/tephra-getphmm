@@ -1,0 +1,115 @@
+#!perl
+
+use strict; 
+use warnings;
+use Config;
+use Bio::SearchIO;
+use File::Spec;
+use File::Basename;
+use List::Util          qw(min);
+use File::Copy          qw(copy);
+use IPC::System::Simple qw(system capture);
+use Try::Tiny;
+use Getopt::Long;
+use Carp 'croak';
+
+my $usage = "USAGE: ".basename($0)." -s seq.fas --hmmfile file.hmm -o outdir";
+my $seq; 
+my $phmm_file;
+my $out_dir;
+
+GetOptions(
+    'seq=s'     => \$seq,
+    'hmmfile=s' => \$phmm_file,
+    'odir=s'    => \$out_dir,
+);
+
+if (!$seq || !$phmm_file || !$out_dir) {
+    print "\nERROR: Missing arguments. Check command line. Exiting.\n\n";
+    print $usage, "\n";
+    exit(1);
+}
+
+my $seq_file = File::Spec->catfile($out_dir, "nucleotide_orfs.fas");       
+my $pep_file = File::Spec->catfile($out_dir, "translated_orfs.faa");
+open my $out, '>', $seq_file or die "\nERROR: Could not open file: $seq_file";
+say $out $seq;
+close $out;
+
+my $exitv;
+try {
+    $exitv = system([0..5], "transeq", "-frame=f", $seq_file, "-outseq=$pep_file", "-auto");
+}
+catch {
+    print "\nERROR: transeq failed with exit value: $exitv. Here is the exception: $_\n";
+    exit;
+};
+
+my $hmmsearch   = find_hmmsearch();
+my @hmm_results = capture([0..5], $hmmsearch, $phmm_file, $pep_file);
+parse_hmmsearch(\@hmm_results, $pep_file);
+
+exit;
+#
+# methods
+#
+sub parse_hmmsearch {
+    my ($hmm_results, $pep_file) = @_;
+
+    my ($name, $path, $suffix) = fileparse($pep_file, qr/\.[^.]*/);
+    my $hmmout = File::Spec->catfile($path, $name."_hmmsearch.txt");
+    open my $o, '>', $hmmout or die "\nERROR: Could not open file: $hmmout";;
+    print $o @$hmm_results;
+    close $o;
+
+    my $hmmer_in = Bio::SearchIO->new(-file => $hmmout, -format => 'hmmer');
+
+    my @evalues;
+    while ( my $result = $hmmer_in->next_result ) {    
+        while ( my $hit = $result->next_hit ) {
+            my $score  = $hit->raw_score;
+            my $signif = $hit->significance;
+            while ( my $hsp = $hit->next_hsp ) {
+                my $e_val = $hsp->evalue;
+                push @evalues, $e_val;
+            }
+        }
+    }
+    my $best_hit = min(@evalues);
+    print $best_hit;
+    unlink $hmmout;
+}
+
+sub find_hmmsearch {
+    if (defined $ENV{HMMER2}) {
+	my $hmmsearch = join "/", $ENV{HMMER2}, 'src', 'hmmsearch';
+	if (-e $hmmsearch && -x $hmmsearch) {
+	    return $hmmsearch;
+	}
+	else {
+	    $hmmsearch = join "/", $ENV{HMMER2}, 'bin', 'hmmsearch';
+	    if (-e $hmmsearch && -x $hmmsearch) {
+		return $hmmsearch;
+	    }
+	}
+    else {
+	my @path = split /:|;/, $ENV{PATH};
+
+	for my $p (@path) {
+	    my $hmmsearch = File::Spec->catfile($p, 'hmmsearch');
+	    if (-e $hmmsearch && -x $hmmsearch) {
+		my @out = capture([0..5], "hmmsearch", "-h");
+		my ($version) = grep { /HMMER/ } @out;		    
+		if ($version =~ /HMMER (\d\.\d\w?\d+?) \(/) {
+		    my $release = $1;                  
+		    if ($release =~ /^2/) {
+			return $hmmsearch;
+		    }
+		    else {
+			croak "\nERROR: HMMER version 2 is required but was not found. Exiting.\n";
+		    }
+		}
+	    }
+	}
+    }
+}

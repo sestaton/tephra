@@ -1,0 +1,8 @@
+UBN2_2_pdom.fasta just finished with PID 9077 and exit code: 0 in 0.02 minutes
+UBN2_pdom.fasta just finished with PID 9083 and exit code: 0 in 0.03 minutes
+UBN2_3_pdom.fasta just finished with PID 9089 and exit code: 0 in 0.05 minutes
+zf_pdom.fasta just finished with PID 9095 and exit code: 0 in 0.07 minutes
+ref_ltrdigest85_combined_filtered_copia_5prime-ltrs.fasta just finished with PID 9100 and exit code: 0 in 0.08 minutes
+ref_ltrdigest85_combined_filtered_copia_3prime-ltrs.fasta just finished with PID 9107 and exit code: 0 in 0.10 minutes
+
+========> Finished running vmatch on 6 domains in 0.10 minutes

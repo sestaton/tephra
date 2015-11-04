@@ -1,0 +1,1376 @@
+hmmsearch - search a sequence database with a profile HMM
+HMMER 2.3.2 (Oct 2003)
+Copyright (C) 1992-2003 HHMI/Washington University School of Medicine
+Freely distributed under the GNU General Public License (GPL)
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+HMM file:                   /home/statonse/github/tephra/MGEScan_nonLTR_v2/my_rewrite2/pHMM/L1.rt.hmm [L1.rt]
+Sequence database:          data/info/full/L1/L1.pep
+per-sequence score cutoff:  [none]
+per-domain score cutoff:    [none]
+per-sequence Eval cutoff:   <= 10        
+per-domain Eval cutoff:     [none]
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Query HMM:   L1.rt
+Accession:   [none]
+Description: [none]
+  [HMM has been calibrated; E-values are empirical estimates]
+
+Scores for complete sequences (score includes all domains):
+Sequence           Description                          Score    E-value  N 
+--------           -----------                          -----    ------- ---
+Ha1.fa_29607977_1                                       593.1     1e-177   1
+Ha1.fa_93644624_2                                       581.9   2.5e-174   1
+Ha1.fa_89573495_3                                       577.3   5.9e-173   1
+Ha1.fa_34109999_2                                       564.5   4.1e-169   1
+Ha1.fa_150177143_3                                      553.0   1.2e-165   1
+Ha1.fa_128701223_1                                      549.9     1e-164   1
+Ha1.fa_153015662_3                                      513.2   1.1e-153   1
+Ha1.fa_79699679_2                                       482.8   1.7e-144   1
+Ha1.fa_164946197_3                                      322.4    3.2e-96   1
+Ha1.fa_23691023_1                                       319.3    2.8e-95   1
+Ha1.fa_14371535_2                                       292.5    3.2e-87   1
+Ha1.fa_124012847_3                                      286.3    2.4e-85   1
+Ha1.fa_164946197_2                                      -40.1    3.3e-11   1
+Ha1.fa_23691023_2                                      -119.1    4.1e-07   1
+Ha1.fa_124012847_2                                     -180.0    0.00057   1
+Ha1.fa_79699679_3                                      -184.4    0.00096   1
+Ha1.fa_23691023_3                                      -233.4       0.33   1
+Ha1.fa_124012847_1                                     -244.3        1.2   1
+Ha1.fa_93644624_1                                      -248.1        1.8   1
+Ha1.fa_150177143_2                                     -248.3        1.9   1
+Ha1.fa_93644624_3                                      -252.6        3.1   1
+Ha1.fa_29607977_2                                      -254.7        3.9   1
+Ha1.fa_150177143_1                                     -254.9          4   1
+Ha1.fa_89573495_1                                      -256.6        4.8   1
+Ha1.fa_164946197_1                                     -257.4        5.3   1
+Ha1.fa_89573495_2                                      -258.4        5.9   1
+Ha1.fa_34109999_3                                      -258.9        6.3   1
+Ha1.fa_79699679_1                                      -260.4        7.3   1
+Ha1.fa_34109999_1                                      -263.2        9.8   1
+Ha1.fa_128701223_3                                     -263.3        9.9   1
+
+Parsed for domains:
+Sequence           Domain  seq-f seq-t    hmm-f hmm-t      score  E-value
+--------           ------- ----- -----    ----- -----      -----  -------
+Ha1.fa_29607977_1    1/1    1093  1521 ..     1   475 []   593.1   1e-177
+Ha1.fa_93644624_2    1/1    1102  1530 ..     1   475 []   581.9 2.5e-174
+Ha1.fa_89573495_3    1/1    1101  1529 ..     1   475 []   577.3 5.9e-173
+Ha1.fa_34109999_2    1/1    1101  1529 ..     1   475 []   564.5 4.1e-169
+Ha1.fa_150177143_3   1/1    1102  1530 ..     1   475 []   553.0 1.2e-165
+Ha1.fa_128701223_1   1/1    1101  1529 ..     1   475 []   549.9   1e-164
+Ha1.fa_153015662_3   1/1    1106  1535 ..     1   475 []   513.2 1.1e-153
+Ha1.fa_79699679_2    1/1    1119  1525 ..     1   475 []   482.8 1.7e-144
+Ha1.fa_164946197_3   1/1    1139  1528 ..     1   475 []   322.4  3.2e-96
+Ha1.fa_23691023_1    1/1    1101  1479 ..     1   475 []   319.3  2.8e-95
+Ha1.fa_14371535_2    1/1    1130  1519 ..     1   475 []   292.5  3.2e-87
+Ha1.fa_124012847_3   1/1    1102  1509 ..     1   475 []   286.3  2.4e-85
+Ha1.fa_164946197_2   1/1    1102  1421 ..     1   475 []   -40.1  3.3e-11
+Ha1.fa_23691023_2    1/1    1163  1529 ..     1   475 []  -119.1  4.1e-07
+Ha1.fa_124012847_2   1/1    1206  1522 ..     1   475 []  -180.0  0.00057
+Ha1.fa_79699679_3    1/1    1100  1434 ..     1   475 []  -184.4  0.00096
+Ha1.fa_23691023_3    1/1     586   892 ..     1   475 []  -233.4     0.33
+Ha1.fa_124012847_1   1/1     761  1089 ..     1   475 []  -244.3      1.2
+Ha1.fa_93644624_1    1/1     211   433 ..     1   475 []  -248.1      1.8
+Ha1.fa_150177143_2   1/1     782  1092 ..     1   475 []  -248.3      1.9
+Ha1.fa_93644624_3    1/1     918  1171 ..     1   475 []  -252.6      3.1
+Ha1.fa_29607977_2    1/1    1333  1631 ..     1   475 []  -254.7      3.9
+Ha1.fa_150177143_1   1/1      63   310 ..     1   475 []  -254.9        4
+Ha1.fa_89573495_1    1/1    1097  1402 ..     1   475 []  -256.6      4.8
+Ha1.fa_164946197_1   1/1     115   395 ..     1   475 []  -257.4      5.3
+Ha1.fa_89573495_2    1/1     146   413 ..     1   475 []  -258.4      5.9
+Ha1.fa_34109999_3    1/1     617   949 ..     1   475 []  -258.9      6.3
+Ha1.fa_79699679_1    1/1     808  1072 ..     1   475 []  -260.4      7.3
+Ha1.fa_34109999_1    1/1    1847  2101 ..     1   475 []  -263.2      9.8
+Ha1.fa_128701223_3   1/1    1252  1525 ..     1   475 []  -263.3      9.9
+
+Alignments of top-scoring domains:
+Ha1.fa_29607977_1: domain 1 of 1, from 1093 to 1521: score 593.1, E = 1e-177
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                      fs+eEik    +A++ ++++K+ GPDGFt  F k+fW+i+  D++ l
+  Ha1.fa_296  1093    FSIEEIK----KAVWECGGDKTSGPDGFTFGFIKHFWEILETDFIVL 1135 
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                   +  f+ +  g+l++++Ns++ItL+PK +++++ +kd+RPISL+ ++ K++
+  Ha1.fa_296  1136 LDYFYVH--GTLSRGCNSTFITLLPK-VDNPQLIKDFRPISLIGCISKVV 1182 
+
+                   sKklanRllkvliklIshpdQsaFipGRsIlDNillaqevihylhkkkkk
+                   sK+lanRl+kv+++l+s ++Q+a i GRsIl++ l+++e++ + +k k+k
+  Ha1.fa_296  1183 SKILANRLKKVIGDLVS-DTQTAYIEGRSILEGPLVINELVSWGKKYKRK 1231 
+
+                   kpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllysspsssv
+                     ++l+K+DfEKAFD+++W+FL  v++ +GF+  w++WI+ ++ss ++s+
+  Ha1.fa_296  1232 --MLLFKVDFEKAFDSLSWSFLDSVMQQMGFPVLWRKWISGILSSTRTSI 1279 
+
+                   lvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrrakeigglqg
+                   lvNG+p+   F ++RG+RQGDPLSPlLFil++E L ++  +a  +g + g
+  Ha1.fa_296  1280 LVNGSPT-SEFEVQRGVRQGDPLSPLLFILAMEALHVAAVKANMEGIFNG 1328 
+
+                   lkperrgggpevshslYADDtllfleadkeslralkeiLnlFekaSGlKi
+                   +k  +   gp++sh+lYADD+l++ + + ++ ++l  +L +F  aSGl +
+  Ha1.fa_296  1329 VKTPN--DGPVLSHLLYADDVLFVGDWSLSNFKNLACLLSCFHLASGLNV 1376 
+
+                   NlqksksilfginvaeeklielillflckigsfpfikyLGlplskgrlkl
+                   N  +sks+l+g++v++++ + +++++ ck+gsfpf+++ Glp + +   +
+  Ha1.fa_296  1377 N--FSKSLLYGVGVTNAEISSMAQILSCKPGSFPFTYL-GLPVGANMGLV 1423 
+
+                   sdreNfkplidkikkrLsgWkgrllssagGeRltliksvlsskPiYlmsl
+                   +    +kp+i+k++++L  Wk+r  +s gG Rltli +vl  +P+Y+ sl
+  Ha1.fa_296  1424 KN---WKPIIEKFENKLTLWKART-LSFGG-RLTLIEAVLNNLPTYYFSL 1468 
+
+                   fklpkiiipkiflqlsFlelidkirrkFlWggkkprikreeikrkkllvk
+                   f++p  +i+++          ++irrkFlWgg          k k+++v+
+  Ha1.fa_296  1469 FNAPLAVIKQL----------ERIRRKFLWGGC-------LEKNKISWVP 1501 
+
+                   wdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                   w         kv  +Ke+GGLG+ +l++   
+  Ha1.fa_296  1502 WF--------KVVASKEEGGLGIGSLAS    1521 
+
+Ha1.fa_93644624_2: domain 1 of 1, from 1102 to 1530: score 581.9, E = 2.5e-174
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                      fs++Eik    +A++++ + KaPGPDGF+  F+k+fW++ik+ + ++
+  Ha1.fa_936  1102    FSLDEIK----NALKDCDGSKAPGPDGFSIKFFKHFWEDIKHLVHDV 1144 
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                   f +f+e   g+++ ++N +++ LIPK k+d++ l+dyRPISL+ + yKI+
+  Ha1.fa_936  1145 FVDFHES--GSISLGCNASFVALIPK-KEDPQVLSDYRPISLVGSTYKII 1191 
+
+                   sKklanRllkvliklIshpdQsaFipGRsIlDNillaqevihylhkkkkk
+                   +K+la Rl+ v++ lIs  +QsaF  GR+I D+ l++ e++ +++  ++k
+  Ha1.fa_936  1192 AKVLAIRLKSVMDGLIS-QTQSAFSGGRCIIDGPLIVSELVSWAK--NSK 1238 
+
+                   kpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllysspsssv
+                   k ++++K+Df KA+D+++W FLlk+L  +GF+ kwi+WI+ ++ss++ sv
+  Ha1.fa_936  1239 KRMMIFKVDFAKAYDSLNWKFLLKTLYFMGFPSKWISWINGCLSSSRGSV 1288 
+
+                   lvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrrakeigglqg
+                   lvNG+p+ g F  +RGlRQGDPLSP+LFil++EvL+  +++a+ ig+++g
+  Ha1.fa_936  1289 LVNGSPT-GEFRFKRGLRQGDPLSPFLFILAMEVLNMFMQQAVAIGLFHG 1337 
+
+                   lkperrgggpevshslYADDtllfleadkeslralkeiLnlFekaSGlKi
+                   +k  +   gp +sh++YADD+l++ e ++ +   l   L++   ++GlK+
+  Ha1.fa_936  1338 IKLPN--DGPLISHLCYADDVLFIGEWSQHNSCSLARFLRCLYLVTGLKV 1385 
+
+                   NlqksksilfginvaeeklielillflckigsfpfikyLGlplskgrlkl
+                   N  + k+ lfg++v ++++ ++++ ++c ig++pf+++ Glp++ + +++
+  Ha1.fa_936  1386 N--YNKCHLFGVGVNDSEVATMANALKCGIGKWPFTYL-GLPIGANLKQA 1432 
+
+                   sdreNfkplidkikkrLsgWkgrllssagGeRltliksvlsskPiYlmsl
+                    +   ++p+++k+kk+Ls+Wk++ ls ag  R+tl ksvl s+P Y++sl
+  Ha1.fa_936  1433 RH---WQPVVEKFKKKLSSWKAKHLSFAG--RITLAKSVLGSLPSYYLSL 1477 
+
+                   fklpkiiipkiflqlsFlelidkirrkFlWggkkprikreeikrkkllvk
+                   f +pki+i+k+          + +rr+F+Wg +        i +k+ ++ 
+  Ha1.fa_936  1478 FLAPKIVIKKL----------EGLRRDFVWGRT-------GIRQKIRWIR 1510 
+
+                   wdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                   w+        ++ +PK  GG+G+ ++ +   
+  Ha1.fa_936  1511 WE--------SMVKPKTSGGIGIGSISS    1530 
+
+Ha1.fa_89573495_3: domain 1 of 1, from 1101 to 1529: score 577.3, E = 5.9e-173
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                      fs+ Eik    eAi+ + +++aPGPDGF+  F k+ Wd+   D+ + 
+  Ha1.fa_895  1101    FSISEIK----EAIWGCVGDRAPGPDGFNFKFIKKNWDLFQGDFAKI 1143 
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                   f+eff++  g +++ + s++I LIPK kkd+t+ +d+RPISL+ v  K +
+  Ha1.fa_895  1144 FQEFFHN--GNISRCCASSFIALIPK-KKDPTSPSDFRPISLIGVVNKAI 1190 
+
+                   sKklanRllkvliklIshpdQsaFipGRsIlDNillaqevihylhkkkkk
+                   sK+l+nRl++v++ lIs ++QsaF  GR+I+D+ l+++e+i +++  k k
+  Ha1.fa_895  1191 SKVLVNRLKRVVGTLIS-EEQSAFLAGRNISDGPLILNEAIAWMK--KVK 1237 
+
+                   kpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllysspsssv
+                   k+g+++K+D+ KA+D+++W +L  v+  ++F+++w+ WI++ + s+++sv
+  Ha1.fa_895  1238 KSGMVFKIDINKAYDSLNWKYLDSVMAQMNFPDRWRGWIMATLVSSRASV 1287 
+
+                   lvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrrakeigglqg
+                   lvNG+p+   F ++RGlRQGDPLSP+LF++++E Ls++I++a+  g + g
+  Ha1.fa_895  1288 LVNGSPT-MEFECTRGLRQGDPLSPFLFVIAMEALSIIIKKAASGGIFDG 1336 
+
+                   lkperrgggpevshslYADDtllfleadkeslralkeiLnlFekaSGlKi
+                   l+  +  +gp +sh+ YADD++++ + + e++ +l+ iL++F  +SGlK+
+  Ha1.fa_895  1337 LRCTS--NGPTISHLIYADDVVFLGKWSIENALNLRRILRCFHLVSGLKV 1384 
+
+                   NlqksksilfginvaeeklielillflckigsfpfikyLGlplskgrlkl
+                   N    k++++gi+vae+++++++++++ck+gsfpf+++ Gl  +  +++l
+  Ha1.fa_895  1385 N--LAKCSIYGIGVAEAEVNHMANTLGCKKGSFPFKHL-GLLVG-ANMNL 1430 
+
+                   sdreNfkplidkikkrLsgWkgrllssagGeRltliksvlsskPiYlmsl
+                    +  N+kp+i+ +k+rLs Wk+++ +s+gG R+tl+ksvl s+P+Y+ sl
+  Ha1.fa_895  1431 VR--NWKPVIEVFKNRLSIWKAKN-LSYGG-RITLVKSVLNSLPTYFFSL 1476 
+
+                   fklpkiiipkiflqlsFlelidkirrkFlWggkkprikreeikrkkllvk
+                   +k+p+ +++ +          +++rr F+Wgg+         + +++ + 
+  Ha1.fa_895  1477 YKAPVKVLEIL----------ERMRRVFFWGGS--------EENSHMSWM 1508 
+
+                   wdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                           W+kv  P e GGLG+ +l+    
+  Ha1.fa_895  1509 A-------WEKVIAPLEXGGLGFGSLRD    1529 
+
+Ha1.fa_34109999_2: domain 1 of 1, from 1101 to 1529: score 564.5, E = 4.1e-169
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                      fs++Eik    eAi+ ++s+KaPGPDGF+  F k++W+ ++++++ +
+  Ha1.fa_341  1101    FSKKEIK----EAIWECGSDKAPGPDGFPFKFIKRYWEQLGDHFMGV 1143 
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                   +nef+++   ++ +++N ++I LIPK ++d+++++ yRPISL+ v+yK++
+  Ha1.fa_341  1144 LNEFHKN--ARIEKGCNASFIALIPK-VNDPKSVSEYRPISLIGVLYKVI 1190 
+
+                   sKklanRllkvliklIshpdQsaFipGRsIlDNillaqevihylhkkkkk
+                   +K la R++kv++ +I  p Q+aFi GRsI+D+ +++ evi +++  ++k
+  Ha1.fa_341  1191 AKLLAIRIKKVIPAVIA-PVQTAFIEGRSIFDGPIITSEVISWAK--RSK 1237 
+
+                   kpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllysspsssv
+                   ++ +++K+DfEKA+D+++W FLl+ L+++ F+  w++W+ + ++s+++sv
+  Ha1.fa_341  1238 QKVFVFKVDFEKAYDSINWKFLLANLKAMKFPLLWRKWVGASLKSSRASV 1287 
+
+                   lvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrrakeigglqg
+                   lvNG+ +   F+l+RGlRQGDPLSP+LFil++E L +++ ra  +  ++g
+  Ha1.fa_341  1288 LVNGSST-TEFSLQRGLRQGDPLSPFLFILAMEALDVIMDRAGKREVFKG 1336 
+
+                   lkperrgggpevshslYADDtllfleadkeslralkeiLnlFekaSGlKi
+                   +k  +   gp +sh++YADD+++  e ++ ++ +l  iL++F  +SGlK+
+  Ha1.fa_341  1337 VKLPN--DGPCISHLCYADDVIFMGEWSEMNILNLNRILRCFYLCSGLKV 1384 
+
+                   NlqksksilfginvaeeklielillflckigsfpfikyLGlplskgrlkl
+                   N    ks+l+g++v +e+ + +++ ++c +g++pf+ + Gl ++ + +++
+  Ha1.fa_341  1385 N--LNKSSLYGVGVEDEEIESMSNMLKCRKGTLPFGFL-GLTIGANMKRI 1431 
+
+                   sdreNfkplidkikkrLsgWkgrllssagGeRltliksvlsskPiYlmsl
+                   ++   +kp++dk++++Ls Wk+++ls ag  R +l k+v+ ++P+Y+ s 
+  Ha1.fa_341  1432 KF---WKPVVDKFNRKLSAWKAKCLSFAG--RMILAKAVMGAIPNYYFSM 1476 
+
+                   fklpkiiipkiflqlsFlelidkirrkFlWggkkprikreeikrkkllvk
+                   + +pk +i ++          d  rr+F+Wg k       + k k+ +++
+  Ha1.fa_341  1477 YLAPKKVIQML----------DAVRRDFVWGRK-------DGKNKIRWIA 1509 
+
+                   wdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                   w+        k+ rPK++GGLG+ dl++   
+  Ha1.fa_341  1510 WK--------KMVRPKKYGGLGIGDLRS    1529 
+
+Ha1.fa_150177143_3: domain 1 of 1, from 1102 to 1530: score 553.0, E = 1.2e-165
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                      f +  ik A+k     + ++KaPGPDGFt+ FYk+fW+ ikp l++l
+  Ha1.fa_150  1102    FQKMKIKIALK----GCDGNKAPGPDGFTMKFYKKFWSHIKPFLVKL 1144 
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                    n+f++   g+++ ++Ns+++ LIPK   d++ + dyRPISL+ ++yKI+
+  Ha1.fa_150  1145 MNDFHSS--GEISIGCNSSFLALIPK-SSDPQNMADYRPISLVGSIYKII 1191 
+
+                   sKklanRllkvliklIshpdQsaFipGRsIlDNillaqevihylhkkkkk
+                   sK l+nRl+ v++ lIs ++QsaF+ GR+IlD+ l++ ev+ +++kkk k
+  Ha1.fa_150  1192 SKLLTNRLKVVMDGLIS-TTQSAFVGGRNILDGPLVVSEVVSWAKKKKIK 1240 
+
+                   kpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllysspsssv
+                     ++++K+DfEKA D+++W FL+ v+e + F++kwi WIk +++s++ sv
+  Ha1.fa_150  1241 --MMVFKVDFEKACDSINWKFLFRVMELMEFPDKWIGWIKGCLRSGKGSV 1288 
+
+                   lvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrrakeigglqg
+                   +vN++p+   Fp +RGlRQGDPLSP+LFi+++ vL   ++ra + g+++g
+  Ha1.fa_150  1289 MVNDSPT-CEFPFKRGLRQGDPLSPFLFIIAMQVLDMFMKRALDLGLFHG 1337 
+
+                   lkperrgggpevshslYADDtllfleadkeslralkeiLnlFekaSGlKi
+                   +k  +  ggp +sh++YADD++++ e ++ ++  l   L++   ++GlK+
+  Ha1.fa_150  1338 IKLPN--GGPIISHLCYADDVIFIGEWSMHNVVSLNRFLRCLFLVTGLKV 1385 
+
+                   NlqksksilfginvaeeklielillflckigsfpfikyLGlplskgrlkl
+                   N   +k+ l+g +v+ +++i++++ ++c +g fpf ++ G+p++ + +++
+  Ha1.fa_150  1386 N--HHKCRLYGLGVDGQEVIQMAQALKCGVGAFPFSYL-GVPIGANMKRK 1432 
+
+                   sdreNfkplidkikkrLsgWkgrllssagGeRltliksvlsskPiYlmsl
+                   ++   ++p+++k++krLs+Wk+r+ls ag  R+tl k+vl s+P Y++sl
+  Ha1.fa_150  1433 IH---WQPVVEKFNKRLSSWKARNLSFAG--RVTLAKAVLGSLPSYYLSL 1477 
+
+                   fklpkiiipkiflqlsFlelidkirrkFlWggkkprikreeikrkkllvk
+                   f  pk+ii+k+          ++irr F+Wg +        ++ k+ +v 
+  Ha1.fa_150  1478 FLTPKSIIKKL----------ESIRRAFVWGKT-------ALGHKIKWVR 1510 
+
+                   wdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                   wd        ++ +PK lGGLG+  ++    
+  Ha1.fa_150  1511 WD--------IMLKPKTLGGLGIGGIRD    1530 
+
+Ha1.fa_128701223_1: domain 1 of 1, from 1101 to 1529: score 549.9, E = 1e-164
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                      fs  Eik    eAi+ + +++aPGPDGF+  F k+ Wd+   D+++l
+  Ha1.fa_128  1101    FSAVEIK----EAIWGCVGDRAPGPDGFNFKFIKKNWDLFQGDFIRL 1143 
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                   f+ef+++  g++ +s  s++I LIPK  kd+ + +++RPISL+ v  K +
+  Ha1.fa_128  1144 FQEFYSN--GTINRSRASSFIALIPK-SKDPSSPSNFRPISLIGVVNKAI 1190 
+
+                   sKklanRllkvliklIshpdQsaFipGRsIlDNillaqevihylhkkkkk
+                   sK+l+nRl+ v+  l+s ++QsaF  GR+I+D+ l+++evi +l+  k k
+  Ha1.fa_128  1191 SKVLVNRLRSVVCRLVS-EEQSAFLAGRNISDGPLILNEVIAWLK--KAK 1237 
+
+                   kpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllysspsssv
+                   k+g+++K+D+ KA+D+++  +L  ++  ++F+++w+ WI++ + ++++sv
+  Ha1.fa_128  1238 KSGMIFKVDINKAYDSLNXKYLDSIMAQMNFPDRWRGWIMATLVTSRASV 1287 
+
+                   lvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrrakeigglqg
+                   lvNG+p+   F ++RGlRQGDPLSP+LF+l++E Ls ++++a  +g + g
+  Ha1.fa_128  1288 LVNGSPT-MEFECSRGLRQGDPLSPFLFVLAIEALSGIMKKAMSEGIFNG 1336 
+
+                   lkperrgggpevshslYADDtllfleadkeslralkeiLnlFekaSGlKi
+                   l+  +  +gp++sh+ YADD++++ e + e++ +l+ iL++F  +SGlK+
+  Ha1.fa_128  1337 LRCTS--NGPVLSHLIYADDVVFLGEWSCENVLNLRRILRCFYLVSGLKV 1384 
+
+                   NlqksksilfginvaeeklielillflckigsfpfikyLGlplskgrlkl
+                   N    k++lfg++v+e+++++++++ +ck+g+fpf+++ Gl  +  +++l
+  Ha1.fa_128  1385 N--LAKCSLFGVGVDESEVQHMADSMGCKRGTFPFKHL-GLVVG-ANMNL 1430 
+
+                   sdreNfkplidkikkrLsgWkgrllssagGeRltliksvlsskPiYlmsl
+                   ++  N++p+id ++krLs Wk+++ +s+gG R+tl+ksvl s+P+Y+ sl
+  Ha1.fa_128  1431 IR--NWNPVIDLFRKRLSLWKAKN-LSYGG-RITLLKSVLNSLPTYFFSL 1476 
+
+                   fklpkiiipkiflqlsFlelidkirrkFlWggkkprikreeikrkkllvk
+                   +k+p  +i+ +          +k+rr F+Wgg+           +++ + 
+  Ha1.fa_128  1477 YKAPAKVIDIL----------EKLRRVFFWGGS--------DDNSYMSWM 1508 
+
+                   wdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                           W+kv  P e+GGLG+ +l+    
+  Ha1.fa_128  1509 A-------WEKVIAPIEYGGLGFGSLRD    1529 
+
+Ha1.fa_153015662_3: domain 1 of 1, from 1106 to 1535: score 513.2, E = 1.1e-153
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                      ++ +E+k    +A fs++ +KaPG DG+t++F+k  W+i++++++++
+  Ha1.fa_153  1106    VTRDEVK----NAMFSIGENKAPGLDGYTSAFFKNSWEIVGDEVTKA 1148 
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                   + effe+  g+l++ +N++iI L PK ++ + ++ dyRPIS++Nv+yK +
+  Ha1.fa_153  1149 ILEFFEN--GKLLQQINHTIIALVPK-VPTPNSVVDYRPISCCNVIYKCI 1195 
+
+                   sKklanRllkvliklIshpdQsaFipGRsIlDNillaqevihylhkkkkk
+                   sK+l+ R++  l+ l+   +QsaF+pGR I+DNill+qe++h +h  +  
+  Ha1.fa_153  1196 SKILTDRIKGSLGVLVD-INQSAFVPGRKISDNILLTQELMHNYH-LRIG 1243 
+
+                   kpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllysspsssv
+                     +++lK+D+ KA+D+V+W+FL+ +L+++GF +k +nWI+ +++++s+s 
+  Ha1.fa_153  1244 PARCALKIDIQKAYDTVSWSFLESILHAFGFHQKMVNWIMVCVTTVSYSL 1293 
+
+                   lvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrrakeigglqg
+                    +NG +  g+F  +RGlRQGDP SP+LF lv+EvLs l+++a+++     
+  Ha1.fa_153  1294 SINGNLF-GYFRGKRGLRQGDPISPYLFTLVMEVLSLLLKDAARNSTAFR 1342 
+
+                   lkperrgggpevshslYADDtllfleadkeslralkeiLnlFekaSGlKi
+                   ++ ++  + +++    +ADD+++f+ +d++s++++ ++L++F+ +SGl  
+  Ha1.fa_153  1343 YHLHC--KKQKIINVSFADDLFIFVNGDVASVKVVTDTLQQFSNLSGLVP 1390 
+
+                   NlqksksilfginvaeeklielillflckigsfpfikyLGlplskgrlkl
+                    +  + + +fg nv+++  +e    ++   gs+p ++yLG+p    +l+ 
+  Ha1.fa_153  1391 SI-PKCTVFFG-NVPQSAKQEILHVLPFREGSLP-VRYLGVPVISSKLSY 1437 
+
+                   sdreNfkplidkikkrLsgWkgrllssagGeRltliksvlsskPiYlmsl
+                   +d    k l++++ k++ +W  r ls ag  Rl+l++svls++ iY+  +
+  Ha1.fa_153  1438 KD---CKILVERMDKKIDNWMTRSLSFAG--RLQLVNSVLSAMHIYWATV 1482 
+
+                   fklpkiiipkiflqlsFlelidkirrkFlWggkkprikreeikrkkllvk
+                   f lp  i+  +          ++ +r FlW+gk       ++   k +v+
+  Ha1.fa_153  1483 FLLPAKIVTDL----------ERRMRAFLWSGK-------NQLNVKAKVA 1515 
+
+                   wdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                   w+        +vc+PK++GGLG+++++    
+  Ha1.fa_153  1516 WK--------IVCLPKNEGGLGVRCIAD    1535 
+
+Ha1.fa_79699679_2: domain 1 of 1, from 1119 to 1525: score 482.8, E = 1.7e-144
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                       s         + +    +k                  i+  D++ l
+  Ha1.fa_796  1119    RS---------RWVHFXLHK-----------------AILEADFVSL 1139 
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                   f  f+ +  g+l +++Ns++ItL PK   +++++k +RPI  + ++ KI+
+  Ha1.fa_796  1140 FDYFYVH--GILNRGCNSSFITLVPK-SANPQHIKEFRPINIIGCISKII 1186 
+
+                   sKklanRllkvliklIshpdQsaFipGRsIlDNillaqevihylhkkkkk
+                   sK+la Rl++v++ l+s ++Q   i GRsIlD+ l+++e++ + +  k+k
+  Ha1.fa_796  1187 SKVLAKRLKRVIGLLVS-DTQMTYIEGRSILDGPLIINELLSWGK--KSK 1233 
+
+                   kpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllysspsssv
+                   k+++l+K+DfEKAFD+++W FL  +L+ +GF+  w++WI+ ++ss++ssv
+  Ha1.fa_796  1234 KKMMLFKVDFEKAFDSISWKFLDTTLSQMGFPALWRKWIMGILSSSRSSV 1283 
+
+                   lvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrrakeigglqg
+                   lvNG+p+ + F+++RG+RQGDPLSPlLFil++E L ++   a  +g ++g
+  Ha1.fa_796  1284 LVNGSPS-QEFNIERGVRQGDPLSPLLFILAMEALHVATVTANVQGIFKG 1332 
+
+                   lkperrgggpevshslYADDtllfleadkeslralkeiLnlFekaSGlKi
+                       +  +gp +sh+lYADD+l++ e ++ +l +l  +L++F  aSGlK+
+  Ha1.fa_796  1333 CITPN--NGPIISHLLYADDVLFVGEWSELNLYNLSRLLRCFHLASGLKV 1380 
+
+                   NlqksksilfginvaeeklielillflckigsfpfikyLGlplskgrlkl
+                   N  + ks lfg++v+ e  +++++++ ck g+fpf+++ Glp++ +   +
+  Ha1.fa_796  1381 N--FNKSQLFGVGVPPETIEQNASILQCKMGVFPFTYL-GLPMGANIGLV 1427 
+
+                   sdreNfkplidkikkrLsgWkgrllssagGeRltliksvlsskPiYlmsl
+                   +    +kp+i++++++Ls Wk+r  +s gG R+tl+ +vl  +P Y++sl
+  Ha1.fa_796  1428 KN---WKPIIERFEGKLSLWKART-LSFGG-RATLVEAVLGNLPSYYLSL 1472 
+
+                   fklpkiiipkiflqlsFlelidkirrkFlWggkkprikreeikrkkllvk
+                   f +p  +++++          ++irrkFlWgg        + k k+++v+
+  Ha1.fa_796  1473 FSAPIQVLKQL----------ERIRRKFLWGGC-------MDKDKVSWVP 1505 
+
+                   wdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                   w         kv  PK++GGLG+ +l +   
+  Ha1.fa_796  1506 WF--------KVVAPKNKGGLGIGSLSS    1525 
+
+Ha1.fa_164946197_3: domain 1 of 1, from 1139 to 1528: score 322.4, E = 3.2e-96
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                      +++ E            ++k                         + 
+  Ha1.fa_164  1139    ITSXEXX-------TNFTKK-------------------------AS 1153 
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                    + +  +   + p s++s       K       l++y     l    K  
+  Ha1.fa_164  1154 XKGVVMH--RSXPXSQKS-------KIQHRXMILDQY---PXLEXYIKCX 1191 
+
+                   sKklanRllkvliklIshpdQsaFipGRsIlDNillaqevihylhkkkkk
+                     k +  ++ v+++lIs p  +aF+ GRsI D+ l++ e++ +++  k k
+  Ha1.fa_164  1192 Q-KRLPXIKTVIPSLIS-PVXTAFVEGRSIIDGPLIISEIMSWAK--KTK 1237 
+
+                   kpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllysspsssv
+                   k++++lK+DfEKA+D+++W FLl   +++ F+ +w +WI ++++s+ +sv
+  Ha1.fa_164  1238 KGMFILKVDFEKAYDSINWKFLLSNFKAMKFPSRWTKWIGACLKSSWASV 1287 
+
+                   lvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrrakeigglqg
+                   lvNG+p+   F+l+RGlRQGDPLSP+LFil++E L ++++ra e+g ++g
+  Ha1.fa_164  1288 LVNGSPT-SKFKLQRGLRQGDPLSPFLFILAMEALEVIMKRASERGVVKG 1336 
+
+                   lkperrgggpevshslYADDtllfleadkeslralkeiLnlFekaSGlKi
+                   ++  +  +gp +sh++YADD+++  e ++ ++++l  iL++F  +SGlK+
+  Ha1.fa_164  1337 INLPN--NGPCISHLCYADDVIFMGEWSETNIKNLNRILRCFL-CSGLKV 1383 
+
+                   NlqksksilfginvaeeklielillflckigsfpfikyLGlplskgrlkl
+                   N    ks++ g++v  e+++ ++  ++c +g+ pf+ + Gl  + + +++
+  Ha1.fa_164  1384 N--LDKSSITGVGVEVEEVERMAEMLKCRKGTTPFKFL-GLTVGANMKRV 1430 
+
+                   sdreNfkplidkikkrLsgWkgrllssagGeRltliksvlsskPiYlmsl
+                   ++   +kp+idk++++Ls Wk+++ls ag  R++l k+vl ++P+Y+ sl
+  Ha1.fa_164  1431 KH---WKPVIDKFNTKLSAWKAKCLSFAG--RVVLAKAVLGALPNYYFSL 1475 
+
+                   fklpkiiipkiflqlsFlelidkirrkFlWggkkprikreeikrkkllvk
+                   +++pk +i+ +          d irr+F+Wg k           k+ +++
+  Ha1.fa_164  1476 YPAPKKVINTL----------DAIRRDFIWGRK-------AGRFKIRWIA 1508 
+
+                   wdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                   w+        k++r K++GG Gl dl++   
+  Ha1.fa_164  1509 WS--------KMTRMKQYGGFGLGDLRS    1528 
+
+Ha1.fa_23691023_1: domain 1 of 1, from 1101 to 1479: score 319.3, E = 2.8e-95
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                      f e+E++     Ai+++   K PGPDGF+  FYk +W+ ikp ++ +
+  Ha1.fa_236  1101    FLEKEVF----CAIKDCDRGKDPGPDGFSLKFYKAYWSSIKPLVMGM 1143 
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                   +nef++   g +++++N +++ LIPK +k++++l ++RPISL+ + yKI+
+  Ha1.fa_236  1144 LNEFHTF--GAISKGCNASFVALIPK-IKEPQDLANFRPISLVGSMYKIV 1190 
+
+                   sKklanRllkvliklIshpdQsaFipGRsIlDNillaqevihylhkkkkk
+                   +K+lanR++ v+ ++Is p+QsaF+ GR+IlD  l+++ev+ +++  k+k
+  Ha1.fa_236  1191 AKVLANRIKLVIKEIIS-PNQSAFVGGRNILDSPLIVNEVVAWAN--KSK 1237 
+
+                   kpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllysspsssv
+                    + +++K+DfEKA+D+++W FL+ ++ek+ F+ kw+ WIk ++ s+  sv
+  Ha1.fa_236  1238 TKILIFKVDFEKAYDSISWKFLIRMMEKMVFPSKWVEWIKGCLYSGMGSV 1287 
+
+                   lvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrrakeigglqg
+                   lvNG+p+ +  + + GlR GDPLSP+LFi+++Ev +  ++ra + g+++g
+  Ha1.fa_236  1288 LVNGSPT-KELKFKQGLRXGDPLSPFLFIIAMEVITMFMKRASNLGLFHG 1336 
+
+                   lkperrgggpevshslYADDtllfleadkeslralkeiLnlFekaSGlKi
+                    k  +  g p + h++YADD+l+f e ++ ++ al   L++   +S l +
+  Ha1.fa_236  1337 CKLPN--GDPTITHLCYADDVLFFGEWSEHNIVALNRMLRWLNLVSRLNV 1384 
+
+                   NlqksksilfginvaeeklielillflckigsfpfikyLGlplskgrlkl
+                   N qk + ++       ++   +  +  c+     + +   l     +   
+  Ha1.fa_236  1385 NRQKMQDLW-------DWGYRVRGGTSCPD---SELRC-WLSSLXPPGHF 1423 
+
+                   sdreNfkplidkikkrLsgWkgrllssagGeRltliksvlsskPiYlmsl
+                   ++ + +++            k  l  s g                     
+  Ha1.fa_236  1424 DR-NXYET-----------CKI-LETSFG--------------------- 1439 
+
+                   fklpkiiipkiflqlsFlelidkirrkFlWggkkprikreeikrkkllvk
+                         i + i+         +   ++F+ +         +     + + 
+  Ha1.fa_236  1440 -----XIFDXII---------EMESFSFVFRQP-------NDACQSCSRQ 1468 
+
+                   wdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                                       +  +d+++   
+  Ha1.fa_236  1469 PA-----------------IIFPLDFRS    1479 
+
+Ha1.fa_14371535_2: domain 1 of 1, from 1130 to 1519: score 292.5, E = 3.2e-87
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                                       +                        D++ +
+  Ha1.fa_143  1130    XX------------XXXGLR---------------------ADFMSM 1143 
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                   f+eff++   ++++++  ++I LIPK +kd+ + +dyRPISL+ ++ K++
+  Ha1.fa_143  1144 FQEFFDN--ATISPGCSASFIALIPK-VKDPMTFSDYRPISLVGCINKVI 1190 
+
+                   sKklanRllkvliklIshpdQsaFipGRsIlDNillaqevihylhkkkkk
+                   sK+l+ Rl++v++k++s  +QsaF  GRsI+D+ l+++e++ ++++ k+k
+  Ha1.fa_143  1191 SKVLVGRLKRVIGKVVS-LEQSAFLSGRSITDGPLMLNELVGWMKRAKRK 1239 
+
+                   kpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllysspsssv
+                     g+++K+D+EKA+D+++W+F++ ++  ++F+ kw++WI++l++s+++sv
+  Ha1.fa_143  1240 --GMIFKIDLEKAYDSISWDFMESIMIQMNFPVKWRSWIMALVTSARASV 1287 
+
+                   lvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrrakeigglqg
+                   lvNG+p+ + Fp+ RGlRQGDP SP+LF+ ++E L+ ++++a  +g+  g
+  Ha1.fa_143  1288 LVNGSPT-QEFPCFRGLRQGDPISPFLFVMAMEALTGIMKKACSEGLYNG 1336 
+
+                   lkperrgggpevshslYADDtllfleadkeslralkeiLnlFekaSGlKi
+                   l  ++   gp +sh+ YADD++++ e + +++r+l+ +L++F  +SGlK+
+  Ha1.fa_143  1337 LACGN--DGPILSHLIYADDVVFLGEWSGSNARNLRRLLRCFHLISGLKV 1384 
+
+                   NlqksksilfginvaeeklielillflckigsfpfikyLGlplskgrlkl
+                   N    k++lfg++v +++++el++++ ck+gsfpf ++ Gl  +      
+  Ha1.fa_143  1385 N--MRKCSLFGVGVGNQEVEELANILRCKKGSFPFSYL-GLQVG------ 1425 
+
+                   sdreNfkplidkikkrLsgWkgrllssagGe...................
+                                    ++      +s+ G                    
+  Ha1.fa_143  1426 -----------------AN------MSLAGXxxxxxxxxxxxxxxxxxxx 1452 
+
+                   .....................RltliksvlsskPiYlmslfklpkiiipk
+                                           +     ss                  
+  Ha1.fa_143  1453 xxxxxxxxxxxxxxxxxxxxxXXXVAXLKGSSV----------------- 1485 
+
+                   iflqlsFlelidkirrkFlWggkkprikreeikrkkllvkwdkGGikaWd
+                              d i  + lW +++p       k  +l  +  k       
+  Ha1.fa_143  1486 -----------DLIK-RTLWXSSHPH-----HKFDILPQNITK------- 1511 
+
+                   kvcrPKelGGLGlpdlkl<-*
+                               ++       
+  Ha1.fa_143  1512 ----------QTVRTXXX    1519 
+
+Ha1.fa_124012847_3: domain 1 of 1, from 1102 to 1509: score 286.3, E = 2.4e-85
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                      f     ++  +   ++       GPDGF+ +F+k+fW++ k+ + + 
+  Ha1.fa_124  1102    FL----RNQGC---SLRLWX-XWGPDGFNFRFFKHFWNLFKDNFSDI 1140 
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                   +   f         ++ sa+I LI K + d+ +l+ yRPISL+ v+ K +
+  Ha1.fa_124  1141 LSPLFLS------VGCGSAFIALIRK-VRDPLSLNEYRPISLVGVINKMV 1183 
+
+                   sKklanRllkvliklIshpdQsaFipGRsIlDNillaqevihylhkkkkk
+                   sK+lanR +k l+ +Is  +QsaF  GR+IlD+ l++ ev+ ++   ++k
+  Ha1.fa_124  1184 SKILANRMKKALDAVIS-NSQSAFLSGRFILDGPLIIKEVMSWIS--RNK 1230 
+
+                   kpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllysspsssv
+                   k  ++lK+ fEK +D V+W+F  ++L  +GF +kw++WI  ++ss+++s 
+  Ha1.fa_124  1231 KQVFFLKIIFEKDYDNVNWNFVSDILLXMGFXGKWRSWIYGILSSARASM 1280 
+
+                   lvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrrakeigglqg
+                   lvNG+p+   F +++G RQGDPLS +LF+ v+E Ls++++ra +   ++g
+  Ha1.fa_124  1281 LVNGSPT-FEFGCSKGMRQGDPLSSFLFVVVMEALSCMLNRACDVVVFKG 1329 
+
+                   lkperrgggpevshslYADDtllfleadkeslralkeiLnlFekaSGlKi
+                   ++  +   gp +sh+ Y DD+++  e  ke++ +++ +L++F ++SGlKi
+  Ha1.fa_124  1330 IQLPN--EGPYLSHLFYTDDAIIMGEWIKENVANVIRVLRCFHACSGLKI 1377 
+
+                   NlqksksilfginvaeeklielillflckigsfpfikyLGlplskgrlkl
+                   N    ks++fg++v+ ++++e+++ ++c + s pf+++ Gl  + +  ++
+  Ha1.fa_124  1378 N--LAKSSFFGFGVSSSEVEEMANXIGCNVDSAPFHYL-GLTVGANMNRI 1424 
+
+                   sdreNfkplidkikkrLsgWkgrllssagGe.......Rltliksvlssk
+                   s    + p+ d +++rL  Wk++ ls +gG + +++  ++    s+ls k
+  Ha1.fa_124  1425 SN---WRPVYDVFENRLTLWKASVLSIGGGXrxsdsffKVSPTTSCLSTK 1471 
+
+                   PiYlmslfklpkiiipkiflqlsFlelidkirrkFlWggkkprikreeik
+                             p + ++k +         +  +++Fl           ++ 
+  Ha1.fa_124  1472 ----------PRLRLSKTW---------KVSLKSFLGVV--------RVT 1494 
+
+                   rkkllvkwdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                     kl+  w                   LG+ +l     
+  Ha1.fa_124  1495 LEKLI-RW-------------------LGIGCLLP    1509 
+
+Ha1.fa_164946197_2: domain 1 of 1, from 1102 to 1421: score -40.1, E = 3.3e-11
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                      fs+eEik    +A++ ++s++aPGPDGF+  F k+fW+ i + ++ +
+  Ha1.fa_164  1102    FSKEEIK----AAVWACGSDRAPGPDGFSFKFIKRFWEQIEDNFVGV 1144 
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                    nef+e+  g + +++N ++ItLIPK +kd+t+++d+RPISL+ v+yK+l
+  Ha1.fa_164  1145 MNEFHEK--GFIERGCNASFITLIPK-VKDPTSVNDFRPISLIGVIYKVL 1191 
+
+                   sKklanRllkvliklIshpdQsaFipGRsIlDNillaqevihylhkkkkk
+                   +K la +   + i  Is  +     +GR            ihy + ++  
+  Ha1.fa_164  1192 AKTLALNQDCHSIANISGVN---GFRGRK-----------IHYRRTTNHX 1227 
+
+                   kpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllysspsssv
+                   ++                     +v+ k+                     
+  Ha1.fa_164  1228 RD---------------------HVMGKKD-------------------- 1236 
+
+                   lvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrrakeigglqg
+                           ++ ++++G R                         e+ ++  
+  Ha1.fa_164  1237 -----Q-ERNVHTQSGFR-------------------------ESLRFDX 1255 
+
+                   lkperrgggpevshslYADDtllfleadkeslralkeiLnlFekaSGlKi
+                   l          vs++++    +   + +++++      ++l +   G +i
+  Ha1.fa_164  1256 LE---------VSLIQFXSNEI---SXPMDEVDWCVFKIKL-GISFGKRI 1292 
+
+                   NlqksksilfginvaeeklielillflckigsfpfikyLGlplskgrlkl
+                      + +        a++    +i++ + +++++  +++     +k ++  
+  Ha1.fa_164  1293 A--YVEVXA--TKRAKT-RXSAITISIHISNGSTXGYH---EEGKXERCS 1334 
+
+                   sdreNfkplidkikkrLsgWkgrllssagGe.......Rltliksvlssk
+                   ++   +++ + +    +s  +    +   G   ++++++         + 
+  Ha1.fa_164  1335 QR---YQSSEQRSVHFTSVLRR-X-CDIYGXmvrdehkK---------PX 1370 
+
+                   PiYlmslfklpkiiipkiflqlsFlelidkirrkFlWggkkprikreeik
+                   P + m+l    k+   +i               k  W+ +        + 
+  Ha1.fa_164  1371 PHFEMLLMLGAKSXFRQI---------------KYNWRRGGGX----GSX 1401 
+
+                   rkkllvkwdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                   + +  vk  k                   +  l +   
+  Ha1.fa_164  1402 KNGGNVKMQKRN---------------NTVXILGS    1421 
+
+Ha1.fa_23691023_2: domain 1 of 1, from 1163 to 1529: score -119.1, E = 4.1e-07
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                      +s            ++  ++                         + 
+  Ha1.fa_236  1163    LS------------SQKSKN------------------------HKT 1173 
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                   +  f +    l+ + ++     L  K                        
+  Ha1.fa_236  1174 LLTFARY--LLWVQCIK-----LSLK-C---------------------- 1193 
+
+                   sKklanRllkvliklIshpdQsaFipGRsIlDNillaqevihylh..kkk
+                     + +n+l ++l  +Is          R+ ++   ++   +  ++  + +
+  Ha1.fa_236  1194 XRIGLNWLXRRLSLRIS----------RLLWEVETSLTVRLLXMKwwRGR 1233 
+
+                   kkkpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllysspss
+                    +++   lK  f+K      W   + +    G +  ++ W k++      
+  Ha1.fa_236  1234 INQK---LKFSFSK------WISRRPMIPXAG-NSXFVXWKKWCSH---- 1269 
+
+                   svlvNGepg......................tgpFplrRGlRQGDPLSPl
+                      +NG+ g+++   +   +    ++++++   +    +G+R        
+  Ha1.fa_236  1270 ---LNGWSGskdacirvwvrfxxmdrrqrnxNSNKAYAKGTR-------- 1308 
+
+                   LFilvaEvLsrlIrrakeigglqglkperr.gggpevshslYADDtl.lf
+                          +L  l         ++ l p++ +g+   v    ++D + + +
+  Ha1.fa_236  1309 ------FPLFFLSXP------WK-LXPCSXkGR---VTWVFFMDVSSqMV 1342 
+
+                   leadkeslralkeiLnlFek..aSGlKiNlq............ksksilf
+                   ++++  s+ +++ ++   +++++S   i   ++    +      +k+ +f
+  Ha1.fa_236  1343 IRPSPISAMRMMFCFLGSGRntISWPXIACXdgxilchvxmxiGKKCKIF 1392 
+
+                   ginvaeeklielillflckigsfpfikyLGlplskgrlklsdreNfkpli
+                   gi+v e+++  l+ + +c +gs+pf ++ G+ ++++ ++++    +k ++
+  Ha1.fa_236  1393 GIGVIESEVGRLARIVNCDVGSLPFNHL-GISIGINMKRAKY---WKLVL 1438 
+
+                   dkikkrLsgWkgrllssagGeRltliksvlsskPiYlmslfklpkiiipk
+                   d++ +rLs+Wk++ ls a   R tl+k+vl s+P Y++s+f +pk +i+k
+  Ha1.fa_236  1439 DRFSTRLSKWKASHLSFAS--RMTLVKAVLGSLPSYFLSIFAAPKCVINK 1486 
+
+                   iflqlsFlelidkirrkFlWggkkprikreeikrkkllvkwdkGGikaWd
+                   +          +kirr+FlWg +       +++ k  ++ wd        
+  Ha1.fa_236  1487 L----------EKIRRDFLWGKT-------NSGHKLRWIRWD-------- 1511 
+
+                   kvcrPKelGGLGlpdlkl<-*
+                    + + K+ GG G+ +++    
+  Ha1.fa_236  1512 LLLKAKNSGGTGIGSIQN    1529 
+
+Ha1.fa_124012847_2: domain 1 of 1, from 1206 to 1522: score -180.0, E = 0.00057
+                   *->fseeEikaAik.........eAifsmpskKaPGPDGFtgeFYktfWd
+                      fs  Ei+   +  ++   +++++ + +             F  +  +
+  Ha1.fa_124  1206    FSXWEIY---SxwppyyxrgDVVDQXKXE---------TGFLSQ--N 1238 
+
+                   iikpDllelfneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPIS
+                      + l  +  ef  g  ++l   l           +             
+  Ha1.fa_124  1239 YFXERLXXCXLEFCLGY-SSLDGFL-----------G------------- 1263 
+
+                   LlNvdyKIlsKklanRllkvliklIshpdQsaFipGRsIlDNillaqevi
+                              k+a  l   +   ++         G  I+ + +++   i
+  Ha1.fa_124  1264 -----------KVA-KLDLWHF--VI---------GXGIHVGERVSYVRI 1290 
+
+                   hylhkkkkkkpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkl
+                   +   +   + p+v++++                     G g+ ++   + 
+  Ha1.fa_124  1291 RVXXRYEARGPFVVVSV-------------------CRGYGGSFLYVEQG 1321 
+
+                   lysspsssvlvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrr
+                   l     ssv     p       rR l    PLS lL+           r 
+  Ha1.fa_124  1322 LXC---SSVXRYSAPX------RRPL----PLSSLLY-----------RX 1347 
+
+                   akeigglqglkperrgggpevshslYADDtllfleadkeslralkeiLnl
+                      +gg+   k +   ++ + s  ++      +l++   s+++ +  L +
+  Ha1.fa_124  1348 RHYHGGVDXRKCC---QC-HXSSEMFP----CLLRPENXSCQVXFFRLWC 1389 
+
+                   FekaSGlKiNlqksksilfginvaeeklielillflckigsfpfikyLGl
+                   F     l+                 ++l +  ++f     ++   ky   
+  Ha1.fa_124  1390 FX----LRSR----------GDGXLDWLXCXFSPFSLSWLDGW-SKY-EP 1423 
+
+                   plskgrlklsdreNfkplidkikkrLsgWkgrllssagGeRltliksvls
+                   ++            +++ +  + k   +  g  +   g  R+tli  vl+
+  Ha1.fa_124  1424 HFQ-----------LETSLXCLXKXAHSLEGFSFIYRG--RVTLIRFVLQ 1460 
+
+                   skPiYlmslfklpkiiipkiflqlsFlelidkirrkFlWggkkprikree
+                   s+P+Y++sl+k+p+ +i+ +          ++i++kF Wgg+        
+  Ha1.fa_124  1461 SLPNYFLSLYKAPVKVIKDL----------ESIIKKFPWGGS-------S 1493 
+
+                   ikrkkllvkwdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                     rk++ v+wd        +v+ PK+ GGLGl  +     
+  Ha1.fa_124  1494 DVRKTHXVAWD--------RVSTPKKTGGLGLCKISD    1522 
+
+Ha1.fa_79699679_3: domain 1 of 1, from 1100 to 1434: score -184.4, E = 0.00096
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                      fs+eEik    eA++ +++ K+PGPDGFt  F k+fW +i   +l  
+  Ha1.fa_796  1100    FSKEEIK----EAVWECGGEKTPGPDGFTFSFIKQFWKLILLVFLTT 1142 
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                   f    +                      +d  ++++ +   L       +
+  Ha1.fa_796  1143 FMCMVSX--------------------TEDVIRVSSLWYRNLPT---HSI 1169 
+
+                   sKklanRllkvliklIshpdQsaFipGRs.............IlDNilla
+                   s   +  l+  +  +    +Q +  ++ +++++    + + +I+ ++ + 
+  Ha1.fa_796  1170 S-RNLDLLISXVVYR-R-XSQKYWQRDXNgssgfxxvtlkxhISKGVAYW 1216 
+
+                   qevihylh....kkkkkkpgvllKlDfEKAFDrVeWpFLlkvLeklGFgp
+                     +  +++  ++ +++k++ + lKl + K         L++   ++ + +
+  Ha1.fa_796  1217 MGLXLSMNfypgVRNQKRKXCYLKLTLKK--------LLIQSAGSFWI-Q 1257 
+
+                   kwinWIkllysspsssvlvNGepgtgpFplrRGlRQGDPLSPlLFilvaE
+                   ++++W+ lly          G  +   F++        P          +
+  Ha1.fa_796  1258 HYLKWVFLLYG---------GNGL-WEFCH--------PQ---------D 1280 
+
+                   vLsrlIrrakeigglqglkperrgggpevshslYADDtllfleadkeslr
+                   +    + +   +   ++ ++e        +   Y      + +  +  l 
+  Ha1.fa_796  1281 PQCXXMVH---HHKSSISNVE---F---DKATHYHHYYS-YSQWRRYMLL 1320 
+
+                   alkeiLnlFekaSGlKiNlqksksilfginvaeeklielillflckigsf
+                   + +  +++  k+  l++     + +++        + ++ +l+   +   
+  Ha1.fa_796  1321 RSRLMFKESLKVVXLQTT--DPSYLIYY-------TLTMFCLWENGR--- 1358 
+
+                   pfikyLGlplskgrlklsdreNfkplidkikkrLsgWkgrllssagGeRl
+                     i +    +  + l++ +   + p         s+  + + + + +   
+  Ha1.fa_796  1359 NXISI----IFLDYLDAFT---WHP--------VSRSTSTKVNYLEW--- 1390 
+
+                   tliksvlsskPiYlmslfklpkiiipkiflqlsFlelidkirrkFlWggk
+                        v ++       l+k+p++   k+            ++ + + g+ 
+  Ha1.fa_796  1391 -----VYLPR-----RLNKMPPSFNAKW-----------ECFHSLILGS- 1418 
+
+                   kprikreeikrkkllvkwdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                             r +  ++w                   L + +  l   
+  Ha1.fa_796  1419 ----------RWVRTLAW-------------------LKIGNQLL    1434 
+
+Ha1.fa_23691023_3: domain 1 of 1, from 586 to 892: score -233.4, E = 0.33
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                      f ++Ei+    +   ++ +  a       g   ++  +  +    e 
+  Ha1.fa_236   586    FNIAEIF----RMEEQIQGE-AA-----GGSSRQVNREEAGVSWEEE 622  
+
+                   fneffegk.......G...gllpeslNsaiItLIPKkkkdatklkdyRPI
+                   +n+ f +  + + + G+  g+   ++   + +L      +at ++     
+  Ha1.fa_236   623 YNKTFLNEvnltlefGeclGIGVVGFENHVKKLVSG-EMEATNCQXI--- 668  
+
+                   SLlNvdyKIlsKklanRllkvliklIshpdQsaFipGRsIlDNillaqev
+                        ++   s   +  + +v++ +Is       ++ R+Il ++  ++ +
+  Ha1.fa_236   669 -----SFRSTS-MGLPMRGRVIGCVIS------SVKRRLILLGFKRLIKL 706  
+
+                   ihylhkkkkkkpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIk
+                   i +++                                          W+ 
+  Ha1.fa_236   707 ICQIR----I-------------------------------------WVG 715  
+
+                   llysspsssvlvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIr
+                   + ++ ps++  v  + g +    r G R                L  ++ 
+  Ha1.fa_236   716 SGVT-PSCKPSVWSQXG-D----REGWR----------------LCGILI 743  
+
+                   rakeigglqglkperrgggpevshslYADDtllfleadkeslralkeiLn
+                   +   ig l+++                      fle+ k  +++ + +L 
+  Ha1.fa_236   744 SLQXIGSLRIIVFX-------------------FLED-KCRVSRRRXTLL 773  
+
+                   lFekaSGlKiNlqksksilfginvaeeklielillflckigsfpfikyLG
+                   ++     l + +       +g+ + e++ i l+++  +      f  +L 
+  Ha1.fa_236   774 IYM---LLMTRP-------LGSYCGESLAIXLATGRFG-----LFLEILT 808  
+
+                   lplskgrlklsdreNfkplidkikkrLsgWkgrllssagGeRltliksvl
+                   ++    r+k++           i++ ++  + rl+ s++    +l  s+ 
+  Ha1.fa_236   809 MY---VRKKKGS----------IRDLIKELRRRLMVSYR--VRVLWSSLX 843  
+
+                   sskPiYlmslfklpkiiipkiflqlsFlelidkirrkFlWggkkprikre
+                   s       sl+    ++++k        ++id  +   +           
+  Ha1.fa_236   844 SEV-----SLLSSTDLVMSKX------ANWIDIXL--MICFX-------- 872  
+
+                   eikrkkllvkwdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                    i+rk  +++ +                   G++ + +   
+  Ha1.fa_236   873 VIGRKLRWRSLN------------------VGIRIIVQ    892  
+
+Ha1.fa_124012847_1: domain 1 of 1, from 761 to 1089: score -244.3, E = 1.2
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                       ++  ++     A++ ++ + aP      +   +  Wd +k ++ + 
+  Ha1.fa_124   761    GTLVGCD----SAVNVLNIY-AP----QGVSAKRDLWDNLKGIINAN 798  
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                      +     g +               +  +++  +y         +K+ 
+  Ha1.fa_124   799 DGYWILA--GDFNA-------------VRFREERRNY--------AFKLA 825  
+
+                   sKklanRllkvlikl.IshpdQsaFipGRsIlDNillaqevihylhkkkk
+                       an    ++  l+ +  +    i+GR  +++ +          kk +
+  Ha1.fa_124   826 C---ANLFNAFIFYLgLIEYS----IKGRRFTFCSYNG--------KKLS 860  
+
+                   kkpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllysspsss
+                   k +++l+ lDf        Wp   ++++ l  ++ w +  ++++      
+  Ha1.fa_124   861 KLDRFLVNLDFFN-----TWPT--ACCRVL--PGLWSDHNSIILV----- 896  
+
+                   vlvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrrakeigglq
+                         ++ ++F   R  R                +++++r+        
+  Ha1.fa_124   897 -----CKS-KNFGA-RLFR---------------FFNSWFRK-------- 916  
+
+                   glkperrgggpevshslYADDtllfleadkeslralkeiLnlFekaSGlK
+                            + e  ++  A D+  f+e+   ++  lk++  + e++   +
+  Ha1.fa_124   917 --------DSFEEVVIVAANDCR-FMEG-FPDVLFLKKLSLIRERLRRWR 956  
+
+                   iNlqksksilfginvaeeklielillflckigsfpfikyLGlplskgrlk
+                   + l  ++ ++  +  a+++l e+ +++     s ++  +  l    + + 
+  Ha1.fa_124   957 VDLARKEGEI--VAAARDELDEMESILESRDVSEEEEWI-FLRKQEDYSL 1003 
+
+                   lsd.r.eNfkplidkikkrLsgWkgrllssagGeRltliksvlsskPiYl
+                    + ++++  k+ i +  +   + k +++s +     +l ks  +s     
+  Ha1.fa_124  1004 GGNgKsDGSKTEISRQMGXGRRQKLKFFSFYD----QLQKSEXHST---- 1045 
+
+                   mslfklpkiiipkiflqls.FlelidkirrkFlWggkkprikreeikrkk
+                           ++ +++   + +F +++ + r +             +++ ++
+  Ha1.fa_124  1046 --------WPXSEW---CLdFXAFLGQER-GVXVFX--------RQICGG 1075 
+
+                   llvkwdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                   ll + +                    l+   +   
+  Ha1.fa_124  1076 LLQPSS------------------ADLLQYXS    1089 
+
+Ha1.fa_93644624_1: domain 1 of 1, from 211 to 433: score -248.1, E = 1.8
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                      +s        +   fs++                          + +
+  Ha1.fa_936   211    IS--------R---FSLG--------------------------WGM 220  
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                   +  f+ g                    +         R I Ll       
+  Ha1.fa_936   221 YLTFLXG--------------------G---------RSIFLL------- 234  
+
+                   sKklanRllkvliklIshpdQsaFipGRsIlDNillaqevihylhkkkkk
+                      l+++ll   +++ s           ++l   + + + +++l   + +
+  Ha1.fa_936   235 Q-SLLAWLLG--TEILS-----------WGLKISCRIKQGLNFLPXXRPQ 270  
+
+                   kpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllysspsssv
+                    ++ ll+l +EK          l   +  G+          +++      
+  Ha1.fa_936   271 GNRGLLSLXLEK----------LRSXRCWGI----------CLR------ 294  
+
+                   lvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrrakeigglqg
+                        ++                            sr   + +    + g
+  Ha1.fa_936   295 -----FS----------------------------SRPVXKMEWXSMWAG 311  
+
+                   lkperrgggpevshslYADDtllfleadkeslralkeiLnlFekaSGlKi
+                    +++       +s sl    t+ f e+          i+  ++   G+  
+  Ha1.fa_936   312 SRSC-------LSSSLMKGPTT-FSEP--------NLIFGRYG-SLGYTF 344  
+
+                   NlqksksilfginvaeeklielillflckigsfpfikyLGlplskgrlkl
+                       +  + f+i ++        ++fl+++   p++    + l+    ++
+  Ha1.fa_936   345 G---TGYLPFSIEWPG-------FPFLGFRY--PCGID--IFLTRXGNDV 380  
+
+                   sdreNfkplidkikkrLsgWkgrllssagGeRltliksvlsskPiYlmsl
+                   ++                 W    ls ++G        v+ s+       
+  Ha1.fa_936   381 GE-------------F---W----LSPMRG--------VIPSI------- 395  
+
+                   fklpkiiipkiflqlsFlelidkirrkFlWggkkprikreeikrkkllvk
+                     +p ii p +              rkFl +           ++ ++  k
+  Ha1.fa_936   396 --CPTIIWPSL----------SIQERKFLVSFP--------XIGLTMSSK 425  
+
+                   wdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                                        G+++  +   
+  Ha1.fa_936   426 --------------------CGWRNMTA    433  
+
+Ha1.fa_150177143_2: domain 1 of 1, from 782 to 1092: score -248.3, E = 1.9
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                          E++    eA+  +     PG+                   + +
+  Ha1.fa_150   782    SGRRELW----EAVINLRLQ-LPGI-------------------WVA 804  
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                   + +f +    +  e+ Ns                  + PIS         
+  Ha1.fa_150   805 LGDFNDV--RQPDERVNS---------P--------FDPIS--------- 826  
+
+                   sKklanRllkvliklIshpdQsaFipGRsIlDNillaqe..vihylhkkk
+                   +         + ++ I     ++F   R     + ++ ++++i + +   
+  Ha1.fa_150   827 T--------SFFNDFIC---RAGFLEYRMTGGKFTYISDnsIIKFSK--L 863  
+
+                   kkkpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkll.yssps
+                   +k   +++ l + K      WpF  ++L+ l     w+ W  +++++   
+  Ha1.fa_150   864 DK--IFVCDLFLKK------WPF--ATLKVL-----WRGWSDHCpVT--- 895  
+
+                   ssvlvNGepg..................................tgpFpl
+                       +  e ++ ++ + +  ++  ++++ ++    + + ++++++g   l
+  Ha1.fa_150   896 ----LVCEALdfgpipfklynswigskdledivianinlqsregKGDVEL 941  
+
+                   rRGlRQGDPLSPlLFilvaEvLsrlIrrakeigglqglkperrgggpevs
+                    + l+                 ++++   k + +++ +++e      ev 
+  Ha1.fa_150   942 AKVLK-----------------NIKLDIKKWRDRVK-VQEEK-----EVA 968  
+
+                   hslYADDtllfleadkeslralkeiLnlFekaSGlKiNlqksksilfgin
+                         D+     + +e l++l e  nl ++   l++           i+
+  Ha1.fa_150   969 ------DLN----KEAERLEKLAESTNLNAEERKLRVS----------IR 998  
+
+                   vaeeklielillflckigsfpfikyLGlplskgrlklsdreNfkplidki
+                   v   kl+ + +  l +++ +  iky       g  + ++   f  +++  
+  Ha1.fa_150   999 VKLKKLESARIKYLHQKSRLNWIKY-------GDENTKF---FHAVVNLN 1038 
+
+                   kkrLsgWkgrllssagGeRltliksvlsskPiYlmslfklpkiiipkifl
+                   k+r s+ +g++ +  +         v  +k             +i+    
+  Ha1.fa_150  1039 KSR-SRINGLNVNGVW---------VTEPK-------------VIK---- 1061 
+
+                   qlsFlelidkirrkFlWggkkprikreeikrkkllvkwdkGGikaWdkvc
+                           + irr F    +      e i r+  + +             
+  Ha1.fa_150  1062 --------ENIRRWFKKHFN------ESIRRRPTFSN------------- 1084 
+
+                   rPKelGGLGlpdlkl<-*
+                          LGlp++ +   
+  Ha1.fa_150  1085 -------LGLPSISA    1092 
+
+Ha1.fa_93644624_3: domain 1 of 1, from 918 to 1171: score -252.6, E = 3.1
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                      +s    ++ +      + +               ++W +    +   
+  Ha1.fa_936   918    IS----WTGLL---LEIXGR--------------SCWGV--GRIXSX 941  
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                   +n                       K +                    Il
+  Ha1.fa_936   942 LNCSKVL------------------K-G--------------------IL 952  
+
+                   sKklanRllkvliklIshpdQsaFipGRsIlDNillaqevihylh..kkk
+                   +   a+R     +k+                           yl+++++ 
+  Ha1.fa_936   953 N-LGAARFGSWKLKIRR------------------------SYLRqqRRX 977  
+
+                   kkkpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllysspss
+                   k+kp                                 ++ +++l + +s 
+  Ha1.fa_936   978 KRKP---------------------------------RSLVCRLMKRSS- 993  
+
+                   svlvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrrakeiggl
+                         e++  + +l++                    s +++    +++l
+  Ha1.fa_936   994 ------ELT-SASTLEK--------------------SNWLKLKIXNKRL 1016 
+
+                   qglkperrgggpevshslYADDtllfleadkeslralkeiLnlFekaSGl
+                     ++++    g++           lf+ +   s+             SG 
+  Ha1.fa_936  1017 ASIGSS---XGMKTP---------LFFTGLXTSIWPGAVXTGXNLGKSGF 1054 
+
+                   KiNlqksksilfginvaeeklielillflckigsfpfikyLGlplskgrl
+                   +i   ks+ il     +e +  ++ l+  +        ++ G+ l +  +
+  Ha1.fa_936  1055 RIL--KSSKIL-----SEGLFVNNLLNQCGDD---LRSRI-GVSLCYPLP 1093 
+
+                   klsdreNfkplidkikkrLsgWkgrllssagGeRltliksvlsskPiYlm
+                   +l     + p       r ++ k r+l++        +k + +      +
+  Ha1.fa_936  1094 TLML---LXP-------RFPWTKLRMLLKIV----MAVKPLGLTV---SL 1126 
+
+                   slfklpkiiipkiflqlsFlelidkirrkFlWggkkprikreeikrkkll
+                   + f  + ++i +i+            +++    +       + + +  +l
+  Ha1.fa_936  1127 LSFLSISGKILNIW----------CTMFSLTFTSQ------ALLVWVAML 1160 
+
+                   vkwdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                   ++w                   L  p  k+   
+  Ha1.fa_936  1161 RSW-------------------LXSPKRKT    1171 
+
+Ha1.fa_29607977_2: domain 1 of 1, from 1333 to 1631: score -254.7, E = 3.9
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWd..iikpDll
+                       + + + ++ +   ++m   +a GP   t+  + +f    ++ p l+
+  Ha1.fa_296  1333    TTVQYCLTSSM---QMMCYLSAIGP-CQTSKIWLVFXVvfTLPPVLM 1375 
+
+                   elfneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyK
+                       +++ +  g+ +++l+s     +                        
+  Ha1.fa_296  1376 STSAKAYYT--GSVLPTLRS-----LAW-H-------------------- 1397 
+
+                   IlsKklanRllkvlikl.IshpdQsaFipGRsIlDNillaqevihylhkk
+                      K  +++l+ ++++ ++s        +  +I+D   +     ++ +  
+  Ha1.fa_296  1398 ---KFSVANLALFHLPTsVS--------RSGQIWDXXKIGSRSSRSSR-- 1434 
+
+                   kkkkpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllyssps
+                    +                            ++G  +++++    l s   
+  Ha1.fa_296  1435 TNS---------------------------HFGRQGRYLSVDDXLXS--- 1454 
+
+                   ssvlvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrrakeigg
+                           +    ++ +R +                  s   ++ ke  g
+  Ha1.fa_296  1455 --------KR-YXITFQRTIF-----------RYSMHHSLSSSNWKEYAG 1484 
+
+                   lqglkperrgggpevshslYADDtllfleadkeslralkeiLnlFekaSG
+                    +++       + + +         l+ ++ ++ lr  k+ +   + aS 
+  Ha1.fa_296  1485 NSFGVD----AWKKTK---------LVGCHGSKXLRPRKKGVXA-SVASR 1520 
+
+                   lKiNlqksksilfginvaeeklielillflckigsfpfikyLGlplskgr
+                   l+i                      ++++l+++    +i+  Gl+ s  r
+  Ha1.fa_296  1521 LQIK------------------HXSSNGILGTK---TKIHPYGLNQS--R 1547 
+
+                   lklsdreNfkplidkikkrLsgWkgrllssagGeRltliksvlsskPiYl
+                   l++ +    + l++ i++  +g  + +ls +    l++   +++ +    
+  Ha1.fa_296  1548 LSIVE-LDVMLLFRSIARX-PGFGS-PLSILE--ELHMNRPLILKQ---- 1588 
+
+                   mslfklpkiiipkiflqlsFlelidkirrkFlWggkkprikreeikrkkl
+                     ++    ++i+              ++    W  + ++    +++r  +
+  Ha1.fa_296  1589 -GWYHTXEWEIKYY----------SGWI--LGWETGPSE----MNSRLFS 1621 
+
+                   lvkwdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                    ++                      ++d  +   
+  Ha1.fa_296  1622 PWNP---------------------IKDASS    1631 
+
+Ha1.fa_150177143_1: domain 1 of 1, from 63 to 310: score -254.9, E = 4
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                      + +eE +       +   ++                           
+  Ha1.fa_150    63    ILKEEKR-------KFGSKC--------------------------- 75   
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                     ++ ++  +++             K ++  ++++ +             
+  Ha1.fa_150    76 --SARRK--SKM-------------K-GGSEKEKQVFK------------ 95   
+
+                   sKklanRllkvliklIshpdQsaFipGRsIlDNillaqevihylh...kk
+                   +   ++  + ++++  +            I+++ l  + +i  + +++k+
+  Ha1.fa_150    96 T-LFLSTSQTFHGDALV------------INFGRLFNNSAILKMLssrKR 132  
+
+                   kkkkpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllyssps
+                       + vl+ lDf                                     
+  Ha1.fa_150   133 EMELGTVLVLLDFQ------------------------------------ 146  
+
+                   ssvlvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrrakeigg
+                         G+   g  ++ +Gl+                           +g
+  Ha1.fa_150   147 ------GSRN-GRENC-KGLK--------------------------WKG 162  
+
+                   lqglkperrgggpevshslYADDtllfleadkeslralkeiLnlFekaSG
+                   ++ ++  +  g p  +       t     +++ +   l + +++      
+  Ha1.fa_150   163 WSXGSTLL--GLPGSK-------TSXKNNHKRTDHLFLTDYIQC------ 197  
+
+                   lKiNlqksksilfginvaeeklielillflckigsfpfikyLGlplskgr
+                       +  ++ ilf i +   + +   + ++++i        +G+p + +r
+  Ha1.fa_150   198 ----T-SQTEILFLIDYIPYNRRIPRNRITGAI-----RQAWGVPXPMQR 237  
+
+                   lklsd.reNfkplidkikkrLsgWkgrllssagGeRltliksvlsskPiY
+                   + l  +r  + +++ ++++r      r+        +++ +s  s     
+  Ha1.fa_150   238 PXLTMgR--WPKIEXQLNSR---QXTRR-------QINIGNSSPSXV--- 272  
+
+                   lmslfklpkiiipkiflqlsFlelidkirrkFlWggkkprikreeikrkk
+                        k    ++ +               ++ +Wg         + ++ +
+  Ha1.fa_150   273 -----KXKTXKCWRK----------XMXSFRXIWG---------WGSKCG 298  
+
+                   llvkwdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                   ++ +                    L +  l +   
+  Ha1.fa_150   299 MWGA--------------------LRFYXLLS    310  
+
+Ha1.fa_89573495_1: domain 1 of 1, from 1097 to 1402: score -256.6, E = 4.8
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                      +s           +f+  + K P                     + +
+  Ha1.fa_895  1097    LS---------SSLFLFRKLKKP---------------------YGV 1113 
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                   + ++  +   ++   lN      + K   +++    +             
+  Ha1.fa_895  1114 VLAIGPR--ARMALILN------LLK-RTGTC----F------------- 1137 
+
+                   sKklanRllkvliklIshpdQsaFipGRsIlDNillaqevihylh.kkkk
+                    K+++ R  +      +          + I  +++ ++ +  y +++++ 
+  Ha1.fa_895  1138 -KVILPRFSRSSS---I----------MGIXVGVVRLRSLPXYQKkRTRL 1173 
+
+                   kkpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllysspsss
+                        +l++ +E     +  pFL+  L  l        W  + y+     
+  Ha1.fa_895  1174 PPLTSVLSVXLEW----LTKPFLRSWLIVLK------EWLEHXYR----- 1208 
+
+                   vlvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrrakeigglq
+                          + +pF ++   R        LF+    + ++   +   +  + 
+  Ha1.fa_895  1209 -----KNS-PPFXPGGTSR-----TAPLFL----MKQSHGXKRXKNRVWC 1243 
+
+                   glkperrgggpevshslYADDtllfleadkeslralkeiLnlFekaSGlK
+                   + +++        +       ++ +  ++      lk ++++ +  +Gl 
+  Ha1.fa_895  1244 LKSIS-------TK------RMT-LSTGNIXIQXWLKXTFRIVG-GAGL- 1277 
+
+                   iNlqksksilfginvaeeklielillflckigsfpfikyLGlplskgrlk
+                     +       + ++  ++ +    ll++  ++  +++k    +  ++  +
+  Ha1.fa_895  1278 --W------RHXFHLGHQ-CLXTDLLLWNSSAHEGCGKV-THY--HRSCS 1315 
+
+                   lsdreNfkplidkikkrLsgWkgrllssagGeRltliksvlsskPiYlms
+                   l     +      +kk   +   ++ +       +l+   ++s+   lm+
+  Ha1.fa_895  1316 LXP---WRHYQSLLKKP-RRVEFSMVCGVH--QMVLLFH-ILSM---LMM 1355 
+
+                   lfklpkiiipkiflqlsFlelidkirrkFlWggkkprikreeikrkkllv
+                   ++    +  + +           +i+       + +r      k   l v
+  Ha1.fa_895  1356 WCFWGNGLXKTL-----------SICEEYXGAFTXSR----VXKSTXLNV 1390 
+
+                   kwdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                   ++ +                  G+++ +l   
+  Ha1.fa_895  1391 PYTE-----------------XGWRRQRL    1402 
+
+Ha1.fa_164946197_1: domain 1 of 1, from 115 to 395: score -257.4, E = 5.3
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                      +s  E++  +    +   ++                    + D++  
+  Ha1.fa_164   115    VSRMEVW--LE---CRRVGN--------------------ITDVYLP 136  
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                   f+  + gk    + ++N        K +                      
+  Ha1.fa_164   137 FKRDLMGK-RFAFARFN--------K-I---------------------- 154  
+
+                   sKklanRllkvliklIshpdQsaFipGRsIlDNillaqevihylh.kkkk
+                       +  l+k l++              +I D  ++a+    +  ++k +
+  Ha1.fa_164   155 --RDLDKLIKALNNT-------------WIGDRRIKANVSKFEREeDKEG 189  
+
+                   kkpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllysspsss
+                   +++               + ++          g++w +++ +  ++ s +
+  Ha1.fa_164   190 RRE---------------NRQY----------GGQWGKMMGHKGATTSGQ 214  
+
+                   vlvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrrakeigglq
+                      N+    +                       E   ++ ++ + +g  +
+  Ha1.fa_164   215 ---NWARR-PESD--------------------ERQDVAQKQSEHQGWYH 240  
+
+                   glkperrgggpevshslYADDtllfleadkeslralkeiLnlFekaSGlK
+                   g++ e+  gg   +   Y+D +l    ++++ ++ l+ + ++ e++S   
+  Ha1.fa_164   241 GGGREG--GG---R--SYMDAVL---GDNQRKAEGLITLTEIDEECSLD- 279  
+
+                   iNlqksksilfginvaeeklielillflckigsfpfikyLGlplsk..gr
+                     ++k + ++  + v++  +++ ++l+   + +++  ++ Gl +  + g 
+  Ha1.fa_164   280 --WSKRTVSMEAKSVDAL-CKAKTILCEVCPDTMEVRYIGGLRILVtmGS 326  
+
+                   lklsdreNfkplidkikk...rLsgWkgrllssagGeRltliksvlsskP
+                   + + + e + +  +k +++  +++ Wk  + +     Rl  i  +  ++ 
+  Ha1.fa_164   327 QMVVE-ELLTTHREKCEEnfmDIKPWKDDK-NWFQ--RLAWIRICGVPI- 371  
+
+                   iYlmslfklpkiiipkiflqlsFlelidkirrkFlWggkkprikreeikr
+                                               ++r+k + +           ++
+  Ha1.fa_164   372 ----------------------------RLRNKAIFKA----------IG 383  
+
+                   kkllvkwdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                     l +                       ++d ++   
+  Ha1.fa_164   384 ERLGRV----------------------VRDAEA    395  
+
+Ha1.fa_89573495_2: domain 1 of 1, from 146 to 413: score -258.4, E = 5.9
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                       s         +  ++++ k                   i+ Dl+  
+  Ha1.fa_895   146    RS---------RCRWLNTIK-------------------IIRDLYIH 164  
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                    +++ ++                    ++ +  l  y  I++l +d    
+  Ha1.fa_895   165 RRSWGRR-------------------SGDQRXPLTWYIQIAMLVIDRSRW 195  
+
+                   sKklanRllkvliklIshpdQsaFipGRsIlDNillaqevihylhkkkkk
+                      l  Rl+ + i   +               +++++++++  +   ++ 
+  Ha1.fa_895   196 C-RLEDRLRVCSI---I---------------GVRMTIQALFLVL--RQS 224  
+
+                   kpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllysspsssv
+                   ++                                                
+  Ha1.fa_895   225 HS------------------------------------------------ 226  
+
+                   lvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrrakeigglqg
+                        +g +  +++  +R G P         +  L  lI  a+ i +lq 
+  Ha1.fa_895   227 -----LG-KDLNIHYIVR-GGPF--------MGXLMMLIPLATYIRLLQR 261  
+
+                   lkperrgggpevshslYADDtllfleadkeslralkeiLnlFekaSGlKi
+                    + e       +s     D  +l+      s+   ++++ +     Gl+ 
+  Ha1.fa_895   262 RGXE-------IS-----DYHTLVG-----SVFSXLWVILI-----GLRM 289  
+
+                   NlqksksilfginvaeeklielillflckigsfpfikyLGlplskgrlkl
+                     q +   +   +++ ++++   ++f+ ++       y    l+  r + 
+  Ha1.fa_895   290 LXQVTRKVY--LRSSVDLMPGKGKIFPRIV---W---Y-TSVLPGSRCTX 330  
+
+                   sdreNfkplidkikkrLsgWkgrllssagGeRltliksvlsskPiYlmsl
+                   ++    + + + ++      ++r   s+g    t     ++s      sl
+  Ha1.fa_895   331 GT---VQCMTKXVACLVRLCRSRH--SLG---XTRTTRNVQSX-----SL 367  
+
+                   fklpkiiipkiflqlsFlelidkirrkFlWggkkprikreeikrkkllvk
+                   f   k+ + +       l l+ +i  +   g+   r    +   +  ++k
+  Ha1.fa_895   368 FHWVKGSRRR-------LXLLGRIG-GTXFGSL--R----MXMHGNRIWK 403  
+
+                   wdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                   +                     +p   +   
+  Ha1.fa_895   404 RR------------------TRWPPWXT    413  
+
+Ha1.fa_34109999_3: domain 1 of 1, from 617 to 949: score -258.9, E = 6.3
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                      f                ++                      pDl e 
+  Ha1.fa_341   617    FD------------LNQEPS---------------------PDLQEE 630  
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                   + + +e                     +                   K +
+  Ha1.fa_341   631 VEATLEI--------------------G-------------------KRV 641  
+
+                   sKklanRllkvliklIshp....dQsaFipGRsIlDNillaqevihylhk
+                     + ++  +  ++ l+  ++ + + s  i    Il+ + +  + + +++ 
+  Ha1.fa_341   642 G-IRVAEFRSEVTRLVQ-EelelNSSSXISCLXILEELGVXTNQLGSVN- 688  
+
+                   kkkkkpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllyssp
+                      +++                 ++L  v++k     +w+   ++  +++
+  Ha1.fa_341   689 -XLRNG-----------------EYLSCVCKK----HRWLAXTQSXWADI 716  
+
+                   sssvlvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrrakeig
+                    ++ ++NG++  +     RG+     L        +  L +  +ra    
+  Ha1.fa_341   717 GVKLIWNGILW-RQEED-RGV---SYL--------LGTLEVFPNRA--XX 751  
+
+                   glqglkperr.gggpevshslYADDtllfleadkeslralkeiLnlFeka
+                     ++   +r++ +               ++ + +  ++    i ++ e+ 
+  Ha1.fa_341   752 KMTPSLXCRVeSRE--------------LMXPXMXXTSMPQLITHV-ERS 786  
+
+                   SGlKiNlqksksilfginvaeeklielillflckigsfpfikyLGlplsk
+                    G       sk  +  + +    l  l++    +i  f +    Gl  s+
+  Ha1.fa_341   787 CGKNXK--ESKLTV--KECGSX-LAILMKXERKVIEXFQGLIVMGLXSST 831  
+
+                   grlklsdreNfkplidkikkrLsgWkgrllssagGe..............
+                   + l ++d       ++  ++ +s+   r++ +a     +     ++  ++
+  Ha1.fa_341   832 RLLGKQD------XLNIKWGVTSSRTCRMMVQAXARxigclcvmssxvng 875  
+
+                   ............RltliksvlsskPiYlmslfklpkiiipkiflqlsFle
+                   ++++ ++  ++ R+t++  +l                 ++ +        
+  Ha1.fa_341   876 hrqslkhwldtyRITVLXFCLVL---------------RKTL-------- 902  
+
+                   lidkirrkFlWggkkprikreeikrkkllvkwdkGGikaWdkvcrPKelG
+                     d++ ++Fl  g++     +  k+    +k+         +  r    G
+  Ha1.fa_341   903 --DQFPSGFLIAGSRXT---AXTKWLERSWKRA--------THGRKVXRG 939  
+
+                   GLGl.pdlkl<-*
+                   +L++ ++lk    
+  Ha1.fa_341   940 WLAFxRNLKR    949  
+
+Ha1.fa_79699679_1: domain 1 of 1, from 808 to 1072: score -260.4, E = 7.3
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                      +s          A  s+++ K+                  +p  l+l
+  Ha1.fa_796   808    IS---------TAFVSPEKEKTRNS---------------IPRWLNL 830  
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                   + + f                 L +                         
+  Ha1.fa_796   831 LTSSFAL---------------LVYQ-N---------------------- 842  
+
+                   sKklanRllkvliklIshpdQsaFipGRsIlDNillaqevihylhkkkkk
+                   +      l ++ + ++s       +  R+ +++  + +   + l+  ++ 
+  Ha1.fa_796   843 T-RCWVALSPIDQTMVS-------VSARL-TECSFVHRSSPNGLQ--RCL 881  
+
+                   kpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllyssp...s
+                   ++                       ++  G       +I l+  ++ + s
+  Ha1.fa_796   882 RG-----------------------CQDIG------QIIDLCCXNAvrxS 902  
+
+                   ssvlvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrrakeigg
+                     +l+ G+++                            +   +  k + +
+  Ha1.fa_796   903 LVILLSGSLT---------------------------HGXTKKAYKKRXL 925  
+
+                   lqglkperrgggpevshslYADDtllfleadkeslralkeiLnlFekaSG
+                   ++   +++                l++   ++    ++ + L + ++ + 
+  Ha1.fa_796   926 IRTRYVSN----------------LFLWISCWHKDXKMXNXLSNPGAETX 959  
+
+                   lKiNlqksksilfginvaeeklielillflckigsfpfikyLGlplskgr
+                                 +++a+  ++ +  l   + + +p+ +      s + 
+  Ha1.fa_796   960 K-------------FRIAKLSTNLQRRLNRXTXKRNPCLYR---RKSVRT 993  
+
+                   lklsdreNfkplidkikkrLsgWkgrllssagGeRltliksvlsskPiYl
+                    +++  + +++l+  i+k  s+ kg++ +s+     ++i s ++ +    
+  Ha1.fa_796   994 ESCGL-KRWQKLKTIIWKI-SN-KGLR-LSGX--XMVMISSFFHGI---- 1033 
+
+                   mslfklpkiiipkiflqlsFlelidkirrkFlWggkkprikreeikrkkl
+                           i+  +       +++i+ + ++ +W     +    e+ +  +
+  Ha1.fa_796  1034 --------IKGHQK------HNRINGLVFNNIWVLE--P----ESLKEEI 1063 
+
+                   lvkwdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                   +   +                      +l +   
+  Ha1.fa_796  1064 KCYFE----------------------NLFQ    1072 
+
+Ha1.fa_34109999_1: domain 1 of 1, from 1847 to 2101: score -263.2, E = 9.8
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                       s e            ++ +K+               d++  ++   
+  Ha1.fa_341  1847    TSRE----------XHCGRYKSG--------------DVLMVEVXVX 1869 
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                   + e   g                  K +++ +    y             
+  Ha1.fa_341  1870 VXESSMG------------------K-VGGFQ----Y------------- 1883 
+
+                   sKklanRllkvliklIshpdQsaFipGRsIlDNillaqevihylhkkkkk
+                     k  n+++  ++  +            s l+++ ++   + +   + + 
+  Ha1.fa_341  1884 --KRRNNIKVDMG--VG-----------SWLFCFXILYCNLGFT-AFAGP 1917 
+
+                   kpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllysspsssv
+                                           vL + +F           ++      
+  Ha1.fa_341  1918 ------------------------VLXSXNF----------TVQ------ 1927 
+
+                   lvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrrakeigglqg
+                          +++ ++   l          F ++   ++r  + +        
+  Ha1.fa_341  1928 -------KKNLKPLXXLG---------FYCCKISFTRHDNEDQHADK--- 1958 
+
+                   lkperrgggpevshslYADDtllfleadkeslralkeiLnlFekaSGlKi
+                   +++ r     ++   l AD +++++             L  F  ++ lK+
+  Ha1.fa_341  1959 PNVKR-----VIXDXLRADKIIVYFVS-----------LVRFTFMARLKL 1992 
+
+                   NlqksksilfginvaeeklielillflckigsfpfikyLGlplskgrlkl
+                   N+  +++ l+ +      l  + ++  +     +   +    l     k+
+  Ha1.fa_341  1993 NK-ITSATLYLFSLXLFALFSVNINYRQ-----KLXILTQXQLKGXLGKV 2036 
+
+                   sdreNfkplidkikkrLsgWkgrllssagGeRltliksvlsskPiYlmsl
+                   +     k +  +++   s     + +s+   ++t i +            
+  Ha1.fa_341  2037 IL---IKGVYYRVNYIVS-----P-CSLH--KITYIGT------------ 2063 
+
+                   fklpkiiipkiflqlsFlelidkirrkFlWggkkprikreeikrkkllvk
+                     ++   +++             ++++ +  g+        + +++ +v+
+  Ha1.fa_341  2064 --ISLKSPSRV------------LTFHYVTFGG-------INFQGINIVS 2092 
+
+                   wdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                                        Gl+ +     
+  Ha1.fa_341  2093 S-------------------CGLHKITY    2101 
+
+Ha1.fa_128701223_3: domain 1 of 1, from 1252 to 1525: score -263.3, E = 9.9
+                   *->fseeEikaAikeAifsmpskKaPGPDGFtgeFYktfWdiikpDllel
+                      f + E++   +    + +s+  PGP                 + l+ 
+  Ha1.fa_128  1252    FPKLEVF---R---LDYGSNEFPGP----------------LEGLDH 1276 
+
+                   fneffegkGgllpeslNsaiItLIPKkkkdatklkdyRPISLlNvdyKIl
+                    n+++    ++                +                     +
+  Ha1.fa_128  1277 GNSCYIX--SV----------------G---------------------F 1287 
+
+                   sKklanRllkvliklIshpdQsaFipGRsIlDNillaqevihylhkkkkk
+                     + an+   v     s        +G  I+  ++l+       h  ++ 
+  Ha1.fa_128  1288 GXWFANNGVXVFSRTTS--------RGPVITILVCLS-------H--RGS 1320 
+
+                   kpgvllKlDfEKAFDrVeWpFLlkvLeklGFgpkwinWIkllysspsssv
+                         +   EK               + G   +++ W  +         
+  Ha1.fa_128  1321 ------FWNNEK--------------GHVG---RYLXWLTMYFX------ 1341 
+
+                   lvNGepgtgpFplrRGlRQGDPLSPlLFilvaEvLsrlIrrakeigglqg
+                    + G+++ +++  r     G        + v E   +  + +        
+  Ha1.fa_128  1342 -WTGFIS-PYIRRRCCFSWG--------VVVXECSXSTQNLE-------- 1373 
+
+                   lkperrgggpevshslYADDtllfleadkeslralkeiLnlFekaSGlKi
+                                       ++lf  + k++ r ++ +  +         
+  Ha1.fa_128  1374 --------------------MFLFGLGVKSESRXVLLVWGW--------- 1394 
+
+                   NlqksksilfginvaeeklielillflckigsfpfikyLGlplskgrlkl
+                              ++  ++      +++   + s+ ++++ G   + +++  
+  Ha1.fa_128  1395 -----------SRXVRSTAHGGLNGLQKRYLSLXTFRI-GGR-GXHES-H 1430 
+
+                   sdreNfkplidkikkrLsgWkgrllssagGeRltliksvlsskPiYlmsl
+                   s+   ++p  + i k++ +  + + s ++  R + +    +     l+ +
+  Ha1.fa_128  1431 SE---LEPGYRLIXKKIVSLESQK-SFLW--RXNHLAXICLEFVADLLFF 1474 
+
+                   fklpkiiipkiflqlsFlelidkirrkFlWggkkprikreeikrkkllvk
+                   ++ ++++                i  +Fl g       +e  + +k + +
+  Ha1.fa_128  1475 LVXSPGKSYXYS---------GEIKEGFLLGRVGXXFIYELDGLGKGHCS 1515 
+
+                   wdkGGikaWdkvcrPKelGGLGlpdlkl<-*
+                   +                   +++ +++    
+  Ha1.fa_128  1516 NR------------------IWWARFRF    1525 
+
+
+Histogram of all scores:
+score    obs    exp  (one = represents 1 sequences)
+-----    ---    ---
+<-269      4      -|====                                                       
+ -269      0      1|*                                                          
+ -268      0      1|*                                                          
+ -267      1      1|*                                                          
+ -266      1      1|*                                                          
+ -265      0      1|*                                                          
+ -264      2      1|*=                                                         
+ -263      0      0|                                                           
+ -262      0      0|                                                           
+ -261      1      0|=                                                          
+ -260      0      0|                                                           
+ -259      2      0|==                                                         
+ -258      1      0|=                                                          
+ -257      1      0|=                                                          
+ -256      0      0|                                                           
+ -255      2      0|==                                                         
+ -254      0      0|                                                           
+>-253     21      -|=====================                                      
+
+
+% Statistical details of theoretical EVD fit:
+              mu =  -272.8236
+          lambda =     0.1190
+chi-sq statistic =     0.0000
+  P(chi-square)  =          0
+
+Total sequences searched: 36
+
+Whole sequence top hits:
+tophits_s report:
+     Total hits:           35
+     Satisfying E cutoff:  30
+     Total memory:         21K
+
+Domain top hits:
+tophits_s report:
+     Total hits:           35
+     Satisfying E cutoff:  35
+     Total memory:         76K

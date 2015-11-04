@@ -1,0 +1,134 @@
+hmmsearch - search a sequence database with a profile HMM
+HMMER 2.3.2 (Oct 2003)
+Copyright (C) 1992-2003 HHMI/Washington University School of Medicine
+Freely distributed under the GNU General Public License (GPL)
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+HMM file:                   MGEScan_nonLTR_v2/my_rewrite2/pHMM/RTE.en.hmm [RTE.en]
+Sequence database:          testtr.faa
+per-sequence score cutoff:  [none]
+per-domain score cutoff:    [none]
+per-sequence Eval cutoff:   <= 10        
+per-domain Eval cutoff:     [none]
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Query HMM:   RTE.en
+Accession:   [none]
+Description: [none]
+  [HMM has been calibrated; E-values are empirical estimates]
+
+Scores for complete sequences (score includes all domains):
+Sequence Description                                    Score    E-value  N 
+-------- -----------                                    -----    ------- ---
+_3                                                     -158.0      0.059   1
+_1                                                     -202.9          3   1
+_2                                                     -215.6          3   1
+
+Parsed for domains:
+Sequence Domain  seq-f seq-t    hmm-f hmm-t      score  E-value
+-------- ------- ----- -----    ----- -----      -----  -------
+_3         1/1       3   177 .]     1   263 []  -158.0    0.059
+_1         1/1       6   155 ..     1   263 []  -202.9        3
+_2         1/1      17   169 ..     1   263 []  -215.6        3
+
+Alignments of top-scoring domains:
+_3: domain 1 of 1, from 3 to 177: score -158.0, E = 0.059
+                   *->gtwnvRtlseagrlaelleELerynlDIvgLsETrlt..gegttkrs
+                      ++ n+R+l+++++ + +++   +     v L+ET  ++ +++     
+          _3     3    LSVNIRGLGRVDKGDWISNIRVKNEASFVMLQETQFAslQGVDIGKY 49   
+
+                   sggyvlyskaradgevrrrgGVGfavkpkLlsalidwrfiseRlatlr..
+                    g++++  ++++ ++    g+ G +++  +++     ++  +R   + ++
+          _3    50 WGSGTF--DSEFMNA---MGRSGGLLSLWDQKLFQKSSVQKHRYYLAVhg 94   
+
+                   .LrtgkktrKDRDtRivltvisaYAPTsdsdeeekeeFYdrLqsvlescP
+                    +++++             ++++YAP    +        ++L++++++  
+          _3    95 yIKGNGAK---------VCLVNVYAPQKITEKR---LLWRELERLVQQ-- 130  
+
+                   rkdelILlGDFNAkVGadeetergvgGskhGlgdrNenGerLlqfCaanr
+                   +    +++GDFN   ++ +e+                             
+          _3   131 DETYWVVGGDFNCVRDR-SERK---------------------------- 151  
+
+                   LvitNTmFkhknrhRVKGrwTWrhPrdskrrnqIDyIlvsrrlrrsvldV
+                       NT+F  ++                               ++++ld 
+          _3   152 ----NTNFNAASSI----------------------------EFNDFLDG 169  
+
+                   RayrgaeidSDHrLVrAkirl<-*
+                   +          H      + l   
+          _3   170 VGL--------H-----EFGL    177  
+
+_1: domain 1 of 1, from 6 to 155: score -202.9, E = 3
+                   *->gtwnvRt.lseagrlaelleELerynlDIvgLsETrltgegttkrss
+                      +t+ v ++l + ++  ++   ++r++l          +  + ++   
+          _1     6    LTFEVWVgLIRGIGFLIFGXKTRRLSL--------CYKRLNLLRC-- 42   
+
+                   ggyvlyskaradgevrrrgGVGfavkpkLlsalidwrfiseRlatlrLrt
+                   + + l   ++a +                             +++l ++ 
+          _1    43 KVWILVNIGVAVRL----------------------------ILSLXMPW 64   
+
+                   gkktrKDRDtRivltvisaYAPTsdsdeeekeeFYdrLqsvlescPrkde
+                    + +        v+++++          +         ++v   c+  d+
+          _1    65 VGPG--------VFYLFGI--------KS-------CFRRVR--CRNIDT 89   
+
+                   lILlGDFNAkVGadeetergvgGskhGlgdrNenGerLlqfCaanrLvit
+                   + L       +G+ ++t r ++                         + +
+          _1    90 ISLC------MGILKVTVRRCV-------------------------WXM 108  
+
+                   NTmFkhknrhRVKGrwTWrhPrdskrrnqIDyIlvsrrlrrsvldVRayr
+                    T  k+  ++          +  ++ ++ +   +  +r ++     ++ +
+          _1   109 YTLLKKLQKK----------DYCGGNWKGL---CSKTRHIGXWAVILIVS 145  
+
+                   gaeidSDHrLVrAkirl<-*
+                   g e       Vr +i+    
+          _1   146 GIE-------VRGRIQT    155  
+
+_2: domain 1 of 1, from 17 to 169: score -215.6, E = 3
+                   *->gtwnvRtlseagrlaelleELerynlDIvgLsETrltgegttkrssg
+                      g++   + +e ++++  ++     +  I+++     +  g+   ++ 
+          _2    17    GLDFXYS-GEKRGVFRYVT-----RDSICFV-----ARCGYWXILGX 52   
+
+                   gyvlyskaradgevrrrgGVGfavkpkLlsalidwrfis.eRlatlrLrt
+                    yv +   +  g    + G  + +++k  s+  + +  + +R a +  r 
+          _2    53 RYVXFXVYECHGS---VRGSSISLGSKVVSEEFGAETXIlSRCAWVYXRX 99   
+
+                   gkktrKDRDtRivltvisaYAPTsdsdeeekeeFYdrLqsvlescPrkde
+                     ++           +i      s++ +                   k +
+          _2   100 RCEG-------VFGECIR-----SSKNYR------------------KKT 119  
+
+                   lILlGDFNAkVGadeetergvgGskhGlgdrNenGerLlqfCaanrLvit
+                   ++ +       G+    +r+++G          +G  +  +C        
+          _2   120 IVAG------IGKACAARRDILG----------SGRXF-XLC-------- 144  
+
+                   NTmFkhknrhRVKGrwTWrhPrdskrrnqIDyIlvsrrlrrsvldVRayr
+                                       P + k   +        +l+r v + +   
+          _2   145 --------------------P-GXKXEEE-------YKLQRRVFNXIXX- 165  
+
+                   gaeidSDHrLVrAkirl<-*
+                                 +r+   
+          _2   166 -------------FLRW    169  
+
+
+Histogram of all scores:
+score    obs    exp  (one = represents 1 sequences)
+-----    ---    ---
+>-216      3      -|===                                                        
+
+
+% Statistical details of theoretical EVD fit:
+              mu =  -181.9845
+          lambda =     0.1637
+chi-sq statistic =     0.0000
+  P(chi-square)  =          0
+
+Total sequences searched: 3
+
+Whole sequence top hits:
+tophits_s report:
+     Total hits:           3
+     Satisfying E cutoff:  3
+     Total memory:         20K
+
+Domain top hits:
+tophits_s report:
+     Total hits:           3
+     Satisfying E cutoff:  3
+     Total memory:         23K

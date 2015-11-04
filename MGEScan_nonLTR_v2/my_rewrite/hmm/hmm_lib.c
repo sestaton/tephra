@@ -896,8 +896,8 @@ void get_phmm(int state, int start, int end, double *score, char *O, int *seq_le
     strcat(hmm_file, "R2.rt.hmm ");
   }
 
-  strcpy(command, phmm_dir);
-  strcat(command, "hmm/get_phmm.pl -s ");
+  //strcpy(command, phmm_dir);
+  strcat(command, "tephra-getphmm -s ");
   strcat(command, domain_bp);
   strcat(command, " -h ");
   strcat(command, hmm_file);

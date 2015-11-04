@@ -1,0 +1,82 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use Cwd;
+use File::Spec;
+use File::Find;
+use File::Path qw(make_path);
+use RunHMM;
+use Postprocess;
+use QValidation;
+use SeqUtils;
+use Getopt::Long;
+
+my $main_data_dir;
+my $program_dir;
+my $genome_dir;
+
+my $cwd = getcwd();
+
+GetOptions(
+           'd|data=s'    => \$main_data_dir,
+           'g|genome=s'  => \$genome_dir,
+           'p|program=s' => \$program_dir,
+           );
+
+die "No input" if !$main_data_dir or !$genome_dir or !$program_dir;
+
+#my $conf_file     = File::Spec->catfile($program_dir, "path_conf");
+my $phmm_dir      = File::Spec->catdir($program_dir, "pHMM");
+my $plus_out_dir  = File::Spec->catdir($main_data_dir, "f");
+my $minus_out_dir = File::Spec->catdir($main_data_dir, "b");
+my $minus_dna_dir = $genome_dir."_b";
+
+unless (-e $minus_dna_dir) {
+    make_path( $minus_dna_dir, {verbose => 0, mode => 0771,} );
+}
+
+# say STDERR "DEBUG: $conf_file $phmm_dir $plus_out_dir $minus_out_dir";
+# DEBUG: ./path_conf ./pHMM/ test/f/ test/b/
+
+# Forward strand
+my @fasfiles;
+find( sub { push @fasfiles, $File::Find::name if -f and /\.fa.*?$/ }, $genome_dir );
+die "\nERROR: No FASTA files found in genome directory. Exiting.\n" if @fasfiles == 0;
+
+printf STDERR "Running forward...\n";
+for my $file (sort @fasfiles) {    
+    my $run_hmm = RunHMM->new( fasta => $file, outdir => $plus_out_dir, phmmdir => $phmm_dir, pdir => $cwd );
+    $run_hmm->run_mgescan;
+}
+
+my $pp = Postprocess->new( fastadir => $genome_dir, outdir => $plus_out_dir, reverse => 0);
+$pp->postprocess;
+
+# Backward strand
+printf "Running backward...\n";
+
+my $sequtils = SeqUtils->new;
+$sequtils->invert_seq($genome_dir, $minus_dna_dir);
+
+my @revfasfiles;
+find( sub { push @revfasfiles, $File::Find::name if -f and /\.fa.*$/ }, $minus_dna_dir );
+
+for my $file (sort @revfasfiles) {
+    my $run_rev_hmm = RunHMM->new( fasta => $file, outdir => $minus_out_dir, 
+				   phmmdir => $phmm_dir, pdir => $cwd );
+    $run_rev_hmm->run_mgescan;
+}
+
+my $pp_rev = Postprocess->new( fastadir => $minus_dna_dir, outdir => $minus_out_dir, reverse => 1);
+$pp_rev->postprocess;
+
+#validation for Q value
+my $pp2 = QValidation->new( outdir => $main_data_dir, phmmdir => $phmm_dir, fasta => $genome_dir);
+$pp2->validate_q_score;
+
+sub print_usage {
+
+    print "USAGE: ./run_MGEScan.pl -genome=[a directory name for genome sequences] -data=[a directory name for output files]  -program=[a directory name for MGEScan-nonLTR]\n\n\n\n";
+
+}

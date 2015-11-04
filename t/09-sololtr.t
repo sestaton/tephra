@@ -33,7 +33,7 @@ my @results   = capture { system([0..5], "$cmd sololtr -h") };
 ok(@results, 'Can execute sololtr subcommand');
 
 my $find_cmd = "$cmd sololtr -i $resdir -g $masked -r $allstfile -l 80 -p -c 0.09 -s";
-#say STDERR $find_cmd;
+say STDERR $find_cmd;
 
 my @ret = capture { system([0..5], $find_cmd) };
 #system([0..5], $find_cmd);
@@ -49,6 +49,6 @@ ok( $seqct == 14, 'Correct number of solo-LTR sequences above thresholds' );
 close $in;
 
 # clean up
-remove_tree( $outdir, { safe => 1 } );
+#remove_tree( $outdir, { safe => 1 } );
 
 done_testing();

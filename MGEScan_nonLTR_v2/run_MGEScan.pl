@@ -92,10 +92,10 @@ foreach my $name (sort readdir(DIRHANDLE)) {
 	system($command);
     }
 }
-system("rm ".$plus_out_dir."out1/aaaaa"); 
-system("rm ".$plus_out_dir."out1/bbbbb");
-system("rm ".$plus_out_dir."out1/ppppp");
-system("rm ".$plus_out_dir."out1/qqqqq");
+#system("rm ".$plus_out_dir."out1/aaaaa"); 
+#system("rm ".$plus_out_dir."out1/bbbbb");
+#system("rm ".$plus_out_dir."out1/ppppp");
+#system("rm ".$plus_out_dir."out1/qqqqq");
 
 my $command = $program_dir."post_process.pl --dna=".$plus_dna_dir." --out=".$plus_out_dir." --rev=0";
 #print $command."\n";
@@ -117,10 +117,10 @@ foreach my $name (sort readdir(DIRHANDLE)) {
     }
 }
 
-system("rm ".$minus_out_dir."out1/aaaaa");
-system("rm ".$minus_out_dir."out1/bbbbb");
-system("rm ".$minus_out_dir."out1/ppppp");
-system("rm ".$minus_out_dir."out1/qqqqq");
+#system("rm ".$minus_out_dir."out1/aaaaa");
+#system("rm ".$minus_out_dir."out1/bbbbb");
+#system("rm ".$minus_out_dir."out1/ppppp");
+#system("rm ".$minus_out_dir."out1/qqqqq");
 
 my $command = $program_dir."post_process.pl --dna=".$minus_dna_dir." --out=".$minus_out_dir." --rev=1";
 #print $command."\n";

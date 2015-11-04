@@ -1,0 +1,24 @@
+# args=-dbcluster 80 80 t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_gypsy/dbcluster-pdoms -p -d -seedlength 10 -exdrop 3 -l 40 -showdesc 0 -sort ld -best 100 /home/statonse/github/tephra/t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_gypsy/RVT_1_pdom.index
+# 1 cluster
+# 2 elements out of 4 (50.00%) are in clusters
+# 2 elements out of 4 (50.00%) are singlets
+# 1 cluster of size 2
+0:
+  Contig57_HLAC-254L24_LTR_retrotransposon5_80143-80623
+  Contig57_HLAC-254L24_LTR_retrotransposon6_96235-96715
+# args=-dbcluster 80 80 t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_gypsy/dbcluster-pdoms -p -d -seedlength 10 -exdrop 3 -l 40 -showdesc 0 -sort ld -best 100 /home/statonse/github/tephra/t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_gypsy/Retrotrans_gag_pdom.index
+# 0 clusters
+# 0 elements out of 3 (0.00%) are in clusters
+# 3 elements out of 3 (100.00%) are singlets
+# args=-dbcluster 80 80 t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_gypsy/dbcluster-pdoms -p -d -seedlength 10 -exdrop 3 -l 40 -showdesc 0 -sort ld -best 100 /home/statonse/github/tephra/t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_gypsy/rve_pdom.index
+# 0 clusters
+# 0 elements out of 3 (0.00%) are in clusters
+# 3 elements out of 3 (100.00%) are singlets
+# args=-dbcluster 80 20 t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_gypsy/dbcluster-5primeseqs -p -d -seedlength 10 -exdrop 7 -l 80 -showdesc 0 -sort ld -best 100 -identity 80 /home/statonse/github/tephra/t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_gypsy/ref_ltrdigest85_combined_filtered_gypsy_5prime-ltrs.index
+# 0 clusters
+# 0 elements out of 3 (0.00%) are in clusters
+# 3 elements out of 3 (100.00%) are singlets
+# args=-dbcluster 80 20 t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_gypsy/dbcluster-3primeseqs -p -d -seedlength 10 -exdrop 7 -l 80 -showdesc 0 -sort ld -best 100 -identity 80 /home/statonse/github/tephra/t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_gypsy/ref_ltrdigest85_combined_filtered_gypsy_3prime-ltrs.index
+# 0 clusters
+# 0 elements out of 3 (0.00%) are in clusters
+# 3 elements out of 3 (100.00%) are singlets

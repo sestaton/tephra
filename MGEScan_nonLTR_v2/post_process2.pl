@@ -2,7 +2,7 @@
 use strict;
 use Getopt::Long;
 
-#our $hmmsearch = '/home/statonse/Desktop/hannuus_annotation/non-ltr/MGEScan_nonLTR_v2/hmmer-2.3.2/src/hmmsearch';
+our $hmmsearch = '/home/statonse/github/tephra/MGEScan_nonLTR_v2/hmmer-2.3.2/src/hmmsearch';
 my @all_clade = ('CR1', 'I', 'Jockey', 'L1', 'L2', 'R1', 'RandI', 'Rex', 'RTE', 'Tad1', 'R2','CRE');
 my @en_clade = ('CR1', 'I', 'Jockey', 'L1', 'L2', 'R1', 'RandI', 'Rex', 'RTE', 'Tad1');
 my $genome="";   
@@ -111,7 +111,7 @@ sub get_domain_for_full_frag{
 	
 	if (-e $pep_file ){
 
-	    $phmm_file = $hmm_dir.$clade.".".$domain.".hmm3";
+	    $phmm_file = $hmm_dir.$clade.".".$domain.".hmm";
 	    $result_pep_file = $dir.$clade.".".$domain.".pe";
 	    $result_dna_file = $dir.$clade.".".$domain.".dna";
 	    
@@ -179,7 +179,7 @@ sub get_domain_pep_seq{
     #$_[1]: domain hmm file
     #$_[2]: output domain pep seq file 
     
-    my $hmm_command = "hmmsearch  ".$_[1]." ".$_[0];
+    my $hmm_command = "$hmmsearch  ".$_[1]." ".$_[0];
     my $hmm_result = `$hmm_command`;
     my %domain_start=();
     my %domain_end=();
@@ -246,7 +246,7 @@ sub get_domain_dna_seq{
     #$_[2]: output domain dna seq file 
     #$_[3]: dna seq file
 
-    my $hmm_command = "hmmsearch  ".$_[1]." ".$_[0];
+    my $hmm_command = "$hmmsearch  ".$_[1]." ".$_[0];
     my $hmm_result = `$hmm_command`;
     my %domain_start=();
     my %domain_end=();
@@ -334,7 +334,7 @@ sub vote_hmmsearch{
 
     for ($i=0; $i<=$#line; $i++){
 
-        my $command = "hmmsearch ".$_[1].$line[$i].".".$_[2].".hmm ".$_[0];
+        my $command = "$hmmsearch ".$_[1].$line[$i].".".$_[2].".hmm ".$_[0];
         my $hmm_result = `$command`;
 
         while ($hmm_result =~ /((\d|\w|\-|\_|\#|\/|\.)+\s+\d+\/\d+\s+\d+\s+\d+\s+(\[|\.)(\]|\.)\s+\d+\s+\d+\s+(\[|\.)(\]|\.)\s+\-*\d+\.\d+\s+((\d|\-|\.|e)+))\s*/g){

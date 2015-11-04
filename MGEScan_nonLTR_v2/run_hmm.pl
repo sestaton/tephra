@@ -5,7 +5,7 @@ use Getopt::Long;
 use Data::Dump;
 use Data::Printer;
 
-#our $hmmsearch = '/home/statonse/Desktop/hannuus_annotation/non-ltr/MGEScan_nonLTR_v2/hmmer-2.3.2/src/hmmsearch';
+our $hmmsearch = '/home/statonse/github/tephra/MGEScan_nonLTR_v2/hmmer-2.3.2/src/hmmsearch';
 ##########################################################
 # get input parameter of dna file, pep file, output dir
 ##########################################################
@@ -40,19 +40,19 @@ my ($phmm_file, $domain_rt_pos_file, $domain_ape_pos_file, $domain_orf1_pos_file
 print "    Protein sequence...\n";
 $pep_file = $out_dir.$dna_name.".pep";
 $command = $pdir."translate -d ".$dna_file." -h ".$dna_name." -p ".$pep_file;
-say STDERR "translate cmd: ";
-say STDERR $command;
+#say STDERR "translate cmd: ";
+#say STDERR $command;
 system($command);
 #exit;
 
 print "    RT signal...\n";
-$phmm_file = $phmm_dir."ebi_ds36752_seq.hmm3";
+$phmm_file = $phmm_dir."ebi_ds36752_seq.hmm";
 $domain_rt_pos_file = $pos_dir.$dna_name.".rt.pos";
 get_signal_domain($pep_file, $phmm_file, $domain_rt_pos_file);
 #exit;
 
 print "    APE signal...\n";
-$phmm_file = $phmm_dir."ebi_ds36736_seq.hmm3";
+$phmm_file = $phmm_dir."ebi_ds36736_seq.hmm";
 $domain_ape_pos_file = $pos_dir.$dna_name.".ape.pos";
 get_signal_domain($pep_file, $phmm_file, $domain_ape_pos_file);
 
@@ -73,7 +73,7 @@ if (-e $domain_rt_pos_file  || -e $domain_ape_pos_file ){
 	close(OUT);
     }
 
-    $command = $pdir."match_pos.pl -rt=".$domain_rt_pos_file." -ape=".$domain_ape_pos_file;
+    #$command = $pdir."match_pos.pl -rt=".$domain_rt_pos_file." -ape=".$domain_ape_pos_file;
     #system($command);
     ###########################################################
     # run hmm
@@ -82,7 +82,7 @@ if (-e $domain_rt_pos_file  || -e $domain_ape_pos_file ){
 
     $out_file = $out1_dir.$dna_name;
     $command = $pdir."hmm/MGEScan -m ".$pdir."hmm/chr.hmm -s ".$dna_file." -r ".$domain_rt_pos_file." -a ".$domain_ape_pos_file." -o ".$out_file." -p ".$pdir." -d ".$out1_dir;
-    #print $command."\n";
+    print $command."\n";
     system($command); 
 }
 
@@ -102,7 +102,7 @@ sub get_signal_domain{
     #$_[1]: domain hmm file
     #$_[2]: output domain dna position file
 
-    my $hmm_command = "hmmsearch  -E 0.00001 $phmm_file $pep_file";;
+    my $hmm_command = "$hmmsearch  -E 0.00001 $phmm_file $pep_file";
     my $hmm_result = `$hmm_command`;
     my %domain_start=();
     my %domain_end=();
@@ -111,14 +111,14 @@ sub get_signal_domain{
     my $temp_file2  = $domain_rt_pos_file."temp2";
     my $output_file = $domain_rt_pos_file;
 
-    say STDERR "TEMP: $temp_file";
+    #say STDERR "TEMP: $temp_file";
     # run hmmsearch to find the domain and save it in the temprary file    
     open (OUT, ">$temp_file");
     while ($hmm_result =~ /((\S)+\s+\d+\/\d+\s+\d+\s+\d+\s+(\[|\.)(\]|\.)\s+\d+\s+\d+\s+(\[|\.)(\]|\.)\s+(-)*\d+\.\d+\s+((\d|\-|\.|e)+))\s*/g){
 
-	say STDERR "match: $1";
+	#say STDERR "match: $1";
         my @temp = split(/\s+/, $1);
-	p @temp;
+	#p @temp;
 	if ($temp[9]<0.001 ){
 	    print OUT eval($temp[2]*3)."\t".eval($temp[3]*3)."\t".$temp[5]."\t".$temp[6]."\t".$temp[8]."\t".$temp[9]."\n";
 	}

@@ -360,7 +360,8 @@ sub bl2seq_compare {
     
     say $qname join "\n", ">".$upstr_id, $upstr_seq;
     say $rname join "\n", ">".$downstr_id, $downstr_seq;
-    my $blcmd = "blastn -query $qname -subject $rname -word_size 4 -outfmt 5 -out $outfile";
+    my $blcmd = "blastn -query $qname -subject $rname -word_size 4 -outfmt 5 -out $outfile 2>&1 | ";
+    $blcmd .= "grep -v \"CFastaReader: Hyphens are invalid and will be ignored\"";
     #say STDERR $blcmd;
     $self->run_cmd($blcmd);
     unlink $qname, $rname;

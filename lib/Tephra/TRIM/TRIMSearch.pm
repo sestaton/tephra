@@ -12,7 +12,7 @@ use Log::Any            qw($log);
 use Try::Tiny;
 use namespace::autoclean;
 
-with 'Tephra::Role::GT';
+with 'Tephra::Role::Run::GT';
 
 sub trim_search_strict {
     my $self = shift;

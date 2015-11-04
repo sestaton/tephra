@@ -48,25 +48,25 @@ sub _run_nonltr_search {
     
     my $genome = $opt->{genome};
     
-    my $ltr_search = Tephra::NonLTR::NonLTRSearch->new( 
-	genome => $genome, 
-	hmmdb  => $hmmdb,
-	trnadb => $trnadb, 
-	clean  => $clean 
-    );
+    #my $ltr_search = Tephra::NonLTR::NonLTRSearch->new( 
+	#genome => $genome, 
+	#hmmdb  => $hmmdb,
+	#trnadb => $trnadb, 
+	#clean  => $clean 
+    #);
 
-    unless (defined $index) {
-	my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
-	$index = $genome.".index";
+    #unless (defined $index) {
+	#my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
+	#$index = $genome.".index";
     
-	my @suff_args = qq(-db $genome -indexname $index -tis -suf -lcp -ssp -sds -des -dna);
-	$ltr_search->create_index(\@suff_args);
-    }
+	#my @suff_args = qq(-db $genome -indexname $index -tis -suf -lcp -ssp -sds -des -dna);
+	#$ltr_search->create_index(\@suff_args);
+    #}
     
-    my $strict_gff  = $ltr_search->ltr_search_strict($index);
-    my $relaxed_gff = $ltr_search->ltr_search_relaxed($index);
+    #my $strict_gff  = $ltr_search->ltr_search_strict($index);
+    #my $relaxed_gff = $ltr_search->ltr_search_relaxed($index);
 
-    return ($relaxed_gff, $strict_gff);
+    #return ($relaxed_gff, $strict_gff);
 }
 
 sub help {

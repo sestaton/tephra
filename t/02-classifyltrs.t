@@ -30,7 +30,7 @@ my @assemb_results = capture { system([0..5], "$cmd classifyltrs -h") };
 ok(@assemb_results, 'Can execute classifyltrs subcommand');
 
 my $find_cmd = "$cmd classifyltrs -g $genome -d $repeatdb -f $gff -o $outdir";
-#say STDERR $find_cmd;
+say STDERR $find_cmd;
 
 my @ret = capture { system([0..5], $find_cmd) };
 

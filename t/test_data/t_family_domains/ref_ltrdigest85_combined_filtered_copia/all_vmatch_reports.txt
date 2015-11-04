@@ -1,0 +1,40 @@
+# args=-dbcluster 80 80 t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/dbcluster-pdoms -p -d -seedlength 10 -exdrop 3 -l 40 -showdesc 0 -sort ld -best 100 /home/statonse/github/tephra/t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/UBN2_2_pdom.index
+# 1 cluster
+# 2 elements out of 3 (66.67%) are in clusters
+# 1 elements out of 3 (33.33%) are singlets
+# 1 cluster of size 2
+0:
+  Contig57_HLAC-254L24_LTR_retrotransposon3_40668-41004
+  Contig57_HLAC-254L24_LTR_retrotransposon3_45773-46109
+# args=-dbcluster 80 80 t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/dbcluster-pdoms -p -d -seedlength 10 -exdrop 3 -l 40 -showdesc 0 -sort ld -best 100 /home/statonse/github/tephra/t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/UBN2_pdom.index
+# 1 cluster
+# 2 elements out of 3 (66.67%) are in clusters
+# 1 elements out of 3 (33.33%) are singlets
+# 1 cluster of size 2
+0:
+  Contig57_HLAC-254L24_LTR_retrotransposon3_40671-41004
+  Contig57_HLAC-254L24_LTR_retrotransposon3_45776-46109
+# args=-dbcluster 80 80 t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/dbcluster-pdoms -p -d -seedlength 10 -exdrop 3 -l 40 -showdesc 0 -sort ld -best 100 /home/statonse/github/tephra/t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/UBN2_3_pdom.index
+# 1 cluster
+# 2 elements out of 3 (66.67%) are in clusters
+# 1 elements out of 3 (33.33%) are singlets
+# 1 cluster of size 2
+0:
+  Contig57_HLAC-254L24_LTR_retrotransposon3_40923-41235
+  Contig57_HLAC-254L24_LTR_retrotransposon3_46028-46340
+# args=-dbcluster 80 80 t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/dbcluster-pdoms -p -d -seedlength 10 -exdrop 3 -l 40 -showdesc 0 -sort ld -best 100 /home/statonse/github/tephra/t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/zf_pdom.index
+# 1 cluster
+# 2 elements out of 2 (100.00%) are in clusters
+# 0 elements out of 2 (0.00%) are singlets
+# 1 cluster of size 2
+0:
+  Contig57_HLAC-254L24_LTR_retrotransposon3_40465-40516
+  Contig57_HLAC-254L24_LTR_retrotransposon3_45570-45621
+# args=-dbcluster 80 20 t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/dbcluster-5primeseqs -p -d -seedlength 10 -exdrop 7 -l 80 -showdesc 0 -sort ld -best 100 -identity 80 /home/statonse/github/tephra/t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/ref_ltrdigest85_combined_filtered_copia_5prime-ltrs.index
+# 0 clusters
+# 0 elements out of 2 (0.00%) are in clusters
+# 2 elements out of 2 (100.00%) are singlets
+# args=-dbcluster 80 20 t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/dbcluster-3primeseqs -p -d -seedlength 10 -exdrop 7 -l 80 -showdesc 0 -sort ld -best 100 -identity 80 /home/statonse/github/tephra/t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/ref_ltrdigest85_combined_filtered_copia_3prime-ltrs.index
+# 0 clusters
+# 0 elements out of 2 (0.00%) are in clusters
+# 2 elements out of 2 (100.00%) are singlets

@@ -2,6 +2,8 @@
 use strict; 
 use Getopt::Long;
 
+our $hmmsearch = '/home/statonse/github/tephra/MGEScan_nonLTR_v2/hmmer-2.3.2/src/hmmsearch';
+
 my $seq; 
 my $phmm_file;
 my $out_dir;
@@ -21,7 +23,7 @@ $pep_file = $out_dir."bbbbb";
 
 system("echo ".$seq." > ".$seq_file);
 system("transeq -frame=f ".$seq_file." -outseq=".$pep_file." 2>/dev/null");
-$command = "hmmsearch ".$phmm_file." ".$pep_file;
+$command = "$hmmsearch ".$phmm_file." ".$pep_file;
 $hmm_result = `$command`;
  
 @hmm_results = split(/\n/, $hmm_result);

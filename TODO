@@ -19,6 +19,15 @@
 -- ltrage
 - make subs. rate a class attribute / option
 
+-- findnonltrs
+- break chromosomes to reduce memory usage in hmmsearch
+- check HMMER2 var and program version
+- remove backticks and shell exec of hmmer
+- remove nasty regex in favor or bioperl reading of report
+- use list form of system to not fork
+- run domain searches in parallel
+- use multiple CPUs (make option) for domain searches
+
 -- meta
 - logging results/progress
 - documentation

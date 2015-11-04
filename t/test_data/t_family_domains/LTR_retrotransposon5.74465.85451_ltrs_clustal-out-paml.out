@@ -1,0 +1,41 @@
+
+BASEML (in paml version 4.8a, July 2014)  LTR_retrotransposon5.74465.85451_ltrs_clustal-out.phy  K80 dGamma (ncatG=5)
+Frequencies..
+                                    T      C      A      G
+3prime_Contig57_HLAC           0.35283 0.18771 0.30470 0.15476 GC = 0.342
+5prime_Contig57_HLAC           0.35061 0.18808 0.30433 0.15698 GC = 0.345
+
+Homogeneity statistic: X2 = 0.00002 G = 0.00002 
+
+Average                        0.35172 0.18789 0.30452 0.15587
+
+# constant sites:   2682 (99.30%)
+ln Lmax (unconstrained) = -3725.778002
+
+Distances:  K80 (kappa)  (alpha set at 0.50)
+This matrix is not used in later m.l. analysis.
+
+3prime_Contig57_HLAC  
+5prime_Contig57_HLAC    0.0071( 2.2422)
+
+TREE #  1:  (1, 2);  MP score: 19.00
+lnL(ntime:  2  np:  4):  -3876.877709    +0.000000
+   3..1     3..2  
+ 0.007166 0.000004 2.247761 0.182755
+
+tree length =   0.00717
+
+(3prime_Contig57_HLAC, 5prime_Contig57_HLAC);
+
+(3prime_Contig57_HLAC: 0.007166, 5prime_Contig57_HLAC: 0.000004);
+
+Detailed output identifying parameters
+
+Parameters (kappa) in the rate matrix (K80) (Yang 1994 J Mol Evol 39:105-111):
+  2.24776
+
+alpha (gamma, K=5) =  0.18275
+rate:   0.00008  0.00718  0.09454  0.60692  4.29129
+freq:   0.20000  0.20000  0.20000  0.20000  0.20000
+
+check convergence..

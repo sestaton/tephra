@@ -1,0 +1,23 @@
+reading file "t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/zf_pdom.fasta"
+for this input size and alphabet size, the maximal prefixlength
+(argument of option -pl) is 2,
+the recommended prefixlength is 1
+total length of sequences: 105 (including 1 separator)
+alphabet "aAcCgGtTuUnsywrkvbdhmNSYWRKVBDHM" (size 32) mapped to "acgtn" (size 5)
+create file "t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/zf_pdom.index.tis"
+create file "t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/zf_pdom.index.ois"
+create file "t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/zf_pdom.index.des"
+create file "t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/zf_pdom.index.sds"
+create file "t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/zf_pdom.index.lcp"
+initializing data structures
+sorting suffixes according to prefix of length 1
+sorting all buckets
+create file "t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/zf_pdom.index.llv"
+create file "t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/zf_pdom.index.bck"
+create file "t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/zf_pdom.index.suf"
+create file "t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/zf_pdom.index.sti1"
+create file "t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/zf_pdom.index.bwt"
+create file "t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/zf_pdom.index.prj"
+create file "t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/zf_pdom.index.al1"
+create file "t/test_data/t_family_domains/ref_ltrdigest85_combined_filtered_copia/zf_pdom.index.skp"
+overall space peak: main=0.19 MB (1945.93 bytes/symbol), secondary=0.00 MB

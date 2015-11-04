@@ -35,8 +35,7 @@ ok( @files == 3, 'Correctly generated subdirectories for family level classifica
 
 for my $file (@files) {
     my $find_cmd = "$cmd ltrage -g $genome -f $file -o $outdir";
-    #say STDERR $find_cmd;
-
+    say STDERR $find_cmd;
     my @ret = capture { system([0..5], $find_cmd) };
 }
 
@@ -48,6 +47,6 @@ ok( @divfiles == 5, 'Generated the expected number of LTR-RT age calculations');
 my @outfiles;
 find( sub { push @outfiles, $File::Find::name if /^ref_ltr/ && ! /$gff/ }, $testdir);
 unlink @outfiles;
-remove_tree( $outdir, { safe => 1 } );
+#remove_tree( $outdir, { safe => 1 } );
     
 done_testing();
