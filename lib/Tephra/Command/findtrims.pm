@@ -32,7 +32,7 @@ sub validate_args {
     elsif ($self->app->global_options->{help}) {
 	$self->help;
     }
-    elsif (!$opt->{genome}) { # || !$opt->{outfile}) { # || !$opt->{hmmdb}) {
+    elsif (!$opt->{genome}) {
 	say "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
@@ -69,7 +69,6 @@ sub _refine_trim_predictions {
 
     $refine_obj->sort_features({ gff               => $relaxed_gff, 
 				 combined_features => $combined_features });
-
 }
 
 sub _run_trim_search {
@@ -133,6 +132,9 @@ __END__
 
 =head1 DESCRIPTION
 
+ Terminal Repeats In Minature (TRIMs) are abundant in many eukaryotic genomes and this command
+ allows you to identify the nature and properties of these elements in a genome. By comparing these
+ to autonomous LTR retrotransposons it may be possible to understand their origin and abundance.
 
 =head1 AUTHOR 
 

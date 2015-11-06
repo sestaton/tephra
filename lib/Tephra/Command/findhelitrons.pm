@@ -11,7 +11,7 @@ use Tephra::Hel::HelSearch;
 sub opt_spec {
     return (    
 	[ "genome|g=s",              "The genome sequences in FASTA format to search for Helitrons "   ],
-	[ "helitronscanner_dir|d=s", "The HelitronScanner directory "    ],
+	[ "helitronscanner_dir|d=s", "The HelitronScanner directory (configured automatically) "       ],
 	[ "outfile|o=s",             "The final combined and filtered GFF3 file of Helitrons "         ],
     );
 }
@@ -91,11 +91,11 @@ __END__
 
 =head1 SYNOPSIS    
 
- tephra findtirs -g ref.fas -d te_models.hmm
+ tephra findhelitrons -g ref.fas -o ref_helitrons.gff3
 
 =head1 DESCRIPTION
 
- Find TIR transposons in a reference genome assembly.
+ Find Helitionrs in a reference genome assembly.
 
 =head1 AUTHOR 
 
@@ -109,9 +109,9 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
  The genome sequences in FASTA format to search for TIR TEs.
 
-=item -d, --hmmdb
+=item -o, --outfile
 
- The HMM db in HMMERv3 format to search for coding domains.
+ The final combined and filtered GFF3 file of Helitrons.
 
 =back
 
@@ -119,13 +119,10 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =over 2
 
-=item -i, --index
+=item -d, --helitronscanner_dir
 
- The suffixerator index to use for the LTR search.
-
-=item -c, --clean
-
- Clean up the index files (Default: yes).
+ The HelitronScanner directory. This should not have to be used except by developers as it
+ should be configured automatically during the installation.
 
 =item -h, --help
 

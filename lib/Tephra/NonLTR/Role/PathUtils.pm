@@ -7,6 +7,19 @@ use File::Spec;
 use IPC::System::Simple qw(capture);
 use Carp 'croak';
 
+=head1 NAME
+
+Tephra::NonLTR::Role::PathUtils - Helper role for setting proper paths to programs
+
+=head1 VERSION
+
+Version 0.01
+
+=cut
+
+our $VERSION = '0.01';
+$VERSION = eval $VERSION;
+
 sub find_hmmsearch {
     my $hmmsearch = File::Spec->catfile($ENV{HOME}, '.tephra', 'hmmer-2.3.2', 'bin', 'hmmsearch');
     if (-e $hmmsearch && -x $hmmsearch) {
@@ -45,5 +58,32 @@ sub find_hmmsearch {
         }
     }
 }
+
+=head1 AUTHOR
+
+S. Evan Staton, C<< <statonse at gmail.com> >>
+
+=head1 BUGS
+
+Please report any bugs or feature requests through the project site at 
+L<https://github.com/sestaton/tephra/issues>. I will be notified,
+and there will be a record of the issue. Alternatively, I can also be 
+reached at the email address listed above to resolve any questions.
+
+=head1 SUPPORT
+
+You can find documentation for this module with the perldoc command.
+
+    perldoc Tephra::NonLTR::Role::PathUtils
+
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright (C) 2015- S. Evan Staton
+
+This program is distributed under the MIT (X11) License, which should be distributed with the package. 
+If not, it can be found here: L<http://www.opensource.org/licenses/mit-license.php>
+
+=cut
 
 1;

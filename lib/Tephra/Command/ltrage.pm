@@ -10,10 +10,10 @@ use Tephra::LTR::LTRStats;
 
 sub opt_spec {
     return (
-	[ "genome|g=s",   "The genome sequences in FASTA format used to search for LTR-RTs "   ],
-	[ "gff|f=s",      "The GFF3 file of LTR-RTs in <genome> "    ],
-	[ "outdir|o=s",   "The output directory for placing categorized elements " ],
-	[ "threads|t=i",  "The number of threads to use for clustering coding domains " ],
+	[ "genome|g=s",   "The genome sequences in FASTA format used to search for LTR-RTs "           ],
+	[ "gff|f=s",      "The GFF3 file of LTR-RTs in <genome> "                                      ],
+	[ "outdir|o=s",   "The output directory for placing categorized elements "                     ],
+	[ "threads|t=i",  "The number of threads to use for clustering coding domains "                ],
 	[ "clean|c",      "Clean up all the intermediate files from PAML and clustalw (Default: yes) " ],
 	);
 }

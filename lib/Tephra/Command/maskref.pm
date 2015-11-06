@@ -86,7 +86,7 @@ __END__
 
 =head1 NAME
                                                                        
- tephra maskref - Mask a reference genome with transposons.
+ tephra maskref - Mask a reference genome with a custom repeat library.
 
 =head1 SYNOPSIS    
 

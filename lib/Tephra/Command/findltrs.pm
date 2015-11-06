@@ -66,11 +66,6 @@ sub _refine_ltr_predictions {
     }
 	
     my $refine_obj = Tephra::LTR::LTRRefine->new(%refine_opts);
-	#genome             => $fasta,
-	#remove_dup_domains => $dedup,
-	#remove_tnp_domains => $detnp,
-	#outfile            => $outfile,
-    #);
 	
     my $relaxed_features
 	= $refine_obj->collect_features({ gff => $relaxed_gff, pid_threshold => 85 });
@@ -83,11 +78,9 @@ sub _refine_ltr_predictions {
     my $combined_features = $refine_obj->reduce_features({ relaxed_features => $relaxed_features, 
 							   strict_features  => $strict_features,
 							   best_elements    => $best_elements });
-
     
     $refine_obj->sort_features({ gff               => $relaxed_gff, 
 				 combined_features => $combined_features });
-
 }
 
 sub _run_ltr_search {

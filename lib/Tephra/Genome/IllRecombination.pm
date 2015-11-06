@@ -17,10 +17,22 @@ use Statistics::Descriptive;
 use Time::HiRes qw(gettimeofday);
 use Log::Any qw($log);
 use namespace::autoclean;
-
-use Data::Dump;
+#use Data::Dump;
 
 with 'Tephra::Role::Util';
+
+=head1 NAME
+
+Tephra::Genome::IllRecombination - Calculate illigetimate recombination in a genome
+
+=head1 VERSION
+
+Version 0.01
+
+=cut
+
+our $VERSION = '0.01';
+$VERSION = eval $VERSION;
 
 has dir => (
       is       => 'ro',
@@ -619,6 +631,33 @@ sub _remove_singletons {
 
     delete $args->{$_} for @singles;
 }
+
+=head1 AUTHOR
+
+S. Evan Staton, C<< <statonse at gmail.com> >>
+
+=head1 BUGS
+
+Please report any bugs or feature requests through the project site at 
+L<https://github.com/sestaton/tephra/issues>. I will be notified,
+and there will be a record of the issue. Alternatively, I can also be 
+reached at the email address listed above to resolve any questions.
+
+=head1 SUPPORT
+
+You can find documentation for this module with the perldoc command.
+
+    perldoc Tephra::Genome::IllRecombination
+
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright (C) 2015- S. Evan Staton
+
+This program is distributed under the MIT (X11) License, which should be distributed with the package. 
+If not, it can be found here: L<http://www.opensource.org/licenses/mit-license.php>
+
+=cut
 
 __PACKAGE__->meta->make_immutable;
 

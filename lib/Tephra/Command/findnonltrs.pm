@@ -94,11 +94,12 @@ __END__
 
 =head1 SYNOPSIS    
 
- tephra findnonltrs
+ tephra findnonltrs -g genome_seqs_dir -o ref_nonltrs_results
 
 =head1 DESCRIPTION
  
-
+ Find non-LTR retrotransposons in a reference genome, classify them into known superfamilies, 
+ and generate a GFF file showing their locations and properties.
 
 =head1 AUTHOR 
 
@@ -108,17 +109,13 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =over 2
 
-=item -g, --genome
+=item -g, --genomedir
 
- The genome sequences in FASTA format used to search for LTR-RTs.
+The directory genome sequences in FASTA format to search for non-LTR-RTs. Important: the sequences must be split into one sequence per file. Numerous sequence files in the directory are expected (e.g., one per chromosome).
 
-=item -t, --trnadb
+=item -o, --outdir
 
- The file of tRNA sequences in FASTA format to search for PBS.
-
-=item -d, --hmmdb
-
- The HMM db in HMMERv3 format to search for coding domains.
+The directory name to place the resulting GFF file (and run the analysis).
 
 =back
 
@@ -126,25 +123,9 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =over 2
 
-=item -o, --outfile
+=item -d, --pdir
 
- The final combined and filtered GFF3 file of LTR-RTs.
-
-=item -i, --index
-
- The suffixerator index to use for the LTR search.
-
-=item -r, --dedup
-
- Discard elements with duplicate coding domains (Default: no).
-
-=item --tnpfilter
-
- Discard elements containing transposase domains (Default: no).
-
-=item -c, --clean
-
- Clean up the index files (Default: yes).
+ The directory to search for HMMs. This should be configured automatically during installation and this option should only have to be used by developers.
 
 =item -h, --help
 

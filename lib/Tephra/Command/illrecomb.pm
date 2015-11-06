@@ -9,13 +9,13 @@ use Tephra::Genome::IllRecombination;
 
 sub opt_spec {
     return (
-	[ "indir|i=s",       "The directory of LTR families in FASTA format. " ],
-	[ "outfile|o=s",     "The filename to write the extracted sequences to " ],
-	[ "statsfile|s=s",   "The file to write the alignment stats for all gaps to " ],
+	[ "indir|i=s",       "The directory of LTR families in FASTA format. "                             ],
+	[ "outfile|o=s",     "The filename to write the extracted sequences to "                           ],
+	[ "statsfile|s=s",   "The file to write the alignment stats for all gaps to "                      ],
 	[ "recombstats|r=s", "The file to write the alignment stats for illegetimate recombination sites " ],
-	[ "repeatpid|p=i",   "The percent identity threshold for retaining repeats that flank gaps. " ],
-	[ "threads|t=i",     "The number of threads to use for alignments (Default: 1) " ],
-	[ "clean|c",         "Clean up the intermediate alignment files (Default: yes) " ],
+	[ "repeatpid|p=i",   "The percent identity threshold for retaining repeats that flank gaps. "      ],
+	[ "threads|t=i",     "The number of threads to use for alignments (Default: 1) "                   ],
+	[ "clean|c",         "Clean up the intermediate alignment files (Default: yes) "                   ],
 	);
 }
 
@@ -64,7 +64,6 @@ sub _calculate_ill_recomb {
     );
     
     $ill_obj->find_illigetimate_recombination;
-
 }
 
 sub help {
@@ -77,14 +76,14 @@ USAGE: tephra illrecomb [-h] [-m]
 Required:
     -i|indir         :    The directory of LTR families in FASTA format.
     -o|outfile       :    File name to write the extracted sequences to.
+    -s|statsfile     :    A file to write alignment stats to.
 
 Options:
     -t|threads       :    The number of threads to use for alignments (Default: 1).    
     -r|recombstats   :    The file to write the alignment stats for illegetimate recombination sites.    
-    -s|statsfile     :    A file to write alignment stats to.
     -p|repeat_pid    :    The percent identity threshold for retaining repeats that flank gaps. 
                           (Default: 10, which is a 2 bp match).
-    -c|clean         :     Clean up the intermediate alignment files (Default: yes).
+    -c|clean         :    Clean up the intermediate alignment files (Default: yes).
 			  
 END
 }
@@ -93,15 +92,17 @@ END
 
 =head1 NAME
                                                                        
- tephra illrecomb
+ tephra illrecomb - Calculate the nature and extent of illigetimate recombination in a genome
 
 =head1 SYNOPSIS    
 
- tephra illrecomb
+ tephra illrecomb -i tephra_ltr_familyX_dir -s familyX_illrecomb_stats.txt -o familyX_illrecomb_seqs.fasta
 
 =head1 DESCRIPTION
 
- This subcommand takes a 
+ This subcommand calculates the nature of illigetimate recombination (total events, size, sequences involved),
+ in a genome by analyzing one TE family at a time. By comparison, it is possible to see if there are
+ differences between TE families (my analyses suggest there should not be).
 
 =head1 AUTHOR 
 
@@ -111,23 +112,17 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =over 2
 
-=item -g, --genome
+=item -i, --indir
 
- The genome sequences in FASTA format used to search for LTR-RTs.
+ The directory of LTR families in FASTA format.
 
-=item -d, --repeatdb
+=item -o, --outfile
 
- The file of repeat sequences in FASTA format to use for classification.
+ File name to write the extracted sequences to.
 
-=item -f, --gff
+=item -s, --statsfile
 
- The GFF3 file of LTR-RTs in <--genome> as output by the 'tephra findltrs' command.
-
-=item -o, --outdir
-
- The output directory for placing categorized elements.
-
-=back
+ A file to write alignment stats to.
 
 =head1 OPTIONS
 
@@ -135,7 +130,20 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =item -t, --threads
 
- The number of threads to use for clustering coding domains (Default: 1).
+ The number of threads to use for alignments (Default: 1).
+
+=item -r, --recombstats
+
+ The file to write the alignment stats for illegetimate recombination sites.
+
+=item -p, --repeat_pid
+
+ The percent identity threshold for retaining repeats that flank gaps.
+ The default is 10, which is a 2 bp match.
+
+=item -c, --clean
+
+ Clean up the intermediate alignment files (Default: yes).
 
 =item -h, --help
 
