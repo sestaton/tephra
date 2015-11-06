@@ -81,8 +81,12 @@ sub parse_hmmsearch {
 }
 
 sub find_hmmsearch {
-    if (defined $ENV{HMMER2}) {
-	my $hmmsearch = join "/", $ENV{HMMER2}, 'src', 'hmmsearch';
+    my $hmmsearch = File::Spec->catfile($ENV{HOME}, '.tephra', 'hmmer-2.3.2', 'bin', 'hmmsearch');
+    if (-e $hmmsearch && -x $hmmsearch) {
+	return $hmmsearch;
+    }
+    elsif (defined $ENV{HMMER2}) {
+	$hmmsearch = join "/", $ENV{HMMER2}, 'src', 'hmmsearch';
 	if (-e $hmmsearch && -x $hmmsearch) {
 	    return $hmmsearch;
 	}
@@ -92,11 +96,12 @@ sub find_hmmsearch {
 		return $hmmsearch;
 	    }
 	}
+    }
     else {
 	my @path = split /:|;/, $ENV{PATH};
-
+	
 	for my $p (@path) {
-	    my $hmmsearch = File::Spec->catfile($p, 'hmmsearch');
+	    $hmmsearch = File::Spec->catfile($p, 'hmmsearch');
 	    if (-e $hmmsearch && -x $hmmsearch) {
 		my @out = capture([0..5], "hmmsearch", "-h");
 		my ($version) = grep { /HMMER/ } @out;		    

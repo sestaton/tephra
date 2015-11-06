@@ -1,7 +1,0 @@
-RVT_1_pdom.fasta just finished with PID 9000 and exit code: 0 in 0.02 minutes
-Retrotrans_gag_pdom.fasta just finished with PID 9005 and exit code: 0 in 0.03 minutes
-rve_pdom.fasta just finished with PID 9011 and exit code: 0 in 0.05 minutes
-ref_ltrdigest85_combined_filtered_gypsy_5prime-ltrs.fasta just finished with PID 9016 and exit code: 0 in 0.07 minutes
-ref_ltrdigest85_combined_filtered_gypsy_3prime-ltrs.fasta just finished with PID 9021 and exit code: 0 in 0.08 minutes
-
-========> Finished running vmatch on 5 domains in 0.08 minutes

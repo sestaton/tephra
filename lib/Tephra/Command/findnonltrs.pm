@@ -7,13 +7,13 @@ use warnings;
 use File::Basename;
 use Tephra -command;
 use Tephra::NonLTR::NonLTRSearch;
-#use Tephra::LTR::LTRRefine;
+use Tephra::NonLTR::GFFWriter;
 
 sub opt_spec {
     return (    
-	[ "genome|g=s",  "The genome sequences in FASTA format to search for non-LTR-RTs "    ],
-	[ "hmmdir|d=s",  "The directory of HMMs in HMMERv3 format to search for coding domains "     ],
-	[ "outdir|o=s",  "The location to place the results "          ],
+	[ "genomedir|g=s", "The genome sequences in FASTA format to search for non-LTR-RTs " ],
+	[ "pdir|d=s",      "The directory to search for HMMs (configured automatically) "    ],
+	[ "outdir|o=s",    "The location to place the results "                              ],
     );
 }
 
@@ -27,7 +27,7 @@ sub validate_args {
     elsif ($self->app->global_options->{help}) {
 	$self->help;
     }
-    elsif (!$opt->{genome}) {
+    elsif (!$opt->{genomedir} || !$opt->{outdir}) {
 	say "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
@@ -39,54 +39,45 @@ sub execute {
     exit(0) if $self->app->global_options->{man} ||
 	$self->app->global_options->{help};
 
-    my ($relaxed_gff, $strict_gff) = _run_nonltr_search($opt);
-    #my $some = _refine_ltr_predictions($relaxed_gff, $strict_gff, $opt);
+    my ($gff) = _run_nonltr_search($opt);
 }
 
 sub _run_nonltr_search {
     my ($opt) = @_;
     
-    my $genome = $opt->{genome};
-    
-    #my $ltr_search = Tephra::NonLTR::NonLTRSearch->new( 
-	#genome => $genome, 
-	#hmmdb  => $hmmdb,
-	#trnadb => $trnadb, 
-	#clean  => $clean 
-    #);
+    my $genomedir = $opt->{genomedir};
+    my $outdir    = $opt->{outdir};
+    my $pdir      = $opt->{pdir};
+    $pdir //= File::Spec->catdir($ENV{HOME}, '.tephra');
 
-    #unless (defined $index) {
-	#my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
-	#$index = $genome.".index";
-    
-	#my @suff_args = qq(-db $genome -indexname $index -tis -suf -lcp -ssp -sds -des -dna);
-	#$ltr_search->create_index(\@suff_args);
-    #}
-    
-    #my $strict_gff  = $ltr_search->ltr_search_strict($index);
-    #my $relaxed_gff = $ltr_search->ltr_search_relaxed($index);
+    my $nonltr_obj = Tephra::NonLTR::NonLTRSearch->new(
+	fastadir => $genomedir,
+	outdir   => $outdir,
+	pdir     => $pdir );
 
-    #return ($relaxed_gff, $strict_gff);
+    $nonltr_obj->find_nonltrs;
+
+    my $gff_obj = Tephra::NonLTR::GFFWriter->new(
+        fastadir => $genomedir,
+	outdir   => $outdir );
+
+    $gff_obj->write_gff;
 }
 
 sub help {
     print STDERR<<END
 
-USAGE: tephra findltrs [-h] [-m]
+USAGE: tephra findnonltrs [-h] [-m]
     -m --man      :   Get the manual entry for a command.
     -h --help     :   Print the command usage.
 
 Required:
-    -g|genome     :   The genome sequences in FASTA format to search for LTR-RTs. 
-    -t|trnadb     :   The file of tRNA sequences in FASTA format to search for PBS. 
-    -d|hmmdb      :   The HMM db in HMMERv3 format to search for coding domains.
+    -g|genomedir  :   The genome sequences in FASTA format (one sequence per file) 
+                      to search for non-LTR-RTs. 
+    -o|outdir     :   The location to place the results. 
 
 Options:
-    -o|outfile    :   The final combined and filtered GFF3 file of LTR-RTs.
-    -i|index      :   The suffixerator index to use for the LTR search.
-    -r|dedup      :   Discard elements with duplicate coding domains (Default: no).
-    --tnpfilter   :   Discard elements containing transposase domains (Default: no).
-    -c|clean      :   Clean up the index files (Default: yes).
+    -p|pdir       :   Location of the HMM models (Default: configured automatically).
 
 END
 }
@@ -99,17 +90,15 @@ __END__
 
 =head1 NAME
                                                                        
- tephra findltrs - Find LTR retrotransposons in a genome assembly.
+ tephra findnonltrs - Find non-LTRs retrotransposons in a genome assembly.
 
 =head1 SYNOPSIS    
 
- tephra findltrs -g ref.fas -t trnadb.fas -d te_models.hmm --tnpfilter --clean
+ tephra findnonltrs
 
 =head1 DESCRIPTION
  
- Search a reference genome and find LTR-RTs under relaxed and strict conditions (more on
- this later...), filter all predictions by a number of criteria, and generate a consensus
- set of the best scoring elements.
+
 
 =head1 AUTHOR 
 

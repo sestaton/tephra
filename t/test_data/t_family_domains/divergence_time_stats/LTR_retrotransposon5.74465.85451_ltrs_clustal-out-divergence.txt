@@ -1,1 +1,0 @@
-LTR_retrotransposon5.74465.85451_ltrs_clustal-out.phy	0.0071	355000	2.2422

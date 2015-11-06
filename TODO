@@ -27,6 +27,7 @@
 - use list form of system to not fork
 - run domain searches in parallel
 - use multiple CPUs (make option) for domain searches
+- write GFF of results
 
 -- meta
 - logging results/progress
