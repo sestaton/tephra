@@ -1,4 +1,0 @@
-use File::Basename;
-
-my $sru = 'genome/Ha1.fa';
-print basename($sru);

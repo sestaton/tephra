@@ -1,9 +1,0 @@
-CC=	gcc
-CFLAG= -O3 -Wall
-SRCS=	util_lib.c hmm_lib.c test_hmm.c
-
-MGEScan:	util_lib.o hmm_lib.o test_hmm.o
-	$(CC)  -o MGEScan util_lib.o hmm_lib.o test_hmm.o  -lm 
-
-clean:
-	rm -rf *.o MGEScan *~

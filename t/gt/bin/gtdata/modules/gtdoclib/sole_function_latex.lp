@@ -1,1 +1,0 @@
-\section{Sole functions}

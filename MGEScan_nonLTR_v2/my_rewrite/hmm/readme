@@ -1,3 +1,0 @@
-make clean
-make test_hmm
-./run_dmel.pl
