@@ -8,7 +8,7 @@
  use File::Spec;
  use File::Find;
  use File::Copy qw(copy move);
- use File::Path qw(make_path);
+ use File::Path qw(make_path remove_tree);
  use File::Basename;
  use Path::Class::File;
  use HTML::TreeBuilder;
@@ -49,6 +49,8 @@
      my $chrdir  = File::Spec->catdir($root, 'hmm');
      my $mgescan = File::Spec->catfile($chrdir, 'tephra-MGEScan');
      my $transla = File::Spec->catfile($chrdir, 'tephra-translate');
+     my $clw     = File::Spec->catdir($root, 'clustalw-2.1', 'bin', 'clustalw2');
+     my $pamlbin = File::Spec->catdir($root, 'paml4.8', 'bin');
 
      unless (-e $gt) {
 	 $gt = $self->get_gt_exes;
@@ -74,7 +76,15 @@
 	 ($mgescan, $transla) = $self->build_mgescan;
      }
 
-     return ($gt, $hscan, $hmmbin, $moddir, $chrdir, $mgescan, $transla);
+     unless (-e $clw) {
+         $clw = $self->fetch_clustalw2;
+     }
+     
+     unless (-e $pamlbin) {
+         $pamlbin = $self->fetch_paml;
+     }
+
+     return ($gt, $hscan, $hmmbin, $moddir, $chrdir, $mgescan, $transla, $clw, $pamlbin);
  }
 
  sub get_gt_exes {
@@ -171,7 +181,87 @@
      return $hmmbin;
  }
 
- sub fetch_hmm_models {
+sub fetch_clustalw2 {
+    my $self = shift;
+    my $root = $self->basedir;
+    my $wd   = $self->workingdir;
+
+    my $urlbase = 'http://www.clustal.org';
+    my $dir     = 'download';
+    my $tool    = 'current';
+    my $file    = 'clustalw-2.1.tar.gz';
+    my $url     = join "/", $urlbase, $dir, $tool, $file;
+    my $outfile = File::Spec->catfile($root, $file);
+    $self->fetch_file($outfile, $url);
+
+    chdir $root;
+    my $dist = 'clustalw-2.1';
+    system("tar xzf $file") == 0 or die "tar failed: $!";
+    chdir $dist;
+    my $cwd = getcwd();
+    system("./configure --prefix=$cwd 2>&1 > /dev/null") == 0
+	or die "configure failed: $!";
+    system("make -j4 2>&1 > /dev/null") == 0 
+	or die "make failed: $!";
+    system("make install 2>&1 > /dev/null") == 0
+	or die "make failed: $!";
+    
+    my $clw = File::Spec->catdir($cwd, 'bin', 'clustalw2');
+    my $distfile = File::Spec->catfile($root, $file);
+    unlink $distfile;
+    chdir $wd;
+
+    return $clw;
+}
+
+sub fetch_paml {
+    my $self = shift;
+    my $root = $self->basedir;
+    my $wd   = $self->workingdir;
+
+    my $urlbase = 'http://abacus.gene.ucl.ac.uk';
+    my $dir     = 'software';
+    my $file    = 'pamlX1.3.1+paml4.8a-win32.tgz';
+    my $url     = join "/", $urlbase, $dir, $file;
+    my $outfile = File::Spec->catfile($root, $file);
+    $self->fetch_file($outfile, $url);
+
+    chdir $root;
+    my $dist  = 'paml4.8';
+    my $xdist = 'pamlX';
+    system("tar xzf $file") == 0 or die "tar failed: $!";
+    remove_tree( $xdist, { safe => 1 } );
+    unlink $file;
+
+    chdir $dist;
+    my $cwd = getcwd();
+    my $bin = File::Spec->catdir($cwd, 'bin');
+    my @exes;
+    find( sub { push @exes, $File::Find::name if -f and /\.exe$/ }, $bin );
+    unlink @exes;
+    chdir 'src';
+    system("make -j4 2>&1 >/dev/null") == 0 
+	or die "make failed: $!";
+
+    my @exelist = ('yn00', 'baseml', 'basemlg', 'mcmctree', 'pamp', 'evolver', 'infinitesites', 'codeml');
+    my $rootdir = File::Spec->catdir($root, 'paml4.8', 'bin');
+    unless ( -d $rootdir ) {
+	make_path( $rootdir, {verbose => 0, mode => 0771,} );
+    }
+
+    for my $file (@exelist) {
+	copy $file, $rootdir or die "Copy failed: $!";
+    }
+
+    my @nonexes = map { File::Spec->catfile($rootdir, $_) } @exelist;
+    my $cnt = chmod 0755, @nonexes;
+    
+    if ($cnt == @exelist) {
+	return $rootdir;
+    }
+}
+
+sub fetch_hmm_models {
      my $self = shift;
      my $root = $self->basedir;
      my $wd   = $self->workingdir;
