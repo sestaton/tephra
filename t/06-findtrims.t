@@ -11,9 +11,6 @@ use File::Spec;
 
 use Test::More tests => 2;
 
-#my $bindir = File::Spec->catdir('t', 'gt', 'bin');
-#local $ENV{PATH} = "$bindir:$ENV{PATH}";
-
 my $cmd     = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir = File::Spec->catdir('t', 'test_data');
 my $genome  = File::Spec->catfile($testdir, 'ref.fas');
@@ -25,7 +22,7 @@ my @assemb_results = capture { system([0..5], "$cmd findtrims -h") };
 ok(@assemb_results, 'Can execute findtrims subcommand');
 
 my $find_cmd = "$cmd findtrims -g $genome -t $trnas -d $model --clean";
-say STDERR $find_cmd;
+#say STDERR $find_cmd;
 
 my @ret = capture { system([0..5], $find_cmd) };
 

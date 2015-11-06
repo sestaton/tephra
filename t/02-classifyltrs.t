@@ -15,9 +15,6 @@ use Data::Dump;
 
 use Test::More tests => 4;
 
-#my $bindir = File::Spec->catdir('t', 'gt', 'bin');
-#local $ENV{PATH} = "$bindir:$ENV{PATH}";
-
 my $cmd      = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir  = File::Spec->catdir('t', 'test_data');
 my $outdir   = File::Spec->catfile($testdir, 't_family_domains');
@@ -30,7 +27,7 @@ my @assemb_results = capture { system([0..5], "$cmd classifyltrs -h") };
 ok(@assemb_results, 'Can execute classifyltrs subcommand');
 
 my $find_cmd = "$cmd classifyltrs -g $genome -d $repeatdb -f $gff -o $outdir";
-say STDERR $find_cmd;
+#say STDERR $find_cmd;
 
 my @ret = capture { system([0..5], $find_cmd) };
 

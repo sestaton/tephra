@@ -11,7 +11,7 @@ use File::Path qw(make_path);
 use Tephra::Config;
 use Cwd;
 
-use Test::More tests => 12;
+use Test::More tests => 13;
 
 BEGIN {
     use_ok( 'Tephra' ) || print "Bail out!\n";
@@ -27,8 +27,11 @@ my $cwd = getcwd();
 #say STDERR $cwd and exit;
 my $basedir = File::Spec->catdir($ENV{HOME}, '.tephra');
 my $confobj = Tephra::Config->new( basedir => $basedir, workingdir => $cwd );
-my ($gt, $hscan, $hmmbin, $moddir, $chrdir, $mgescan, $trans, $clw, $pamlbin) 
-    = $confobj->configure_root;
+#my ($gt, $hscan, $hmmbin, $moddir, $chrdir, $mgescan, $trans, $clw, $pamlbin) 
+my $config = $confobj->configure_root;
+my ($gt, $hscan, $hmmbin, $moddir, $chrdir, $mgescan, $trans, $clw, $pamlbin, $transeq)
+    = @{$config}{qw(gt hscandir hmmerbin modeldir hmmdir mgescan transcmd clustalw pamlbin transeq)};
+
 my $hmmsearch = File::Spec->catfile($hmmbin, 'hmmsearch');
 
 ok( -x $gt,        'Can execute gt for testing' );
@@ -40,6 +43,7 @@ ok( -e $mgescan,   'Can build custom MGEScan for non-LTR search' );
 ok( -e $trans,     'Can build translate command for non-LTR search' );
 ok( -e $clw,       'Can build clustalw for alignments' );
 ok( -e $pamlbin,   'Can build paml for analyzing LTR demography' );
+ok( -e $transeq,   'Can build transeq for identify coding domains' );
 
 done_testing();
 

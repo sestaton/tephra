@@ -11,9 +11,6 @@ use File::Spec;
 
 use Test::More tests => 2;
 
-#my $bindir = File::Spec->catdir('t', 'gt', 'bin');
-#local $ENV{PATH} = "$bindir:$ENV{PATH}";
-
 my $cmd     = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir = File::Spec->catdir('t', 'test_data');
 my $genome  = File::Spec->catfile($testdir, 'ref.fas');
@@ -24,7 +21,7 @@ my @results = capture { system([0..5], "$cmd findtirs -h") };
 ok(@results, 'Can execute findtirs subcommand');
 
 my $find_cmd = "$cmd findtirs -g $genome -d $model --clean";
-say STDERR $find_cmd;
+#say STDERR $find_cmd;
 
 my @ret = capture { system([0..5], $find_cmd) };
 

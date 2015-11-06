@@ -13,9 +13,6 @@ use Data::Dump;
 
 use Test::More tests => 3;
 
-#my $bindir = File::Spec->catdir('t', 'gt', 'bin');
-#local $ENV{PATH} = "$bindir:$ENV{PATH}";
-
 my $cmd      = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir  = File::Spec->catdir('t', 'test_data');
 my $genome   = File::Spec->catfile($testdir, 'ref.fas');
@@ -27,7 +24,7 @@ my @assemb_results = capture { system([0..5], "$cmd maskref -h") };
 ok(@assemb_results, 'Can execute maskref subcommand');
 
 my $find_cmd = "$cmd maskref -g $genome -d $repeatdb --clean";
-say STDERR $find_cmd;
+#say STDERR $find_cmd;
 
 my @ret = capture { system([0..5], $find_cmd) };
 

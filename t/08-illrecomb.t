@@ -13,9 +13,6 @@ use Data::Dump;
 
 use Test::More tests => 8;
 
-#my $bindir = File::Spec->catdir('t', 'gt', 'bin');
-#local $ENV{PATH} = "$bindir:$ENV{PATH}";
-
 my $cmd       = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir   = File::Spec->catdir('t', 'test_data');
 my $outdir    = File::Spec->catdir($testdir, 't_family_domains');
@@ -29,10 +26,10 @@ my @results   = capture { system([0..5], "$cmd illrecomb -h") };
 ok(@results, 'Can execute illrecomb subcommand');
 
 my $find_cmd = "$cmd illrecomb -i $resdir -s $allstfile -r $illstfile -o $seqfile";
-say STDERR $find_cmd;
+#say STDERR $find_cmd;
 
-#my @ret = capture { system([0..5], $find_cmd) };
-system([0..5], $find_cmd);
+my @ret = capture { system([0..5], $find_cmd) };
+#system([0..5], $find_cmd);
 
 ok( -s $allstfile, 'Generated statistics for all gap sites' );
 ok( -s $illstfile, 'Generated statistics for all putative illegetimate recombination sites' );

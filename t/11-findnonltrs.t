@@ -13,9 +13,6 @@ use Data::Dump;
 
 use Test::More tests => 2;
 
-#my $bindir = File::Spec->catdir('t', 'gt', 'bin');
-#local $ENV{PATH} = "$bindir:$ENV{PATH}";
-
 my $cmd     = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir = File::Spec->catdir('t', 'test_data');
 my $genome  = File::Spec->catfile($testdir, 'nonltrgenome'); #, 'Ha1.fa');
