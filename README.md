@@ -7,7 +7,7 @@ Tephra is a command line application to annotate [transposable elements](http://
 
 **DEPENDENCIES**
 
-Part of utility of Tephra is to provide family-level TE classifications and infer patterns of molecular evoltion. To be efficient as possible, these tasks requires a few external programs. Specifically, you will need to download [muscle](http://drive5.org/muscle) and [vmatch](http://vmatch.de), both of which require a license so I cannot distribute them (but they are free). If you are only interested in TE identification, you can skip the need to download these programs.
+Part of utility of Tephra is to provide family-level TE classifications and infer patterns of molecular evoltion. To be efficient as possible, these tasks require a few external programs. Specifically, you will need to download [MUSCLE](http://http://drive5.com/muscle/) and [Vmatch](http://vmatch.de), both of which require a license so I cannot distribute them (but they are free). If you are only interested in TE identification, you can skip the need to download these programs.
 
 **SUPPORT AND DOCUMENTATION**
 
@@ -26,6 +26,17 @@ You can also look for information at:
             https://github.com/sestaton/tephra/issues
 
 
+**ACKNOWLEDGEMENT**
+
+This project uses the following programs:
+
+[PAML](http://abacus.gene.ucl.ac.uk/software/paml.html) - Used for calculating insertion times
+[Clustalw2:](http://www.clustal.org/clustal2) - Used for alignment to calculate insertion times
+[HMMER](http://hmmer.org/) - Coding domain classification
+[HelitronScanner](http://sourceforge.net/projects/helitronscanner/) - For Helitron discovery
+[MGEScan-nonLTR](http://darwin.informatics.indiana.edu/cgi-bin/evolution/nonltr/nonltr.pl) - The non-LTR retrotransposon finding component is a re-write of MGEScan-nonLTR and some of the source is used in the project
+[MUSCLE](http://http://drive5.com/muscle/) - Used for inferring patterns of deletion
+[Vmatch](http://vmatch.de) - Used for family-level classifications
 **LICENSE AND COPYRIGHT**
 
 Copyright (C) 2015 S. Evan Staton
