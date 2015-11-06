@@ -69,7 +69,6 @@ sub _calculate_soloLTR_abund {
     );
     
     $ill_obj->find_soloLTRs;
-
 }
 
 sub help {
