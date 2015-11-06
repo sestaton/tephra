@@ -1,4 +1,4 @@
-# tephra
+# Tephra
 Transposable Element Paleontology by Historical Reconstruction from Annotations
 
 ### What is Tephra?
@@ -7,15 +7,7 @@ Tephra is a command line application to annotate [transposable elements](http://
 
 **DEPENDENCIES**
 
-# Required
-
-[GenomeTools](genometools.org) and [Vmatch](vmatch.de) are required for TE prediction and classification. In addition, HMMERv3 and BLAST+ are required for classification steps.
-
-# Optional
-
-[HelitronScanner](http://sourceforge.net/projects/helitronscanner/) and [MGEScan-nonltr](https://github.com/MGEScan/mgescan) for identifying Helitrons and non-LTR retrotransposons (these are not yet incorporated into Tephra).
-
-One of the final stages of Tephra is to infer patterns of molecular evoltion, and this requires a feq external programs. Specifically, you will need to download [ClustalW](http://clustal.org/download/2.1/) and [PAML](http://abacus.gene.ucl.ac.uk/software/paml.html#download). The versions tested are Clustal v2.1 and PAML v4.8. Unfortunately, I cannot guarantee everything will work, especially with different versions of PAML, so please aim to have those versions in your PATH. If this is a problem, please let me know.
+One of the final stages of Tephra is to infer patterns of molecular evoltion, and this requires a few external programs. Specifically, you will need to download [ClustalW](http://clustal.org/download/2.1/) and [PAML](http://abacus.gene.ucl.ac.uk/software/paml.html#download). The versions tested are Clustal v2.1 and PAML v4.8. Unfortunately, I cannot guarantee everything will work, especially with different versions of PAML, so please aim to have those versions in your PATH. If this is a problem, please let me know.
 
 **SUPPORT AND DOCUMENTATION**
 
