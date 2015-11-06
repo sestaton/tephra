@@ -7,7 +7,7 @@ Tephra is a command line application to annotate [transposable elements](http://
 
 **DEPENDENCIES**
 
-One of the final stages of Tephra is to infer patterns of molecular evoltion, and this requires a few external programs. Specifically, you will need to download [ClustalW](http://clustal.org/download/2.1/) and [PAML](http://abacus.gene.ucl.ac.uk/software/paml.html#download). The versions tested are Clustal v2.1 and PAML v4.8. Unfortunately, I cannot guarantee everything will work, especially with different versions of PAML, so please aim to have those versions in your PATH. If this is a problem, please let me know.
+Part of utility of Tephra is to provide family-level TE classifications and infer patterns of molecular evoltion. To be efficient as possible, these tasks requires a few external programs. Specifically, you will need to download [muscle](http://drive5.org/muscle) and [vmatch](http://vmatch.de), both of which require a license so I cannot distribute them (but they are free). If you are only interested in TE identification, you can skip the need to download these programs.
 
 **SUPPORT AND DOCUMENTATION**
 
