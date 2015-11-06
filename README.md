@@ -34,9 +34,12 @@ This project uses the following programs:
 * [Clustalw2](http://www.clustal.org/clustal2) - Used for alignment to calculate insertion times
 * [HMMER](http://hmmer.org/) - Coding domain classification
 * [HelitronScanner](http://sourceforge.net/projects/helitronscanner/) - For Helitron discovery
-* [MGEScan-nonLTR](http://darwin.informatics.indiana.edu/cgi-bin/evolution/nonltr/nonltr.pl) - The non-LTR retrotransposon finding component is a re-write of MGEScan-nonLTR and some of the source is used in the project
+* [MGEScan-nonLTR](http://darwin.informatics.indiana.edu/cgi-bin/evolution/nonltr/nonltr.pl) - The non-LTR retrotransposon finding component of Tephra is a re-write of MGEScan-nonLTR and some of the source is used in this project
 * [MUSCLE](http://http://drive5.com/muscle/) - Used for inferring patterns of deletion
 * [Vmatch](http://vmatch.de) - Used for family-level classifications
+* [GenomeTools](http://genometools.org) - Used for LTR and TIR discovery
+
+Other than MUSCLE and Vmatch mentioned above, there is no need install any of these programs manually.
 
 **LICENSE AND COPYRIGHT**
 
