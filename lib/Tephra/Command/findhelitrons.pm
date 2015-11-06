@@ -26,7 +26,7 @@ sub validate_args {
     elsif ($self->app->global_options->{help}) {
 	$self->help;
     }
-    elsif (!$opt->{genome} || !$opt->{helitronscanner_dir} || !$opt->{outfile}) {
+    elsif (!$opt->{genome} || !$opt->{outfile}) {
 	say "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
@@ -47,7 +47,8 @@ sub _run_helitron_search {
     my $genome     = $opt->{genome};
     my $hscan_dir  = $opt->{helitronscanner_dir};
     my $gff        = $opt->{outfile};
-    
+    $hscan_dir //= File::Spec->catfile($ENV{HOME}, '.tephra', 'helitronscanner', 'HelitronScanner');
+
     my $hel_search = Tephra::Hel::HelSearch->new( 
 	genome  => $genome, 
 	helitronscanner_dir => $hscan_dir,
@@ -69,8 +70,11 @@ USAGE: tephra findhelitrons [-h] [-m]
 
 Required:
     -g|genome               :   The genome sequences in FASTA format to search for Helitrons.. 
-    -d|helitronscanner_dir  :   The HelitronScanner directory containing the ".jar" files and Training Set.
     -o|outfile              :   The final combined and filtered GFF3 file of Helitrons.
+
+Options:
+    -d|helitronscanner_dir  :   The HelitronScanner directory containing the ".jar" files and Training Set.
+                                This should be configured automatically upon a successful install.
 
 END
 }
