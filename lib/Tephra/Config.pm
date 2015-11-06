@@ -51,6 +51,7 @@
      my $transla = File::Spec->catfile($chrdir, 'tephra-translate');
      my $clw     = File::Spec->catdir($root, 'clustalw-2.1', 'bin', 'clustalw2');
      my $pamlbin = File::Spec->catdir($root, 'paml4.8', 'bin');
+     my $transeq = File::Spec->catdir($root, 'EMBOSS-6.5.7', 'bin');
 
      unless (-e $gt) {
 	 $gt = $self->get_gt_exes;
@@ -84,7 +85,21 @@
          $pamlbin = $self->fetch_paml;
      }
 
-     return ($gt, $hscan, $hmmbin, $moddir, $chrdir, $mgescan, $transla, $clw, $pamlbin);
+     unless (-e $transeq) {
+         $transeq = $self->fetch_paml;
+     }
+
+     return ({
+	 gt       => $gt, 
+	 hscandir => $hscan, 
+	 hmmerbin => $hmmbin, 
+	 modeldir => $moddir, 
+	 hmmdir   => $chrdir, 
+	 mgescan  => $mgescan, 
+	 transcmd => $transla, 
+	 clustalw => $clw, 
+	 pamlbin  => $pamlbin,
+	 transeq  => $transeq });
  }
 
  sub get_gt_exes {
@@ -261,14 +276,55 @@ sub fetch_paml {
     }
 }
 
+sub fetch_emboss {
+    my $self = shift;
+    my $root = $self->basedir;
+    my $wd   = $self->workingdir;
+
+    my @path = split /:|;/, $ENV{PATH};
+    
+    for my $p (@path) {
+	my $transeq  = File::Spec->catfile($p, 'transeq');
+	if (-e $transeq && -x $transeq) {
+	    return $transeq;
+	}
+    }
+
+    my $urlbase = 'ftp://emboss.open-bio.org';
+    my $dir     = 'pub';
+    my $tool    = 'EMBOSS';
+    my $release = 'old';
+    my $version = '6.5.0';
+    my $file    = 'EMBOSS-6.5.7.tar.gz';
+    my $url     = join "/", $urlbase, $dir, $tool, $release, $version, $file;
+    my $outfile = File::Spec->catfile($root, $file);
+    $self->fetch_file($outfile, $url);
+
+    chdir $root;
+    my $dist = 'EMBOSS-6.5.7';
+    system("tar xzf $file") == 0 or die "tar failed: $!";
+    chdir $dist;
+    my $cwd = getcwd();
+    system("./configure --prefix=$cwd 2>&1 > /dev/null") == 0
+	or die "configure failed: $!";
+    system("make -j4 2>&1 > /dev/null") == 0 
+	or die "make failed: $!";
+    system("make install 2>&1 > /dev/null") == 0
+	or die "make failed: $!";
+    
+    my $transeq = File::Spec->catdir($cwd, 'bin', 'transeq');
+    my $distfile = File::Spec->catfile($root, $file);
+    unlink $distfile;
+    chdir $wd;
+
+    return $transeq;
+}
+
 sub fetch_hmm_models {
-     my $self = shift;
-     my $root = $self->basedir;
-     my $wd   = $self->workingdir;
-
-    #my $cwd = getcwd();
-    #say STDERR "CWD: $cwd";
-
+    my $self = shift;
+    my $root = $self->basedir;
+    my $wd   = $self->workingdir;
+   
     chdir $wd;
     my $file = 'pHMM.tar.gz';
     my $dist = File::Spec->catfile('build', $file);
@@ -277,7 +333,6 @@ sub fetch_hmm_models {
     system("tar xzf $file") == 0 or die $!;
     unlink $file;
 
-    #my $cwd = getcwd();
     my $dir = File::Spec->catfile($root, 'pHMM');
 
     return $dir;
