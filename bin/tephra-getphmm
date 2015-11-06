@@ -1,8 +1,9 @@
 #!perl
 
+## NB: This is used internally by Tephra, do not use it directly
+
 use strict; 
 use warnings;
-use Config;
 use Bio::SearchIO;
 use File::Spec;
 use File::Basename;
