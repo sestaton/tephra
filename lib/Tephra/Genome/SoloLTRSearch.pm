@@ -88,7 +88,7 @@ sub find_soloLTRs {
     ## 2) get aligned ltrs from clustalw
 
     my $ltr_aln_files = $self->_get_ltr_alns($dir);
-    #dd $ltr_aln_files; and exit;
+    #dd $ltr_aln_files and exit;
 
     ## need masked genome here
     if (@$ltr_aln_files < 1 || ! -e $genome) {
@@ -96,7 +96,7 @@ sub find_soloLTRs {
     }
     
     my $aln_stats = $self->_get_aln_len($ltr_aln_files); # return a hash-ref
-    #dd $aln_stats;
+    #dd $aln_stats and exit;
     
     # make one directory
     my $model_dir = File::Spec->catdir($dir, "Tephra_LTR_exemplar_models");
@@ -112,7 +112,8 @@ sub find_soloLTRs {
     my @ltr_hmm_files;
     find( sub { push @ltr_hmm_files, $File::Find::name if -f and /\.hmm$/ }, $model_dir);
     my ($gname, $gpath, $gsuffix) = fileparse($genome, qr/\.[^.]*/);
-    
+    #dd \@ltr_hmm_files and exit;
+
     for my $hmm (@ltr_hmm_files) {
 	my $indiv_results_dir = $hmm;
 	$indiv_results_dir =~ s/\.hmm.*$/\_search_out/;
@@ -203,20 +204,20 @@ sub _collate {
 sub _find_hmmer {
     my $self = shift; 
 
-    my $bin = File::Spec->catdir($ENV{HOME}, '.tephra', 'hmmer-2.3.2', 'bin');
-    my $hmmbuild = File::Spec->catdir($bin, 'hmmbuild');
-    my $hmmsearch = File::Spec->catdir($bin, 'hmmsearch');
+    #my $bin = File::Spec->catdir($ENV{HOME}, '.tephra', 'hmmer-2.3.2', 'bin');
+    #my $hmmbuild = File::Spec->catdir($bin, 'hmmbuild');
+    #my $hmmsearch = File::Spec->catdir($bin, 'hmmsearch');
 
-    if (-e $hmmbuild && -x $hmmbuild &&
-	-e $hmmsearch && -x $hmmsearch) {
-	return ($hmmbuild, $hmmsearch);
-    }
-    else {
+    #if (-e $hmmbuild && -x $hmmbuild &&
+	#-e $hmmsearch && -x $hmmsearch) {
+	#return ($hmmbuild, $hmmsearch);
+    #}
+    #else {
 	my @path = split /:|;/, $ENV{PATH};
 	
 	for my $p (@path) {
-	    $hmmbuild  = File::Spec->catfile($p, 'hmmbuild');
-	    $hmmsearch = File::Spec->catfile($p, 'hmmsearch');
+	    my $hmmbuild  = File::Spec->catfile($p, 'hmmbuild');
+	    my $hmmsearch = File::Spec->catfile($p, 'hmmsearch');
 	    
 	    if (-e $hmmbuild && -x $hmmbuild &&
 	    -e $hmmsearch && -x $hmmsearch) {
@@ -231,18 +232,18 @@ sub _find_hmmer {
 			return ($hmmbuild, $hmmsearch);
 		    }
 		    elsif ($release =~ /^2/) {
-			croak "\nERROR: HMMER version 2 was found but HMMER version 3 is required. Exiting.\n";
+			croak "\nERROR: HMMER version 2 was found but HMMER version 3 is required.\n";
 		    }
 		    else {
-			croak "\nERROR: Could not determine HMMER Version. Check that HMMER is in PATH. Exiting.\n";
+			croak "\nERROR: Could not determine HMMER Version. Check that HMMER is in PATH.\n";
 		    }
 		} 
 		else {
-		    croak "\nERROR: Could not determine HMMER Version. Check that HMMER is in PATH. Exiting.\n";
+		    croak "\nERROR: Could not determine HMMER Version. Check that HMMER is in PATH.\n";
 		}
 	    }
 	}
-    }
+    #}
 }
 
 sub _get_aln_len {
@@ -356,8 +357,6 @@ sub write_hmmsearch_report {
     unlink $seqfile, $parsed if $matches == 0;
 
 }
-
-
 
 __PACKAGE__->meta->make_immutable;
 
