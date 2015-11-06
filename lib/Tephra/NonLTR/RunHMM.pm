@@ -78,12 +78,10 @@ sub run_mgescan {
 	my $chrhmm   = File::Spec->catfile($pdir, 'hmm', 'chr.hmm');
 	my $ldir = $pdir."/";
 	$outf_dir .= "/";
+	$ENV{PATH} = join ':', $ENV{PATH}, File::Spec->catfile($ENV{HOME}, '.tephra', 'EMBOSS-6.5.7', 'bin');
 	system("$mgescan -m $chrhmm -s $dna_file -r $domain_rt_pos_file -a $domain_ape_pos_file -o $out_file -p $ldir -d $outf_dir");
     }
     unlink $pep_file if -e $pep_file;
-    #if (-e $pep_file){
-        #system("rm ".$pep_file);
-    #} 
 }
 
 sub translate_forward {

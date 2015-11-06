@@ -36,6 +36,8 @@ open my $out, '>', $seq_file or die "\nERROR: Could not open file: $seq_file";
 say $out $seq;
 close $out;
 
+$ENV{PATH} = join ':', $ENV{PATH}, File::Spec->catfile($ENV{HOME}, '.tephra', 'EMBOSS-6.5.7', 'bin');
+
 my $exitv;
 try {
     $exitv = system([0..5], "transeq", "-frame=f", $seq_file, "-outseq=$pep_file", "-auto");
