@@ -3,11 +3,11 @@ Transposable Element Paleontology by Historical Reconstruction from Annotations
 
 ### What is Tephra?
 
-Tephra is a command line application to annotate [transposable elements](http://en.wikipedia.org/wiki/Transposable_element) from a genome assembly. The goal is to provide a high quality set of de novo annotations for all transposon types, describe the structucture and evolution of those sequences, and do it without a reference set of transposon sequences (therefore being unbiased as possible)..
+Tephra is a command line application to annotate [transposable elements](http://en.wikipedia.org/wiki/Transposable_element) from a genome assembly. The goal is to provide a high quality set of de novo annotations for all transposon types, describe the structure and evolution of those sequences, and do it without a reference set of transposon sequences (therefore being unbiased as possible).
 
 **DEPENDENCIES**
 
-Part of utility of Tephra is to provide family-level TE classifications and infer patterns of molecular evoltion. To be efficient as possible, these tasks require a few external programs. Specifically, you will need to download [MUSCLE](http://http://drive5.com/muscle/) and [Vmatch](http://vmatch.de), both of which require a license so I cannot distribute them (but they are free). If you are only interested in TE identification, you can skip the need to download these programs.
+Part of utility of Tephra is to provide family-level TE classifications and infer patterns of molecular evoltion. To be efficient as possible, these tasks require a few external programs. Specifically, you will need to download [MUSCLE](http://http://drive5.com/muscle/) and [Vmatch](http://vmatch.de), both of which require a license so I cannot distribute them (but they are free). If you are only interested in TE identification, you can skip the need to download these programs. Last, [EMBOSS](http://emboss.sourceforge.net/)
 
 **SUPPORT AND DOCUMENTATION**
 
@@ -39,7 +39,7 @@ This project uses the following programs:
 * [Vmatch](http://vmatch.de) - Used for family-level classifications
 * [GenomeTools](http://genometools.org) - Used for LTR and TIR discovery
 
-Other than MUSCLE and Vmatch mentioned above, there is no need install any of these programs manually.
+Other than MUSCLE and Vmatch mentioned above, there is no need install to any of these programs manually.
 
 **LICENSE AND COPYRIGHT**
 
