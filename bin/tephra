@@ -20,7 +20,7 @@ Tephra - Transposable element paleontology
 
 =head1 DESCRIPTION
 
- This is an application to Find transposable elements based on structural and sequence similarity features,
+ This is an application to find transposable elements based on structural and sequence similarity features,
  group those elements into recognized superfamilies and infer patterns of evolution.     
 
 =head1 LICENSE
@@ -38,7 +38,7 @@ Copyright (C) 2015 S. Evan Staton
 Perl 5.20.1 (Mac OS X 10.6.8)
 
 =item *
-Perl 5.22.0 (Fedora 21)
+Perl 5.22.0 (Fedora 21; Cent OS 7)
 
 =back
 
@@ -52,12 +52,17 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =item The method to perform. Must be one of the following:
     
-    classifyltrs: Classify LTR retrotransposons into superfamilies.
-  classifytirs: Classify TIR transposons into superfamilies.
-      findltrs: Find LTR retrotransposons in a genome assembly.
-      findtirs: Find TIR transposons in a genome assembly.
-     findtrims: Find TRIM retrotransposons in a genome assembly.
-       maskref: Mask a reference genome with transposons
+    classifyltrs: Classify LTR retrotransposons into superfamilies and families.
+   classifytirs: Classify TIR transposons into superfamilies.
+  findhelitrons: Find Helitons in a genome assembly.
+       findltrs: Find LTR retrotransposons in a genome assembly.
+    findnonltrs: Find non-LTR retrotransposons in a genome assembly.
+       findtirs: Find TIR transposons in a genome assembly.
+      findtrims: Find TRIM retrotransposons in a genome assembly.
+      illrecomb: Characterize the distribution of illigetimate recombination in a genome.
+         ltrage: Calculate the age distribution of LTR retrotransposons.
+        maskref: Mask a reference genome with transposons.
+        sololtr: Find solo-LTRs in a genome assembly.
 
 =back
 
