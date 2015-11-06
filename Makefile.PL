@@ -32,6 +32,6 @@ WriteMakefile(
     EXE_FILES   => [ 'bin/tephra', 'bin/tephra-getphmm' ],
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     test  => { TESTS => 't/*.t' },
-    clean => { FILES => [ 't/test_data/*.fai' ] },
+    clean => { FILES => [ 't/test_data/*.fai', 'src/*.o', 'src/tephra-*' ] },
 );
 
