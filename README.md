@@ -31,7 +31,7 @@ You can also look for information at:
 This project uses the following programs:
 
 * [PAML](http://abacus.gene.ucl.ac.uk/software/paml.html) - Used for calculating insertion times
-* [Clustalw2:](http://www.clustal.org/clustal2) - Used for alignment to calculate insertion times
+* [Clustalw2](http://www.clustal.org/clustal2) - Used for alignment to calculate insertion times
 * [HMMER](http://hmmer.org/) - Coding domain classification
 * [HelitronScanner](http://sourceforge.net/projects/helitronscanner/) - For Helitron discovery
 * [MGEScan-nonLTR](http://darwin.informatics.indiana.edu/cgi-bin/evolution/nonltr/nonltr.pl) - The non-LTR retrotransposon finding component is a re-write of MGEScan-nonLTR and some of the source is used in the project
