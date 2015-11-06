@@ -15,7 +15,7 @@ use File::Spec;
 sub opt_spec {
     return (    
 	[ "genome|g=s",   "The genome sequences in FASTA format to search for TIRs "   ],
-	[ "gff|f=s",      "The GFF3 file of TIR TEs in <genome> "    ],
+	[ "gff|f=s",      "The GFF3 file of TIR TEs in <genome> "                      ],
     );
 }
 
