@@ -205,6 +205,11 @@ sub _build_gt_exec {
         return $gtexe;
     }
     elsif (! defined $gtexe) {
+	$gtexe = File::Spec->catfile($ENV{HOME}, '.tephra', 'gt', 'bin', 'gt');
+	if (-e $gtexe && -x $gtexe) {
+	    return $gtexe;
+	}
+
 	my @path = split /:|;/, $ENV{PATH};
 	for my $p (@path) {
 	    my $gt = File::Spec->catfile($p, 'gt');

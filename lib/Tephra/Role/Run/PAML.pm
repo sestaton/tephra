@@ -188,6 +188,12 @@ sub _build_baseml_exec { # this should probably be a separate role
         return $blexe;
     }
     elsif (! defined $blexe) {
+	$blexe = File::Spec->catfile($ENV{HOME}, '.tephra', 'hmmer-2.3.2', 'bin', 'baseml');
+	if (-e $blexe && -x $blexe) {
+	    $self->set_baseml_exec($blexe);
+	    return $blexe;
+	}
+
 	my @path = split /:|;/, $ENV{PATH};
 	for my $p (@path) {
 	    my $bl = File::Spec->catfile($p, 'baseml');

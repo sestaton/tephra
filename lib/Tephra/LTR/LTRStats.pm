@@ -180,7 +180,8 @@ sub align_features {
     close $log;
 
     my @alnfiles;
-    my $wanted  = sub { push @alnfiles, $File::Find::name if -f && /ltrs.fasta$|\.aln$|\.log$|\.phy$|\.dnd$|\.ctl$/ };
+    my $wanted  = sub { push @alnfiles, $File::Find::name 
+			    if -f && /ltrs.fasta$|\.aln$|\.log$|\.phy$|\.dnd$|\.ctl$/ };
     my $process = sub { grep ! -d, @_ };
     find({ wanted => $wanted, preprocess => $process }, $dir);
     unlink @alnfiles if $self->clean;
@@ -227,7 +228,8 @@ sub process_align_args {
     my $dnd = File::Spec->catfile($path, $name."_clustal-out.dnd");
     my $log = File::Spec->catfile($path, $name."_clustal-out.log");
 
-    my $clwcmd  = "clustalw2 -infile=$db -outfile=$aln 2>$log";
+    my $clustalw2 = File::Spec->catfile($ENV{HOME}, '.tephra', 'clustalw-2.1', 'bin', 'clustalw2');
+    my $clwcmd  = "$clustalw2 -infile=$db -outfile=$aln 2>$log";
     $self->capture_cmd($clwcmd);
     my $phy = $self->parse_aln($aln, $tre, $dnd);
     $self->process_baseml_args($phy, $dnd, $resdir);

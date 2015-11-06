@@ -166,6 +166,7 @@ sub _get_ltr_alns {
     my (@ltrseqs, @aligns);
 
     find( sub { push @ltrseqs, $File::Find::name if -f and /exemplar_ltrs.fasta$/ }, $dir);
+    my $clustalw2 = File::Spec->catfile($ENV{HOME}, '.tephra', 'clustalw-2.1', 'bin', 'clustalw2');
 
     for my $ltrseq (@ltrseqs) {
 	my ($name, $path, $suffix) = fileparse($ltrseq, qr/\.[^.]*/);
@@ -173,7 +174,7 @@ sub _get_ltr_alns {
 	my $aln = File::Spec->catfile($path, $name."_clustal-out.aln");
 	my $log = File::Spec->catfile($path, $name."_clustal-out.log");
 	
-	my $clwcmd  = "clustalw2 -infile=$ltrseq -outfile=$aln 2>$log";
+	my $clwcmd  = "$clustalw2 -infile=$ltrseq -outfile=$aln 2>$log";
 	$self->capture_cmd($clwcmd);
 	unlink $tre, $log;
 	push @aligns, $aln;
@@ -202,33 +203,43 @@ sub _collate {
 sub _find_hmmer {
     my $self = shift; 
 
-    my @path = split /:|;/, $ENV{PATH};
+    my $bin = File::Spec->catdir($ENV{HOME}, '.tephra', 'hmmer-2.3.2', 'bin');
+    my $hmmbuild = File::Spec->catdir($bin, 'hmmbuild');
+    my $hmmsearch = File::Spec->catdir($bin, 'hmmsearch');
 
-    for my $p (@path) {
-	my $hmmbuild  = File::Spec->catfile($p, 'hmmbuild');
-	my $hmmsearch = File::Spec->catfile($p, 'hmmsearch');
+    if (-e $hmmbuild && -x $hmmbuild &&
+	-e $hmmsearch && -x $hmmsearch) {
+	return ($hmmbuild, $hmmsearch);
+    }
+    else {
+	my @path = split /:|;/, $ENV{PATH};
 	
-	if (-e $hmmbuild && -x $hmmbuild &&
+	for my $p (@path) {
+	    $hmmbuild  = File::Spec->catfile($p, 'hmmbuild');
+	    $hmmsearch = File::Spec->catfile($p, 'hmmsearch');
+	    
+	    if (-e $hmmbuild && -x $hmmbuild &&
 	    -e $hmmsearch && -x $hmmsearch) {
 
-	    my @out = capture([0..5], "hmmbuild -h");
-	    my ($version) = grep { /HMMER/ } @out;
-	    
-	    if ($version =~ /HMMER (\d\.\d\w?\d+?) \(/) {  # version 3.0
-		my $release = $1;                    
-		#return $release;
-		if ($release =~ /^3/) {
-		    return ($hmmbuild, $hmmsearch);
-		}
-		elsif ($release =~ /^2/) {
-		    croak "\nERROR: HMMER version 2 was found but HMMER version 3 is required. Exiting.\n";
-		}
+		my @out = capture([0..5], "hmmbuild -h");
+		my ($version) = grep { /HMMER/ } @out;
+		
+		if ($version =~ /HMMER (\d\.\d\w?\d+?) \(/) {  # version 3.0
+		    my $release = $1;                    
+		    #return $release;
+		    if ($release =~ /^3/) {
+			return ($hmmbuild, $hmmsearch);
+		    }
+		    elsif ($release =~ /^2/) {
+			croak "\nERROR: HMMER version 2 was found but HMMER version 3 is required. Exiting.\n";
+		    }
+		    else {
+			croak "\nERROR: Could not determine HMMER Version. Check that HMMER is in PATH. Exiting.\n";
+		    }
+		} 
 		else {
 		    croak "\nERROR: Could not determine HMMER Version. Check that HMMER is in PATH. Exiting.\n";
 		}
-	    } 
-	    else {
-		croak "\nERROR: Could not determine HMMER Version. Check that HMMER is in PATH. Exiting.\n";
 	    }
 	}
     }
