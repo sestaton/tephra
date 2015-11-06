@@ -4,8 +4,6 @@ use Moose;
 use App::Cmd::Setup -app;
 use namespace::clean;
 
-#with 'Tephra::Role::Config';
-
 =head1 NAME
 
 Tephra - Transposable element palenontology
@@ -25,8 +23,6 @@ our $VERSION = '0.01';
 
 =cut
 
-
-
 =head1 AUTHOR
 
 S. Evan Staton, C<< <statonse at gmail.com> >>
@@ -34,7 +30,7 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =head1 BUGS
 
 Please report any bugs or feature requests through the project site at 
-L<https://github.com/sestaton/Tephra/issues>. I will be notified,
+L<https://github.com/sestaton/tephra/issues>. I will be notified,
 and there will be a record of the issue. Alternatively, I can also be 
 reached at the email address listed above to resolve any questions.
 
@@ -53,5 +49,7 @@ This program is distributed under the MIT (X11) License, which should be distrib
 If not, it can be found here: L<http://www.opensource.org/licenses/mit-license.php>
 
 =cut
+
+__PACKAGE__->meta->make_immutable;
 
 1;

@@ -4,15 +4,15 @@ use App::Cmd::Setup -command;
 
 =head1 NAME
 
-Chloro::Command - Control class for setting global options with Chloro
+Tephra::Command - Control class for setting global options with Tephra
 
 =head1 VERSION
 
-Version 0.04
+Version 0.01
 
 =cut
 
-our $VERSION = '0.04';
+our $VERSION = '0.01';
 
 sub opt_spec {
     my ( $class, $app ) = @_;
@@ -43,7 +43,7 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =head1 BUGS
 
 Please report any bugs or feature requests through the project site at 
-L<https://github.com/sestaton/Chloro/issues>. I will be notified,
+L<https://github.com/sestaton/tephra/issues>. I will be notified,
 and there will be a record of the issue. Alternatively, I can also be 
 reached at the email address listed above to resolve any questions.
 
@@ -51,12 +51,12 @@ reached at the email address listed above to resolve any questions.
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Chloro::Command
+    perldoc Tephra::Command
 
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (C) 2014 S. Evan Staton
+Copyright (C) 2015- S. Evan Staton
 
 This program is distributed under the MIT (X11) License, which should be distributed with the package. 
 If not, it can be found here: L<http://www.opensource.org/licenses/mit-license.php>
