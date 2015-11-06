@@ -7,7 +7,7 @@ Tephra is a command line application to annotate [transposable elements](http://
 
 **DEPENDENCIES**
 
-Part of utility of Tephra is to provide family-level TE classifications and infer patterns of molecular evoltion. To be efficient as possible, these tasks require a few external programs. Specifically, you will need to download [MUSCLE](http://http://drive5.com/muscle/) and [Vmatch](http://vmatch.de), both of which require a license so I cannot distribute them (but they are free). If you are only interested in TE identification, you can skip the need to download these programs. Last, [EMBOSS](http://emboss.sourceforge.net/)
+Part of utility of Tephra is to provide family-level TE classifications and infer patterns of molecular evoltion. To be efficient as possible, these tasks require a few external programs. Specifically, you will need to download [MUSCLE](http://http://drive5.com/muscle/) and [Vmatch](http://vmatch.de), both of which require a license so I cannot distribute them (but they are free). If you are only interested in TE identification, you can skip the need to download these programs.
 
 **SUPPORT AND DOCUMENTATION**
 
@@ -38,6 +38,7 @@ This project uses the following programs:
 * [MUSCLE](http://http://drive5.com/muscle/) - Used for inferring patterns of deletion
 * [Vmatch](http://vmatch.de) - Used for family-level classifications
 * [GenomeTools](http://genometools.org) - Used for LTR and TIR discovery
+* [EMBOSS](http://emboss.sourceforge.net/) - Utilities for sequence manipulation and domain finding
 
 Other than MUSCLE and Vmatch mentioned above, there is no need install to any of these programs manually.
 
