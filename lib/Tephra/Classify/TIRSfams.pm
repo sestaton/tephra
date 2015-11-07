@@ -56,7 +56,8 @@ sub find_tc1_mariner {
     my ($feature, $header) = @_;
     my $fasta = $self->genome;
     my $gff   = $self->gff;
-    
+    my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+
     my @lengths;
     my $mar_feats;
     my $is_mariner = 0;
@@ -91,7 +92,7 @@ sub find_tc1_mariner {
 		if ($tsd_len == 2) {
 		    #my $tsd = substr $hash->{$loc}, $feats[3], $tsd_len;
 		    my $tmp = $tir.".fasta";
-		    my $cmd = "samtools faidx $fasta $region:$feats[3]-$feats[4] > $tmp";
+		    my $cmd = "$samtools faidx $fasta $region:$feats[3]-$feats[4] > $tmp";
 		    $self->run_cmd($cmd);
 		    my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
 		    while (my $seqobj = $seqio->next_seq) {
@@ -332,7 +333,8 @@ sub find_cacta {
     my ($feature, $header) = @_;
     my $fasta = $self->genome;
     my $gff   = $self->gff;
-    
+    my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+
     my @lengths;
     my $cac_feats;
     my $is_cacta = 0;
@@ -367,7 +369,7 @@ sub find_cacta {
 		if ($tsd_len >= 2 && $tsd_len <= 3) {
 		    #my $tir_elem = substr $hash->{$loc}, $s, $len;
 		    my $tmp = $tir.".fasta";
-		    my $cmd = "samtools faidx $fasta $region:$feats[3]-$feats[4] > $tmp";
+		    my $cmd = "$samtools faidx $fasta $region:$feats[3]-$feats[4] > $tmp";
 		    $self->run_cmd($cmd);
 		    my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
 		    while (my $seqobj = $seqio->next_seq) {

@@ -259,7 +259,7 @@ sub sort_features {
     my $self = shift;
     my ($feature_ref) = @_;
     my ($gff, $combined_features) = @{$feature_ref}{qw(gff combined_features)};
-
+    my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
     my $fasta = $self->genome;
     my $outfile;
     my $outfasta;
@@ -332,7 +332,7 @@ sub sort_features {
 		    $elem .= $index;
 		    my $id = $elem."_".$chromosome."_".$start."_".$end;
 		    my $tmp = $elem.".fasta";
-		    my $cmd = "samtools faidx $fasta $chromosome:$start-$end > $tmp";
+		    my $cmd = "$samtools faidx $fasta $chromosome:$start-$end > $tmp";
 		    $self->run_cmd($cmd);
 
 		    my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
@@ -408,7 +408,7 @@ sub _get_ltr_score_dups {
 		$best_element{$source}{$best_score_key} = $allfeatures->{$source}{$best_score_key};
 	    }
 	    else {
-		say "\nERROR: Something went wrong....'$best_score_key' not found in hash. This is a bug. Exiting.";
+		say "\nERROR: Something went wrong....'$best_score_key' not found in hash. This is a bug.";
 		exit(1);
 	    }
 	}
@@ -425,7 +425,7 @@ sub _get_ltr_score_dups {
 		$best_element{$source}{$best_score_key} = $allfeatures->{$source}{$best};
 	    }
 	    else {
-		say "\nERROR: Something went wrong....'$best' not found in hash. This is a bug. Exiting.";
+		say "\nERROR: Something went wrong....'$best' not found in hash. This is a bug.";
 		exit(1);
 	    }
 	}
@@ -599,10 +599,11 @@ sub _filter_compound_elements {
 sub _filterNpercent {
     my $self = shift;
     my ($source, $key, $fasta) = @_;
+    my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
     my $n_perc = 0;
     my ($element, $start, $end) = split /\|\|/, $key;
-    my $tmp = $element.".fasta";
-    my $cmd = "samtools faidx $fasta $source:$start-$end > $tmp";
+    my $tmp = $element.".fasta";    
+    my $cmd = "$samtools faidx $fasta $source:$start-$end > $tmp";
     $self->run_cmd($cmd);
     
     my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
@@ -654,8 +655,8 @@ sub _index_ref {
     my $self = shift;
     my ($fasta) = @_;
     #my $bgzip_cmd = "bgzip $fasta";
-    my $faidx_cmd = "samtools faidx $fasta";
-    #run_cmd($bgzip_cmd);
+    my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    my $faidx_cmd = "$samtools faidx $fasta";
     $self->run_cmd($faidx_cmd);
 }
 

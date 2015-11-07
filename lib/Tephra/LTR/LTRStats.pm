@@ -283,7 +283,8 @@ sub parse_aln {
 sub subseq {
     my $self = shift;
     my ($fasta, $loc, $elem, $start, $end, $tmp, $out, $orient) = @_;
-    my $cmd = "samtools faidx $fasta $loc:$start-$end > $tmp";
+    my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    my $cmd = "$samtools faidx $fasta $loc:$start-$end > $tmp";
     $self->run_cmd($cmd);
 
     my $id = join "_", $orient, $loc, $elem, "$start-$end";

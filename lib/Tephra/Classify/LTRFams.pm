@@ -360,7 +360,8 @@ sub process_cluster_args {
 sub subseq {
     my $self = shift;
     my ($fasta, $loc, $elem, $start, $end, $tmp, $out) = @_;
-    my $cmd = "samtools faidx $fasta $loc:$start-$end > $tmp";
+    my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    my $cmd = "$samtools faidx $fasta $loc:$start-$end > $tmp";
     $self->run_cmd($cmd);
 
     my $id = join "_", $loc, $elem, "$start-$end";

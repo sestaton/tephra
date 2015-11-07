@@ -171,6 +171,7 @@ sub find_unclassified {
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfast = File::Spec->catfile($path, $name."_unclassified.fasta");
+    my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
 
     open my $ofas, '>>', $outfast;
 
@@ -186,7 +187,7 @@ sub find_unclassified {
 		my $id = $elem."_".$loc."_".$start."_".$end;
 		$ltr_rregion_map{$id} = $ltr;
 		my $tmp = $elem.".fasta";
-		my $cmd = "samtools faidx $fasta $loc:$start-$end > $tmp";
+		my $cmd = "$samtools faidx $fasta $loc:$start-$end > $tmp";
 		$self->run_cmd($cmd);
 		my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
 		while (my $seqobj = $seqio->next_seq) {
@@ -212,8 +213,9 @@ sub search_unclassified {
     my ($bname, $bpath, $bsuffix) = fileparse($unc_fas, qr/\.[^.]*/);
     my ($fname, $fpath, $fsuffix) = fileparse($unc_fas, qr/\.[^.]*/);
     my $outfile = $fname."_".$bname.".bln";
+    my $blastn  = File::Spec->catfile($ENV{HOME}, '.tephra', 'ncbi-blast-2.2.31+', 'bin', 'blastn');
 
-    my $blastcmd = "blastn -dust no -query $unc_fas -evalue 10 -db $blastdb ".
+    my $blastcmd = "$blastn -dust no -query $unc_fas -evalue 10 -db $blastdb ".
 	"-outfmt 6 -num_threads 12 | sort -nrk12,12 | sort -k1,1 -u > $outfile";
 
     $self->run_cmd($blastcmd);
@@ -501,9 +503,10 @@ sub _make_blastdb {
     my $dir = getcwd();
     my $db_path = Path::Class::File->new($dir, $db);
     unlink $db_path if -e $db_path;
+    my $makeblastdb  = File::Spec->catfile($ENV{HOME}, '.tephra', 'ncbi-blast-2.2.31+', 'bin', 'makeblastdb');
 
     try {
-	my @makedbout = capture([0..5],"makeblastdb -in $db_fas -dbtype nucl -title $db -out $db_path 2>&1 > /dev/null");
+	my @makedbout = capture([0..5],"$makeblastdb -in $db_fas -dbtype nucl -title $db -out $db_path 2>&1 > /dev/null");
     }
     catch {
 	say STDERR "Unable to make blast database. Here is the exception: $_.";
