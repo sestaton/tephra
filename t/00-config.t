@@ -11,7 +11,7 @@ use File::Path qw(make_path);
 use Tephra::Config;
 use Cwd;
 
-use Test::More tests => 13;
+use Test::More tests => 15;
 
 BEGIN {
     use_ok( 'Tephra' ) || print "Bail out!\n";

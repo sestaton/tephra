@@ -1,20 +1,21 @@
- package Tephra::Config;
+package Tephra::Config;
 
- use 5.010;
- use Moose;
- use MooseX::Types::Path::Class;
- use Cwd;
- use Config;
- use File::Spec;
- use File::Find;
- use File::Copy qw(copy move);
- use File::Path qw(make_path remove_tree);
- use File::Basename;
- use Path::Class::File;
- use HTML::TreeBuilder;
- use HTTP::Tiny;
- use Log::Any qw($log);
- use namespace::autoclean;
+use 5.010;
+use Moose;
+use MooseX::Types::Path::Class;
+use Cwd;
+use Config;
+use File::Spec;
+use File::Find;
+use File::Copy qw(copy move);
+use File::Path qw(make_path remove_tree);
+use File::Basename;
+use Path::Class::File;
+use HTML::TreeBuilder;
+use HTTP::Tiny;
+use Net::FTP;
+use Log::Any qw($log);
+use namespace::autoclean;
 
 =head1 NAME
 
@@ -195,21 +196,21 @@ sub fetch_samtools {
 
     my $host = 'http://sourceforge.net';
     my $dir  = 'projects/samtools/files/samtools/1.2/samtools-1.2.tar.bz2/download';
-    #my $ldir = File::Spec->catdir($root, 'helitr');
-    #make_path( $ldir, {verbose => 0, mode => 0771,} );
     my $file = 'samtools-1.2.tar.bz2';
     my $path = File::Spec->catfile($root, $file);
-    $self->fetch_file($path, $host."/".$dir);
     chdir $root or die $!;
+
+    $self->fetch_file($path, $host."/".$dir);
     system("tar xjf $file 2>&1 > /dev/null") == 0 or die $!;
-    my $dist = 'samtools-1.2';
-    chdir $dist;
-    system("make -j4 2>&1 > /dev/null") == 0 or die $!;
     unlink $file if -e $file;
+
+    my $dist = 'samtools-1.2';
+    chdir $dist or die $!;
+    system("make -j4 2>&1 > /dev/null") == 0 or die $!;
 
     my $cwd = getcwd();
     my $samtools = File::Spec->catfile($cwd, 'samtools');
-    chdir $wd;
+    chdir $wd or die $!;
 
     return $samtools;
 }
@@ -219,19 +220,30 @@ sub fetch_blast {
     my $root = $self->basedir;
     my $wd   = $self->workingdir;
 
-    my $host = 'ftp://ftp.ncbi.nlm.nih.gov';
-    my $dir  = 'blast';
-    my $exd  = 'executables';
-    my $prog = 'blast+';
-    my $rel  = 'LATEST';
-    my $file = 'ncbi-blast-2.2.31+-x64-linux.tar.gz';
-    my $ldir = 'ncbi-blast-2.2.31+';
-    my $arch = join "/", $host, $dir, $exd, $prog, $rel, $file;
+    chdir $root or die $!;
+    my $host = 'ftp.ncbi.nlm.nih.gov';
+    my $ftp = Net::FTP->new($host, Passive => 1, Debug => 0)
+	or die "Cannot connect to $host: $@";
 
-    my $path = File::Spec->catfile($root, $file);
-    $self->fetch_file($path, $arch);
+    $ftp->login or die "Cannot login ", $ftp->message;
+
+    my $dir  = '/blast/executables/blast+/LATEST';
+    $ftp->cwd($dir)
+	or die "Cannot change working directory ", $ftp->message;
+
+    my $file = 'ncbi-blast-2.2.31+-x64-linux.tar.gz';
+
+    $ftp->binary();
+    my $rsize = $ftp->size($file) or die "Could not get size ", $ftp->message;
+    $ftp->get($file) or die "get failed ", $ftp->message;
+    my $lsize = -s $file;
+    die "Failed to fetch complete file: $file (local size: $lsize, remote size: $rsize)"
+	unless $rsize == $lsize;
+
+    my $ldir = 'ncbi-blast-2.2.31+';
     system("tar xzf $file 2>&1 > /dev/null") == 0 or die $!;
-    chdir $ldir;
+    unlink $file if -e $file;
+    chdir $ldir or die $!;
 
     my $cwd = getcwd();
     my $blastpath = File::Spec->catfile($cwd, 'bin');
