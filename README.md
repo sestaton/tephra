@@ -7,7 +7,7 @@ Tephra is a command line application to annotate [transposable elements](http://
 
 **DEPENDENCIES**
 
-Part of the utility of Tephra is to provide family-level TE classifications and infer patterns of molecular evoltion. To be efficient as possible, these tasks require a few external programs. Specifically, you will need to download [MUSCLE](http://http://drive5.com/muscle/) and [Vmatch](http://vmatch.de), both of which require a license so I cannot distribute them (but they are free). If you are only interested in TE identification, you can skip the need to download these programs. At this time, you also need to install [HMMER](http://hmmer.org/) version 3 and [EMBOSS](http://emboss.sourceforge.net/), which are freely available, as well.
+Part of the utility of Tephra is to provide family-level TE classifications and infer patterns of molecular evoltion. To be efficient as possible, these tasks require a few external programs. Specifically, you will need to download [MUSCLE](http://http://drive5.com/muscle/) and [Vmatch](http://vmatch.de), both of which require a license so I cannot distribute them (but they are free). If you are only interested in TE identification, you can skip the need to download these programs. However, you do need to install [HMMER](http://hmmer.org/) version 3 and [EMBOSS](http://emboss.sourceforge.net/) at this time.
 
 **SUPPORT AND DOCUMENTATION**
 
