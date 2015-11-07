@@ -61,16 +61,18 @@ sub configure_root {
     my $chrdir  = File::Spec->catdir($root, 'hmm');
     my $mgescan = File::Spec->catfile($chrdir, 'tephra-MGEScan');
     my $transla = File::Spec->catfile($chrdir, 'tephra-translate');
-    my $clw     = File::Spec->catdir($root, 'clustalw-2.1', 'bin', 'clustalw2');
+    my $clw     = File::Spec->catfile($root, 'clustalw-2.1', 'bin', 'clustalw2');
     my $pamlbin = File::Spec->catdir($root, 'paml4.8', 'bin');
     my $transeq = File::Spec->catdir($root, 'EMBOSS-6.5.7', 'bin');
-    
+    my $samtool = File::Spec->catfile($root, 'samtools-1.2', 'samtools');
+    my $blastph = File::Spec->catdir($root, 'ncbi-blast-2.2.31+', 'bin');
+
     unless (-e $gt) {
-	$gt = $self->get_gt_exes;
+	$gt = $self->fetch_gt_exes;
     }
     
     unless (-e $hscan) {
-	$hscan = $self->get_hscan;
+	$hscan = $self->fetch_hscan;
     }
     
     unless (-e $hmmbin) {
@@ -101,20 +103,31 @@ sub configure_root {
 	$transeq = $self->fetch_paml;
     }
 
+    unless (-e $samtool) {
+        $samtool = $self->fetch_samtools;
+    }
+
+    unless (-e $blastph) {
+        $blastph = $self->fetch_blast;
+    }
+
     return ({
-	gt       => $gt, 
-	hscandir => $hscan, 
-	hmmerbin => $hmmbin, 
-	modeldir => $moddir, 
-	hmmdir   => $chrdir, 
-	mgescan  => $mgescan, 
-	transcmd => $transla, 
-	clustalw => $clw, 
-	pamlbin  => $pamlbin,
-	transeq  => $transeq });
+	gt        => $gt, 
+	hscandir  => $hscan, 
+	hmmerbin  => $hmmbin, 
+	modeldir  => $moddir, 
+	hmmdir    => $chrdir, 
+	mgescan   => $mgescan, 
+	transcmd  => $transla, 
+	clustalw  => $clw, 
+	pamlbin   => $pamlbin,
+	transeq   => $transeq,
+	samtools  => $samtool,
+	blastpath => $blastph });
+
 }
 
-sub get_gt_exes {
+sub fetch_gt_exes {
     my $self = shift;
     my $root = $self->basedir;
     my $wd   = $self->workingdir;
@@ -153,7 +166,7 @@ sub get_gt_exes {
     return $gt
 }
 
-sub get_hscan {
+sub fetch_hscan {
     my $self = shift;
     my $root = $self->basedir;
     my $wd   = $self->workingdir;
@@ -173,6 +186,57 @@ sub get_hscan {
     chdir $wd;
     
      return $hscan;
+}
+
+sub fetch_samtools {
+    my $self = shift;
+    my $root = $self->basedir;
+    my $wd   = $self->workingdir;
+
+    my $host = 'http://sourceforge.net';
+    my $dir  = 'projects/samtools/files/samtools/1.2/samtools-1.2.tar.bz2/download';
+    #my $ldir = File::Spec->catdir($root, 'helitr');
+    #make_path( $ldir, {verbose => 0, mode => 0771,} );
+    my $file = 'samtools-1.2.tar.bz2';
+    my $path = File::Spec->catfile($root, $file);
+    $self->fetch_file($path, $host."/".$dir);
+    chdir $root or die $!;
+    system("tar xjf $file 2>&1 > /dev/null") == 0 or die $!;
+    my $dist = 'samtools-1.2';
+    chdir $dist;
+    system("make -j4 2>&1 > /dev/null") == 0 or die $!;
+    unlink $file if -e $file;
+
+    my $cwd = getcwd();
+    my $samtools = File::Spec->catfile($cwd, 'samtools');
+    chdir $wd;
+
+    return $samtools;
+}
+
+sub fetch_blast {
+    my $self = shift;
+    my $root = $self->basedir;
+    my $wd   = $self->workingdir;
+
+    my $host = 'ftp://ftp.ncbi.nlm.nih.gov';
+    my $dir  = 'blast';
+    my $exd  = 'executables';
+    my $prog = 'blast+';
+    my $rel  = 'LATEST';
+    my $file = 'ncbi-blast-2.2.31+-x64-linux.tar.gz';
+    my $ldir = 'ncbi-blast-2.2.31+';
+    my $arch = join "/", $host, $dir, $exd, $prog, $rel, $file;
+
+    my $path = File::Spec->catfile($root, $file);
+    $self->fetch_file($path, $arch);
+    system("tar xzf $file 2>&1 > /dev/null") == 0 or die $!;
+    chdir $ldir;
+
+    my $cwd = getcwd();
+    my $blastpath = File::Spec->catfile($cwd, 'bin');
+
+    return $blastpath;
 }
 
 sub fetch_hmmer2 {
@@ -293,8 +357,8 @@ sub fetch_emboss {
     my $root = $self->basedir;
     my $wd   = $self->workingdir;
 
-    my @path = split /:|;/, $ENV{PATH};
-    
+    # this is to avoid building each time
+    my @path = split /:|;/, $ENV{PATH};    
     for my $p (@path) {
 	my $transeq  = File::Spec->catfile($p, 'transeq');
 	if (-e $transeq && -x $transeq) {

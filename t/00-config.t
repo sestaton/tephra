@@ -29,10 +29,11 @@ my $basedir = File::Spec->catdir($ENV{HOME}, '.tephra');
 my $confobj = Tephra::Config->new( basedir => $basedir, workingdir => $cwd );
 #my ($gt, $hscan, $hmmbin, $moddir, $chrdir, $mgescan, $trans, $clw, $pamlbin) 
 my $config = $confobj->configure_root;
-my ($gt, $hscan, $hmmbin, $moddir, $chrdir, $mgescan, $trans, $clw, $pamlbin, $transeq)
-    = @{$config}{qw(gt hscandir hmmerbin modeldir hmmdir mgescan transcmd clustalw pamlbin transeq)};
+my ($gt, $hscan, $hmmbin, $moddir, $chrdir, $mgescan, $trans, $clw, $pamlbin, $transeq, $sam, $blast)
+    = @{$config}{qw(gt hscandir hmmerbin modeldir hmmdir mgescan transcmd clustalw pamlbin transeq samtools blastpath)};
 
 my $hmmsearch = File::Spec->catfile($hmmbin, 'hmmsearch');
+my $blastn    = File::Spec->catfile($blast, 'blastn');
 
 ok( -x $gt,        'Can execute gt for testing' );
 ok( -e $hscan,     'Can execute HelitronScanner for testing' );
@@ -44,6 +45,8 @@ ok( -e $trans,     'Can build translate command for non-LTR search' );
 ok( -e $clw,       'Can build clustalw for alignments' );
 ok( -e $pamlbin,   'Can build paml for analyzing LTR demography' );
 ok( -e $transeq,   'Can build transeq for identify coding domains' );
+ok( -e $sam,       'Can build samtools for indexing functions' );
+ok( -e $blastn,    'Can build blastn for sequence searches' );
 
 done_testing();
 
