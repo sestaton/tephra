@@ -32,7 +32,8 @@ sub collect_gff_features {
     #my $in = $gff->open('r') or die "\n[ERROR]: Could not open file: $gff\n";
     while (<$in>) {
 	chomp;
-	if (/^#/) {
+	next if /^###$/;
+	if (/^##\w+/) {
 	    $header .= $_."\n";
 	}
 	else {
