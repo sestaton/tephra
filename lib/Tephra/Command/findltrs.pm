@@ -4,6 +4,7 @@ package Tephra::Command::findltrs;
 use 5.010;
 use strict;
 use warnings;
+use File::Find;
 use File::Basename;
 use Tephra -command;
 use Tephra::LTR::LTRSearch;
@@ -44,8 +45,22 @@ sub execute {
     exit(0) if $self->app->global_options->{man} ||
 	$self->app->global_options->{help};
 
+    my $skip_refinement = 0;
     my ($relaxed_gff, $strict_gff) = _run_ltr_search($opt);
-    my $some = _refine_ltr_predictions($relaxed_gff, $strict_gff, $opt);
+    if (! -s $strict_gff) {
+	say STDERR "\nWARNING: No LTR retrotransposons were found under strict conditions. ".
+	    "Skipping refinement step.\n";
+	$skip_refinement = 1;
+    }
+    elsif (! -s $relaxed_gff) {
+	say STDERR "\nWARNING: No LTR retrotransposons were found under relaxed conditions. ".
+            "Skipping refinement step.\n";
+	$skip_refinement =1;
+    }
+    
+    unless ($skip_refinement) {
+	my $some = _refine_ltr_predictions($relaxed_gff, $strict_gff, $opt);
+    }
 }
 
 sub _refine_ltr_predictions {
@@ -91,7 +106,17 @@ sub _run_ltr_search {
     my $trnadb = $opt->{trnadb};
     my $clean  = defined $opt->{clean} ? $opt->{clean} : 0;
     my $index  = $opt->{index};
-    
+
+    my ($name, $path, $suffix) = fileparse($index, qr/\.[^.]*/);
+    my @files;
+    for my $suf ('.des', '.lcp', '.llv', '.md5', '.prj', '.sds', '.suf')  {
+	push @files, $index.$suf;
+    }
+
+    my $matchstr = join "|", @files;
+    my @indexfiles;
+    find( sub { push @indexfiles, $File::Find::name if -f and /$matchstr/ }, $path );
+
     my $ltr_search = Tephra::LTR::LTRSearch->new( 
 	genome => $genome, 
 	hmmdb  => $hmmdb,
@@ -99,7 +124,7 @@ sub _run_ltr_search {
 	clean  => $clean 
     );
 
-    unless (defined $index) {
+    unless (defined $index && @indexfiles == 7) {
 	my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
 	$index = $genome.".index";
     
