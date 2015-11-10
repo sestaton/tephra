@@ -219,7 +219,7 @@ sub search_unclassified {
 	"-outfmt 6 -num_threads 12 | sort -nrk12,12 | sort -k1,1 -u > $outfile";
 
     $self->run_cmd($blastcmd);
-
+    #say STDERR "debug: $outfile";
     unlink glob("$blastdb*");
 
     return $outfile;
@@ -237,13 +237,27 @@ sub annotate_unclassified {
  
 	if ($f[2] >= 80 && $f[3] >= 80) { #make length and pid thresholds options
 	    my ($family) = ($f[1] =~ /(^RL[GCX][_-][a-zA-Z]*\d*?)/);
-	    if ($family =~ /^RLG/) {
+	    if (defined $family && $family =~ /^RLG/) {
 		$gypsy->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
 		delete $features->{ $ltr_rregion_map->{$f[0]} };
 	    }
-	    elsif ($family =~ /^RLC/) {
+	    elsif (defined $family && $family =~ /^RLC/) {
 		$copia->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
 		delete $features->{ $ltr_rregion_map->{$f[0]} };
+	    }
+	    else {# (! defined $family) {
+		#$family = $f[1];
+		if ($f[1] =~ /gyp/i) {
+		    #say STDERR "debug: $f[0]";
+		    $gypsy->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
+		    delete $features->{ $ltr_rregion_map->{$f[0]} };
+		}
+		if ($f[1] =~ /cop/i) {
+		    #say STDERR "debug: $f[0]";
+		    $copia->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
+		    delete $features->{ $ltr_rregion_map->{$f[0]} };
+		}
+		#undef $family;
 	    }
 	}
     }
@@ -401,14 +415,18 @@ sub write_copia {
     }
     close $domf;
     
-    say STDERR join "\t", "copia_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
+    #say STDERR join "\t", "copia_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
     my $stat = Statistics::Descriptive::Full->new;
     $stat->add_data(@lengths);
     my $min   = $stat->min;
     my $max   = $stat->max;
     my $mean  = $stat->mean;
     my $count = $stat->count;
-    say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+    if (defined $count && defined $min && defined $max && defined $mean) {
+	say STDERR join "\t", "copia_count", "min_length", "max_length", "mean_length", 
+	    "elements_with_protein_matches";
+	say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+    }
 
     return $outfile;
 }
