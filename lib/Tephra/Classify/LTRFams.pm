@@ -17,6 +17,7 @@ use Parallel::ForkManager;
 use Cwd;
 use Try::Tiny;
 use namespace::autoclean;
+use Data::Dump;
 
 with 'Tephra::Role::GFF',
      'Tephra::Role::Util';
@@ -263,7 +264,7 @@ sub collect_feature_args {
     my $pbsname = File::Spec->catfile($dir, 'dbcluster-pbs');
     my $pbsargs = "-dbcluster 90 90 $pbsname -p -d -seedlength 5 -exdrop 2 ";
     $pbsargs .= "-l 3 -showdesc 0 -sort ld -best 100";
-    $vmatch_args{pbs} = { seqs => \@pbs, args => $pbsargs, prefixlen => 3 };
+    $vmatch_args{pbs} = { seqs => \@pbs, args => $pbsargs, prefixlen => 1 };
 
     my $pptname = File::Spec->catfile($dir, 'dbcluster-ppt');
     my $pptargs = "-dbcluster 90 90 $pptname -p -d -seedlength 5 -exdrop 2 ";
@@ -400,6 +401,9 @@ sub parse_clusters {
     find( sub { push @compfiles, $File::Find::name if /complete.fasta$/ }, $cpath );
     my $ltrfas = shift @compfiles;
     my $seqstore = $self->_store_seq($ltrfas);
+    #say "DEBUG: ltrfas -> $ltrfas";
+    #say "DEBUG: clsfile -> $clsfile";
+    #dd $seqstore;
     
     my (%cls, %all_seqs, %all_pdoms, $clusnum, $dom);
     open my $in, '<', $clsfile;
@@ -423,6 +427,7 @@ sub parse_clusters {
 	    push @{$cls{$dom}{$clusnum}}, $element;
 	}
     }
+    close $in;
 
     my (%elem_sorted, %multi_cluster_elem);
     for my $pdom (keys %cls) {
@@ -470,16 +475,19 @@ sub parse_clusters {
 	$fastas{$outfile} = 1;
     }
 
-    my $famxfile = $sf."_singleton_families.fasta";
-    my $xoutfile = File::Spec->catfile($cpath, $famxfile);
-    open my $outx, '>', $xoutfile;
-    for my $k (keys %$seqstore) {
-	my $seq = $seqstore->{$k};
-	$seq =~ s/.{60}\K/\n/g;
-	say $outx join "\n", ">$sfname"."_singleton_family_$k", $seq;
-    }
-    close $outx;
-    $fastas{$xoutfile} = 1;
+    #if (%$seqstore) {
+	my $famxfile = $sf."_singleton_families.fasta";
+	my $xoutfile = File::Spec->catfile($cpath, $famxfile);
+	open my $outx, '>', $xoutfile;
+	for my $k (keys %$seqstore) {
+	    my $seq = $seqstore->{$k};
+	    $seq =~ s/.{60}\K/\n/g;
+	    say $outx join "\n", ">$sfname"."_singleton_family_$k", $seq;
+	}
+	close $outx;
+	$fastas{$xoutfile} = 1;
+    #}
+    #else { say "Debug: no keys left in seqstore"; }
 
     return \%fastas;
 }
