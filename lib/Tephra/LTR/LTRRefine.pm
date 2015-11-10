@@ -263,7 +263,12 @@ sub sort_features {
     my $fasta = $self->genome;
     my $outfile;
     my $outfasta;
-    
+ 
+    unless (-s $gff) {
+	say "\nNo LTR retrotransposons found. Refinement step will be skipped. Exiting.\n";
+	exit (0);
+    }
+
     if ($self->has_outfile) {
 	$outfile = $self->outfile;
 	my ($name, $path, $suffix) = fileparse($outfile, qr/\.[^.]*/);
