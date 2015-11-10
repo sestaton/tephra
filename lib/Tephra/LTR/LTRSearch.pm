@@ -11,6 +11,7 @@ use Path::Class::File;
 use Log::Any            qw($log);
 use Try::Tiny;
 use namespace::autoclean;
+use Data::Dump;
 
 with 'Tephra::Role::Run::GT';
 
@@ -55,22 +56,27 @@ sub ltr_search_strict {
     @ltrh_cmd{@ltrh_opts} = @ltrh_args;
     
     my $ltr_succ  = $self->run_ltrharvest(\%ltrh_cmd);
-    my $gffh_sort = $self->sort_gff($ltrh_gff);
+    if (-s $ltrh_gff) {
+	my $gffh_sort = $self->sort_gff($ltrh_gff);
 
-#    -pdomevalcutoff    global E-value cutoff for pHMM search
-#	default 1E-6
-#	-pdomcutoff
+        #    -pdomevalcutoff    global E-value cutoff for pHMM search
+        #	default 1E-6
+        #	-pdomcutoff
 
-    my @ltrd_opts = qw(-trnas -hmms -aliout -aaout -seqfile -matchdescstart -seqnamelen -o -outfileprefix);
-    #-pdomevalcutoff -pdomcutoff);
-    my @ltrd_args = ($trnadb,$hmmdb,"no","no",$genome,"yes","50",$ltrg_gff,$ltrg_out); #,'1E-10','TC');
-    @ltrd_cmd{@ltrd_opts} = @ltrd_args;
+	my @ltrd_opts = qw(-trnas -hmms -aliout -aaout -seqfile -matchdescstart -seqnamelen -o -outfileprefix);
+        #-pdomevalcutoff -pdomcutoff);
+	my @ltrd_args = ($trnadb,$hmmdb,"no","no",$genome,"yes","50",$ltrg_gff,$ltrg_out); #,'1E-10','TC');
+	@ltrd_cmd{@ltrd_opts} = @ltrd_args;
+	
+	my $ltr_dig = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort);
+	unlink $ltrh_gff;
+	unlink $gffh_sort;
     
-    my $ltr_dig = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort);
-    unlink $ltrh_gff;
-    unlink $gffh_sort;
-    
-    return $ltrg_gff;
+	return $ltrg_gff;
+    }
+    else {
+	unlink $ltrh_gff;
+    }
 }
 
 sub ltr_search_relaxed {
