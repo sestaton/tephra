@@ -75,14 +75,16 @@ sub create_index {
     unshift @$args, 'suffixerator';
     unshift @$args, $gt;
     my $cmd = join qq{ }, @$args;
+    #say STDERR $cmd;
 
     my ($stdout, $stderr, $exit);
     try {
-	#my @out = capture { system([0..5], $cmd) };
-	($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
+	#system([0..5], $cmd);
+	my @out = capture { system([0..5], $cmd) };
+	#($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
     }
     catch {
-	$log->error("Unable to make suffixerator index. Error: $stderr. Here is the exception: $_\nExiting.");
+	$log->error("Unable to make suffixerator index. Here is the exception: $_\nExiting.");
 	exit(1);
     };
 
@@ -105,14 +107,15 @@ sub run_ltrharvest {
     } 
 
     my $cmd = join qq{ }, @ltrh_args;
-    #say STDERR $cmd and exit;
+    #say STDERR $cmd; # and exit;
     my ($stdout, $stderr, $exit);
     try {
-	#my @out = capture { system([0..5], $cmd) };
-	($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
+	#system([0..5], $cmd);
+	my @out = capture { system([0..5], $cmd) };
+	#($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
     }
     catch {
-	$log->error("LTRharvest failed. Error: $stderr. Here is the exception: $_\nExiting.");
+	$log->error("LTRharvest failed. Here is the exception: $_\nExiting.");
 	exit(1);
     };
 
@@ -132,13 +135,15 @@ sub run_ltrdigest {
     }
     
     my $cmd = join qq{ }, @ltrd_args, $gff;
+    #say STDERR $cmd;
     my ($stdout, $stderr, $exit);
     try {
-	#my @out = capture { system([0..5], $cmd) };
-	($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
+	#system([0..5], $cmd);
+	my @out = capture { system([0..5], $cmd) };
+	#($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
     }
     catch {
-	$log->error("LTRdigest failed. Error: $stderr. Here is the exception: $_\nExiting.");
+	$log->error("LTRdigest failed. Here is the exception: $_\nExiting.");
 	exit(1);
     };
 
@@ -163,11 +168,12 @@ sub run_tirvish {
     #p $cmd;
     my ($stdout, $stderr, $exit);
     try {
-	#my @out = capture { system([0..5], $cmd) };
-	($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
+	#system([0..5], $cmd);
+	my @out = capture { system([0..5], $cmd) };
+       #($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
     }
     catch {
-	$log->error("'gt tirvish' failed. Error: $stderr. Here is the exception: $_\nExiting.");
+	$log->error("'gt tirvish' failed. Here is the exception: $_\nExiting.");
 	exit(1);
     };
 
@@ -183,14 +189,14 @@ sub sort_gff {
     my $gt = $self->get_gt_exec;
 
     my $cmd = "$gt gff3 -sort $gff > $gff_sort";
+    #say STDERR $cmd;
     my ($stdout, $stderr, $exit);
     try {
-	#system([0..5], $sort_cmd);
+	#system([0..5], $cmd);
 	($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
     }
     catch {
-	$log->error("'gt gff3 -sort' failed with exit status: $exit. Error: $stderr ". 
-                    "Here is the exception: $_\nExiting.");
+	$log->error("'gt gff3 -sort' failed. Here is the exception: $_\nExiting.");
 	exit(1);
     };
 
