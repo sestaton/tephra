@@ -14,7 +14,7 @@ use Bio::SearchIO;
 use IPC::System::Simple qw(capture system);
 use Carp 'croak';
 use namespace::autoclean;
-#use Data::Dump;
+use Data::Dump;
 
 with 'Tephra::Role::Util';
 
@@ -100,7 +100,7 @@ sub find_soloLTRs {
     ## 2) get aligned ltrs from clustalw
 
     my $ltr_aln_files = $self->_get_ltr_alns($dir);
-    #dd $ltr_aln_files and exit;
+    #dd $ltr_aln_files;# and exit;
 
     ## need masked genome here
     if (@$ltr_aln_files < 1 || ! -e $genome) {
@@ -108,7 +108,7 @@ sub find_soloLTRs {
     }
     
     my $aln_stats = $self->_get_aln_len($ltr_aln_files); # return a hash-ref
-    #dd $aln_stats and exit;
+    #dd $aln_stats;# and exit;
     
     # make one directory
     my $model_dir = File::Spec->catdir($dir, "Tephra_LTR_exemplar_models");
@@ -124,7 +124,7 @@ sub find_soloLTRs {
     my @ltr_hmm_files;
     find( sub { push @ltr_hmm_files, $File::Find::name if -f and /\.hmm$/ }, $model_dir);
     my ($gname, $gpath, $gsuffix) = fileparse($genome, qr/\.[^.]*/);
-    #dd \@ltr_hmm_files and exit;
+    #dd \@ltr_hmm_files; # and exit;
 
     for my $hmm (@ltr_hmm_files) {
 	my $indiv_results_dir = $hmm;
@@ -136,11 +136,12 @@ sub find_soloLTRs {
 	
 	$self->search_with_models($hmmsearch_out, $hmm, $hmmsearch, $genome);
 	    
-	if (defined $self->report) {   		
+	if (defined $self->report && -e $hmmsearch_out) {   		
 	    $self->write_hmmsearch_report($aln_stats, $hmmsearch_out);
 	} 
     }
     
+    # this is causing no results??
     my @zeroes;
     find( sub { push @zeroes, $File::Find::name if -f and ! -s }, $model_dir );
     unlink @zeroes;
@@ -149,7 +150,14 @@ sub find_soloLTRs {
 	my $hmmsearch_summary = $self->report;
 	my @reports;
 	find( sub { push @reports, $File::Find::name if -f and /\.txt$/ }, $model_dir );
-	$self->_collate(\@reports, $hmmsearch_summary);
+	if (@reports) {
+	    $self->_collate(\@reports, $hmmsearch_summary);
+	}
+	else {
+	    say "\nWARNING: No solo-LTRs found so none will be reported. Exiting.\n";
+	    unlink $hmmsearch_summary if -e $hmmsearch_summary;
+	    exit(1);
+	}
     }
 }
 
@@ -161,6 +169,8 @@ sub build_model {
     $hmmname =~ s/\.aln$/\.hmm/;
     my $model_path = File::Spec->catfile($model_dir, $hmmname);
     my $hmm_cmd = "$hmmbuild --cpu 4 --dna $model_path $aln";
+
+    #$self->run_cmd($hmm_cmd);
     $self->capture_cmd($hmm_cmd);
 }
 
@@ -200,6 +210,7 @@ sub _collate {
     my $self = shift;
     my ($files, $outfile) = @_;
 
+    my $ct = 0;
     open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     for my $file (@$files) {
 	my $lines = do { 
@@ -207,8 +218,10 @@ sub _collate {
 	    open my $fh_in, '<', $file or die "\nERROR: Could not open file: $file\n";
 	    <$fh_in>;
 	};
+	$lines =~ s/^#.*$// if $ct > 0;
 	chomp $lines;
 	say $out $lines;
+	$ct++;
     }
     close $out;
 }
