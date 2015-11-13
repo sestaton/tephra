@@ -14,7 +14,6 @@ use Path::Class::File;
 use Log::Any            qw($log);
 use Try::Tiny;
 use namespace::autoclean;
-use Data::Dump;
 
 with 'Tephra::Role::Run::GT',
      'Tephra::Role::GFF';
@@ -55,7 +54,7 @@ sub tir_search {
 
     my $filtered = $self->_filter_tir_gff($gff);
     my $fixgff   = $self->_fix_tir_gff($filtered, $genome);
-    #my $gff_sort = $self->sort_gff($fixgff);
+    #my $gff_sort = $self->sort_gff($fixgff); # no need to call sort, we can sort it
 
     $self->clean_index if $self->clean;
     
@@ -73,11 +72,9 @@ sub _filter_tir_gff {
     my ($header, $features) = $self->collect_gff_features($gff);
     say $out $header;
 
-    my $ltrrt = 0;
     my @rt = qw(rve rvt rvp gag chromo);
     
     for my $tir (nsort keys %$features) {
-	#$tirct++;
 	for my $feat (@{$features->{$tir}}) {
 	    my @feats = split /\|\|/, $feat;
 	    if ($feats[2] eq 'protein_match') {
@@ -130,8 +127,6 @@ sub _fix_tir_gff {
             my ($md5, $hash, $id) = split /\:/, $regs[1];
 	    if (exists $seqlen->{$regs[3]}) {
 		$md5{$id} = $seqlen->{$regs[3]};
-		#$md5{ $seqlen->{$regs[3]} } = $regs[3];
-		
 	    }
         }
         if (/^md5/) {
@@ -145,14 +140,12 @@ sub _fix_tir_gff {
 
     say $out "##gff-version 3";
     for my $id (nsort keys %md5) {
-	say STDERR join q{ }, "debug:", $id, $md5{$id};
 	say $out join q{ }, "##sequence-region", $md5{$id}, "1", $idmap->{ $md5{$id} };
     }
 
     for my $chr (nsort keys %features) {
         for my $start (sort { $a <=> $b } keys %{$features{$chr}}) {       
             my @feats = split /\|\|/, $features{$chr}{$start};
-	    #shift @feats;
             say $out join "\t", $chr, @feats;
         }
     }
@@ -173,7 +166,6 @@ sub _get_seq_len {
     while ( my $seq = $seq_in->next_seq() ) {
         my $id = $seq->id;
 	$ids{$id} = $seq->length;
-        #$len{$id} = $seq->length;
     }       
     
     my %len = reverse %ids;
