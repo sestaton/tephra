@@ -3,8 +3,10 @@ package Tephra::TIR::TIRSearch;
 use 5.010;
 use Moose;
 use Cwd;
+use Bio::SeqIO;
 use File::Spec;
 use File::Find;
+use File::Copy;
 use File::Basename;
 use IPC::System::Simple qw(system EXIT_ANY);
 use Sort::Naturally;
@@ -12,6 +14,7 @@ use Path::Class::File;
 use Log::Any            qw($log);
 use Try::Tiny;
 use namespace::autoclean;
+use Data::Dump;
 
 with 'Tephra::Role::Run::GT',
      'Tephra::Role::GFF';
@@ -52,11 +55,11 @@ sub tir_search {
 
     my $filtered = $self->_filter_tir_gff($gff);
     my $fixgff   = $self->_fix_tir_gff($filtered, $genome);
-    my $gff_sort = $self->sort_gff($fixgff);
+    #my $gff_sort = $self->sort_gff($fixgff);
 
     $self->clean_index if $self->clean;
     
-    return $gff_sort;
+    return $fixgff;
 }
 
 sub _filter_tir_gff {
@@ -91,14 +94,11 @@ sub _filter_tir_gff {
     for my $tir (keys %$features) {
 	my ($rreg, $s, $e) = split /\./, $tir;
 	my $len = ($e - $s);
-	#push @lengths, $len;
 	my $region = @{$features->{$tir}}[0];
 	my ($loc, $source) = (split /\|\|/, $region)[0..1];
 	say $out join "\t", $loc, $source, 'repeat_region', $s, $e, '.', '?', '.', "ID=$rreg";
 	for my $feat (@{$features->{$tir}}) {
 	    my @feats = split /\|\|/, $feat;
-	    #$feats[8] =~ s/\s\;\s/\;/g;
-	    #$feats[8] =~ s/\s+/=/g;
 	    $feats[8] =~ s/\s\;\s/\;/g;
 	    $feats[8] =~ s/\s+$//;
 	    $feats[8] =~ s/\"//g;
@@ -115,62 +115,69 @@ sub _fix_tir_gff {
     my $self = shift;
     my ($gff, $genome) = @_;
 
+    my ($idmap, $seqlen) = $self->_get_seq_len($genome);
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name."_id.gff3");
-    open my $out, '>', $outfile;
-    open my $in, '<', $gff;
+    open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    open my $in, '<', $gff or die "\nERROR: Could not open file: $gff\n";;
 
-    my $seqio = Bio::SeqIO->new( -file => $genome, -format => 'fasta' );
-
-    my (%md5, %name_map, $seqid, $seqlen, $first_id);
-    my $write_id = 1;
+    my (%md5, %features);
     while (<$in>) {
-	chomp;
-	if (/^##gff/) {
-	    say $out $_;
-	}
-	elsif (/^##sequence-region/) {
-	    ##sequence-region   md5:faf622ff75def8ca86a6ac12894a87dc:seq0 1 119871
-	    my @regs = split /\s+/;
-	    $md5{$regs[1]} = $regs[3];
-	}
-	elsif (/^#[^#]/) {
-	    say STDERR $_;
-	    s/#//g;
-	    my $len;
-	    my @name = split /\s+/;
-	    if ($name[1] =~ /len=(\d+)/) {
-		$len = $1;
+        chomp;
+        if (/^##sequence-region/) {
+            ##sequence-region   md5:faf622ff75def8ca86a6ac12894a87dc:seq0 1 119871
+            my @regs = split /\s+/;
+            my ($md5, $hash, $id) = split /\:/, $regs[1];
+	    if (exists $seqlen->{$regs[3]}) {
+		$md5{$id} = $seqlen->{$regs[3]};
+		#$md5{ $seqlen->{$regs[3]} } = $regs[3];
+		
 	    }
-	    my ($key) = grep { $md5{$_} eq $len } keys %md5;
-	    $name_map{$key} = $name[0];
-	    say $out join q{ }, "##sequence-region", $name[0], "1", $len;
-	}
-	elsif (/^md5/ && (keys %md5) == 1 && $write_id) {
-	    my @f = split /\t/;
-	    my $len; for my $k (keys %md5) { $len = $md5{$k} }
-	    while (my $seqobj = $seqio->next_seq) {
-		my $seq = $seqobj->seq;
-		my $seql = length($seq);
-		if ($len == $seql) {
-		    $seqlen = $seql;
-		    $seqid  = $seqobj->id;
-		}
-	    }
-	    say $out join q{ }, "##sequence-region", $seqid, "1", $seqlen;
-	    say $out join "\t", $seqid, @f[1..$#f];
-	    $write_id = 0;
-	    
-	}
-	elsif (/^md5/ && (keys %md5) == 1 && !$write_id) {
-	    my @f = split /\t/;
-	    say $out join "\t", $seqid, @f[1..$#f];
-	}
+        }
+        if (/^md5/) {
+            my @f = split /\t/;
+            my $source = shift @f;
+            my ($md5, $hash, $id) = split /\:/, $source;
+            $features{ $md5{$id} }{$f[3]} = join "||", @f;
+        }
     }
     close $in;
+
+    say $out "##gff-version 3";
+    for my $id (nsort keys %md5) {
+	say STDERR join q{ }, "debug:", $id, $md5{$id};
+	say $out join q{ }, "##sequence-region", $md5{$id}, "1", $idmap->{ $md5{$id} };
+    }
+
+    for my $chr (nsort keys %features) {
+        for my $start (sort { $a <=> $b } keys %{$features{$chr}}) {       
+            my @feats = split /\|\|/, $features{$chr}{$start};
+	    #shift @feats;
+            say $out join "\t", $chr, @feats;
+        }
+    }
     close $out;
 
+    move $outfile, $gff or die "Move failed: $!";
     return $outfile;
+}
+
+sub _get_seq_len {
+    my $self = shift;
+    my ($genome) = @_;
+    
+    my %ids;
+
+    my $seq_in = Bio::SeqIO->new(-file => $genome, -format => 'fasta');
+
+    while ( my $seq = $seq_in->next_seq() ) {
+        my $id = $seq->id;
+	$ids{$id} = $seq->length;
+        #$len{$id} = $seq->length;
+    }       
+    
+    my %len = reverse %ids;
+    return (\%ids, \%len);
 }
 
 =head1 AUTHOR
