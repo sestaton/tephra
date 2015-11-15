@@ -33,6 +33,10 @@ sub validate_args {
 	say "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
+    elsif (! -e $opt->{genome} || ! -e $opt->{gff}) {
+	say "\nERROR: One or more of the required files does not exist.";
+	$self->help and exit(0);
+    }
 } 
 
 sub execute {
