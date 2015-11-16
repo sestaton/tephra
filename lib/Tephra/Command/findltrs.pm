@@ -107,15 +107,17 @@ sub _run_ltr_search {
     my $clean  = defined $opt->{clean} ? $opt->{clean} : 0;
     my $index  = $opt->{index};
 
-    my ($name, $path, $suffix) = fileparse($index, qr/\.[^.]*/);
-    my @files;
-    for my $suf ('.des', '.lcp', '.llv', '.md5', '.prj', '.sds', '.suf')  {
-	push @files, $index.$suf;
-    }
-
-    my $matchstr = join "|", @files;
     my @indexfiles;
-    find( sub { push @indexfiles, $File::Find::name if -f and /$matchstr/ }, $path );
+    if (defined $index) {
+	my ($name, $path, $suffix) = fileparse($index, qr/\.[^.]*/);
+	my @files;
+	for my $suf ('.des', '.lcp', '.llv', '.md5', '.prj', '.sds', '.suf')  {
+	    push @files, $index.$suf;
+	}
+	
+	my $matchstr = join "|", @files;
+	find( sub { push @indexfiles, $File::Find::name if -f and /$matchstr/ }, $path );
+    }
 
     my $ltr_search = Tephra::LTR::LTRSearch->new( 
 	genome => $genome, 
