@@ -5,6 +5,7 @@ use 5.010;
 use strict;
 use warnings;
 use File::Basename;
+use File::Find;
 use Tephra -command;
 use Tephra::TIR::TIRSearch;
 
