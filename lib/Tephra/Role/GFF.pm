@@ -28,19 +28,19 @@ sub collect_gff_features {
     #my $gff = $self->gff;
 
     my $header;
-    open my $in, '<', $gff;
+    open my $in, '<', $gff or die "\nERROR: Could not open file: $gff\n";
     #my $in = $gff->open('r') or die "\n[ERROR]: Could not open file: $gff\n";
     while (<$in>) {
 	chomp;
 	next if /^###$/;
-	if (/^##\w+/) {
+	if (/^##?\w+/) {
 	    $header .= $_."\n";
 	}
 	else {
 	    last;
 	}
     }
-    close $gff;
+    close $in;
     #$in->close;
     chomp $header;
 
