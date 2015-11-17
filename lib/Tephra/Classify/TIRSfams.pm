@@ -70,8 +70,8 @@ sub find_tc1_mariner {
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name."_tc1-mariner.gff3");
     my $domoutfile = File::Spec->catfile($path, $name."_tc1-mariner_domain_org.tsv");
-    open my $out, '>>', $outfile;
-    open my $domf, '>>', $domoutfile;
+    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";;
     say $out $header;
 
     for my $tir (nsort_by { m/repeat_region(\d+)/ and $1 } keys %$feature) {
@@ -171,8 +171,8 @@ sub find_hat {
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name."_hAT.gff3");
     my $domoutfile = File::Spec->catfile($path, $name."_hAT_domain_org.tsv");
-    open my $out, '>>', $outfile;
-    open my $domf, '>>', $domoutfile;
+    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";;
+    open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";;
     say $out $header;
 
     for my $tir (nsort_by { m/repeat_region(\d+)/ and $1 } keys %$feature) {
@@ -257,8 +257,8 @@ sub find_mutator {
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name."_mutator.gff3");
     my $domoutfile = File::Spec->catfile($path, $name."_mutator_domain_org.tsv");
-    open my $out, '>>', $outfile;
-    open my $domf, '>>', $domoutfile;
+    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";;
+    open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";;
     say $out $header;
 
     for my $tir (nsort_by { m/repeat_region(\d+)/ and $1 } keys %$feature) {
@@ -347,8 +347,8 @@ sub find_cacta {
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name."_cacta.gff3");
     my $domoutfile = File::Spec->catfile($path, $name."_cacta_domain_org.tsv");
-    open my $out, '>>', $outfile;
-    open my $domf, '>>', $domoutfile;
+    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";;
+    open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";;
     say $out $header;
 
     for my $tir (nsort_by { m/repeat_region(\d+)/ and $1 } keys %$feature) {
@@ -448,8 +448,8 @@ sub write_unclassified_tirs {
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name."_unclassified.gff3");
     my $domoutfile = File::Spec->catfile($path, $name."_unclassified_domain_org.tsv");
-    open my $out, '>>', $outfile;
-    open my $domf, '>>', $domoutfile;
+    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";;
+    open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";;
     say $out $header;
 
     for my $tir (nsort_by { m/repeat_region(\d+)/ and $1 } keys %$feature) {
@@ -502,6 +502,14 @@ sub write_unclassified_tirs {
     else {
 	unlink $outfile;
     }
+}
+
+sub index_ref {
+    my $self = shift;
+    my $fasta = $self->genome;
+    my $samtools  = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    my $faidx_cmd = "$samtools faidx $fasta";
+    $self->run_cmd($faidx_cmd);
 }
 
 sub _format_attribute {
