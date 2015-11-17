@@ -90,20 +90,15 @@ sub find_tc1_mariner {
 	    if ($feats[2] eq 'target_site_duplication') {
 		my $tsd_len = ($feats[4] - $feats[3]) + 1;
 		if ($tsd_len == 2) {
-		    #my $tsd = substr $hash->{$loc}, $feats[3], $tsd_len;
 		    my $tmp = $tir.".fasta";
-		    my $cmd = "$samtools faidx $fasta $region:$feats[3]-$feats[4] > $tmp";
+		    my $cmd = "$samtools faidx $fasta $loc:$feats[3]-$feats[4] > $tmp";
 		    $self->run_cmd($cmd);
 		    my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
 		    while (my $seqobj = $seqio->next_seq) {
 			my $seq = $seqobj->seq;
-			#$seq =~ s/.{60}\K/\n/g;
-			#say $ofas join "\n", ">".$id, $seq;
 			$is_mariner = 1 if $seq =~ /ta/i;
 		    }
 		    unlink $tmp;
-		    
-		    #$is_mariner = 1 if $tsd =~ /ta/i;
 		}
 	    }
 	    $mar_feats .= join "\t", @feats, "\n";
@@ -145,8 +140,7 @@ sub find_tc1_mariner {
     my $count = $stat->count;
 
     if ($count > 0) {
-	say STDERR join "\t", "mariner_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
-		
+	say STDERR join "\t", "mariner_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";		
 	say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
     }
     else {
@@ -231,8 +225,7 @@ sub find_hat {
     my $count = $stat->count;
 
     if ($count > 0) {
-	say STDERR join "\t", "mariner_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
-	
+	say STDERR join "\t", "hat_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
 	say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
     }
     else {
@@ -319,8 +312,7 @@ sub find_mutator {
     my $count = $stat->count;
 
     if ($count > 0) {
-	say STDERR join "\t", "mariner_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
-		
+	say STDERR join "\t", "mutator_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";	
 	say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
     }
     else {
@@ -367,20 +359,15 @@ sub find_cacta {
 	    if ($feats[2] eq 'target_site_duplication') {
 		my $tsd_len = ($feats[4] - $feats[3]) + 1;
 		if ($tsd_len >= 2 && $tsd_len <= 3) {
-		    #my $tir_elem = substr $hash->{$loc}, $s, $len;
 		    my $tmp = $tir.".fasta";
-		    my $cmd = "$samtools faidx $fasta $region:$feats[3]-$feats[4] > $tmp";
+		    my $cmd = "$samtools faidx $fasta $loc:$feats[3]-$feats[4] > $tmp";
 		    $self->run_cmd($cmd);
 		    my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
 		    while (my $seqobj = $seqio->next_seq) {
 			my $seq = $seqobj->seq;
-			#$seq =~ s/.{60}\K/\n/g;
-			#say $ofas join "\n", ">".$id, $seq;
 			$is_cacta = 1 if $seq =~ /^cact[ag]/i;
 		    }
 		    unlink $tmp;
-		    
-		    #$is_cacta = 1 if $tir_elem =~ /^cact[ag]/i;
 		}
 	    }
 	    $cac_feats .= join "\t", @feats, "\n";
@@ -422,8 +409,7 @@ sub find_cacta {
     my $count = $stat->count;
 
     if ($count > 0) {
-	say STDERR join "\t", "mariner_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
-		
+	say STDERR join "\t", "cacta_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";		
 	say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
     }
     else {
@@ -496,7 +482,7 @@ sub write_unclassified_tirs {
     my $count = $stat->count;
 
     if ($count > 0) {
-	say STDERR join "\t", "mariner_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";		
+	say STDERR join "\t", "unclassified_tir_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";		
 	say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
     }
     else {
