@@ -56,7 +56,10 @@ sub _classify_tir_predictions {
 	gff      => $opt->{gff} 
     );
 
-    $classify_obj->index_ref;
+    my $index = $opt->{genome}.'.fai';
+    unless (-e $index) {
+	$classify_obj->index_ref;
+    }
     my ($header, $features) = $classify_obj->collect_gff_features($opt->{gff});
 
     my $all_ct = (keys %$features);
