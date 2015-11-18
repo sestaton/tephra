@@ -14,6 +14,7 @@ sub opt_spec {
 	[ "percentident|p=f", "Percent identity threshold for matches. (default 0.39)."                     ], 
 	[ "percentcov|c=f",   "Percent coverage threshold for matches. (default 0.80)."                     ],
 	[ "matchlen|l=f",     "Length threshold for matches. (default 80)."                                 ],
+	[ "outfile|o=s",      "The GFF file to save results to. "                                           ],
 	[ "report|r=s",       "Parse hmmsearch of each sequence and produce a summary of align statistics." ],
 	[ "seq|s",            "Extract query sequence from domain alignment."                               ],
 	[ "clean",            "Clean up the intermediate alignment files (Default: yes) "                   ],
@@ -30,7 +31,7 @@ sub validate_args {
     elsif ($self->app->global_options->{help}) {
 	$self->help;
     }
-    elsif (!$opt->{indir} || !$opt->{genome}) {
+    elsif (!$opt->{indir} || !$opt->{genome} || !$opt->{outfile}) {
 	say "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
@@ -48,19 +49,21 @@ sub execute {
 sub _calculate_soloLTR_abund {
     my ($opt) = @_;
 
-    my $dir    = $opt->{indir};
-    my $genome = $opt->{genome};
-    my $report = $opt->{report};
-    my $pid    = defined $opt->{percentident} ? $opt->{percentident} : 0.39;
-    my $pcov   = defined $opt->{percentcov} ? $opt->{percentcov} : 0.80;
-    my $len    = defined $opt->{matchlen} ? $opt->{matchlen} : 80;
-    my $seq    = defined $opt->{seq} ? 1 : 0;
-    my $clean  = defined $opt->{clean} ? 1 : 0;
+    my $dir     = $opt->{indir};
+    my $genome  = $opt->{genome};
+    my $report  = $opt->{report};
+    my $outfile = $opt->{outfile};
+    my $pid     = defined $opt->{percentident} ? $opt->{percentident} : 0.39;
+    my $pcov    = defined $opt->{percentcov} ? $opt->{percentcov} : 0.80;
+    my $len     = defined $opt->{matchlen} ? $opt->{matchlen} : 80;
+    my $seq     = defined $opt->{seq} ? 1 : 0;
+    my $clean   = defined $opt->{clean} ? 1 : 0;
 
     my $ill_obj = Tephra::Genome::SoloLTRSearch->new(
 	dir          => $dir,
 	genome       => $genome,
 	report       => $report,
+	outfile      => $outfile,
 	percentident => $pid,
 	percentcov   => $pcov,
 	matchlen     => $len,
@@ -81,6 +84,7 @@ sub help {
  Required:
      -i|indir         :    The input directory of LTR families in FASTA format.
      -g|genome        :    Input FASTA file of sequences to search.
+     -o|outfile       :    The GFF file to write the solo-LTRs to.
 
  Options:
      -p|percentident  :    Percent identity threshold for matches. (default 0.39).
@@ -124,6 +128,10 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =item -g, --genome
 
  Input (masked) FASTA file of genomic sequences to search.
+
+=item -o, --outfile
+
+ The name of the GFF file to write the solo-LTR locations to.
 
 =back
 
