@@ -16,7 +16,8 @@ use Try::Tiny;
 use namespace::autoclean;
 
 with 'Tephra::Role::Run::GT',
-     'Tephra::Role::GFF';
+     'Tephra::Role::GFF',
+     'Tephra::Role::Util';
 
 has outfile => (
       is        => 'ro',
@@ -46,44 +47,60 @@ sub tir_search {
     my $hmmdb   = $self->hmmdb;
     my $outfile = $self->outfile;
     my (%suf_args, %tirv_cmd);
-    
+
+    my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
     if ($name =~ /(\.fa.*)/) {
 	$name =~ s/$1//;
     }
     
     my $gff = defined $outfile ? $outfile : File::Spec->catfile($path, $name."_tirs.gff3");
-    my @tirv_opts = qw(-seqids -md5 -mintirlen -mintirdist -index -hmms);
+    my $fas = $gff;
+    $fas =~ s/\.gff.*/.fasta/;
 
-    my @tirv_args = ("no","yes","27","100",$index,$hmmdb);
+    my @tirv_opts = qw(-seqids -mintirlen -mintirdist -index -hmms);
+
+    my @tirv_args = ("yes","27","100",$index,$hmmdb);
     @tirv_cmd{@tirv_opts} = @tirv_args;
     
     $self->run_tirvish(\%tirv_cmd, $gff);
     
-    my $filtered = $self->_filter_tir_gff($gff);
-    my $fixgff   = $self->_fix_tir_gff($filtered);
+    my $filtered = $self->_filter_tir_gff($gff, $fas);
 
     $self->clean_index if $self->clean;
     
-    return $fixgff;
+    return $filtered;
 }
 
 sub _filter_tir_gff {
     my $self = shift;
-    my ($gff) = @_;
+    my ($gff, $fas) = @_;
+    my $genome = $self->genome;
 
+    my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name."_filtered.gff3");
-    open my $out, '>', $outfile;
-
+    open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    open my $faout, '>>', $fas or die "\nERROR: Could not open file: $fas\n";
+    
+    my %tirs;
     my ($header, $features) = $self->collect_gff_features($gff);
     say $out $header;
+
+    my $idx = $genome.'.fai';
+    unless (-e $idx) {
+	$self->_index_ref;
+    }
 
     my @rt = qw(rve rvt rvp gag chromo);
     
     for my $tir (nsort keys %$features) {
 	for my $feat (@{$features->{$tir}}) {
 	    my @feats = split /\|\|/, $feat;
+	    if ($feats[2] eq 'terminal_inverted_repeat_element') {
+		my ($id) = ($feats[8] =~ /ID\s+?=?(terminal_inverted_repeat_element\d+)/);
+		$tirs{$feats[0]}{$id} = join "||", @feats[3..4];
+	    }
 	    if ($feats[2] eq 'protein_match') {
 		my ($type, $pdom) = ($feats[8] =~ /(name) ("?\w+"?)/);
 		$pdom =~ s/"//g;
@@ -95,7 +112,7 @@ sub _filter_tir_gff {
 	}
     }
 
-    for my $tir (keys %$features) {
+    for my $tir (nsort keys %$features) {
 	my ($rreg, $s, $e) = split /\./, $tir;
 	my $len = ($e - $s);
 	my $region = @{$features->{$tir}}[0];
@@ -109,57 +126,34 @@ sub _filter_tir_gff {
 	    $feats[8] =~ s/(\;\w+)\s/$1=/g;
 	    $feats[8] =~ s/\s;/;/;
 	    $feats[8] =~ s/^(\w+)\s/$1=/;
+	    if ($feats[2] eq 'terminal_inverted_repeat_element') {
+		my ($elem) = ($feats[8] =~ /ID=(terminal_inverted_repeat_element\d+)/);
+                my $tmp = $elem.".fasta";
+                my $id  = $elem."_".$loc."_".$feats[3]."_".$feats[4];
+                my $cmd = "$samtools faidx $genome $loc:$feats[3]-$feats[4] > $tmp";
+                $self->run_cmd($cmd);
+                my $seqio = Bio::SeqIO->new(-file => $tmp, -format => 'fasta');
+                while (my $seqobj = $seqio->next_seq) {
+                    my $seq = $seqobj->seq;
+                    $seq =~ s/.{60}\K/\n/g;
+                    say $faout join "\n", ">".$id, $seq;
+                }
+                unlink $tmp;
+            }
 	    say $out join "\t", @feats;
 	}
     }
+    close $out;
+
     return $outfile;
 }
 
-sub _fix_tir_gff {
+sub _index_ref {
     my $self = shift;
-    my ($gff) = @_;
-
-    my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $outfile = File::Spec->catfile($path, $name."_id.gff3");
-    open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-    open my $in, '<', $gff or die "\nERROR: Could not open file: $gff\n";
-
-    my (%md5, %name_map);
-    while (my $line = <$in>) {
-        chomp $line;
-        if ($line =~ /^##gff/) {
-            say $out $line;
-        }
-        elsif ($line =~ /^##sequence-region/) {
-            ##sequence-region   md5:faf622ff75def8ca86a6ac12894a87dc:seq0 1 119871
-            my @regs = split /\s+/, $line;
-            $md5{$regs[1]} = $regs[3];
-        }
-        elsif ($line =~ /^#[^#]/) {
-            $line =~ s/#//g;
-            my $len;
-            my @name = split /\s+/, $line;
-            if ($name[1] =~ /length=(\d+)/) {
-                $len = $1;
-            }
-            my ($key) = grep { $md5{$_} eq $len } keys %md5;
-            $name_map{$key} = $name[0];
-            say $out join q{ }, "##sequence-region", $name[0], "1", $len;
-        }
-        elsif ($line =~ /^md5/) {
-            my @f = split /\t/, $line;
-            if (exists $name_map{ $f[0] }) {
-                my $id = $name_map{ $f[0] };
-                my $source = shift @f;
-                say $out join "\t", $id, @f;
-            }
-        }
-    }
-    close $in;
-    close $out;
-
-    move $outfile, $gff or die "Move failed: $!";
-    return $gff;
+    my $fasta = $self->genome;
+    my $samtools  = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    my $faidx_cmd = "$samtools faidx $fasta";
+    $self->run_cmd($faidx_cmd);
 }
 
 =head1 AUTHOR
