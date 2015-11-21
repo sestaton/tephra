@@ -64,9 +64,13 @@ sub _fasta_to_gff {
 	while (my $line = <$in>) {
 	    chomp $line;
 	    if ($line =~ /^>/) {
-		my ($id, $start, $end) = ($line =~ /^\>(\w+\.?\w+)_(\d+)-(\d+)/);
+		my ($id, $start, $end) = ($line =~ /^\>(.*\.?fa(?:s?t?a?))_(\d+)-(\d+)/);
 		if (defined $id) {
 		    $regions{$name}{$id}{$start} = join "||", $start, $end;
+		}
+		else {
+		    warn "\nERROR: Could not parse sequence ID for header: '$line'. ".
+			"This is a bug, please report it.\n";;
 		}
 	    }
 	}
@@ -93,7 +97,7 @@ sub _fasta_to_gff {
 	    my ($name, $path, $suffix) = fileparse($seqid, qr/\.[^.]*/);
 	    for my $start (sort { $a <=> $b } keys %{$regions{$clade}{$seqid}}) {
 	        my ($start, $end) = split /\|\|/, $regions{$clade}{$seqid}{$start};	
-	        say $out join "\t", $name, 'Tephra', 'non_LTR_retrotransposon', $start, $end, '-', '?', '-', 
+	        say $out join "\t", $name, 'Tephra', 'non_LTR_retrotransposon', $start, $end, '.', '?', '.', 
 	            "ID=non_LTR_retrotransposon$ct;Name=$clade;Ontology_term=SO:0000189"; 
 		$ct++;
 	    }
