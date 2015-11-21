@@ -270,7 +270,7 @@ sub fetch_hmmer2 {
     system("tar xzf $file") == 0 or die "tar failed: $!";
     chdir $dist;
     my $cwd = getcwd();
-    system("./configure --prefix=$cwd 2>&1 > /dev/null") == 0
+    system("./configure --enable-threads --prefix=$cwd 2>&1 > /dev/null") == 0
 	or die "configure failed: $!";
     system("make -j4 2>&1 >/dev/null") == 0 
 	or die "make failed: $!";
