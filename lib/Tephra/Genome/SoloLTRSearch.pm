@@ -16,7 +16,7 @@ use Set::IntervalTree;
 use IPC::System::Simple qw(capture system);
 use Carp 'croak';
 use namespace::autoclean;
-use Data::Dump;
+#use Data::Dump;
 
 with 'Tephra::Role::Util';
 
@@ -110,33 +110,40 @@ sub find_soloLTRs {
     ## 1) generate exemplar for each family (vmatch to cts)
     ## 2) get aligned ltrs from clustalw
 
+    print STDERR "Getting LTR alignments....";
     my $ltr_aln_files = $self->_get_ltr_alns($dir);
-    dd $ltr_aln_files;# and exit;
-
+    #dd $ltr_aln_files;# and exit;
+    say STDERR "done with alignements.";
+    
     ## need masked genome here
     if (@$ltr_aln_files < 1 || ! -e $genome) {
 	croak "\nERROR: No genome was found or the expected alignements files were not found. Exiting.";
     }
     
+    print STDERR "Getting alignment statistics...";
     my $aln_stats = $self->_get_aln_len($ltr_aln_files); # return a hash-ref
-    dd $aln_stats;# and exit;
-    
+    #dd $aln_stats;# and exit;
+    say STDERR "done with alignment statistics.";
+
     # make one directory
     my $model_dir = File::Spec->catdir($dir, "Tephra_LTR_exemplar_models");
     unless ( -e $model_dir ) {
 	make_path( $model_dir, {verbose => 0, mode => 0771,} );
     }
     
+    print STDERR "Building LTR exemplar models...";
     for my $ltr_aln (@$ltr_aln_files) {
 	$self->build_model($ltr_aln, $model_dir, $hmmbuild);	
 	unlink $ltr_aln;	
     }
-
+    say STDERR "done with models.";
+    
     my @ltr_hmm_files;
     find( sub { push @ltr_hmm_files, $File::Find::name if -f and /\.hmm$/ }, $model_dir);
     my ($gname, $gpath, $gsuffix) = fileparse($genome, qr/\.[^.]*/);
-    dd \@ltr_hmm_files; # and exit;
+    #dd \@ltr_hmm_files; # and exit;
 
+    print STDERR "Search genome with models...";
     for my $hmm (@ltr_hmm_files) {
 	my $indiv_results_dir = $hmm;
 	$indiv_results_dir =~ s/\.hmm.*$/\_search_out/;
@@ -147,31 +154,29 @@ sub find_soloLTRs {
 	
 	$self->search_with_models($hmmsearch_out, $hmm, $hmmsearch, $genome);
 	    
-	#if (defined $self->report && -e $hmmsearch_out) {   		
 	if (-e $hmmsearch_out) {   
 	    $self->write_hmmsearch_report($aln_stats, $hmmsearch_out);
 	} 
     }
-    
+    say STDERR "done searching with LTR models.";
+    print STDERR "Collating results and writing GFF...";
     #my @zeroes;
     #find( sub { push @zeroes, $File::Find::name if -f and ! -s }, $model_dir );
     #unlink @zeroes;
     
-    #if (defined $self->report) {
-	#my $hmmsearch_summary = $self->report;
-	my @reports;
-	find( sub { push @reports, $File::Find::name if -f and /\.txt$/ }, $model_dir );
-	if (@reports) {
-	    $self->_collate(\@reports, $hmmsearch_summary);
-	}
-	else {
-	    say "\nWARNING: No solo-LTRs found so none will be reported. Exiting.\n";
-	    unlink $hmmsearch_summary if -e $hmmsearch_summary;
-	    exit(1);
-	}
-    #}
+    my @reports;
+    find( sub { push @reports, $File::Find::name if -f and /\.txt$/ }, $model_dir );
+    if (@reports) {
+	$self->_collate(\@reports, $hmmsearch_summary);
+    }
+    else {
+	say "\nWARNING: No solo-LTRs found so none will be reported. Exiting.\n";
+	unlink $hmmsearch_summary if -e $hmmsearch_summary;
+	exit(1);
+    }
 
     $self->write_sololtr_gff($hmmsearch_summary);
+    say STDERR "all done with solo-LTRs.";
 }
 
 sub write_sololtr_gff {
@@ -200,12 +205,9 @@ sub write_sololtr_gff {
 	$query =~ s/_ltrs_clustal-out//;
 
 	if (exists $seqlen->{$hit_name}) {
-	    #$ct++;
-	    #my $str = join "||", $hit_name, 'Tephra', 'solo_LTR', $hsp_hit_start, $hsp_hit_end, '.', '?', '.',
-	        #"ID=solo_LTR;Parent=$query;Name=solo_LTR;Ontology_term=SO:0001003";
-	    #$features{$hit_name}{$hsp_hit_start} = $str;
+	    $ct++;
 	    say $out join "\t", $hit_name, 'Tephra', 'solo_LTR', $hsp_hit_start, $hsp_hit_end, 
-	        '.', '?', '.', "ID=solo_LTR;Parent=$query;Name=solo_LTR;Ontology_term=SO:0001003";
+	        '.', '?', '.', "ID=solo_LTR$ct;Parent=$query;Name=solo_LTR;Ontology_term=SO:0001003";
 	}
 	else {
 	    die "\nERROR: $hit_name not found in $genome. This should not happen. Exiting.\n";
@@ -213,63 +215,6 @@ sub write_sololtr_gff {
     }
     close $in;
     close $out; 
-#    my $tree = Set::IntervalTree->new;
-#    for my $chr (nsort keys %features) {
-#	for my $start (sort { $a <=> $b } keys %{$features{$chr}}) {
-#	    $ct++;
-#	    my @feat_str = split /\|\|/, $features{$chr}{$start};
-#	    my $ltr_len = $feat_str[4] - $feat_str[3] + 1;
-#	    $feat_str[8] =~ s/ID=solo_LTR/ID=solo_LTR$ct/;
-#	    my ($id) = ($feat_str[8] =~ /ID=(solo_LTR\d+)/);
-#	    $tree->insert($id, @feat_str[3..4]);
-#	    $intervals{$chr} = $tree;
-#	    $ltr_lengths{$id} = join "||", $ltr_len, $start;
-#	    my $str = join "||", @feat_str;
-#	    #say $out join "\t", @feat_str;
-#	    $features{$chr}{$start} = $str
-#	}
-#    }
-
-    #my (%sorted_lens, %hash_max, %best_ltrs);
-    #for my $chr (nsort keys %features) {
-	#for my $start (sort { $a <=> $b } keys %{$features{$chr}}) {
-	#    my @feat_str = split /\|\|/, $features{$chr}{$start};
-	#    my $res = $intervals{$chr}->fetch(@feat_str[3..4]);
-	#    my $max;
-	#    if (@$res) {
-	#	for my $ltr (@$res) {
-	#	    my ($ltr_len, $start) = split /\|\|/, $ltr_lengths{$ltr};
-	#	    $sorted_lens{$start} = $ltr_len;
-	#	}
-	#	dd \%sorted_lens;
-#
-#		while (my ($key, $value) = each %sorted_lens) {
-#		    if ( !defined $max || $value > $max ) {
-#			%hash_max = ();
-#			$max = $value;
-#		    }
-#		    $hash_max{$key} = $value if $max == $value;
-#		}
-#	
-#		dd \%hash_max;
-#		my ($longest_start) = (keys %hash_max);
-#		my @best_feat_str = split /\|\|/, $features{$chr}{$longest_start};
-#		unless (exists $best_ltrs{$chr}{$longest_start} && 
-#			$best_ltrs{$chr}{$longest_start} == $sorted_lens{$longest_start}) {
-#		    say $out join "\t", @best_feat_str;
-#		}
-#		$best_ltrs{$chr}{$longest_start} = $sorted_lens{$longest_start};
-#		dd \%best_ltrs;
-#	    }
-#	    else {
-#		say $out join "\t", @feat_str;
-#	    }
-#	    %sorted_lens = ();
-#	    %hash_max = ();
-#	    #undef $max;
-#	}
-#   }
-#    close $out;
 }
 
 sub build_model {
@@ -280,10 +225,9 @@ sub build_model {
     $hmmname =~ s/\.aln$/\.hmm/;
     my $model_path = File::Spec->catfile($model_dir, $hmmname);
     # hmmer3 has --dna and --cpu options and not -g (global)
-    my $hmm_cmd = "$hmmbuild -g --nucleic $model_path $aln";
+    my $hmm_cmd = "$hmmbuild -f --nucleic $model_path $aln";
 
-    $self->run_cmd($hmm_cmd);
-    #$self->capture_cmd($hmm_cmd);
+    $self->capture_cmd($hmm_cmd);
 }
 
 sub search_with_models {
@@ -291,7 +235,7 @@ sub search_with_models {
     my ($search_out, $hmm_model, $hmmsearch, $fasta) = @_;
 
     ## no -o option in hmmer2
-    my $hmmsearch_cmd = "$hmmsearch $hmm_model $fasta > $search_out";
+    my $hmmsearch_cmd = "$hmmsearch --cpu 12 $hmm_model $fasta > $search_out";
     $self->run_cmd($hmmsearch_cmd);
     unlink $hmm_model; # if $self->clean;
 }
@@ -323,20 +267,35 @@ sub _collate {
     my $self = shift;
     my ($files, $outfile) = @_;
 
-    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    my (%seen, %parsed_alns);
+    for my $file (@$files) {
+	open my $fh_in, '<', $file or die "\nERROR: Could not open file: $file\n";
+	while (my $line = <$fh_in>) {
+	    chomp $line;
+	    next if $line =~ /^#/;
+	    my @f = split /\t/, $line;
+	    if (exists $seen{$f[3]}{$f[9]}) {
+		my ($len, $pid) = split /\|\|/, $seen{$f[3]}{$f[9]};
+		if ($f[10]-$f[9] > $len && $f[6] > $pid) {
+		    $parsed_alns{$f[3]}{$f[9]} =  join "||", @f;
+		}
+	    }
+	    $parsed_alns{$f[3]}{$f[9]} =  join "||", @f;
+	    $seen{$f[3]}{$f[9]} = join "||", $f[10]-$f[9], $f[6];
+	}
+	close $fh_in;
+    }
 
+    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     say $out join "\t", "#query", "query_length", "number_of_hits", "hit_name",
         "perc_coverage","hsp_length", "hsp_perc_ident","hsp_query_start", "hsp_query_end",
         "hsp_hit_start", "hsp_hit_end","search_type";
 
-    for my $file (@$files) {
-	my $lines = do { 
-	    local $/ = undef; 
-	    open my $fh_in, '<', $file or die "\nERROR: Could not open file: $file\n";
-	    <$fh_in>;
-	};
-	chomp $lines;
-	say $out $lines;
+    for my $chr (nsort keys %parsed_alns) {
+	for my $start (sort { $a <=> $b } keys %{$parsed_alns{$chr}}) {
+	    my @f = split /\|\|/, $parsed_alns{$chr}{$start};
+	    say $out join "\t", @f;
+	}
     }
     close $out;
 }
@@ -447,27 +406,18 @@ sub write_hmmsearch_report {
 	open $seq, ">$seqfile" or die "\nERROR: Could not open file: $seqfile";
     }
 
-    #say STDERR "alignment report: $element";
-    
     my $hmmerin = Bio::SearchIO->new(-file => $search_report, -format => 'hmmer');
 
-    ## todo - delete if no matches
-    #say $out join "\t", "#query", "query_length", "number_of_hits", "hit_name", 
-        #"perc_coverage","hsp_length", "hsp_perc_ident","hsp_query_start", "hsp_query_end", 
-        #"hsp_hit_start", "hsp_hit_end","search_type";
-
     my ($positions, $matches) = (0, 0);
-	
     while ( my $result = $hmmerin->next_result() ) {
 	my $query    = $result->query_name();
 	my $num_hits = $result->num_hits();
-	#my $qlen     = $result->query_length;
 	my $qlen     = $aln_stats->{$query};
-	die "\nERROR: Could not determine query length for: $query" unless defined $qlen;
+	die "\nERROR: Could not determine query length for: $query" 
+	    unless defined $qlen;
 	while ( my $hit = $result->next_hit() ) {
 	    my $hitid = $hit->name();
 	    while ( my $hsp = $hit->next_hsp() ) {
-		#my $percent_id = sprintf("%.2f", $hsp->percent_identity);
 		my $percent_q_coverage = sprintf("%.2f", $hsp->length('query')/$qlen * 100);
 		my @ident_pos = $hsp->seq_inds('query','identical');
 		my $hspgaps   = $hsp->gaps;
@@ -480,15 +430,10 @@ sub write_hmmsearch_report {
 		my $qhsplen   = $hsp->length('query');
 		
 		if (exists $aln_stats->{$query}) {
-		    #say STDERR "DEBUG: match -> $query";
 		    my $percent_coverage = sprintf("%.2f",$hsplen/$aln_stats->{$query});
 		    $positions++ for @ident_pos;
-
-		    #my $pid = sprintf("%.2f", $positions/$hsplen * 100);
 		    my $pid = sprintf("%.2f", $positions/$aln_stats->{$query} * 100);
-		    #say STDERR "DEBUG: match -> $query hsplen -> $hsplen alnlen -> $aln_stats->{$query} pid -> $pid positions -> $positions perc_q_cov -> $percent_q_coverage match_pcov -> $match_pcov qhsplen -> $qhsplen qlen -> $qlen";
 		    if ( $hsplen >= $match_len && $hsplen >= $aln_stats->{$query} * $match_pcov ) {
-			#my $percent_identity = sprintf("%.2f",$positions/$hsplen);
 			if ($pid >= $match_pid) {
 			    $matches++;
 			    say $out join "\t", $query, $aln_stats->{$query}, $num_hits, $hitid, 
@@ -511,7 +456,6 @@ sub write_hmmsearch_report {
     }
     close $out;
     close $seq;
-    #unlink $search_report;
     unlink $seqfile, $parsed if $matches == 0;
 
 }
