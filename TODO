@@ -1,3 +1,6 @@
+-- maskref
+- add option for output masked sequence name
+
 -- classifyltrs
 - compare domain organization in LTRs to what is expected per superfamily; incorporate this into the classification scheme
 - clean up logs and intermediate files from vmatch (dbluster-*)
@@ -6,8 +9,12 @@
 -- findtirs
 - check for index (if given)
 
+-- findsololtrs
+- parallelize hmmsearch to speed things up. likely this is faster than multiple cpus for one model at time
+
 -- classifytirs
 - in tests, skip if empty output (none found). This is not a good test honestly, need a new reference
+- write fasta of each superfamily, and combined library
 
 -- findltrs 
 - check for index (if given)
@@ -28,6 +35,7 @@
 - run domain searches in parallel
 - use multiple CPUs (make option) for domain searches
 - write GFF of results
+- add verbose option so as to not print progress when there are 5k scaffolds
 
 -- meta
 - logging results/progress
@@ -35,3 +43,5 @@
 - reduce LTRs/TRIMs....perhaps when combining all GFFs
 - save tnp matching ltr-rts and search for cacta tes..or just add as putative classII
 - add kmer mapping command (see tallymer2gff.pl)
+- create config role for setting paths
+- change config module to be an Install namespace
