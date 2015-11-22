@@ -36,6 +36,7 @@
 - use multiple CPUs (make option) for domain searches
 - write GFF of results
 - add verbose option so as to not print progress when there are 5k scaffolds
+- write combined file of all elements
 
 -- meta
 - logging results/progress
