@@ -8,8 +8,9 @@ use File::Spec;
 use File::Path qw(make_path);
 use File::Basename;
 use Sort::Naturally;
-use Data::Printer;
 use namespace::autoclean;
+
+with 'Tephra::Role::Util';
 
 =head1 NAME
 
@@ -52,20 +53,25 @@ sub _fasta_to_gff {
     my $outdir = $self->outdir;
     my ($seqs) = @_;
 
+    my $samtools  = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
     my $name = basename($outdir);
     my $outfile = File::Spec->catfile($outdir, $name."_tephra_nonltr.gff3");
+    my $fas     = File::Spec->catfile($outdir, $name."_tephra_nonltr.fasta");
     open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-    my $lens = $self->_get_seq_region;
+    open my $faout, '>', $fas or die "\nERROR: Could not open file: $fas\n";
+    my ($lens, $combined) = $self->_get_seq_region;
+    $self->_index_ref($combined) unless -e $combined.'.fai';
 
     my %regions;
     for my $file (@$seqs) {
+	next if $file =~ /tephra/;
 	my ($name, $path, $suffix) = fileparse($file, qr/\.[^.]*/);
 	open my $in, '<', $file or die "\nERROR: Could not open file: $file\n";
 	while (my $line = <$in>) {
 	    chomp $line;
 	    if ($line =~ /^>/) {
 		my ($id, $start, $end) = ($line =~ /^\>(.*\.?fa(?:s?t?a?))_(\d+)-(\d+)/);
-		if (defined $id) {
+		if (defined $id) {		    
 		    $regions{$name}{$id}{$start} = join "||", $start, $end;
 		}
 		else {
@@ -96,13 +102,30 @@ sub _fasta_to_gff {
 	for my $seqid (nsort keys %{$regions{$clade}}) {
 	    my ($name, $path, $suffix) = fileparse($seqid, qr/\.[^.]*/);
 	    for my $start (sort { $a <=> $b } keys %{$regions{$clade}{$seqid}}) {
-	        my ($start, $end) = split /\|\|/, $regions{$clade}{$seqid}{$start};	
-	        say $out join "\t", $name, 'Tephra', 'non_LTR_retrotransposon', $start, $end, '.', '?', '.', 
-	            "ID=non_LTR_retrotransposon$ct;Name=$clade;Ontology_term=SO:0000189"; 
+	        my ($start, $end) = split /\|\|/, $regions{$clade}{$seqid}{$start};
+		my $seqname = $seqid;
+		$seqname =~ s/\.fa.*//;
+		my $elem = "non_LTR_retrotransposon$ct";
+                my $tmp = $elem.".fasta";
+                my $id  = $elem."_".$seqname."_".$start."_".$end;
+                my $cmd = "$samtools faidx $combined $seqname:$start-$end > $tmp";
+                $self->run_cmd($cmd);
+		my $seqio = Bio::SeqIO->new(-file => $tmp, -format => 'fasta');
+		while (my $seqobj = $seqio->next_seq) {
+		    my $seq = $seqobj->seq;
+		    $seq =~ s/.{60}\K/\n/g;
+		    say $faout join "\n", ">".$id, $seq;
+		}
+		unlink $tmp;
+		
+		say $out join "\t", $name, 'Tephra', 'non_LTR_retrotransposon', $start, $end, '.', '?', '.', 
+		"ID=non_LTR_retrotransposon$ct;Name=$clade;Ontology_term=SO:0000189"; 
 		$ct++;
 	    }
 	} 
     }
+    close $faout;
+    unlink $combined;
 }
 
 sub _get_seq_region {
@@ -111,8 +134,12 @@ sub _get_seq_region {
 
     my (@seqs, %lens);
     find( sub { push @seqs, $File::Find::name if -f and /\.fa.*$/ }, $fasdir );
+    my $combined = File::Spec->catfile($fasdir, 'tephra_all_genome_seqs.fas');
+    open my $out, '>', $combined or die "\nERROR: Could not open file: $combined\n";
 
-    for my $seq (@seqs) {
+    for my $seq (nsort @seqs) {
+	next if $seq =~ /tephra/;
+	$self->_collate($seq, $out);
 	my $seqio = Bio::SeqIO->new(-file => $seq, -format => 'fasta');
 	while (my $seqobj = $seqio->next_seq) {
 	    my $id  = $seqobj->id;
@@ -121,7 +148,26 @@ sub _get_seq_region {
 	}
     }
 
-    return \%lens;
+    return (\%lens, $combined);
+}
+
+sub _collate {
+    my $self = shift;
+    my ($file_in, $fh_out) = @_;
+    my $lines = do { 
+        local $/ = undef; 
+        open my $fh_in, '<', $file_in or die "\nERROR: Could not open file: $file_in\n";
+        <$fh_in>;
+    };
+    print $fh_out $lines;
+}
+
+sub _index_ref {
+    my $self = shift;
+    my ($fasta) = @_;
+    my $samtools  = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    my $faidx_cmd = "$samtools faidx $fasta";
+    $self->run_cmd($faidx_cmd);
 }
 
 =head1 AUTHOR
