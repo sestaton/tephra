@@ -1,3 +1,7 @@
+# ABOUT
+
+This file is for keeping a list of feature requests and bugs. Hopefully, having one list will make it easier to keep track of proposed changes. It would be nice to rank the lists in order to prioritize tasks. 
+
 ## Command `tephra classifyltrs`
  - [x] Classify 'best' LTR-RT elements into superfamilies based on domain content and organization
  - [x] Classify elements into families based on cluster organization; Generate FASTA for each family
@@ -64,7 +68,8 @@
 ## Command `tephra maskref`
  - [x] Generate masked reference from custom repeat library 
 
-</br>
+*** 
+
 ## Meta
  - [ ] logging results/progress
  - [ ] documentation
