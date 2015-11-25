@@ -15,6 +15,7 @@ use File::Spec;
 sub opt_spec {
     return (    
 	[ "genome|g=s",   "The genome sequences in FASTA format to search for LTR-RTs " ],
+	[ "outfile|o=s",  "The output filename to use for the masked genome "           ],
 	[ "repeatdb|d=s", "The database of repeat sequences to use for masking "        ],
 	[ "clean",        "Clean up the index files (Default: yes) "                    ],
     );
@@ -50,11 +51,13 @@ sub _run_masking {
     
     my $genome   = $opt->{genome};
     my $repeatdb = $opt->{repeatdb};
+    my $outfile  = $opt->{outfile};
     my $clean    = defined $opt->{clean} ? $opt->{clean} : 0;
 
     my $mask_obj = Tephra::Genome::MaskRef->new( 
 	genome   => $genome, 
-	repeatdb => $repeatdb, 
+	repeatdb => $repeatdb,
+	outfile  => $outfile,
 	clean    => $clean 
     );
     
@@ -73,6 +76,7 @@ Required:
     -d|repeatdb   :   The database of repeat sequences to use for masking.
 
 Options:
+    -o|outfile    :   The output filename to use for the masked genome.
     -c|clean      :   Clean up the index files (Default: yes).
 
 END
@@ -118,6 +122,11 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =head1 OPTIONS
 
 =over 2
+
+=item -o, --outfile
+
+ The output filename to use for the masked genome. If not given, the output will be named "input_masked.fas."
+ For example, if the input is "seqs.fas" the output filename would be "seqs_masked.fas."
 
 =item -c, --clean
 
