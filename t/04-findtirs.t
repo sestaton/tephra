@@ -27,11 +27,11 @@ my @ret = capture { system([0..5], $find_cmd) };
 
 my @files;
 find( sub { push @files, $File::Find::name if /\.gff3$/ }, $testdir);
-ok( @files == 4, 'Can find some tirs' ); # 2 ltrdigest files + combined file
+ok( @files == 2, 'Can find some tirs' ); # original + filtered gff3
 
 ## clean up
 my @outfiles;
-find( sub { push @outfiles, $File::Find::name if /^ref_tirs/ && ! /filtered_id_sort.gff3$/ }, $testdir);
+find( sub { push @outfiles, $File::Find::name if /^ref_tirs/ && ! /filtered.gff3$/ }, $testdir);
 unlink @outfiles;
     
 done_testing();
