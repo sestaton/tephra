@@ -9,7 +9,7 @@ use Capture::Tiny       qw(capture);
 use List::Util          qw(sum);
 use File::Find;
 use File::Spec;
-use Data::Dump;
+#use Data::Dump::Color;
 
 use Test::More tests => 8;
 
@@ -30,7 +30,7 @@ my $find_cmd = "$cmd findltrs -g $genome -t $trnas -d $model --clean";
 #say STDERR $find_cmd;
 
 my ($stdout, $stderr, @ret) = capture { system([0..5], $find_cmd) };
-       
+      
 my @files;
 find( sub { push @files, $File::Find::name if /\.gff3$/ }, $testdir);
 ok( @files == 3, 'Can find some ltrs' ); # 2 ltrdigest files + combined file
@@ -58,7 +58,7 @@ for my $line (split /^/, $stderr) {
 
 ## clean up
 my @outfiles;
-find( sub { push @outfiles, $File::Find::name if /^ref_ltr/ && ! /filtered.gff3$/ }, $testdir);
+find( sub { push @outfiles, $File::Find::name if /^ref_ltr/ && ! /combined_filtered.gff3$/ }, $testdir);
 unlink @outfiles;
     
 done_testing();
