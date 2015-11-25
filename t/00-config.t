@@ -8,14 +8,13 @@ use HTML::TreeBuilder;
 use File::Spec;
 use File::Copy qw(move);
 use File::Path qw(make_path);
-use Tephra::Config;
-use Cwd;
+use Tephra::Config::Exe;
 
 use Test::More tests => 15;
 
 BEGIN {
     use_ok( 'Tephra' ) || print "Bail out!\n";
-    use_ok( 'Tephra::Config' ) || print "Bail out!\n"
+    use_ok( 'Tephra::Config::Exe' ) || print "Bail out!\n"
 }
 
 diag( "Testing Tephra $Tephra::VERSION, Perl $], $^X" );
@@ -23,17 +22,12 @@ diag( "Testing Tephra $Tephra::VERSION, Perl $], $^X" );
 my $cmd = File::Spec->catfile('blib', 'bin', 'tephra');
 ok( -x $cmd, 'Can execute tephra' );
 
-my $cwd = getcwd();
-#say STDERR $cwd and exit;
-my $basedir = File::Spec->catdir($ENV{HOME}, '.tephra');
-my $confobj = Tephra::Config->new( basedir => $basedir, workingdir => $cwd );
-#my ($gt, $hscan, $hmmbin, $moddir, $chrdir, $mgescan, $trans, $clw, $pamlbin) 
-my $config = $confobj->configure_root;
+my $config = Tephra::Config::Exe->new->get_config_paths;
 my ($gt, $hscan, $hmmbin, $moddir, $chrdir, $mgescan, $trans, $clw, $pamlbin, $transeq, $sam, $blast)
     = @{$config}{qw(gt hscandir hmmerbin modeldir hmmdir mgescan transcmd clustalw pamlbin transeq samtools blastpath)};
 
 my $hmmsearch = File::Spec->catfile($hmmbin, 'hmmsearch');
-my $blastn    = File::Spec->catfile($blast, 'blastn');
+my $blastn    = File::Spec->catfile($blast,  'blastn');
 
 ok( -x $gt,        'Can execute gt for testing' );
 ok( -e $hscan,     'Can execute HelitronScanner for testing' );
