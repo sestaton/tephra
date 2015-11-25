@@ -16,7 +16,7 @@ use Test::More tests => 2;
 my $cmd      = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir  = File::Spec->catdir('t', 'test_data');
 my $genome   = File::Spec->catfile($testdir, 'ref.fas');
-my $gff      = File::Spec->catfile($testdir, 'ref_tirs_filtered_id_sort.gff3');
+my $gff      = File::Spec->catfile($testdir, 'ref_tirs_filtered.gff3');
 
 my @assemb_results = capture { system([0..5], "$cmd classifyltrs -h") };
 
