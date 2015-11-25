@@ -1,6 +1,6 @@
-# ABOUT
+# TEPHRA TODO
 
-This file is for keeping a list of feature requests and bugs. Hopefully, having one list will make it easier to keep track of proposed changes. It would be nice to rank the lists in order to prioritize tasks. 
+This file is for logging feature requests and bugs during development. Hopefully, having one list will make it easier to keep track of proposed changes. It would be nice to rank the lists in order to prioritize tasks. It should be noted this list is for development purposes and it may go away once a stable release is made.
 
 ## Command `tephra classifyltrs`
  - [x] Classify 'best' LTR-RT elements into superfamilies based on domain content and organization
@@ -10,6 +10,7 @@ This file is for keeping a list of feature requests and bugs. Hopefully, having 
  - [x] clean up logs and intermediate files from vmatch (dbluster-*)
  - [x] combine domain organization from both strands (if the same)?
  - [ ] add family classifications to GFF Name attribute and update with age
+ - [ ] incorporate legacy annotations from input GFF/reference
 
 ## Command `tephra findtirs`
  - [x] Find all non-overlapping TIR elements passing thresholds
@@ -19,7 +20,7 @@ This file is for keeping a list of feature requests and bugs. Hopefully, having 
 ## Command `tephra sololtr`
  - [x] Create HMM of LTRs for each LTR-RT
  - [x] Search masked ref with LTR HMM
- - [ ] Create GFF with SO terms of solo-LTRs
+ - [x] Create GFF with SO terms of solo-LTRs
  - [ ] parallelize hmmsearch to speed things up. likely this is faster than multiple cpus for one model at time
 
 ## Command `tephra classifytirs`
@@ -49,7 +50,7 @@ This file is for keeping a list of feature requests and bugs. Hopefully, having 
  - [x] Generate combined GFF3 of high-quality TRIMs
 
 ## Command `tephra findnonltrs`
- - [ ] break chromosomes to reduce memory usage in hmmsearch
+ - [ ] break chromosomes to reduce memory usage in hmmsearch (only applies to HMMERv3)
  - [x] check HMMER2 var and program version
  - [x] remove backticks and shell exec of hmmer
  - [x] remove nasty regex parsing in favor or bioperl reading of report
@@ -57,7 +58,6 @@ This file is for keeping a list of feature requests and bugs. Hopefully, having 
  - [ ] run domain searches in parallel
  - [ ] use multiple CPUs (make option) for domain searches
  - [x] write GFF of results
- - [ ] use multiple CPUs (make option) for domain searches
  - [ ] add verbose option so as to not print progress when there are 5k scaffolds
  - [x] write combined file of all elements
 
@@ -67,6 +67,7 @@ This file is for keeping a list of feature requests and bugs. Hopefully, having 
 
 ## Command `tephra maskref`
  - [x] Generate masked reference from custom repeat library 
+ - [x] Add outfile option instead of creating filename
 
 *** 
 
@@ -78,3 +79,4 @@ This file is for keeping a list of feature requests and bugs. Hopefully, having 
  - [ ] add kmer mapping command (see tallymer2gff.pl)
  - [ ] create config role for setting paths
  - [ ] change config module to be an Install namespace
+ - [ ] add subcommand to merge all GFFs
