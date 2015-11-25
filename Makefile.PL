@@ -1,6 +1,9 @@
 use strict;
 use warnings FATAL => 'all';
 use ExtUtils::MakeMaker;
+use Cwd;
+use lib qw(lib);
+use Tephra::Config::Install;
 
 if (eval ($ExtUtils::MakeMaker::VERSION) <= 6.55) {
     print "\n[ERROR]: ExtUtils::MakeMaker >= 6.5503 is required to build the package correctly.\n";
@@ -23,7 +26,7 @@ WriteMakefile(
         'Test::More' => 0,
     },
     PREREQ_PM => {
-	'Moose'                   => 0,       
+	'Moose'                 => 0,       
         'IPC::System::Simple'   => 0,
 	'Parallel::ForkManager' => 0,
 	'Try::Tiny'             => 0,
@@ -34,4 +37,11 @@ WriteMakefile(
     test  => { TESTS => 't/*.t' },
     clean => { FILES => [ 't/test_data/*.fai', 'src/*.o', 'src/tephra-*' ] },
 );
+
+{
+    print STDERR "=====> Configuring Tephra, this may take some time...";
+    my $cwd = getcwd();
+    my $confobj = Tephra::Config::Install->new( workingdir => $cwd );
+    my $config  = $confobj->configure_root;
+}
 
