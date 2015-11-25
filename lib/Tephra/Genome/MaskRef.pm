@@ -6,7 +6,7 @@ use Cwd;
 use File::Spec;
 use File::Find;
 use File::Basename;
-use Path::Class::File;
+#use Path::Class::File;
 use Log::Any qw($log);
 use namespace::autoclean;
 
@@ -27,16 +27,23 @@ $VERSION = eval $VERSION;
 
 has genome => (
       is       => 'ro',
-      isa      => 'Path::Class::File',
+      isa      => 'Maybe[Str]',
       required => 1,
-      coerce   => 1,
+      coerce   => 0,
 );
 
 has repeatdb => (
       is       => 'ro',
-      isa      => 'Path::Class::File',
+      isa      => 'Maybe[Str]',
       required => 0,
-      coerce   => 1,
+      coerce   => 0,
+);
+
+has outfile => (
+    is       => 'ro',
+    isa      => 'Maybe[Str]',
+    required => 1,
+    coerce   => 0,
 );
 
 has clean => (
@@ -44,30 +51,31 @@ has clean => (
     isa      => 'Bool',
     required => 0,
     default  => 1,
-    );
+);
 
 sub mask_reference {
     my $self = shift;
-    my $genome   = $self->genome->absolute;
+    my $genome   = $self->genome;
     my $repeatdb = $self->repeatdb;
-    my (%suf_args, %ltrh_cmd, %ltrd_cmd);
 
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
     if ($name =~ /(\.fa.*)/) {
 	$name =~ s/$1//;
     }
 
-    my $masked_ref = File::Spec->catfile($path, $name."_masked.fas");
+    my $outfile = $self->outfile // File::Spec->catfile($path, $name."_masked.fas");
+
+    my (%suf_args, %ltrh_cmd, %ltrd_cmd);
     my $index      = $repeatdb.".index";
     my $vmatch_log = File::Spec->catfile($path, $name."_vmatch.err");
     my $mkvtree = "mkvtree -db $repeatdb -indexname $index -dna -allout -v -pl 2>&1 > /dev/null";
-    my $vmatch  = "vmatch -q $genome -l 50 -s 90 -qmaskmatch N $index 1> $masked_ref 2> $vmatch_log";
+    my $vmatch  = "vmatch -q $genome -l 50 -s 90 -qmaskmatch N $index 1> $outfile 2> $vmatch_log";
     $self->run_cmd($mkvtree); # need to warn here, not just log errors
     $self->run_cmd($vmatch);
 
     $self->clean_index($path) if $self->clean;
 
-    return $masked_ref;
+    return $outfile;
 }
 
 sub clean_index {
