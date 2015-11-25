@@ -265,8 +265,10 @@ sub sort_features {
     my $outfasta;
  
     unless (-s $gff) {
+	# should never get here, this test can be removed
 	say "\nNo LTR retrotransposons found. Refinement step will be skipped. Exiting.\n";
-	exit (0);
+	unlink $gff;
+	exit(0);
     }
 
     if ($self->has_outfile) {
@@ -286,8 +288,8 @@ sub sort_features {
     #p $gff;
     #exit;
     
-    open my $ogff, '>', $outfile;
-    open my $ofas, '>>', $outfasta;
+    open my $ogff, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    open my $ofas, '>>', $outfasta or die "\nERROR: Could not open file: $outfasta\n";
 
     my ($header, %features);
     open my $in, '<', $gff;
@@ -348,13 +350,6 @@ sub sort_features {
 		    }   
 		    unlink $tmp;
 		}
-		#if ($feats[2] eq 'long_terminal_repeat' && $strand eq '+') {
-
-		#}
-		#if ($feats[2] eq 'long_terminal_repeat' && $strand eq '-') {
-
-		#}
-		
 	    }
 	    $index++;
 	}

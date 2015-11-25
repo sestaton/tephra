@@ -45,20 +45,26 @@ sub execute {
     exit(0) if $self->app->global_options->{man} ||
 	$self->app->global_options->{help};
 
-    my $skip_refinement = 0;
+    my ($no_relaxed, $no_strict) = (0, 0);
     my ($relaxed_gff, $strict_gff) = _run_ltr_search($opt);
     if (! -s $strict_gff) {
 	say STDERR "\nWARNING: No LTR retrotransposons were found under strict conditions. ".
 	    "Skipping refinement step.\n";
-	$skip_refinement = 1;
+	$no_strict = 1;
     }
     elsif (! -s $relaxed_gff) {
 	say STDERR "\nWARNING: No LTR retrotransposons were found under relaxed conditions. ".
             "Skipping refinement step.\n";
-	$skip_refinement =1;
+	$no_relaxed = 1;
     }
-    
-    unless ($skip_refinement) {
+
+    if ($no_strict && !$no_relaxed) {
+	say STDERR "\nFinal output file: $relaxed_gff\n";
+    }
+    elsif (!$no_strict && $no_relaxed) {
+	say STDERR "\nFinal output file: $strict_gff\n";
+    }
+    elsif (!$no_strict && !$no_relaxed) {
 	my $some = _refine_ltr_predictions($relaxed_gff, $strict_gff, $opt);
     }
 }
