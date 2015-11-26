@@ -10,12 +10,12 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] clean up logs and intermediate files from vmatch (dbluster-*)
  - [x] combine domain organization from both strands (if the same)?
  - [ ] add family classifications to GFF Name attribute and update with age
- - [ ] incorporate legacy annotations from input GFF/reference
+ - [ ] incorporate legacy annotations from input GFF/reference to family classification
 
 ## Command `tephra findtirs`
  - [x] Find all non-overlapping TIR elements passing thresholds
  - [x] Generate combined GFF3 of high-quality TIRs
- - [ ] Check for index (if given)
+ - [x] Check for index (if given)
 
 ## Command `tephra sololtr`
  - [x] Create HMM of LTRs for each LTR-RT
@@ -33,7 +33,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Find all non-overlapping LTR-RTs under strict and relaxed conditions
  - [x] Filter elements by quality score, retaining the best elements
  - [x] Generate combined GFF3 of high-quality LTR-RTs
- - [ ] Check for index (if given)
+ - [x] Check for index (if given)
  - [ ] change header format to be ">id_source_range"
  - [ ] adjust filtering command to not increment if element has been deleted (inflated filtering stats)
  - [ ] reporting of superfamilies after ltr search?.. better to do that at classification stage
