@@ -15,6 +15,7 @@ use List::MoreUtils     qw(any none);
 use Path::Class::File;
 use Try::Tiny;
 use Cwd;
+use Tephra::Config::Exe;
 use namespace::autoclean;
 
 with 'Tephra::Role::GFF',
@@ -171,9 +172,11 @@ sub find_unclassified {
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfast = File::Spec->catfile($path, $name."_unclassified.fasta");
-    my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    #my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($samtools) = @{$config}{qw(samtools)};
 
-    open my $ofas, '>>', $outfast;
+    open my $ofas, '>>', $outfast or die "\nERROR: Could not open file: $outfast\n";
 
     for my $ltr (keys %$features) {
 	my $region = @{$features->{$ltr}}[0];
@@ -213,7 +216,10 @@ sub search_unclassified {
     my ($bname, $bpath, $bsuffix) = fileparse($unc_fas, qr/\.[^.]*/);
     my ($fname, $fpath, $fsuffix) = fileparse($unc_fas, qr/\.[^.]*/);
     my $outfile = $fname."_".$bname.".bln";
-    my $blastn  = File::Spec->catfile($ENV{HOME}, '.tephra', 'ncbi-blast-2.2.31+', 'bin', 'blastn');
+    #my $blastn  = File::Spec->catfile($ENV{HOME}, '.tephra', 'ncbi-blast-2.2.31+', 'bin', 'blastn');
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($blastbin) = @{$config}{qw(blastpath)};
+    my $blastn     =  File::Spec->catfile($blastbin, 'blastn');
 
     my $blastcmd = "$blastn -dust no -query $unc_fas -evalue 10 -db $blastdb ".
 	"-outfmt 6 -num_threads 12 | sort -nrk12,12 | sort -k1,1 -u > $outfile";
@@ -228,7 +234,7 @@ sub search_unclassified {
 sub annotate_unclassified {
     my $self = shift;
     my ($blast_out, $gypsy, $copia, $features, $ltr_rregion_map) = @_;
-    open my $in, '<', $blast_out;
+    open my $in, '<', $blast_out or die "\nERROR: Could not open file: $blast_out\n";
     my (%gypsy_re, %copia_re);
 
     while (<$in>) {
@@ -280,8 +286,8 @@ sub write_gypsy {
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name."_gypsy.gff3");
     my $domoutfile = File::Spec->catfile($path, $name."_gypsy_domain_org.tsv");
-    open my $out, '>>', $outfile;
-    open my $domf, '>>', $domoutfile;
+    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";
     say $out $header;
 
     my @all_pdoms;
@@ -363,8 +369,8 @@ sub write_copia {
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name."_copia.gff3");
     my $domoutfile = File::Spec->catfile($path, $name."_copia_domain_org.tsv");
-    open my $out, '>>', $outfile;
-    open my $domf, '>>', $domoutfile;
+    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";
     say $out $header;
 
     for my $ltr (nsort_by { m/repeat_region\d+\.(\d+)\.\d+/ and $1 } keys %$copia) {
@@ -447,8 +453,8 @@ sub write_unclassified {
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name."_unclassified.gff3");
     my $domoutfile = File::Spec->catfile($path, $name."_unclassified_domain_org.tsv");
-    open my $out, '>>', $outfile;
-    open my $domf, '>>', $domoutfile;
+    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";
     say $out $header;
 
     for my $ltr (nsort_by { m/repeat_region\d+\.(\d+)\.\d+/ and $1 } keys %$features) {
@@ -521,7 +527,10 @@ sub _make_blastdb {
     my $dir = getcwd();
     my $db_path = Path::Class::File->new($dir, $db);
     unlink $db_path if -e $db_path;
-    my $makeblastdb  = File::Spec->catfile($ENV{HOME}, '.tephra', 'ncbi-blast-2.2.31+', 'bin', 'makeblastdb');
+    #my $makeblastdb  = File::Spec->catfile($ENV{HOME}, '.tephra', 'ncbi-blast-2.2.31+', 'bin', 'makeblastdb');
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($blastbin) = @{$config}{qw(blastpath)};
+    my $makeblastdb = File::Spec->catfile($blastbin, 'makeblastdb');
 
     try {
 	my @makedbout = capture([0..5],"$makeblastdb -in $db_fas -dbtype nucl -title $db -out $db_path 2>&1 > /dev/null");

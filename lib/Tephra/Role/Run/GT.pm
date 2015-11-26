@@ -11,6 +11,7 @@ use File::Find;
 use File::Basename;
 use Log::Any        qw($log);
 use Cwd;
+use Tephra::Config::Exe;
 use namespace::autoclean;
 #use Data::Dump;
 #use Data::Printer;
@@ -223,7 +224,9 @@ sub _build_gt_exec {
         return $gtexe;
     }
     elsif (! defined $gtexe) {
-	$gtexe = File::Spec->catfile($ENV{HOME}, '.tephra', 'gt', 'bin', 'gt');
+	my $config = Tephra::Config::Exe->new->get_config_paths;
+	($gtexe) = @{$config}{qw(gt)};
+	#$gtexe = File::Spec->catfile($ENV{HOME}, '.tephra', 'gt', 'bin', 'gt');
 	if (-e $gtexe && -x $gtexe) {
 	    return $gtexe;
 	}

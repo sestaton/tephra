@@ -16,6 +16,7 @@ use Parallel::ForkManager;
 use Statistics::Descriptive;
 use Time::HiRes qw(gettimeofday);
 use Log::Any qw($log);
+use Tephra::Config::Exe;
 use namespace::autoclean;
 #use Data::Dump;
 
@@ -324,11 +325,6 @@ sub get_indel_range {
     my @indel_ranges;
     my @indel_lengths;
 
-    # The algorithm below is based on
-    # something I found on stackoverflow
-    # for converting an array with sequential
-    # numbers into an array with ranges
-    # http://stackoverflow.com/questions/117691
     my $gap_range = [ $indels[0] ];
 
     for my $indel (@indels[1..$#indels]) {
@@ -369,12 +365,15 @@ sub bl2seq_compare {
     my $outfile = $out->filename;
     my $qfile   = $qname->filename;
     my $rfile   = $rname->filename;
-    my $blastn  = File::Spec->catfile($ENV{HOME}, '.tephra', 'ncbi-blast-2.2.31+', 'bin', 'blastn');
+    #my $blastn  = File::Spec->catfile($ENV{HOME}, '.tephra', 'ncbi-blast-2.2.31+', 'bin', 'blastn');
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($blastbin) = @{$config}{qw(blastpath)};
+    my $blastn = File::Spec->catfile($blastbin, 'blastn');
 
     say $qname join "\n", ">".$upstr_id, $upstr_seq;
     say $rname join "\n", ">".$downstr_id, $downstr_seq;
     my $blcmd = "$blastn -query $qname -subject $rname -word_size 4 -outfmt 5 -out $outfile 2>&1 | ";
-    $blcmd .= "grep -v \"CFastaReader: Hyphens are invalid and will be ignored\"";
+    $blcmd .= "grep -v \"CFastaReader: Hyphens are invalid and will be ignored\""; ## what is worse, this hack or the stupid warnings?
     #say STDERR $blcmd;
     $self->run_cmd($blcmd);
     unlink $qname, $rname;

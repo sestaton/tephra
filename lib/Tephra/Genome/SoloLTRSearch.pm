@@ -15,6 +15,7 @@ use Sort::Naturally;
 use Set::IntervalTree;
 use IPC::System::Simple qw(capture system);
 use Carp 'croak';
+use Tephra::Config::Exe;
 use namespace::autoclean;
 #use Data::Dump;
 
@@ -246,7 +247,9 @@ sub _get_ltr_alns {
     my (@ltrseqs, @aligns);
 
     find( sub { push @ltrseqs, $File::Find::name if -f and /exemplar_ltrs.fasta$/ }, $dir);
-    my $clustalw2 = File::Spec->catfile($ENV{HOME}, '.tephra', 'clustalw-2.1', 'bin', 'clustalw2');
+    #my $clustalw2 = File::Spec->catfile($ENV{HOME}, '.tephra', 'clustalw-2.1', 'bin', 'clustalw2');
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($clustalw2) = @{$config}{qw(clustalw)};
 
     for my $ltrseq (@ltrseqs) {
 	my ($name, $path, $suffix) = fileparse($ltrseq, qr/\.[^.]*/);
@@ -303,9 +306,13 @@ sub _collate {
 sub _find_hmmer {
     my $self = shift; 
 
-    my $bin = File::Spec->catdir($ENV{HOME}, '.tephra', 'hmmer-2.3.2', 'bin');
-    my $hmmbuild = File::Spec->catdir($bin, 'hmmbuild');
-    my $hmmsearch = File::Spec->catdir($bin, 'hmmsearch');
+    ## this is somewhat duplicated from the non-ltr path role. create a single role and reuse it, eh?
+
+    #my $bin = File::Spec->catdir($ENV{HOME}, '.tephra', 'hmmer-2.3.2', 'bin');
+    my $config     = Tephra::Config::Exe->new->get_config_paths;
+    my ($hmmerbin) = @{$config}{qw(hmmerbin)};
+    my $hmmbuild   = File::Spec->catfile($hmmerbin, 'hmmbuild');
+    my $hmmsearch  = File::Spec->catfile($hmmerbin, 'hmmsearch');
 
     if (-e $hmmbuild && -x $hmmbuild &&
 	-e $hmmsearch && -x $hmmsearch) {

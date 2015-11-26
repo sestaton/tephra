@@ -6,13 +6,14 @@ use strict;
 use warnings;
 use File::Basename;
 use Tephra -command;
+use Tephra::Config::Exe;
 use Tephra::Hel::HelSearch;
 
 sub opt_spec {
     return (    
-	[ "genome|g=s",              "The genome sequences in FASTA format to search for Helitrons "   ],
-	[ "helitronscanner_dir|d=s", "The HelitronScanner directory (configured automatically) "       ],
-	[ "outfile|o=s",             "The final combined and filtered GFF3 file of Helitrons "         ],
+	[ "genome|g=s",           "The genome sequences in FASTA format to search for Helitrons "   ],
+	[ "helitronscanner|j=s",  "The HelitronScanner .jar file (configured automatically) "       ],
+	[ "outfile|o=s",          "The final combined and filtered GFF3 file of Helitrons "         ],
     );
 }
 
@@ -44,14 +45,18 @@ sub execute {
 sub _run_helitron_search {
     my ($opt) = @_;
     
-    my $genome     = $opt->{genome};
-    my $hscan_dir  = $opt->{helitronscanner_dir};
-    my $gff        = $opt->{outfile};
-    $hscan_dir //= File::Spec->catfile($ENV{HOME}, '.tephra', 'helitronscanner', 'HelitronScanner');
+    my $genome   = $opt->{genome};
+    my $hscan    = $opt->{helitronscanner};
+    my $gff      = $opt->{outfile};
+    my $config   = Tephra::Config::Exe->new->get_config_paths;
+    my ($hscanj) = @{$config}{qw(hscanjar)};
 
+    $hscan //= $hscanj;
+
+    say STDERR "hscandir: $hscan";
     my $hel_search = Tephra::Hel::HelSearch->new( 
 	genome  => $genome, 
-	helitronscanner_dir => $hscan_dir,
+	helitronscanner => $hscan,
 	outfile => $gff
     );
 

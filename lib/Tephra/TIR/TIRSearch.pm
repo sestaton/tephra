@@ -13,6 +13,7 @@ use Sort::Naturally;
 use Path::Class::File;
 use Log::Any            qw($log);
 use Try::Tiny;
+use Tephra::Config::Exe;
 use namespace::autoclean;
 
 with 'Tephra::Role::Run::GT',
@@ -48,7 +49,10 @@ sub tir_search {
     my $outfile = $self->outfile;
     my (%suf_args, %tirv_cmd);
 
-    my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    #my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($samtools) = @{$config}{qw(samtools)};
+
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
     if ($name =~ /(\.fa.*)/) {
 	$name =~ s/$1//;
@@ -65,7 +69,7 @@ sub tir_search {
     
     $self->run_tirvish(\%tirv_cmd, $gff);
     
-    my $filtered = $self->_filter_tir_gff($gff, $fas);
+    my $filtered = $self->_filter_tir_gff($samtools, $gff, $fas);
 
     $self->clean_index if $self->clean;
     
@@ -74,10 +78,10 @@ sub tir_search {
 
 sub _filter_tir_gff {
     my $self = shift;
-    my ($gff, $fas) = @_;
+    my ($samtools, $gff, $fas) = @_;
     my $genome = $self->genome;
 
-    my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    #my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name."_filtered.gff3");
     open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
@@ -89,7 +93,7 @@ sub _filter_tir_gff {
 
     my $idx = $genome.'.fai';
     unless (-e $idx) {
-	$self->_index_ref;
+	$self->_index_ref($samtools);
     }
 
     my @rt = qw(rve rvt rvp gag chromo);
@@ -151,7 +155,8 @@ sub _filter_tir_gff {
 sub _index_ref {
     my $self = shift;
     my $fasta = $self->genome;
-    my $samtools  = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    my ($samtools) = @_;
+    #my $samtools  = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
     my $faidx_cmd = "$samtools faidx $fasta";
     $self->run_cmd($faidx_cmd);
 }

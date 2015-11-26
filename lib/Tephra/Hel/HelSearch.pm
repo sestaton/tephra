@@ -31,9 +31,9 @@ $VERSION = eval $VERSION;
 sub find_helitrons {
     my $self = shift;
     
-    my $genome    = $self->genome->absolute;
-    my $hscan_dir = $self->helitronscanner_dir;
-    my $gff       = $self->outfile;
+    my $genome = $self->genome->absolute;
+    my $jar    = $self->helitronscanner;
+    my $gff    = $self->outfile;
 
     my (%scanh_cmd, %scant_cmd, %pair_cmd, %draw_cmd);
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
@@ -47,8 +47,8 @@ sub find_helitrons {
     my $g_helname  = File::Spec->catfile($path, $name."_tephra_hscan_helitrons");
     my $full_hels  = $g_helname.".hel.fa";
 
-    my $jar  = File::Spec->catfile($hscan_dir, "HelitronScanner.jar");
-    my $parent = $hscan_dir->parent; # unfortunately, the dist does not unpack in a separate dir
+    #my $jar  = File::Spec->catfile($hscan_dir, "HelitronScanner.jar");
+    my $parent = $jar->parent->parent; # unfortunately, the dist does not unpack in a separate dir
     my $lcvs = File::Spec->catfile($parent, "TrainingSet", "head.lcvs");
     my $rcvs = File::Spec->catfile($parent, "TrainingSet", "tail.lcvs");
 

@@ -6,6 +6,7 @@ use Config;
 use File::Spec;
 use IPC::System::Simple qw(capture);
 use Carp 'croak';
+use Tephra::Config::Exe;
 
 =head1 NAME
 
@@ -21,7 +22,11 @@ our $VERSION = '0.01';
 $VERSION = eval $VERSION;
 
 sub find_hmmsearch {
-    my $hmmsearch = File::Spec->catfile($ENV{HOME}, '.tephra', 'hmmer-2.3.2', 'bin', 'hmmsearch');
+    #my $hmmsearch = File::Spec->catfile($ENV{HOME}, '.tephra', 'hmmer-2.3.2', 'bin', 'hmmsearch');
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($hmmerbin) = @{$config}{qw(hmmerbin)};
+    my $hmmsearch = File::Spec->catfile($hmmerbin, 'hmmsearch');
+
     if (-e $hmmsearch && -x $hmmsearch) {
         return $hmmsearch;
     }

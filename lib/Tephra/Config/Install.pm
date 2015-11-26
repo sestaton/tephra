@@ -59,8 +59,8 @@ sub configure_root {
 	print STDERR ".";
     }
     
-    unless (-e $config->{hscandir}) {
-	$config->{hscandir} = $self->fetch_hscan;
+    unless (-e $config->{hscanjar}) {
+	$config->{hscanjar} = $self->fetch_hscan;
 	print STDERR ".";
     }
     

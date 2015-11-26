@@ -35,9 +35,9 @@ has genome => (
     coerce   => 1,
 );
 
-has helitronscanner_dir => (
+has helitronscanner => (
     is       => 'ro',
-    isa      => 'Path::Class::Dir',
+    isa      => 'Path::Class::File',
     required => 1,
     coerce   => 1,
 );

@@ -13,6 +13,7 @@ use Bio::SeqIO;
 use Bio::SearchIO;
 use Try::Tiny;
 use Data::Dump;
+use Tephra::Config::Exe;
 use namespace::autoclean;
 
 with 'Tephra::NonLTR::Role::PathUtils';
@@ -104,9 +105,11 @@ sub translate_forward {
 
     # // translate cmd
     my $name = basename($in);
-    my $translate = File::Spec->catfile($pdir, 'hmm', 'tephra-translate');
+    #my $translate = File::Spec->catfile($pdir, 'hmm', 'tephra-translate');
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($translate) = @{$config}{qw(transcmd)};
     my $cmd = "$translate -d $in -h $name -p $out";
-    say STDERR "CMD: $cmd";
+    #say STDERR "CMD: $cmd";
     try {
 	system($cmd);
     }

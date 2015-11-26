@@ -7,6 +7,7 @@ use File::Find;
 use File::Basename;
 use Bio::SeqIO;
 use Bio::Tools::GFF;
+use Tephra::Config::Exe;
 use namespace::autoclean;
 
 with 'Tephra::Role::GFF',
@@ -195,7 +196,10 @@ sub parse_vmatch {
 sub subseq {
     my $self = shift;
     my ($fasta, $loc, $elem, $start, $end, $tmp, $out, $orient) = @_;
-    my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($samtools) = @{$config}{qw(samtools)};
+    #my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
     my $cmd = "$samtools faidx $fasta $loc:$start-$end > $tmp";
     $self->run_cmd($cmd);
 

@@ -16,8 +16,9 @@ use File::Path  qw(make_path);
 use Parallel::ForkManager;
 use Cwd;
 use Try::Tiny;
+use Tephra::Config::Exe;
 use namespace::autoclean;
-use Data::Dump;
+#use Data::Dump;
 
 with 'Tephra::Role::GFF',
      'Tephra::Role::Util';
@@ -361,7 +362,9 @@ sub process_cluster_args {
 sub subseq {
     my $self = shift;
     my ($fasta, $loc, $elem, $start, $end, $tmp, $out) = @_;
-    my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    #my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($samtools) = @{$config}{qw(samtools)};
     my $cmd = "$samtools faidx $fasta $loc:$start-$end > $tmp";
     $self->run_cmd($cmd);
 

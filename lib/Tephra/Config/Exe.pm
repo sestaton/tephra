@@ -72,7 +72,7 @@ sub get_config_paths {
 
     return ({
         gt        => $gt,
-        hscandir  => $hscan,
+        hscanjar  => $hscan,
         hmmerbin  => $hmmbin,
         modeldir  => $moddir,
         hmmdir    => $chrdir,

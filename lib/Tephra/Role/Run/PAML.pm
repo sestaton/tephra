@@ -12,6 +12,7 @@ use File::Find;
 use File::Basename;
 use Log::Any        qw($log);
 use Cwd;
+use Tephra::Config::Exe;
 use namespace::autoclean;
 
 =head1 NAME
@@ -116,8 +117,8 @@ sub create_baseml_files {
     print $out $ctl_file;
     close $out;
 
-    return { outfile         => $outfile,
-	     control_file    => $control_file };
+    return ({ outfile     => $outfile,
+	     control_file => $control_file });
 }
 
 sub parse_baseml {
@@ -132,7 +133,7 @@ sub parse_baseml {
 
     my $divfile = basename($divergence_file);
     my $out = basename($outfile);
-    my $wd = getcwd();
+    my $wd  = getcwd();
     
     open my $divin, '<', $out or die "ERROR: Could not open outfile: $!\n";
     open my $divout, '>', $divfile or die "ERROR: Could not open divergence file: $!\n";
@@ -201,7 +202,10 @@ sub _build_baseml_exec { # this should probably be a separate role
         return $blexe;
     }
     elsif (! defined $blexe) {
-	$blexe = File::Spec->catfile($ENV{HOME}, '.tephra', 'hmmer-2.3.2', 'bin', 'baseml');
+	#$blexe = File::Spec->catfile($ENV{HOME}, '.tephra', 'hmmer-2.3.2', 'bin', 'baseml');
+	my $config = Tephra::Config::Exe->new->get_config_paths;
+	my ($pamlbin) = @{$config}{qw(pamlbin)};
+	$blexe = File::Spec->catfile($pamlbin, 'baseml');
 	if (-e $blexe && -x $blexe) {
 	    $self->set_baseml_exec($blexe);
 	    return $blexe;

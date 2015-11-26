@@ -10,6 +10,7 @@ use Tephra::NonLTR::RunHMM;
 use Tephra::NonLTR::Postprocess;
 use Tephra::NonLTR::QValidation;
 use Tephra::NonLTR::SeqUtils;
+use Tephra::Config::Exe;
 use namespace::autoclean;
 
 =head1 NAME
@@ -34,9 +35,11 @@ sub find_nonltrs {
     my $main_data_dir = $self->outdir;
     my $genome_dir    = $self->fastadir;
     my $program_dir   = $self->pdir;
-    $program_dir //= File::Spec->catdir($ENV{HOME}, '.tephra');
+    #$program_dir //= File::Spec->catdir($ENV{HOME}, '.tephra');
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($phmm_dir) = @{$config}{qw(modeldir)};
 
-    my $phmm_dir      = File::Spec->catdir($program_dir, 'pHMM');
+    #my $phmm_dir      = File::Spec->catdir($program_dir, 'pHMM');
     my $plus_out_dir  = File::Spec->catdir($main_data_dir, 'f');
     my $minus_out_dir = File::Spec->catdir($main_data_dir, 'b');
     my $minus_dna_dir = $genome_dir."_b";

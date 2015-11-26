@@ -19,6 +19,7 @@ use Time::HiRes qw(gettimeofday);
 use Parallel::ForkManager;
 use Cwd;
 use Try::Tiny;
+use Tephra::Config::Exe;
 use namespace::autoclean;
 #use Data::Dump;
 #use Data::Printer;
@@ -240,7 +241,9 @@ sub process_align_args {
     my $dnd = File::Spec->catfile($path, $name."_clustal-out.dnd");
     my $log = File::Spec->catfile($path, $name."_clustal-out.log");
 
-    my $clustalw2 = File::Spec->catfile($ENV{HOME}, '.tephra', 'clustalw-2.1', 'bin', 'clustalw2');
+    #my $clustalw2 = File::Spec->catfile($ENV{HOME}, '.tephra', 'clustalw-2.1', 'bin', 'clustalw2');
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($clustalw2) = @{$config}{qw(clustalw)};
     my $clwcmd  = "$clustalw2 -infile=$db -outfile=$aln 2>$log";
     $self->capture_cmd($clwcmd);
     my $phy = $self->parse_aln($aln, $tre, $dnd);
@@ -251,7 +254,7 @@ sub process_align_args {
 
 sub parse_aln {
     my $self = shift;
-    my ($aln, $tre, $dnd) = @_;
+    my ( $aln, $tre, $dnd) = @_;
 
     my ($name, $path, $suffix) = fileparse($aln, qr/\.[^.]*/);
     my $phy = File::Spec->catfile($path, $name.".phy");
@@ -283,7 +286,9 @@ sub parse_aln {
 sub subseq {
     my $self = shift;
     my ($fasta, $loc, $elem, $start, $end, $tmp, $out, $orient) = @_;
-    my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    #my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($samtools) = @{$config}{qw(samtools)};
     my $cmd = "$samtools faidx $fasta $loc:$start-$end > $tmp";
     $self->run_cmd($cmd);
 

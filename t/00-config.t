@@ -24,7 +24,7 @@ ok( -x $cmd, 'Can execute tephra' );
 
 my $config = Tephra::Config::Exe->new->get_config_paths;
 my ($gt, $hscan, $hmmbin, $moddir, $chrdir, $mgescan, $trans, $clw, $pamlbin, $transeq, $sam, $blast)
-    = @{$config}{qw(gt hscandir hmmerbin modeldir hmmdir mgescan transcmd clustalw pamlbin transeq samtools blastpath)};
+    = @{$config}{qw(gt hscanjar hmmerbin modeldir hmmdir mgescan transcmd clustalw pamlbin transeq samtools blastpath)};
 
 my $hmmsearch = File::Spec->catfile($hmmbin, 'hmmsearch');
 my $blastn    = File::Spec->catfile($blast,  'blastn');

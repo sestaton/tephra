@@ -16,6 +16,7 @@ use List::Util          qw(sum max);
 use Set::IntervalTree;
 use Path::Class::File;
 use Try::Tiny;
+use Tephra::Config::Exe;
 #use Data::Printer;
 use namespace::autoclean;
 
@@ -167,7 +168,7 @@ sub get_overlaps {
 
 sub reduce_features {
     my $self = shift;
-
+    my $fasta = $self->genome;
     my ($feature_ref) = @_;
     my ($relaxed_features, $strict_features, $best_elements)
 	= @{$feature_ref}{qw(relaxed_features strict_features best_elements)};
@@ -178,8 +179,8 @@ sub reduce_features {
     my $part_stats = $strict_features->{stats};
     
     my ($all, $best, $part, $comb) = (0, 0, 0, 0);
-    my $fasta = $self->genome;
-    $self->_index_ref($fasta);
+    #my $fasta = $self->genome;
+    #$self->_index_ref($fasta);
     
     my (%best_features, %all_features, %best_stats);
 
@@ -259,8 +260,12 @@ sub sort_features {
     my $self = shift;
     my ($feature_ref) = @_;
     my ($gff, $combined_features) = @{$feature_ref}{qw(gff combined_features)};
-    my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    #my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($samtools) = @{$config}{qw(samtools)};
+
     my $fasta = $self->genome;
+    $self->_index_ref($samtools, $fasta);
     my $outfile;
     my $outfasta;
  
@@ -599,7 +604,9 @@ sub _filter_compound_elements {
 sub _filterNpercent {
     my $self = shift;
     my ($source, $key, $fasta) = @_;
-    my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    #my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($samtools) = @{$config}{qw(samtools)};
     my $n_perc = 0;
     my ($element, $start, $end) = split /\|\|/, $key;
     my $tmp = $element.".fasta";    
@@ -653,9 +660,9 @@ sub _get_source {
 
 sub _index_ref {
     my $self = shift;
-    my ($fasta) = @_;
+    my ($samtools, $fasta) = @_;
     #my $bgzip_cmd = "bgzip $fasta";
-    my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    #my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
     my $faidx_cmd = "$samtools faidx $fasta";
     $self->run_cmd($faidx_cmd);
 }

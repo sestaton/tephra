@@ -8,6 +8,7 @@ use File::Spec;
 use File::Path qw(make_path);
 use File::Basename;
 use Sort::Naturally;
+use Tephra::Config::Exe;
 use namespace::autoclean;
 
 with 'Tephra::Role::Util';
@@ -53,14 +54,16 @@ sub _fasta_to_gff {
     my $outdir = $self->outdir;
     my ($seqs) = @_;
 
-    my $samtools  = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    #my $samtools  = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($samtools) = @{$config}{qw(samtools)};
     my $name = basename($outdir);
     my $outfile = File::Spec->catfile($outdir, $name."_tephra_nonltr.gff3");
     my $fas     = File::Spec->catfile($outdir, $name."_tephra_nonltr.fasta");
     open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     open my $faout, '>', $fas or die "\nERROR: Could not open file: $fas\n";
     my ($lens, $combined) = $self->_get_seq_region;
-    $self->_index_ref($combined) unless -e $combined.'.fai';
+    $self->_index_ref($samtools, $combined) unless -e $combined.'.fai';
 
     my %regions;
     for my $file (@$seqs) {
@@ -119,7 +122,7 @@ sub _fasta_to_gff {
 		unlink $tmp;
 		
 		say $out join "\t", $name, 'Tephra', 'non_LTR_retrotransposon', $start, $end, '.', '?', '.', 
-		"ID=non_LTR_retrotransposon$ct;Name=$clade;Ontology_term=SO:0000189"; 
+		    "ID=non_LTR_retrotransposon$ct;Name=$clade;Ontology_term=SO:0000189"; 
 		$ct++;
 	    }
 	} 
@@ -164,8 +167,8 @@ sub _collate {
 
 sub _index_ref {
     my $self = shift;
-    my ($fasta) = @_;
-    my $samtools  = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    my ($samtools, $fasta) = @_;
+    #my $samtools  = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
     my $faidx_cmd = "$samtools faidx $fasta";
     $self->run_cmd($faidx_cmd);
 }
