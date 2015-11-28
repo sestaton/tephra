@@ -15,7 +15,7 @@ use Test::More tests => 2;
 
 my $cmd     = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir = File::Spec->catdir('t', 'test_data');
-my $genome  = File::Spec->catfile($testdir, 'nonltrgenome'); #, 'Ha1.fa');
+my $genome  = File::Spec->catfile($testdir, 'Ha1.fa');
 my $outdir  = File::Spec->catdir($testdir, 'nonltrdata');
 my $devtest = 0;
 
@@ -24,8 +24,8 @@ ok( @results, 'Can execute findnonltrs subcommand' );
 
 SKIP: {
     skip 'skip lengthy tests', 1 unless $devtest;
-    my $find_cmd = "$cmd findnonltrs -g $genome -o $outdir";
-    #say STDERR $find_cmd;
+    my $find_cmd = "$cmd findnonltrs -g $genome";
+    say STDERR $find_cmd;
 
     my ($stdout, $stderr, @ret) = capture { system([0..5], $find_cmd) };
        
