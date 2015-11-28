@@ -5,6 +5,7 @@ use Moose;
 use Cwd;
 use File::Spec;
 use File::Find;
+use File::Basename;
 use File::Path qw(make_path);
 use Tephra::NonLTR::RunHMM;
 use Tephra::NonLTR::Postprocess;
@@ -26,20 +27,33 @@ Version 0.01
 our $VERSION = '0.01';
 $VERSION = eval $VERSION;
 
-has fastadir => ( is => 'ro', isa => 'Path::Class::File', required => 1, coerce => 1 );
-has outdir   => ( is => 'ro', isa => 'Path::Class::Dir',  required => 1, coerce => 1 );
-has pdir     => ( is => 'ro', isa => 'Path::Class::Dir',  required => 0, coerce => 1 );
+has genome   => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
+#has fastadir => ( is => 'ro', isa => 'Path::Class::File', required => 1, coerce => 1 );
+has outdir   => ( is => 'ro', isa => 'Maybe[Str]',  required => 0 );
+has pdir     => ( is => 'ro', isa => 'Maybe[Str]',  required => 0 );
 
 sub find_nonltrs {
     my $self = shift;
     my $main_data_dir = $self->outdir;
-    my $genome_dir    = $self->fastadir;
+    #my $genome_dir    = $self->fastadir;
     my $program_dir   = $self->pdir;
+    my $genome = $self->genome;
     #$program_dir //= File::Spec->catdir($ENV{HOME}, '.tephra');
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($phmm_dir) = @{$config}{qw(modeldir)};
 
-    #my $phmm_dir      = File::Spec->catdir($program_dir, 'pHMM');
+    my ($gname, $gpath, $gsuffix) = fileparse($genome, qr/\.[^.]*/);
+    my $genome_dir = File::Spec->catdir($gpath, $gname.'_genome');
+    $main_data_dir //= File::Spec->catdir($gpath, $gname.'_nonLTRs');
+
+    unless ( -d $genome_dir ) {
+	make_path( $genome_dir, {verbose => 0, mode => 0771,} );
+    }
+
+    unless ( -d $main_data_dir ) {
+	make_path( $main_data_dir, {verbose => 0, mode => 0771,} );
+    }
+
     my $plus_out_dir  = File::Spec->catdir($main_data_dir, 'f');
     my $minus_out_dir = File::Spec->catdir($main_data_dir, 'b');
     my $minus_dna_dir = $genome_dir."_b";
@@ -49,6 +63,7 @@ sub find_nonltrs {
     }
 
     # Forward strand
+    $self->_split_genome($genome, $genome_dir);
     my @fasfiles;
     find( sub { push @fasfiles, $File::Find::name if -f and /\.fa.*?$/ }, $genome_dir );
     die "\nERROR: No FASTA files found in genome directory. Exiting.\n" if @fasfiles == 0;
@@ -102,6 +117,22 @@ sub find_nonltrs {
 	fasta   => $genome_dir );
 
     $pp2->validate_q_score;
+
+    return ($genome_dir, $main_data_dir);
+}
+
+sub _split_genome {
+    my $self = shift;
+    my ($genome, $genome_dir) = @_;
+
+    my $seqio = Bio::SeqIO->new(-file => $genome, -format => 'fasta');
+    while (my $seqobj = $seqio->next_seq) {
+	my $id = $seqobj->id;
+	my $outfile = File::Spec->catfile($genome_dir, $id.'.fasta');
+	open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+	say $out join "\n", ">".$id, $seqobj->seq;
+	close $out;
+    }
 }
 
 =head1 AUTHOR

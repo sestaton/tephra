@@ -47,6 +47,7 @@ sub write_gff {
     }
 
     $self->_fasta_to_gff(\@nonltrs);
+    say STDERR "Done with non-LTR search.";
 }
 
 sub _fasta_to_gff {
