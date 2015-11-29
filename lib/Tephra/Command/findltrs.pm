@@ -47,26 +47,26 @@ sub execute {
 
     my ($no_relaxed, $no_strict) = (0, 0);
     my ($relaxed_gff, $strict_gff) = _run_ltr_search($opt);
-    if (! -s $strict_gff) {
-	say STDERR "\nWARNING: No LTR retrotransposons were found under strict conditions. ".
-	    "Skipping refinement step.\n";
-	$no_strict = 1;
-    }
-    elsif (! -s $relaxed_gff) {
-	say STDERR "\nWARNING: No LTR retrotransposons were found under relaxed conditions. ".
-            "Skipping refinement step.\n";
-	$no_relaxed = 1;
-    }
+    #if (! -s $strict_gff) {
+	#say STDERR "\nWARNING: No LTR retrotransposons were found under strict conditions. ".
+	    #"Skipping refinement step.\n";
+	#$no_strict = 1;
+    #}
+    #elsif (! -s $relaxed_gff) {
+	#say STDERR "\nWARNING: No LTR retrotransposons were found under relaxed conditions. ".
+        #    "Skipping refinement step.\n";
+	#$no_relaxed = 1;
+    #}
 
-    if ($no_strict && !$no_relaxed) {
-	say STDERR "\nFinal output file: $relaxed_gff\n";
-    }
-    elsif (!$no_strict && $no_relaxed) {
-	say STDERR "\nFinal output file: $strict_gff\n";
-    }
-    elsif (!$no_strict && !$no_relaxed) {
+    #if ($no_strict && !$no_relaxed) {
+	#say STDERR "\nFinal output file: $relaxed_gff\n";
+    #}
+    #elsif (!$no_strict && $no_relaxed) {
+	#say STDERR "\nFinal output file: $strict_gff\n";
+    #}
+    #elsif (!$no_strict && !$no_relaxed) {
 	my $some = _refine_ltr_predictions($relaxed_gff, $strict_gff, $opt);
-    }
+    #}
 }
 
 sub _refine_ltr_predictions {
@@ -87,23 +87,34 @@ sub _refine_ltr_predictions {
     }
 	
     my $refine_obj = Tephra::LTR::LTRRefine->new(%refine_opts);
+
+    if (defined $relaxed_gff && defined $strict_gff) {
+	my $relaxed_features
+	    = $refine_obj->collect_features({ gff => $relaxed_gff, pid_threshold => 85 });
+	my $strict_features
+	    = $refine_obj->collect_features({ gff => $strict_gff,  pid_threshold => 99 });
 	
-    my $relaxed_features
-	= $refine_obj->collect_features({ gff => $relaxed_gff, pid_threshold => 85 });
-    my $strict_features
-	= $refine_obj->collect_features({ gff => $strict_gff,  pid_threshold => 99 });
-
-    my $best_elements = $refine_obj->get_overlaps({ relaxed_features => $relaxed_features, 
-						    strict_features  => $strict_features });
-    
-    my $combined_features = $refine_obj->reduce_features({ relaxed_features => $relaxed_features, 
-							   strict_features  => $strict_features,
-							   best_elements    => $best_elements });
-    
-    $refine_obj->sort_features({ gff               => $relaxed_gff, 
-				 combined_features => $combined_features });
+	my $best_elements = $refine_obj->get_overlaps({ relaxed_features => $relaxed_features, 
+							strict_features  => $strict_features });
+	
+	my $combined_features = $refine_obj->reduce_features({ relaxed_features => $relaxed_features, 
+							       strict_features  => $strict_features,
+							       best_elements    => $best_elements });
+	
+	$refine_obj->sort_features({ gff               => $relaxed_gff, 
+				     combined_features => $combined_features });
+    }
+    elsif (defined $relaxed_gff && !defined $strict_gff) {
+	say STDERR "\nWARNING: No LTR retrotransposons were found under strict conditions. ".                  
+            "Skipping refinement step.\n";
+	$refine_obj->sort_features({ gff               => $relaxed_gff,
+                                     combined_features => undef });
+    }
+    else {
+	say STDERR "\nWARNING: No LTR retrotransposons were found with the given parameters.\n";
+    }
 }
-
+    
 sub _run_ltr_search {
     my ($opt) = @_;
     

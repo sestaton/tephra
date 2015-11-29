@@ -7,6 +7,7 @@ use Cwd;
 use File::Spec;
 use File::Find;
 use File::Basename;
+use File::Copy qw(move);
 use Bio::SeqIO;
 use Bio::Tools::GFF;
 use IPC::System::Simple qw(system EXIT_ANY);
@@ -269,12 +270,12 @@ sub sort_features {
     my $outfile;
     my $outfasta;
  
-    unless (-s $gff) {
+    #unless (-s $gff) {
 	# should never get here, this test can be removed
-	say "\nNo LTR retrotransposons found. Refinement step will be skipped. Exiting.\n";
-	unlink $gff;
-	exit(0);
-    }
+	#say "\nNo LTR retrotransposons found. Refinement step will be skipped. Exiting.\n";
+	#unlink $gff;
+	#exit(0);
+    #}
 
     if ($self->has_outfile) {
 	$outfile = $self->outfile;
@@ -293,78 +294,141 @@ sub sort_features {
     #p $gff;
     #exit;
     
-    open my $ogff, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    #open my $ogff, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     open my $ofas, '>>', $outfasta or die "\nERROR: Could not open file: $outfasta\n";
 
-    my ($header, %features);
-    open my $in, '<', $gff;
-    while (<$in>) {
-	chomp;
-	if (/^#/) {
-	    $header .= $_."\n";
-	}
-	else {
-	    last;
-	}
-    }
-    close $in;
-    chomp $header;
-    say $ogff $header;
-
     my ($elem_tot, $index) = (0, 1);
-    for my $chromosome (nsort keys %$combined_features) {
-	for my $ltr (nsort_by { m/repeat_region\d+\_\d+\.(\d+)\.\d+/ and $1 }
-		     keys %{$combined_features->{$chromosome}}) {
-	    my ($rreg, $rreg_start, $rreg_end, $rreg_length) = split /\./, $ltr;
-	    my $new_rreg = $rreg;
-	    $new_rreg =~ s/\d+.*/$index/;
-	    #$new_rreg .= $index;
-	    my ($first) = @{$combined_features->{$chromosome}{$ltr}}[0];
-	    my ($source, $strand) = (split /\|\|/, $first)[1,6];
-	    say $ogff join "\t", $chromosome, $source, 'repeat_region', 
-	        $rreg_start, $rreg_end, '.', $strand, '.', "ID=$new_rreg";
-	    for my $entry (@{$combined_features->{$chromosome}{$ltr}}) {
-		my @feats = split /\|\|/, $entry;
-		$feats[8] =~ s/\s\;\s/\;/g;
-		$feats[8] =~ s/\s+$//;
-		$feats[8] =~ s/\"//g;
-		$feats[8] =~ s/(\;\w+)\s/$1=/g;
-		$feats[8] =~ s/\s;/;/;
-		$feats[8] =~ s/^(\w+)\s/$1=/;
-		$feats[8] =~ s/repeat_region\d+_\d+/$new_rreg/g;
-		$feats[8] =~ s/LTR_retrotransposon\d+/LTR_retrotransposon$index/g;
-		say $ogff join "\t", @feats;
+    if (defined $combined_features) {
+	open my $ogff, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
-		if ($feats[2] eq 'LTR_retrotransposon') {
-		    #$feats[8] .= ";SO:0000186";
-		    $elem_tot++;
-		    my ($start, $end) = @feats[3..4];
-		    my ($elem) = ($feats[8] =~ /(LTR_retrotransposon\d+)/);
-		    $elem =~ s/\d+.*//;
-		    $elem .= $index;
-		    my $id = $elem."_".$chromosome."_".$start."_".$end;
-		    my $tmp = $elem.".fasta";
-		    my $cmd = "$samtools faidx $fasta $chromosome:$start-$end > $tmp";
-		    $self->run_cmd($cmd);
-
-		    my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
-		    while (my $seqobj = $seqio->next_seq) {
-			my $seq = $seqobj->seq;
-			$seq =~ s/.{60}\K/\n/g;
-			say $ofas join "\n", ">".$id, $seq;
-		    }   
-		    unlink $tmp;
-		}
+	my ($header, %features);
+	open my $in, '<', $gff;
+	while (<$in>) {
+	    chomp;
+	    if (/^#/) {
+		$header .= $_."\n";
 	    }
-	    $index++;
+	    else {
+		last;
+	    }
 	}
+	close $in;
+	chomp $header;
+	say $ogff $header;
+	
+	#my ($elem_tot, $index) = (0, 1);
+	for my $chromosome (nsort keys %$combined_features) {
+	    for my $ltr (nsort_by { m/repeat_region\d+\_\d+\.(\d+)\.\d+/ and $1 }
+			 keys %{$combined_features->{$chromosome}}) {
+		my ($rreg, $rreg_start, $rreg_end, $rreg_length) = split /\./, $ltr;
+		my $new_rreg = $rreg;
+		$new_rreg =~ s/\d+.*/$index/;
+		#$new_rreg .= $index;
+		my ($first) = @{$combined_features->{$chromosome}{$ltr}}[0];
+		my ($source, $strand) = (split /\|\|/, $first)[1,6];
+		say $ogff join "\t", $chromosome, $source, 'repeat_region', 
+	            $rreg_start, $rreg_end, '.', $strand, '.', "ID=$new_rreg";
+		for my $entry (@{$combined_features->{$chromosome}{$ltr}}) {
+		    my @feats = split /\|\|/, $entry;
+		    $feats[8] =~ s/\s\;\s/\;/g;
+		    $feats[8] =~ s/\s+$//;
+		    $feats[8] =~ s/\"//g;
+		    $feats[8] =~ s/(\;\w+)\s/$1=/g;
+		    $feats[8] =~ s/\s;/;/;
+		    $feats[8] =~ s/^(\w+)\s/$1=/;
+		    $feats[8] =~ s/repeat_region\d+_\d+/$new_rreg/g;
+		    $feats[8] =~ s/LTR_retrotransposon\d+/LTR_retrotransposon$index/g;
+		    say $ogff join "\t", @feats;
+		    
+		    if ($feats[2] eq 'LTR_retrotransposon') {
+			#$feats[8] .= ";SO:0000186";
+			$elem_tot++;
+			my ($start, $end) = @feats[3..4];
+			my ($elem) = ($feats[8] =~ /(LTR_retrotransposon\d+)/);
+			$elem =~ s/\d+.*//;
+			$elem .= $index;
+			my $id = $elem."_".$chromosome."_".$start."_".$end;
+			#my $tmp = $elem.".fasta";
+			#my $cmd = "$samtools faidx $fasta $chromosome:$start-$end > $tmp";
+			#$self->run_cmd($cmd);
+			
+			#my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
+			#while (my $seqobj = $seqio->next_seq) {
+			    #my $seq = $seqobj->seq;
+			    #$seq =~ s/.{60}\K/\n/g;
+			    #say $ofas join "\n", ">".$id, $seq;
+			#}   
+			#unlink $tmp;
+			$self->_get_ltr_range($samtools, $fasta, $elem, $id, $chromosome, $start, $end, $ofas);
+		    }
+		}
+		$index++;
+	    }
+	}
+	close $ogff;
+	#close $ofas;
+	
+	say STDERR "\nTotal elements written: $elem_tot";
     }
-    close $ogff;
+    else {
+	open my $in, '<', $gff, or die die "\nERROR: Could not open file: $gff\n";
+	while (my $line = <$in>) {
+	    chomp $line;
+	    next if $line =~ /^#/;
+	    my @feats = split /\t/, $line;
+	    if ($feats[2] eq 'LTR_retrotransposon') {
+		#$feats[8] .= ";SO:0000186";                                                            
+		$elem_tot++;
+		my ($chromosome, $start, $end) = @feats[0,3,4];
+		my ($elem) = ($feats[8] =~ /(LTR_retrotransposon\d+)/);
+		$elem =~ s/\d+.*//;
+		$elem .= $index;
+		my $id = $elem."_".$chromosome."_".$start."_".$end;
+		#my $tmp = $elem.".fasta";
+		#my $cmd = "$samtools faidx $fasta $chromosome:$start-$end > $tmp";
+		#$self->run_cmd($cmd);
+		
+		#my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
+		#while (my $seqobj = $seqio->next_seq) {
+		    #my $seq = $seqobj->seq;
+		    #$seq =~ s/.{60}\K/\n/g;
+		    #say $ofas join "\n", ">".$id, $seq;
+		#}
+		#unlink $tmp;
+		$self->_get_ltr_range($samtools, $fasta, $elem, $id, $chromosome, $start, $end, $ofas);
+	    }
+	}
+	close $in;
+
+	move $gff, $outfile or die "Move failed: $!";
+	say STDERR "\nTotal elements written: $elem_tot";
+    }
     close $ofas;
 
-    say STDERR "\nTotal elements written: $elem_tot";
+    #say STDERR "\nTotal elements written: $elem_tot";
 }
-    
+
+sub _get_ltr_range {
+    my $self = shift;
+    my ($samtools, $fasta, $elem, $id, $chromosome, $start, $end, $ofh) = @_;
+    #my ($start, $end) = @feats[3..4];
+    #my ($elem) = ($feats[8] =~ /(LTR_retrotransposon\d+)/);
+    #$elem =~ s/\d+.*//;
+    #$elem .= $index;
+    #my $id = $elem."_".$chromosome."_".$start."_".$end;
+    my $tmp = $elem.".fasta";
+    my $cmd = "$samtools faidx $fasta $chromosome:$start-$end > $tmp";
+    $self->run_cmd($cmd);
+
+    my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
+    while (my $seqobj = $seqio->next_seq) {
+	my $seq = $seqobj->seq;
+	$seq =~ s/.{60}\K/\n/g;
+	say $ofh join "\n", ">".$id, $seq;
+    }
+    unlink $tmp;
+}
+
 sub _get_ltr_score_dups {
     my $self = shift;
     my ($scores, $sims, $allfeatures, $partfeatures) = @_;
