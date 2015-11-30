@@ -65,7 +65,7 @@ This file is for logging feature requests and bugs during development. Hopefully
 
 ## Command `tephra ltrage`
  - [x] Calculate age for each LTR-RT
- - [ ] Take substitution rate as an option
+ - [x] Take substitution rate as an option
  - [x] check if input directory exists
 
 ## Command `tephra maskref`
