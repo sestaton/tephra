@@ -46,6 +46,12 @@ has genome => (
     coerce   => 1,
 );
 
+has subs_rate => (
+    is       => 'ro',
+    isa      => 'Num',
+    default  => 1e-8,
+);
+
 has clean => (
     is       => 'ro',
     isa      => 'Bool',
@@ -124,6 +130,7 @@ sub create_baseml_files {
 sub parse_baseml {
     my $self = shift;
     my ($args) = @_;
+    my $subs_rate       = $self->subs_rate;
     my $divergence_file = $args->{divergence_file};
     my $outfile         = $args->{outfile};
     my $phylip          = $args->{phylip};
@@ -146,7 +153,7 @@ sub parse_baseml {
 
 	    $divergence_time =~ s/\($//;
 	    $kappa =~ s/\)$//;
-	    my $time = $divergence_time/(1e-8 * 2);   # T=k/2r, k=1.0 10-8
+	    my $time = $divergence_time/($subs_rate * 2);   # T=k/2r, k=1.0 10-8
 
 	    # alignID divergence age Ts:Tv
 	    say $divout join "\t", basename($phylip), $divergence_time, $time, $kappa;

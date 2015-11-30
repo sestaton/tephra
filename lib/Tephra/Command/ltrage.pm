@@ -10,11 +10,12 @@ use Tephra::LTR::LTRStats;
 
 sub opt_spec {
     return (
-	[ "genome|g=s",   "The genome sequences in FASTA format used to search for LTR-RTs "           ],
-	[ "gff|f=s",      "The GFF3 file of LTR-RTs in <genome> "                                      ],
-	[ "outdir|o=s",   "The output directory for placing categorized elements "                     ],
-	[ "threads|t=i",  "The number of threads to use for clustering coding domains "                ],
-	[ "clean|c",      "Clean up all the intermediate files from PAML and clustalw (Default: yes) " ],
+	[ "genome|g=s",    "The genome sequences in FASTA format used to search for LTR-RTs "           ],
+	[ "gff|f=s",       "The GFF3 file of LTR-RTs in <genome> "                                      ],
+	[ "outdir|o=s",    "The output directory for placing categorized elements "                     ],
+	[ "subs_rate|r=f", "The nucleotide substitution rate to use (Default: 1e-8) "                   ],
+	[ "threads|t=i",   "The number of threads to use for clustering coding domains "                ],
+	[ "clean|c",       "Clean up all the intermediate files from PAML and clustalw (Default: yes) " ],
 	);
 }
 
@@ -54,21 +55,24 @@ sub execute {
 sub _calculate_ltr_stats {
     my ($opt) = @_;
 
-    my $genome   = $opt->{genome};
-    my $gff      = $opt->{gff};
-    my $outdir   = $opt->{outdir};
-    my $threads  = defined $opt->{threads} ? $opt->{threads} : 1;
-    my $clean    = defined $opt->{clean} ? 1 : 0;
+    my $genome    = $opt->{genome};
+    my $gff       = $opt->{gff};
+    my $outdir    = $opt->{outdir};
+    my $subs_rate = defined $opt->{subs_rate} ? $opt->{subs_rate} : 1e-8;
+    my $threads   = defined $opt->{threads} ? $opt->{threads} : 1;
+    my $clean     = defined $opt->{clean} ? 1 : 0;
 
     unless ( -d $outdir ) {
 	make_path( $outdir, {verbose => 0, mode => 0771,} );
     }
 
     my $stats_obj = Tephra::LTR::LTRStats->new(
-	genome   => $genome,
-	gff      => $gff,
-	outdir   => $outdir,
-	clean    => $clean,
+	genome    => $genome,
+	gff       => $gff,
+	subs_rate => $subs_rate,
+	threads   => $threads,
+	outdir    => $outdir,
+	clean     => $clean,
     );
 
     $stats_obj->extract_ltr_features;
@@ -88,6 +92,7 @@ sub help {
       -o|outdir     :   The output directory for placing categorized elements.
     
   Options:
+      -r|subs_rate  :   The nucleotide substitution rate to use (Default: 1e-8).
       -t|threads    :   The number of threads to use for clustering coding domains (Default: 1).
       -c|clean      :   Clean up all the intermediate files from PAML and clustalw (Default: yes).
     
@@ -138,6 +143,10 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =head1 OPTIONS
 
 =over 2
+
+=item -r, --subs_rate
+
+ The nucleotide substitution rate to use for calculating insertion times (Default: 1e-8).
 
 =item -t, --threads
 
