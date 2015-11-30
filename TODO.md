@@ -22,7 +22,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Search masked ref with LTR HMM
  - [x] Create GFF with SO terms of solo-LTRs
  - [ ] parallelize hmmsearch to speed things up. likely this is faster than multiple cpus for one model at time
- - [ ] check if input directory exists
+ - [x] check if input directory exists
 
 ## Command `tephra classifytirs`
  - [x] Classify 'best' TIR elements into superfamilies based on domain content, TSD, and/or motif
@@ -66,7 +66,7 @@ This file is for logging feature requests and bugs during development. Hopefully
 ## Command `tephra ltrage`
  - [x] Calculate age for each LTR-RT
  - [ ] Take substitution rate as an option
- - [ ] check if input directory exists
+ - [x] check if input directory exists
 
 ## Command `tephra maskref`
  - [x] Generate masked reference from custom repeat library 
