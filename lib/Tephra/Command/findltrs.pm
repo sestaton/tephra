@@ -12,20 +12,23 @@ use Tephra::LTR::LTRRefine;
 
 sub opt_spec {
     return (    
-	[ "genome|g=s",   "The genome sequences in FASTA format to search for LTR-RTs "    ],
-	[ "trnadb|t=s",   "The file of tRNA sequences in FASTA format to search for PBS "  ], 
-	[ "hmmdb|d=s",    "The HMM db in HMMERv3 format to search for coding domains "     ],
-	[ "outfile|o=s",  "The final combined and filtered GFF3 file of LTR-RTs "          ],
-	[ "index|i=s",    "The suffixerator index to use for the LTR search "              ],
-	[ "mintsd=i",     "The minimum TSD length (Default: 4) "                           ],
-	[ "maxtsd=i",     "The maximum TSD length (Default: 6) "                           ],
-	[ "minlenltr=i",  "The minimum LTR length (Default: 100) "                         ],
-	[ "maxlenltr=i",  "The maximum LTR length (Default: 6000) "                        ],
-	[ "mindistltr=i", "The minimum LTR element length (Default: 1500) "                ],
-	[ "maxdistltr=i", "The maximum LTR element length (Default: 25000) "               ],
-	[ "dedup|r",      "Discard elements with duplicate coding domains (Default: no) "  ],
-	[ "tnpfilter",    "Discard elements containing transposase domains (Default: no) " ],
-	[ "clean|c",      "Clean up the index files (Default: yes) "                       ],
+	[ "genome|g=s",     "The genome sequences in FASTA format to search for LTR-RTs "    ],
+	[ "trnadb|t=s",     "The file of tRNA sequences in FASTA format to search for PBS "  ], 
+	[ "hmmdb|d=s",      "The HMM db in HMMERv3 format to search for coding domains "     ],
+	[ "outfile|o=s",    "The final combined and filtered GFF3 file of LTR-RTs "          ],
+	[ "index|i=s",      "The suffixerator index to use for the LTR search "              ],
+	[ "mintsd=i",       "The minimum TSD length (Default: 4) "                           ],
+	[ "maxtsd=i",       "The maximum TSD length (Default: 6) "                           ],
+	[ "minlenltr=i",    "The minimum LTR length (Default: 100) "                         ],
+	[ "maxlenltr=i",    "The maximum LTR length (Default: 6000) "                        ],
+	[ "mindistltr=i",   "The minimum LTR element length (Default: 1500) "                ],
+	[ "maxdistltr=i",   "The maximum LTR element length (Default: 25000) "               ],
+	[ "overlaps",       "Keep 'all', 'best', or 'no' overlaps (Default: best) "          ],
+	[ "pdomevalue|e=f", "Protein domain match threshold (Default: 10E-6) "               ],
+	[ "pdomcutoff|m=s", "Protein domain match cutoff method. (Default: NONE) "           ],
+	[ "dedup|r",        "Discard elements with duplicate coding domains (Default: no) "  ],
+	[ "tnpfilter",      "Discard elements containing transposase domains (Default: no) " ],
+	[ "clean|c",        "Clean up the index files (Default: yes) "                       ],
     );
 }
 
@@ -113,8 +116,6 @@ sub _refine_ltr_predictions {
 sub _run_ltr_search {
     my ($opt) = @_;
     
-    $opt->{clean}  //= 0;
-
     my @indexfiles;
     if (defined $opt->{index}) {
 	my ($name, $path, $suffix) = fileparse($opt->{index}, qr/\.[^.]*/);
@@ -127,12 +128,18 @@ sub _run_ltr_search {
 	find( sub { push @indexfiles, $File::Find::name if -f and /$matchstr/ }, $path );
     }
 
-    my $ltr_search = Tephra::LTR::LTRSearch->new( 
-	genome => $opt->{genome}, 
-	hmmdb  => $opt->{hmmdb},
-	trnadb => $opt->{trnadb}, 
-	clean  => $opt->{clean} 
+    my %search_opts = ( 
+	genome   => $opt->{genome}, 
+	hmmdb    => $opt->{hmmdb},
+	trnadb   => $opt->{trnadb},
     );
+
+    $search_opts{clean} = $opt->{clean} // 0;
+    if (defined $opt->{overlaps}) {
+	$search_opts{overlaps} = $opt->{overlaps};
+    }
+
+    my $ltr_search = Tephra::LTR::LTRSearch->new(%search_opts);
 
     unless (defined $opt->{index} && @indexfiles == 7) {
 	my ($name, $path, $suffix) = fileparse($opt->{genome}, qr/\.[^.]*/);
@@ -169,6 +176,9 @@ Options:
     --maxlenltr   :   The maximum LTR length (Default: 6000).
     --mindistltr  :   The minimum LTR element length (Default: 1500).
     --maxdistltr  :   The maximum LTR element length (Default: 25000).
+    --overlaps    :   Keep 'all', 'best', or 'no' overlaps (Default: best).
+    -e|pdomevalue :   Protein domain match threshold (Default: 10E-6).
+    -m|pdomcutoff :   Protein domain match cutoff method. (Default: NONE).
     -r|dedup      :   Discard elements with duplicate coding domains (Default: no).
     --tnpfilter   :   Discard elements containing transposase domains (Default: no).
     -c|clean      :   Clean up the index files (Default: yes).
@@ -253,6 +263,19 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =item --maxdistltr
 
  The maximum LTR element length (Default: 25000).
+
+=item --overlaps 
+
+ Keep 'all', 'best', or 'no' overlapping LTR-RT predictions (Default: best).
+
+=item -e, -- pdomevalue
+
+ Protein domain match threshold for pHMM matches with HMMER (Default: 10E-6).
+
+=item -m, --pdomcutoff
+
+ Protein domain match cutoff method for pHMM matches with HMMER. Options are, 'GA' or gathering
+ method, 'TC' or trusted cutoff, or 'NONE' (Default: NONE).
 
 =item -r, --dedup
 
