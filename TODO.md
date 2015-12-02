@@ -39,6 +39,11 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] adjust filtering command to not increment if element has been deleted (inflated filtering stats)
  - [ ] reporting of superfamilies after ltr search?.. better to do that at classification stage
  - [x] add options for LTR size parameters
+ - [ ] add LTR_Finder
+   - Domain matches 
+     - [ ] adjust duplicate domain filtering to consider strand and range of matches
+     - [ ] fix reporting of overlapping domain matches by LTRdigest? (issue reported: https://github.com/genometools/genometools/issues/706)
+     - [x] add e-value threshold option and domain filtering method 
 
 ## Command `tephra findhelitrons`
  - [x] Find helitrons in reference sequences with HelitronScanner
@@ -62,6 +67,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] add verbose option so as to not print progress when there are 5k scaffolds
  - [x] write combined file of all elements
  - [x] take a multifasta as input and create directories for input/output to methods
+ - [ ] use complete elements to find truncated nonLTRs after masking
 
 ## Command `tephra ltrage`
  - [x] Calculate age for each LTR-RT
