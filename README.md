@@ -25,6 +25,12 @@ You can also look for information at:
     Tephra issue tracker
             https://github.com/sestaton/tephra/issues
 
+**CITATION**
+
+A manuscript is in preparation, which includes a description of the all the methods and their uses, a comparison to other programs, and results from model systems. These will be provided in some form ahead of publication, as soon as they are available.
+
+For now, please cite the github URL of this repo if you use Tephra. Thank you. 
+
 **LICENSE AND COPYRIGHT**
 
 Copyright (C) 2015 S. Evan Staton
