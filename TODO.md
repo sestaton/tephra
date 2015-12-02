@@ -38,7 +38,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] change header format to be ">id_source_range"
  - [ ] adjust filtering command to not increment if element has been deleted (inflated filtering stats)
  - [ ] reporting of superfamilies after ltr search?.. better to do that at classification stage
- - [ ] add options for LTR size parameters
+ - [x] add options for LTR size parameters
 
 ## Command `tephra findhelitrons`
  - [x] Find helitrons in reference sequences with HelitronScanner

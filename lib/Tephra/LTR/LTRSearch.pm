@@ -28,6 +28,13 @@ Version 0.01
 our $VERSION = '0.01';
 $VERSION = eval $VERSION;
 
+has mintsd => ( is => 'ro', isa => 'Int', required => 0, default => 4 );
+has maxtsd => ( is => 'ro', isa => 'Int', required => 0, default => 6 );
+has minlenltr => ( is => 'ro', isa => 'Int', required => 0, default => 100 );
+has maxlenltr => ( is => 'ro', isa => 'Int', required => 0, default => 6000 );
+has mindistltr => ( is => 'ro', isa => 'Int', required => 0, default => 1500 );
+has maxdistltr => ( is => 'ro', isa => 'Int', required => 0, default => 25000 );
+
 sub ltr_search_strict {
     my $self = shift;
     my ($index) = @_;
@@ -35,6 +42,14 @@ sub ltr_search_strict {
     my $genome = $self->genome->absolute;
     my $hmmdb  = $self->hmmdb;
     my $trnadb = $self->trnadb;
+
+    my $mintsd = $self->mintsd;
+    my $maxtsd = $self->maxtsd;
+    my $minlenltr = $self->minlenltr;
+    my $maxlenltr = $self->maxlenltr;
+    my $mindistltr = $self->mindistltr;
+    my $maxdistltr = $self->maxdistltr;
+
     my (%suf_args, %ltrh_cmd, %ltrd_cmd);
     
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
@@ -51,7 +66,7 @@ sub ltr_search_strict {
     my @ltrh_opts = qw(-longoutput -seqids -tabout -mintsd -maxtsd -minlenltr -maxlenltr -mindistltr 
                        -maxdistltr -motif -similar -vic -index -out -outinner -gff3);
 
-    my @ltrh_args = ("no","yes","no","4","6","100","6000","1500","25000","tgca","99",
+    my @ltrh_args = ("no","yes","no",$mintsd,$maxtsd,$minlenltr,$maxlenltr,$mindistltr,$maxdistltr,"tgca","99",
 		     "10",$index,$ltrh_out,$ltrh_out_inner,$ltrh_gff);
     @ltrh_cmd{@ltrh_opts} = @ltrh_args;
     
@@ -86,6 +101,14 @@ sub ltr_search_relaxed {
     my $hmmdb  = $self->hmmdb;
     my $trnadb = $self->trnadb;
     my $gt = $self->get_gt_exec;
+   
+    my $mintsd = $self->mintsd;
+    my $maxtsd = $self->maxtsd;
+    my $minlenltr = $self->minlenltr;
+    my $maxlenltr = $self->maxlenltr;
+    my $mindistltr = $self->mindistltr;
+    my $maxdistltr = $self->maxdistltr;
+    
     my (%suf_args, %ltrh_cmd, %ltrd_cmd);
     
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
@@ -102,7 +125,7 @@ sub ltr_search_relaxed {
     my @ltrh_opts = qw(-longoutput -seqids -tabout -mintsd -maxtsd -minlenltr -maxlenltr 
                        -mindistltr -maxdistltr -similar -vic -index -out -outinner -gff3);
 
-    my @ltrh_args = ("no","yes","no","4","6","100","6000","1500","25000","85","10",
+    my @ltrh_args = ("no","yes","no",$mintsd,$maxtsd,$minlenltr,$maxlenltr,$mindistltr,$maxdistltr,"85","10",
 		     $index,$ltrh_out,$ltrh_out_inner,$ltrh_gff);
     @ltrh_cmd{@ltrh_opts} = @ltrh_args;
     

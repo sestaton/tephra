@@ -12,14 +12,20 @@ use Tephra::LTR::LTRRefine;
 
 sub opt_spec {
     return (    
-	[ "genome|g=s",  "The genome sequences in FASTA format to search for LTR-RTs "    ],
-	[ "trnadb|t=s",  "The file of tRNA sequences in FASTA format to search for PBS "  ], 
-	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains "     ],
-	[ "outfile|o=s", "The final combined and filtered GFF3 file of LTR-RTs "          ],
-	[ "index|i=s",   "The suffixerator index to use for the LTR search "              ],
-	[ "dedup|r",     "Discard elements with duplicate coding domains (Default: no) "  ],
-	[ "tnpfilter",   "Discard elements containing transposase domains (Default: no) " ],
-	[ "clean|c",     "Clean up the index files (Default: yes) "                       ],
+	[ "genome|g=s",   "The genome sequences in FASTA format to search for LTR-RTs "    ],
+	[ "trnadb|t=s",   "The file of tRNA sequences in FASTA format to search for PBS "  ], 
+	[ "hmmdb|d=s",    "The HMM db in HMMERv3 format to search for coding domains "     ],
+	[ "outfile|o=s",  "The final combined and filtered GFF3 file of LTR-RTs "          ],
+	[ "index|i=s",    "The suffixerator index to use for the LTR search "              ],
+	[ "mintsd=i",     "The minimum TSD length (Default: 4) "                           ],
+	[ "maxtsd=i",     "The maximum TSD length (Default: 6) "                           ],
+	[ "minlenltr=i",  "The minimum LTR length (Default: 100) "                         ],
+	[ "maxlenltr=i",  "The maximum LTR length (Default: 6000) "                        ],
+	[ "mindistltr=i", "The minimum LTR element length (Default: 1500) "                ],
+	[ "maxdistltr=i", "The maximum LTR element length (Default: 25000) "               ],
+	[ "dedup|r",      "Discard elements with duplicate coding domains (Default: no) "  ],
+	[ "tnpfilter",    "Discard elements containing transposase domains (Default: no) " ],
+	[ "clean|c",      "Clean up the index files (Default: yes) "                       ],
     );
 }
 
@@ -33,8 +39,20 @@ sub validate_args {
     elsif ($self->app->global_options->{help}) {
 	$self->help;
     }
-    elsif (!$opt->{genome}) {
+    elsif (!$opt->{genome} || !$opt->{hmmdb} || !$opt->{trnadb}) {
 	say "\nERROR: Required arguments not given.";
+	$self->help and exit(0);
+    }
+    elsif (! -e $opt->{genome}) { 
+	say "\nERROR: '--genome' file given but does not appear to exist. Check input.";
+	$self->help and exit(0);
+    }
+    elsif (! -e $opt->{hmmdb}) { 
+	say "\nERROR: '--hmmdb' file given but does not appear to exist. Check input.";
+	$self->help and exit(0);
+    }
+    elsif (! -e $opt->{trnadb}) { 
+	say "\nERROR: '--trnadb' file given but does not appear to exist. Check input.";
 	$self->help and exit(0);
     }
 } 
@@ -45,47 +63,24 @@ sub execute {
     exit(0) if $self->app->global_options->{man} ||
 	$self->app->global_options->{help};
 
-    my ($no_relaxed, $no_strict) = (0, 0);
     my ($relaxed_gff, $strict_gff) = _run_ltr_search($opt);
-    #if (! -s $strict_gff) {
-	#say STDERR "\nWARNING: No LTR retrotransposons were found under strict conditions. ".
-	    #"Skipping refinement step.\n";
-	#$no_strict = 1;
-    #}
-    #elsif (! -s $relaxed_gff) {
-	#say STDERR "\nWARNING: No LTR retrotransposons were found under relaxed conditions. ".
-        #    "Skipping refinement step.\n";
-	#$no_relaxed = 1;
-    #}
-
-    #if ($no_strict && !$no_relaxed) {
-	#say STDERR "\nFinal output file: $relaxed_gff\n";
-    #}
-    #elsif (!$no_strict && $no_relaxed) {
-	#say STDERR "\nFinal output file: $strict_gff\n";
-    #}
-    #elsif (!$no_strict && !$no_relaxed) {
-	my $some = _refine_ltr_predictions($relaxed_gff, $strict_gff, $opt);
-    #}
+    my $some = _refine_ltr_predictions($relaxed_gff, $strict_gff, $opt);
 }
 
 sub _refine_ltr_predictions {
     my ($relaxed_gff, $strict_gff, $opt) = @_;
-    my $fasta   = $opt->{genome};
-    my $outfile = $opt->{outfile};
-    my $dedup   = defined $opt->{dedup} ? 1 : 0;
-    my $detnp   = defined $opt->{tnpfilter} ? 1 : 0;
 
     my %refine_opts = (
-	genome             => $fasta, 
-	remove_dup_domains => $dedup,
-	remove_tnp_domains => $detnp,
+	genome => $opt->{genome}, 
     );
 
-    if (defined $outfile) {
-	$refine_opts{outfile} = $outfile;
+    if (defined $opt->{outfile}) {
+	$refine_opts{outfile} = $opt->{outfile};
     }
-	
+
+    $refine_opts{remove_dup_domains} = $opt->{dedup} // 0;
+    $refine_opts{remove_tnp_domains} = $opt->{tnpfilter} // 0;
+
     my $refine_obj = Tephra::LTR::LTRRefine->new(%refine_opts);
 
     if (defined $relaxed_gff && defined $strict_gff) {
@@ -118,18 +113,14 @@ sub _refine_ltr_predictions {
 sub _run_ltr_search {
     my ($opt) = @_;
     
-    my $genome = $opt->{genome};
-    my $hmmdb  = $opt->{hmmdb};
-    my $trnadb = $opt->{trnadb};
-    my $clean  = defined $opt->{clean} ? $opt->{clean} : 0;
-    my $index  = $opt->{index};
+    $opt->{clean}  //= 0;
 
     my @indexfiles;
-    if (defined $index) {
-	my ($name, $path, $suffix) = fileparse($index, qr/\.[^.]*/);
+    if (defined $opt->{index}) {
+	my ($name, $path, $suffix) = fileparse($opt->{index}, qr/\.[^.]*/);
 	my @files;
 	for my $suf ('.des', '.lcp', '.llv', '.md5', '.prj', '.sds', '.suf')  {
-	    push @files, $index.$suf;
+	    push @files, $opt->{index}.$suf;
 	}
 	
 	my $matchstr = join "|", @files;
@@ -137,22 +128,22 @@ sub _run_ltr_search {
     }
 
     my $ltr_search = Tephra::LTR::LTRSearch->new( 
-	genome => $genome, 
-	hmmdb  => $hmmdb,
-	trnadb => $trnadb, 
-	clean  => $clean 
+	genome => $opt->{genome}, 
+	hmmdb  => $opt->{hmmdb},
+	trnadb => $opt->{trnadb}, 
+	clean  => $opt->{clean} 
     );
 
-    unless (defined $index && @indexfiles == 7) {
-	my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
-	$index = $genome.".index";
+    unless (defined $opt->{index} && @indexfiles == 7) {
+	my ($name, $path, $suffix) = fileparse($opt->{genome}, qr/\.[^.]*/);
+	$opt->{index} = $opt->{genome}.".index";
     
-	my @suff_args = qq(-db $genome -indexname $index -tis -suf -lcp -ssp -sds -des -dna);
+	my @suff_args = qq(-db $opt->{genome} -indexname $opt->{index} -tis -suf -lcp -ssp -sds -des -dna);
 	$ltr_search->create_index(\@suff_args);
     }
     
-    my $strict_gff  = $ltr_search->ltr_search_strict($index);
-    my $relaxed_gff = $ltr_search->ltr_search_relaxed($index);
+    my $strict_gff  = $ltr_search->ltr_search_strict($opt->{index});
+    my $relaxed_gff = $ltr_search->ltr_search_relaxed($opt->{index});
 
     return ($relaxed_gff, $strict_gff);
 }
@@ -172,6 +163,12 @@ Required:
 Options:
     -o|outfile    :   The final combined and filtered GFF3 file of LTR-RTs.
     -i|index      :   The suffixerator index to use for the LTR search.
+    --mintsd      :   The minimum TSD length (Default: 4).
+    --maxtsd      :   The maximum TSD length (Default: 6).
+    --minlenltr   :   The minimum LTR length (Default: 100).
+    --maxlenltr   :   The maximum LTR length (Default: 6000).
+    --mindistltr  :   The minimum LTR element length (Default: 1500).
+    --maxdistltr  :   The maximum LTR element length (Default: 25000).
     -r|dedup      :   Discard elements with duplicate coding domains (Default: no).
     --tnpfilter   :   Discard elements containing transposase domains (Default: no).
     -c|clean      :   Clean up the index files (Default: yes).
@@ -232,6 +229,30 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =item -i, --index
 
  The suffixerator index to use for the LTR search.
+
+=item --mintsd
+
+ The minimum TSD length (Default: 4).
+
+=item --maxtsd
+
+ The maximum TSD length (Default: 6).
+
+=item --minlenltr
+
+ The minimum LTR length (Default: 100).
+
+=item --maxlenltr
+
+  The maximum LTR length (Default: 6000).
+
+=item --mindistltr
+
+ The minimum LTR element length (Default: 1500).
+
+=item --maxdistltr
+
+ The maximum LTR element length (Default: 25000).
 
 =item -r, --dedup
 
