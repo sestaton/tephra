@@ -23,6 +23,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Create GFF with SO terms of solo-LTRs
  - [ ] parallelize hmmsearch to speed things up. likely this is faster than multiple cpus for one model at time
  - [x] check if input directory exists
+ - [ ] make sure to set path to correct version of hmmer
 
 ## Command `tephra classifytirs`
  - [x] Classify 'best' TIR elements into superfamilies based on domain content, TSD, and/or motif
@@ -84,3 +85,4 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] change config module to be an Install namespace
  - [ ] add subcommand to merge all GFFs
  - [ ] handle compressed input/output
+ - [ ] add fasta-handling classes from Transposome, which are faster than BioPerl
