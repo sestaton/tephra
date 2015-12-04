@@ -1,0 +1,21 @@
+## For more information about this file, see: 
+## https://github.com/sestaton/Transposome/wiki/Specifications-and-example-usage.
+findltrs:
+  - genome:         t_reads.fas
+  - thread:         2
+  - outfile:        transposome_results_out
+  - trnadb:
+  - hmmdb: 
+  - index:      
+  - mintsd:         4
+  - maxtsd:         6
+  - minlenltr:      100
+  - maxlenltr:      6000
+  - mindistltr:     1500
+  - maxdistltr:     25000
+  - overlaps:       best
+  - pdomevalue:     10E-6
+  - pdomcutoff:     NONE
+  - dedup:          no
+  - tnpfilter:      no
+  - clean:          yes
