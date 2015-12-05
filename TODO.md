@@ -11,6 +11,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] combine domain organization from both strands (if the same)?
  - [ ] add family classifications to GFF Name attribute and update with age
  - [ ] incorporate legacy annotations from input GFF/reference to family classification
+ - [x] merge overlapping hits in chain of protein matches, and contatenate the rest for each element
 
 ## Command `tephra findtirs`
  - [x] Find all non-overlapping TIR elements passing thresholds
@@ -45,6 +46,7 @@ This file is for logging feature requests and bugs during development. Hopefully
      - [ ] adjust duplicate domain filtering to consider strand and range of matches
      - [ ] fix reporting of overlapping domain matches by LTRdigest? (issue reported: https://github.com/genometools/genometools/issues/706)
      - [x] add e-value threshold option and domain filtering method 
+ - [ ] add config file to handle the multitude of LTR-RT constraints
 
 ## Command `tephra findhelitrons`
  - [x] Find helitrons in reference sequences with HelitronScanner
