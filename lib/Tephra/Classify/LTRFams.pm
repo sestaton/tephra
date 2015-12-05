@@ -11,6 +11,7 @@ use File::Find;
 use File::Basename;
 use Bio::SeqIO;
 use Bio::Tools::GFF;
+use Number::Range;
 use Time::HiRes qw(gettimeofday);
 use File::Path  qw(make_path);
 use Parallel::ForkManager;
@@ -18,7 +19,7 @@ use Cwd;
 use Try::Tiny;
 use Tephra::Config::Exe;
 use namespace::autoclean;
-#use Data::Dump;
+#use Data::Dump::Color;
 
 with 'Tephra::Role::GFF',
      'Tephra::Role::Util';
@@ -113,11 +114,11 @@ sub extract_features {
     my $five_pr_ltrs  = File::Spec->catfile($resdir, $name."_5prime-ltrs.fasta");
     my $three_pr_ltrs = File::Spec->catfile($resdir, $name."_3prime-ltrs.fasta");
 
-    open my $allfh, '>>', $comp;
-    open my $pptfh, '>>', $ppts;
-    open my $pbsfh, '>>', $pbs;
-    open my $fivefh, '>>', $five_pr_ltrs;
-    open my $threfh, '>>', $three_pr_ltrs;
+    open my $allfh, '>>', $comp or die "\nERROR: Could not open file: $comp\n";
+    open my $pptfh, '>>', $ppts or die "\nERROR: Could not open file: $ppts\n";
+    open my $pbsfh, '>>', $pbs or die "\nERROR: Could not open file: $pbs\n";
+    open my $fivefh, '>>', $five_pr_ltrs or die "\nERROR: Could not open file: $five_pr_ltrs\n";
+    open my $threfh, '>>', $three_pr_ltrs or die "\nERROR: Could not open file: $three_pr_ltrs\n";
 
     my $gffio = Bio::Tools::GFF->new( -file => $infile, -gff_version => 3 );
 
@@ -151,8 +152,8 @@ sub extract_features {
 	    my @string = split /\t/, $feature->gff_string;
 	    if ($feature->start >= $start && $feature->end <= $end) {
 		my ($name) = ($string[8] =~ /name \"?(\w+)\"?/);
-		my $pdomkey = join "||", $string[0], $feature->primary_tag, $name, @string[3..4];
-		push @{$ltrs{$key}{'pdoms'}}, $pdomkey unless exists $seen{$pdomkey};
+		my $pdomkey = join "||", $string[0], $feature->primary_tag, $name, @string[3,4,6];
+		push @{$ltrs{$key}{'pdoms'}{$name}}, $pdomkey unless exists $seen{$pdomkey};
 		$seen{$pdomkey} = 1;
 	    }
 	}
@@ -170,9 +171,9 @@ sub extract_features {
     for my $ltr (sort keys %ltrs) {
 	my ($element, $rstart, $rend) = split /\./, $ltr;
 	# full element
-	my ($source, $prim_tag, $start, $end) = split /\|\|/, $ltrs{$ltr}{'full'};
+	my ($source, $prim_tag, $fstart, $fend) = split /\|\|/, $ltrs{$ltr}{'full'};
 	my $full_tmp = File::Spec->catfile($resdir, $ltr.".fasta");
-	$self->subseq($fasta, $source, $element, $start, $end, $full_tmp, $allfh);
+	$self->subseq($fasta, $source, $element, $fstart, $fend, $full_tmp, $allfh);
 
 	# pbs
 	if ($ltrs{$ltr}{'pbs'}) {
@@ -208,10 +209,12 @@ sub extract_features {
 	}
 
 	if ($ltrs{$ltr}{'pdoms'}) {
-	    for my $ltr_repeat (@{$ltrs{$ltr}{'pdoms'}}) {
-		my ($src, $pdomtag, $name, $s, $e ) = split /\|\|/, $ltr_repeat;
-		#"Ha10||protein_match||UBN2||132013916||132014240",
-		push @{$pdoms{$name}}, join "||", $src, $element, $s, $e;
+	    for my $model_name (keys %{$ltrs{$ltr}{'pdoms'}}) {
+		for my $ltr_repeat (@{$ltrs{$ltr}{'pdoms'}{$model_name}}) {
+		    my ($src, $pdomtag, $name, $s, $e, $str) = split /\|\|/, $ltr_repeat;
+		    #"Ha10||protein_match||UBN2||132013916||132014240",
+		    push @{$pdoms{$src}{$element}{$name}}, join "||", $s, $e, $str;
+		}
 	    }
 	}
     }
@@ -221,16 +224,52 @@ sub extract_features {
     close $fivefh;
     close $threfh;
 
-    for my $pdom_type (keys %pdoms) {
-	my $pdom_file = File::Spec->catfile($resdir, $pdom_type."_pdom.fasta");
-	open my $fh, '>>', $pdom_file;
-	for my $ltrpdom (@{$pdoms{$pdom_type}}) {
-	    my ($src, $elem, $s, $e) = split /\|\|/, $ltrpdom;
-	    my $tmp = File::Spec->catfile($resdir, $elem."_".$pdom_type.".fasta");
-	    $self->subseq($fasta, $src, $elem, $s, $e, $tmp, $fh);
+    ## This is where we merge overlapping hits in a chain and concatenate non-overlapping hits
+    ## to create a single domain sequence for each element
+    #dd \%pdoms; # and exit;
+    for my $src (keys %pdoms) {
+	for my $element (keys %{$pdoms{$src}}) {
+	    my ($pdom_s, $pdom_e, $str);
+	    for my $pdom_type (keys %{$pdoms{$src}{$element}}) {
+		my (%lrange, %seqs, $union);
+		my $pdom_file = File::Spec->catfile($resdir, $pdom_type."_pdom.fasta");
+		open my $fh, '>>', $pdom_file or die "\nERROR: Could not open file: $pdom_file\n";
+		for my $split_dom (@{$pdoms{$src}{$element}{$pdom_type}}) {
+		    ($pdom_s, $pdom_e, $str) = split /\|\|/, $split_dom;
+		    push @{$lrange{$src}{$element}{$pdom_type}}, "$pdom_s..$pdom_e";
+		}
+		
+		if (@{$lrange{$src}{$element}{$pdom_type}} > 1) {
+		    #say STDERR "over 1: $element -> $pdom_type";
+		    {
+			no warnings; # Number::Range warns on EVERY single interger that overlaps
+			my $range = Number::Range->new(@{$lrange{$src}{$element}{$pdom_type}});
+			$union    = $range->range;
+		    }
+		    #dd $union;
+		    
+		    for my $r (split /\,/, $union) {
+			my ($ustart, $uend) = split /\.\./, $r;
+			my $tmp = File::Spec->catfile($resdir, $element."_".$pdom_type.".fasta");
+			my $seq = $self->subseq_pdoms($fasta, $src, $element, $ustart, $uend, $tmp);
+			my $k = join "-", $ustart, $uend;
+			$seqs{$k} = $seq;
+		    }
+		    
+		    #dd \%seqs;
+		    $self->concat_pdoms($src, $element, \%seqs, $fh);
+		}
+		else {
+		    my ($nustart, $nuend, $str) = split /\|\|/, @{$pdoms{$src}{$element}{$pdom_type}}[0];
+		    my $tmp = File::Spec->catfile($resdir, $element."_".$pdom_type.".fasta");
+		    $self->subseq($fasta, $src, $element, $nustart, $nuend, $tmp, $fh);
+		}
+		close $fh;
+		%seqs   = ();
+		%lrange = ();
+		unlink $pdom_file if ! -s $pdom_file;
+	    }
 	}
-	close $fh;
-	unlink $pdom_file if ! -s $pdom_file;
     }
 
     for my $file ($comp, $ppts, $pbs, $five_pr_ltrs, $three_pr_ltrs) {
@@ -238,6 +277,40 @@ sub extract_features {
     }
 
     return $resdir
+}
+
+sub subseq_pdoms {
+    my $self = shift;
+    my ($fasta, $loc, $elem, $start, $end, $tmp) = @_;
+
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($samtools) = @{$config}{qw(samtools)};
+    my $cmd = "$samtools faidx $fasta $loc:$start-$end > $tmp";
+    $self->run_cmd($cmd);
+
+    my $seq;
+    if (-s $tmp) {
+	my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
+	while (my $seqobj = $seqio->next_seq) {
+	    $seq = $seqobj->seq;
+	}
+    }
+    unlink $tmp;
+    return $seq;
+}
+
+sub concat_pdoms {
+    my $self = shift;
+    my ($src, $elem, $seqs, $fh_out) = @_;
+    my $ranges = join "_", keys %$seqs;
+    my $id = $src."_".$elem."_$ranges";
+
+    my $concat_seq;
+    for my $seq (values %$seqs) {
+	$concat_seq .= $seq;
+    }
+    $concat_seq =~ s/.{60}\K/\n/g;
+    say $fh_out join "\n", ">$id", $concat_seq;
 }
 
 sub collect_feature_args {
