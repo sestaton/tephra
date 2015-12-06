@@ -38,7 +38,8 @@ ok( -s $seqfile,   'Generated sequences flanking all putative illegetimate recom
 my $seqct = 0;
 open my $in, '<', $seqfile;
 while (<$in>) { $seqct++ if /^>/; }
-ok( $seqct/2 == 16, 'Correct number of illigetimate recombination events detected' );
+#say STDERR "seqct: $seqct";
+ok( $seqct/2 == 34, 'Correct number of illigetimate recombination events detected' );
 close $in;
 
 my ($qmatch, $hmatch) = (0, 0);
@@ -49,8 +50,9 @@ while (<$stats>) {
     $hmatch++ if /^Hit match string/;
 }
 
-ok( $qmatch == 16, 'Correct number of illigetimate recombination events detected upstream of gap' );
-ok( $hmatch == 16, 'Correct number of illigetimate recombination events detected downstream of gap' );
+#say STDERR join q{ }, $qmatch, $hmatch;
+ok( $qmatch == 34, 'Correct number of illigetimate recombination events detected upstream of gap' );
+ok( $hmatch == 34, 'Correct number of illigetimate recombination events detected downstream of gap' );
 ok( $seqct == $qmatch+$hmatch, 'Correct number of illigetimate recombination events detected' );
 
 unlink $allstfile, $illstfile, $seqfile;
