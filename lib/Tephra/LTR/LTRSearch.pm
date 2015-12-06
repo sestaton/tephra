@@ -10,10 +10,12 @@ use IPC::System::Simple qw(system EXIT_ANY);
 use Path::Class::File;
 use Log::Any            qw($log);
 use Try::Tiny;
+use YAML::Tiny;
 use namespace::autoclean;
 use Data::Dump;
 
-with 'Tephra::Role::Run::GT';
+with 'Tephra::LTR::Role::Config',
+     'Tephra::Role::Run::GT';
 
 =head1 NAME
 
@@ -28,34 +30,62 @@ Version 0.01
 our $VERSION = '0.01';
 $VERSION = eval $VERSION;
 
-has overlaps   => ( is => 'ro', isa => 'Str', required => 0, default => 'best' );
-has mintsd     => ( is => 'ro', isa => 'Int', required => 0, default => 4 );
-has maxtsd     => ( is => 'ro', isa => 'Int', required => 0, default => 6 );
-has minlenltr  => ( is => 'ro', isa => 'Int', required => 0, default => 100 );
-has maxlenltr  => ( is => 'ro', isa => 'Int', required => 0, default => 6000 );
-has mindistltr => ( is => 'ro', isa => 'Int', required => 0, default => 1500 );
-has maxdistltr => ( is => 'ro', isa => 'Int', required => 0, default => 25000 );
-has pdomcutoff => ( is => 'ro', isa => 'Str', required => 0, default => 'NONE' );
-has pdomevalue => ( is => 'ro', isa => 'Num', required => 0, default => 10E-6 );
+#has overlaps   => ( is => 'ro', isa => 'Str', required => 0, default => 'best' );
+#has mintsd     => ( is => 'ro', isa => 'Int', required => 0, default => 4 );
+#has maxtsd     => ( is => 'ro', isa => 'Int', required => 0, default => 6 );
+#has minlenltr  => ( is => 'ro', isa => 'Int', required => 0, default => 100 );
+#has maxlenltr  => ( is => 'ro', isa => 'Int', required => 0, default => 6000 );
+#has mindistltr => ( is => 'ro', isa => 'Int', required => 0, default => 1500 );
+#has maxdistltr => ( is => 'ro', isa => 'Int', required => 0, default => 25000 );
+#has pdomcutoff => ( is => 'ro', isa => 'Str', required => 0, default => 'NONE' );
+#has pdomevalue => ( is => 'ro', isa => 'Num', required => 0, default => 10E-6 );
+
+has config => (
+    is            => 'ro',
+    isa           => 'Str',
+    required      => 0,
+    documentation => qq{The Tephra LTR configuration file},
+);
 
 sub ltr_search_strict {
     my $self = shift;
-    my ($index) = @_;
+    my ($config, $index) = @_;
     
-    my $genome = $self->genome->absolute;
+    my $genome = $self->genome;
     my $hmmdb  = $self->hmmdb;
     my $trnadb = $self->trnadb;
+    #my $index  = $self->index;
 
     ## LTR constraints
-    my $overlaps   = $self->overlaps;
-    my $mintsd     = $self->mintsd;
-    my $maxtsd     = $self->maxtsd;
-    my $minlenltr  = $self->minlenltr;
-    my $maxlenltr  = $self->maxlenltr;
-    my $mindistltr = $self->mindistltr;
-    my $maxdistltr = $self->maxdistltr;
-    my $pdomcutoff = $self->pdomcutoff;
-    my $pdomevalue = $self->pdomevalue;
+    my $overlaps   = $config->{overlaps};
+    my $mintsd     = $config->{mintsd};
+    my $maxtsd     = $config->{maxtsd};
+    my $minlenltr  = $config->{minlenltr};
+    my $maxlenltr  = $config->{maxlenltr};
+    my $mindistltr = $config->{mindistltr};
+    my $maxdistltr = $config->{maxdistltr};
+    my $pdomcutoff = $config->{pdomcutoff};
+    my $pdomevalue = $config->{pdomevalue};
+
+    my $pptradius = $config->{pptradius};
+    my $pptlen    = $config->{pptlen};
+    my $pptagpr   = $config->{pptagpr};
+    my $uboxlen   = $config->{uboxlen};
+    my $uboxutpr  = $config->{uboxutpr};
+    my $pbsradius = $config->{pbsradius};
+    my $pbslen    = $config->{pbslen};
+    my $pbsoffset = $config->{pbsoffset};
+    my $pbstrnaoffset  = $config->{pbstrnaoffset};
+    my $pbsmaxeditdist = $config->{pbsmaxeditdist};
+    my $maxgaplen = $config->{maxgaplen};
+
+    my $seedlength = $config->{seedlength};
+    my $tsdradius  = $config->{tsdradius};
+    my $xdrop      = $config->{xdrop};
+    my $swmat      = $config->{swmat};
+    my $swmis      = $config->{swmis};
+    my $swins      = $config->{swins};
+    my $swdel      = $config->{swdel};
 
     my (%suf_args, %ltrh_cmd, %ltrd_cmd);
     
@@ -71,18 +101,24 @@ sub ltr_search_strict {
     my $ltrg_out = File::Spec->catfile($path, $name."_ltrdigest99");
 
     my @ltrh_opts = qw(-longoutput -seqids -tabout -mintsd -maxtsd -minlenltr -maxlenltr -mindistltr 
-                       -maxdistltr -motif -similar -vic -index -out -outinner -overlaps -gff3);
-
+                       -maxdistltr -motif -similar -vic -index -out -outinner -overlaps -gff3
+                       -seed -vic -xdrop -mat -mis -ins -del);
     my @ltrh_args = ("no","yes","no",$mintsd,$maxtsd,$minlenltr,$maxlenltr,$mindistltr,$maxdistltr,"tgca","99",
-		     "10",$index,"no","no",$overlaps,$ltrh_gff);
+		     "10",$index,"no","no",$overlaps,$ltrh_gff,$seedlength,$tsdradius,$xdrop,$swmat,
+		     $swmis,$swins,$swdel);
     @ltrh_cmd{@ltrh_opts} = @ltrh_args;
     
     my $ltr_succ  = $self->run_ltrharvest(\%ltrh_cmd);
     if (-s $ltrh_gff) {
 	my $gffh_sort = $self->sort_gff($ltrh_gff);
 
-	my @ltrd_opts = qw(-trnas -hmms -aliout -aaout -seqfile -matchdescstart -seqnamelen -o -outfileprefix -pdomevalcutoff -pdomcutoff);
-	my @ltrd_args = ($trnadb,$hmmdb,"no","no",$genome,"yes","50",$ltrg_gff,$ltrg_out,$pdomevalue,$pdomcutoff);
+	my @ltrd_opts = qw(-trnas -hmms -aliout -aaout -seqfile -matchdescstart -seqnamelen -o 
+                           -outfileprefix -pdomevalcutoff -pdomcutoff -pptradius -pptlen -pptaprob 
+                           -pptgprob -uboxlen -pptuprob -pbsalilen -pbsradius -pbsoffset -pbstrnaoffset
+                           -pbsmaxedist -maxgaplen);
+	my @ltrd_args = ($trnadb,$hmmdb,"no","no",$genome,"yes","50",$ltrg_gff,$ltrg_out,
+			 $pdomevalue,$pdomcutoff,$pptradius,$pptlen,$pptagpr,$pptagpr,$uboxlen,
+	                 $uboxutpr,$pbslen,$pbsradius,$pbsoffset,$pbstrnaoffset,$pbsmaxeditdist,$maxgaplen);
 	@ltrd_cmd{@ltrd_opts} = @ltrd_args;
 	
 	my $ltr_dig = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort);
@@ -93,26 +129,53 @@ sub ltr_search_strict {
     }
     else {
 	unlink $ltrh_gff;
+	return undef;
     }
 }
 
 sub ltr_search_relaxed {
     my $self = shift;
-    my ($index) = @_;
-    my $genome = $self->genome->absolute;
+    my ($config, $index) = @_;
+    
+    my $genome = $self->genome;
     my $hmmdb  = $self->hmmdb;
     my $trnadb = $self->trnadb;
+    #my $index  = $self->index;
+
+    ## LTR constraints                                                                                         
+    my $overlaps   = $config->{overlaps};
+    my $mintsd     = $config->{mintsd};
+    my $maxtsd     = $config->{maxtsd};
+    my $minlenltr  = $config->{minlenltr};
+    my $maxlenltr  = $config->{maxlenltr};
+    my $mindistltr = $config->{mindistltr};
+    my $maxdistltr = $config->{maxdistltr};
+    my $pdomcutoff = $config->{pdomcutoff};
+    my $pdomevalue = $config->{pdomevalue};
+    
+    my $seedlength = $config->{seedlength};
+    my $tsdradius  = $config->{tsdradius};
+    my $xdrop      = $config->{xdrop};
+    my $swmat      = $config->{swmat};
+    my $swmis      = $config->{swmis};
+    my $swins      = $config->{swins};
+    my $swdel      = $config->{swdel};
+
+    my $pptradius = $config->{pptradius};
+    my $pptlen    = $config->{pptlen};
+    my $pptagpr   = $config->{pptagpr};
+    my $uboxlen   = $config->{uboxlen};
+    my $uboxutpr  = $config->{uboxutpr};
+    my $pbsradius = $config->{pbsradius};
+    my $pbslen    = $config->{pbslen};
+    my $pbsoffset = $config->{pbsoffset};
+    my $pbstrnaoffset  = $config->{pbstrnaoffset};
+    my $pbsmaxeditdist = $config->{pbsmaxeditdist};
+    my $maxgaplen = $config->{maxgaplen};
+    #my $genome = $self->genome->absolute;
+    #my $hmmdb  = $self->hmmdb;
+    #my $trnadb = $self->trnadb;
     my $gt = $self->get_gt_exec;
-   
-    my $overlaps   = $self->overlaps;
-    my $mintsd     = $self->mintsd;
-    my $maxtsd     = $self->maxtsd;
-    my $minlenltr  = $self->minlenltr;
-    my $maxlenltr  = $self->maxlenltr;
-    my $mindistltr = $self->mindistltr;
-    my $maxdistltr = $self->maxdistltr;
-    my $pdomcutoff = $self->pdomcutoff;
-    my $pdomevalue = $self->pdomevalue;
 
     my (%suf_args, %ltrh_cmd, %ltrd_cmd);
     
@@ -128,17 +191,24 @@ sub ltr_search_relaxed {
     my $ltrg_out = File::Spec->catfile($path, $name."_ltrdigest85");
 
     my @ltrh_opts = qw(-longoutput -seqids -tabout -mintsd -maxtsd -minlenltr -maxlenltr 
-                       -mindistltr -maxdistltr -similar -vic -index -out -outinner -overlaps -gff3);
+                       -mindistltr -maxdistltr -similar -vic -index -out -outinner -overlaps -gff3
+                       -seed -vic -xdrop -mat -mis -ins -del);
 
     my @ltrh_args = ("no","yes","no",$mintsd,$maxtsd,$minlenltr,$maxlenltr,$mindistltr,$maxdistltr,"85","10",
-		     $index,"no","no",$overlaps,$ltrh_gff);
+		     $index,"no","no",$overlaps,$ltrh_gff,$seedlength,$tsdradius,$xdrop,$swmat,
+                     $swmis,$swins,$swdel);
     @ltrh_cmd{@ltrh_opts} = @ltrh_args;
     
     my $ltr_succ  = $self->run_ltrharvest(\%ltrh_cmd);
     my $gffh_sort = $self->sort_gff($ltrh_gff);
 
-    my @ltrd_opts = qw(-trnas -hmms -aliout -aaout -seqfile -matchdescstart -seqnamelen -o -outfileprefix -pdomevalcutoff -pdomcutoff);
-    my @ltrd_args = ($trnadb,$hmmdb,"no","no",$genome,"yes","50",$ltrg_gff,$ltrg_out,$pdomevalue,$pdomcutoff);
+    my @ltrd_opts = qw(-trnas -hmms -aliout -aaout -seqfile -matchdescstart -seqnamelen -o 
+                       -outfileprefix -pdomevalcutoff -pdomcutoff -pptradius -pptlen -pptaprob
+                       -pptgprob -uboxlen -pptuprob -pbsalilen -pbsradius -pbsoffset 
+                       -pbstrnaoffset -pbsmaxedist -maxgaplen);
+    my @ltrd_args = ($trnadb,$hmmdb,"no","no",$genome,"yes","50",$ltrg_gff,$ltrg_out,$pdomevalue,
+		     $pdomcutoff,$pptradius,$pptlen,$pptagpr,$pptagpr,$uboxlen,$uboxutpr,$pbslen,
+		     $pbsradius,$pbsoffset,$pbstrnaoffset,$pbsmaxeditdist,$maxgaplen);
     @ltrd_cmd{@ltrd_opts} = @ltrd_args;
     
     my $ltr_dig = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort);
@@ -147,6 +217,13 @@ sub ltr_search_relaxed {
     unlink $gffh_sort;
 
     return $ltrg_gff;
+}
+
+sub get_configuration {
+    my $self = shift;
+    my $configfile   = YAML::Tiny->read( $self->config );
+    my $valid_config = $self->parse_configuration( $configfile );
+    return $valid_config;
 }
 
 =head1 AUTHOR

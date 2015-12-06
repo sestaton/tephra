@@ -9,26 +9,19 @@ use File::Basename;
 use Tephra -command;
 use Tephra::LTR::LTRSearch;
 use Tephra::LTR::LTRRefine;
+use Data::Dump::Color;
 
 sub opt_spec {
     return (    
+	[ "config|c=s", "The Tephra LTR option configuration file " ],
 	[ "genome|g=s",     "The genome sequences in FASTA format to search for LTR-RTs "    ],
 	[ "trnadb|t=s",     "The file of tRNA sequences in FASTA format to search for PBS "  ], 
 	[ "hmmdb|d=s",      "The HMM db in HMMERv3 format to search for coding domains "     ],
 	[ "outfile|o=s",    "The final combined and filtered GFF3 file of LTR-RTs "          ],
 	[ "index|i=s",      "The suffixerator index to use for the LTR search "              ],
-	[ "mintsd=i",       "The minimum TSD length (Default: 4) "                           ],
-	[ "maxtsd=i",       "The maximum TSD length (Default: 6) "                           ],
-	[ "minlenltr=i",    "The minimum LTR length (Default: 100) "                         ],
-	[ "maxlenltr=i",    "The maximum LTR length (Default: 6000) "                        ],
-	[ "mindistltr=i",   "The minimum LTR element length (Default: 1500) "                ],
-	[ "maxdistltr=i",   "The maximum LTR element length (Default: 25000) "               ],
-	[ "overlaps",       "Keep 'all', 'best', or 'no' overlaps (Default: best) "          ],
-	[ "pdomevalue|e=f", "Protein domain match threshold (Default: 10E-6) "               ],
-	[ "pdomcutoff|m=s", "Protein domain match cutoff method. (Default: NONE) "           ],
 	[ "dedup|r",        "Discard elements with duplicate coding domains (Default: no) "  ],
 	[ "tnpfilter",      "Discard elements containing transposase domains (Default: no) " ],
-	[ "clean|c",        "Clean up the index files (Default: yes) "                       ],
+	[ "clean",        "Clean up the index files (Default: yes) "                       ],
     );
 }
 
@@ -42,8 +35,12 @@ sub validate_args {
     elsif ($self->app->global_options->{help}) {
 	$self->help;
     }
-    elsif (!$opt->{genome} || !$opt->{hmmdb} || !$opt->{trnadb}) {
+    elsif (!$opt->{config} || !$opt->{genome} || !$opt->{hmmdb} || !$opt->{trnadb}) {
 	say "\nERROR: Required arguments not given.";
+	$self->help and exit(0);
+    }
+    elsif (! -e $opt->{config}) { 
+	say "\nERROR: '--config' file given but does not appear to exist. Check input.";
 	$self->help and exit(0);
     }
     elsif (! -e $opt->{genome}) { 
@@ -77,16 +74,13 @@ sub _refine_ltr_predictions {
 	genome => $opt->{genome}, 
     );
 
-    if (defined $opt->{outfile}) {
-	$refine_opts{outfile} = $opt->{outfile};
-    }
-
     $refine_opts{remove_dup_domains} = $opt->{dedup} // 0;
     $refine_opts{remove_tnp_domains} = $opt->{tnpfilter} // 0;
-
+    
     my $refine_obj = Tephra::LTR::LTRRefine->new(%refine_opts);
 
     if (defined $relaxed_gff && defined $strict_gff) {
+	say STDERR join q{ }, "DEBUG: ", $relaxed_gff, $strict_gff;
 	my $relaxed_features
 	    = $refine_obj->collect_features({ gff => $relaxed_gff, pid_threshold => 85 });
 	my $strict_features
@@ -116,6 +110,10 @@ sub _refine_ltr_predictions {
 sub _run_ltr_search {
     my ($opt) = @_;
     
+    #my $search_obj = Tephra::LTR::LTRSearch->new( config => $opt->{config} );
+    #my $config     = $search_obj->get_configuration;
+    #dd $config;
+
     my @indexfiles;
     if (defined $opt->{index}) {
 	my ($name, $path, $suffix) = fileparse($opt->{index}, qr/\.[^.]*/);
@@ -132,14 +130,13 @@ sub _run_ltr_search {
 	genome   => $opt->{genome}, 
 	hmmdb    => $opt->{hmmdb},
 	trnadb   => $opt->{trnadb},
+	config   => $opt->{config},
     );
 
     $search_opts{clean} = $opt->{clean} // 0;
-    if (defined $opt->{overlaps}) {
-	$search_opts{overlaps} = $opt->{overlaps};
-    }
 
     my $ltr_search = Tephra::LTR::LTRSearch->new(%search_opts);
+    my $config     = $ltr_search->get_configuration;
 
     unless (defined $opt->{index} && @indexfiles == 7) {
 	my ($name, $path, $suffix) = fileparse($opt->{genome}, qr/\.[^.]*/);
@@ -149,8 +146,8 @@ sub _run_ltr_search {
 	$ltr_search->create_index(\@suff_args);
     }
     
-    my $strict_gff  = $ltr_search->ltr_search_strict($opt->{index});
-    my $relaxed_gff = $ltr_search->ltr_search_relaxed($opt->{index});
+    my $strict_gff  = $ltr_search->ltr_search_strict($config, $opt->{index});
+    my $relaxed_gff = $ltr_search->ltr_search_relaxed($config, $opt->{index});
 
     return ($relaxed_gff, $strict_gff);
 }
@@ -163,22 +160,14 @@ USAGE: tephra findltrs [-h] [-m]
     -h --help     :   Print the command usage.
 
 Required:
-    -g|genome     :   The genome sequences in FASTA format to search for LTR-RTs. 
-    -t|trnadb     :   The file of tRNA sequences in FASTA format to search for PBS. 
+    -c|config     :   The Tephra LTR option configuration file.
+    -g|genome     :   The genome sequences in FASTA format to search for LTR-RTs.
+    -t|trnadb     :   The file of tRNA sequences in FASTA format to search for PBS.
     -d|hmmdb      :   The HMM db in HMMERv3 format to search for coding domains.
 
 Options:
     -o|outfile    :   The final combined and filtered GFF3 file of LTR-RTs.
     -i|index      :   The suffixerator index to use for the LTR search.
-    --mintsd      :   The minimum TSD length (Default: 4).
-    --maxtsd      :   The maximum TSD length (Default: 6).
-    --minlenltr   :   The minimum LTR length (Default: 100).
-    --maxlenltr   :   The maximum LTR length (Default: 6000).
-    --mindistltr  :   The minimum LTR element length (Default: 1500).
-    --maxdistltr  :   The maximum LTR element length (Default: 25000).
-    --overlaps    :   Keep 'all', 'best', or 'no' overlaps (Default: best).
-    -e|pdomevalue :   Protein domain match threshold (Default: 10E-6).
-    -m|pdomcutoff :   Protein domain match cutoff method. (Default: NONE).
     -r|dedup      :   Discard elements with duplicate coding domains (Default: no).
     --tnpfilter   :   Discard elements containing transposase domains (Default: no).
     -c|clean      :   Clean up the index files (Default: yes).
