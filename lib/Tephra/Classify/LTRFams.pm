@@ -435,7 +435,7 @@ sub process_cluster_args {
 sub subseq {
     my $self = shift;
     my ($fasta, $loc, $elem, $start, $end, $tmp, $out) = @_;
-    #my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($samtools) = @{$config}{qw(samtools)};
     my $cmd = "$samtools faidx $fasta $loc:$start-$end > $tmp";
@@ -466,8 +466,8 @@ sub parse_clusters {
     }
 
     my ($cname, $cpath, $csuffix) = fileparse($clsfile, qr/\.[^.]*/);
-    my $dir = basename($cpath);
-    my ($sf)  = ($dir =~ /_(\w+)$/);
+    my $dir  = basename($cpath);
+    my ($sf) = ($dir =~ /_(\w+)$/);
     my $sfname;
     $sfname = 'RLG' if $sf =~ /gypsy/i;
     $sfname = 'RLC' if $sf =~ /copia/i;
@@ -477,12 +477,9 @@ sub parse_clusters {
     find( sub { push @compfiles, $File::Find::name if /complete.fasta$/ }, $cpath );
     my $ltrfas = shift @compfiles;
     my $seqstore = $self->_store_seq($ltrfas);
-    #say "DEBUG: ltrfas -> $ltrfas";
-    #say "DEBUG: clsfile -> $clsfile";
-    #dd $seqstore;
     
     my (%cls, %all_seqs, %all_pdoms, $clusnum, $dom);
-    open my $in, '<', $clsfile;
+    open my $in, '<', $clsfile or die "\nERROR: Could not open file: $clsfile\n";
 
     while (my $line = <$in>) {
 	chomp $line;
