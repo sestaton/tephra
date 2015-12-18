@@ -240,13 +240,11 @@ sub extract_features {
 		}
 		
 		if (@{$lrange{$src}{$element}{$pdom_type}} > 1) {
-		    #say STDERR "over 1: $element -> $pdom_type";
 		    {
 			no warnings; # Number::Range warns on EVERY single interger that overlaps
 			my $range = Number::Range->new(@{$lrange{$src}{$element}{$pdom_type}});
 			$union    = $range->range;
 		    }
-		    #dd $union;
 		    
 		    for my $r (split /\,/, $union) {
 			my ($ustart, $uend) = split /\.\./, $r;
@@ -444,6 +442,8 @@ sub subseq {
     $self->run_cmd($cmd);
 
     my $id = join "_", $elem, $loc, $start, $end;
+    #say STDERR join q{ }, "debug:", $id, $fasta, $tmp;
+
     if (-s $tmp) {
 	my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
 	while (my $seqobj = $seqio->next_seq) {
@@ -530,6 +530,9 @@ sub parse_clusters {
 	undef $string;
     }
 
+    #dd $seqstore;
+    #dd \%dom_orgs;
+
     my $idx = 0;
     my %fastas;
     for my $str (reverse sort { @{$dom_orgs{$a}} <=> @{$dom_orgs{$b}} } keys %dom_orgs) {
@@ -538,6 +541,7 @@ sub parse_clusters {
 	open my $out, '>>', $outfile;
 	for my $elem (@{$dom_orgs{$str}}) {
 	    if (exists $seqstore->{$elem}) {
+		$seqstore->{$elem} =~ s/.{60}\K/\n/g;
 		say $out join "\n", ">$sfname"."_family$idx"."_$elem", $seqstore->{$elem};
 		delete $seqstore->{$elem};
 	    }
@@ -550,16 +554,18 @@ sub parse_clusters {
 	$fastas{$outfile} = 1;
     }
 
-    my $famxfile = $sf."_singleton_families.fasta";
-    my $xoutfile = File::Spec->catfile($cpath, $famxfile);
-    open my $outx, '>', $xoutfile;
-    for my $k (keys %$seqstore) {
-	my $seq = $seqstore->{$k};
-	$seq =~ s/.{60}\K/\n/g;
-	say $outx join "\n", ">$sfname"."_singleton_family_$k", $seq;
+    if (%$seqstore) {
+	my $famxfile = $sf."_singleton_families.fasta";
+	my $xoutfile = File::Spec->catfile($cpath, $famxfile);
+	open my $outx, '>', $xoutfile;
+	for my $k (keys %$seqstore) {
+	    my $seq = $seqstore->{$k};
+	    $seq =~ s/.{60}\K/\n/g;
+	    say $outx join "\n", ">$sfname"."_singleton_family_$k", $seq;
+	}
+	close $outx;
+	$fastas{$xoutfile} = 1;
     }
-    close $outx;
-    $fastas{$xoutfile} = 1;
 
     return \%fastas;
 }
