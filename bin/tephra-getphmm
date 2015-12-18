@@ -12,6 +12,7 @@ use File::Copy          qw(copy);
 use IPC::System::Simple qw(system capture);
 use Try::Tiny;
 use Getopt::Long;
+use Tephra::Config::Exe;
 use Carp 'croak';
 
 my $usage = "USAGE: ".basename($0)." -s seq.fas --hmmfile file.hmm -o outdir";
@@ -37,18 +38,21 @@ open my $out, '>', $seq_file or die "\nERROR: Could not open file: $seq_file";
 say $out $seq;
 close $out;
 
-$ENV{PATH} = join ':', $ENV{PATH}, File::Spec->catfile($ENV{HOME}, '.tephra', 'EMBOSS-6.5.7', 'bin');
+#$ENV{PATH} = join ':', $ENV{PATH}, File::Spec->catfile($ENV{HOME}, '.tephra', 'EMBOSS-6.5.7', 'bin');
+my $config = Tephra::Config::Exe->new->get_config_paths;
+my ($hmmbin, $transeq) = @{$config}{qw(hmmerbin transeq)};
+my $hmmsearch = File::Spec->catfile($hmmbin, 'hmmsearch');
 
 my $exitv;
 try {
-    $exitv = system([0..5], "transeq", "-frame=f", $seq_file, "-outseq=$pep_file", "-auto");
+    $exitv = system([0..5], $transeq, "-frame=f", $seq_file, "-outseq=$pep_file", "-auto");
 }
 catch {
     print "\nERROR: transeq failed with exit value: $exitv. Here is the exception: $_\n";
     exit;
 };
 
-my $hmmsearch   = find_hmmsearch();
+#my $hmmsearch   = find_hmmsearch();
 my @hmm_results = capture([0..5], $hmmsearch, $phmm_file, $pep_file);
 parse_hmmsearch(\@hmm_results, $pep_file);
 
