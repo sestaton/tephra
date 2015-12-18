@@ -6,6 +6,7 @@ use MooseX::Types::Path::Class;
 use Statistics::Descriptive;
 use Sort::Naturally;
 use List::MoreUtils qw(indexes any);
+use List::Util qw(min max);
 use File::Spec;
 use File::Find;
 use File::Basename;
@@ -226,8 +227,7 @@ sub extract_features {
 
     ## This is where we merge overlapping hits in a chain and concatenate non-overlapping hits
     ## to create a single domain sequence for each element
-    #dd \%pdoms; # and exit;
-    for my $src (keys %pdoms) {
+     for my $src (keys %pdoms) {
 	for my $element (keys %{$pdoms{$src}}) {
 	    my ($pdom_s, $pdom_e, $str);
 	    for my $pdom_type (keys %{$pdoms{$src}{$element}}) {
@@ -252,11 +252,10 @@ sub extract_features {
 			my ($ustart, $uend) = split /\.\./, $r;
 			my $tmp = File::Spec->catfile($resdir, $element."_".$pdom_type.".fasta");
 			my $seq = $self->subseq_pdoms($fasta, $src, $element, $ustart, $uend, $tmp);
-			my $k = join "-", $ustart, $uend;
+			my $k = join "_", $ustart, $uend;
 			$seqs{$k} = $seq;
 		    }
 		    
-		    #dd \%seqs;
 		    $self->concat_pdoms($src, $element, \%seqs, $fh);
 		}
 		else {
@@ -302,13 +301,16 @@ sub subseq_pdoms {
 sub concat_pdoms {
     my $self = shift;
     my ($src, $elem, $seqs, $fh_out) = @_;
-    my $ranges = join "_", keys %$seqs;
-    my $id = $src."_".$elem."_$ranges";
+    my @ranges = map { split /\_/, $_ } keys %$seqs;
+    my $start  = min(@ranges);
+    my $end    = max(@ranges);
+    my $id     = join "_", $elem, $src, $start, $end;
 
     my $concat_seq;
     for my $seq (values %$seqs) {
 	$concat_seq .= $seq;
     }
+
     $concat_seq =~ s/.{60}\K/\n/g;
     say $fh_out join "\n", ">$id", $concat_seq;
 }
@@ -441,7 +443,7 @@ sub subseq {
     my $cmd = "$samtools faidx $fasta $loc:$start-$end > $tmp";
     $self->run_cmd($cmd);
 
-    my $id = join "_", $loc, $elem, "$start-$end";
+    my $id = join "_", $elem, $loc, $start, $end;
     if (-s $tmp) {
 	my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
 	while (my $seqobj = $seqio->next_seq) {
@@ -477,7 +479,7 @@ sub parse_clusters {
     find( sub { push @compfiles, $File::Find::name if /complete.fasta$/ }, $cpath );
     my $ltrfas = shift @compfiles;
     my $seqstore = $self->_store_seq($ltrfas);
-    
+
     my (%cls, %all_seqs, %all_pdoms, $clusnum, $dom);
     open my $in, '<', $clsfile or die "\nERROR: Could not open file: $clsfile\n";
 
@@ -496,7 +498,7 @@ sub parse_clusters {
 	}
 	elsif ($line =~ /^\s+(\S+)/) {
 	    my $element = $1;
-	    $element =~ s/_\d+-\d+$//;
+	    $element =~ s/_\d+-?_?\d+$//;
 	    push @{$cls{$dom}{$clusnum}}, $element;
 	}
     }
@@ -548,19 +550,16 @@ sub parse_clusters {
 	$fastas{$outfile} = 1;
     }
 
-    #if (%$seqstore) {
-	my $famxfile = $sf."_singleton_families.fasta";
-	my $xoutfile = File::Spec->catfile($cpath, $famxfile);
-	open my $outx, '>', $xoutfile;
-	for my $k (keys %$seqstore) {
-	    my $seq = $seqstore->{$k};
-	    $seq =~ s/.{60}\K/\n/g;
-	    say $outx join "\n", ">$sfname"."_singleton_family_$k", $seq;
-	}
-	close $outx;
-	$fastas{$xoutfile} = 1;
-    #}
-    #else { say "Debug: no keys left in seqstore"; }
+    my $famxfile = $sf."_singleton_families.fasta";
+    my $xoutfile = File::Spec->catfile($cpath, $famxfile);
+    open my $outx, '>', $xoutfile;
+    for my $k (keys %$seqstore) {
+	my $seq = $seqstore->{$k};
+	$seq =~ s/.{60}\K/\n/g;
+	say $outx join "\n", ">$sfname"."_singleton_family_$k", $seq;
+    }
+    close $outx;
+    $fastas{$xoutfile} = 1;
 
     return \%fastas;
 }
@@ -595,7 +594,7 @@ sub _store_seq {
     my $seqio = Bio::SeqIO->new( -file => $file, -format => 'fasta' );
     while (my $seqobj = $seqio->next_seq) {
 	my $id  = $seqobj->id;
-	$id =~ s/_\d+-\d+$//;
+	$id =~ s/_\d+-?_?\d+$//;
 	my $seq = $seqobj->seq;
 	$hash{$id} = $seq;
     }
