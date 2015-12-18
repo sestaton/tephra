@@ -9,6 +9,7 @@ use Bio::SeqIO;
 use Bio::Tools::GFF;
 use Tephra::Config::Exe;
 use namespace::autoclean;
+#use Data::Dump::Color;
 
 with 'Tephra::Role::GFF',
      'Tephra::Role::Util';
@@ -57,7 +58,8 @@ sub make_exemplars {
     my $fasta = $self->genome;
     
     my $exemplars = $self->process_vmatch_args($dir);
-    
+    #dd $exemplars;
+
     my $gffio = Bio::Tools::GFF->new( -file => $gff, -gff_version => 3 );
 
     my ($start, $end, $source, $elem_id, $key, $full_feats, $exempid, 
@@ -72,8 +74,8 @@ sub make_exemplars {
 	push @fullseqs, $exemcomp;
 	push @ltrseqs, $exemltrs;
 	
-	open my $allfh, '>>', $exemcomp;
-	open my $ltrs_outfh, '>>', $exemltrs;
+	open my $allfh, '>>', $exemcomp or die "\nERROR: Could not open file: $exemcomp\n";
+	open my $ltrs_outfh, '>>', $exemltrs or die "\nERROR: Could not open file: $exemltrs\n";
 	
 	while (my $feature = $gffio->next_feature()) {
 	    if ($feature->primary_tag eq 'LTR_retrotransposon') {
@@ -84,7 +86,7 @@ sub make_exemplars {
 		$full_feats = join "||", $source, $feature->primary_tag, @string[3,4,6];
 	    }
 	    next unless defined $start && defined $end;
-	    my $exemplar_id_form = $source."_".$elem_id;
+	    my $exemplar_id_form = join "_", $elem_id, $source;
 
 	    if ($exemplar eq $exemplar_id_form) {
 		$ltrs{$key}{'full'} = $full_feats;
@@ -98,7 +100,7 @@ sub make_exemplars {
 		}
 	    }
 	}
-	    
+
 	my %pdoms;
 	my $ltrct = 0;
 	for my $ltr (sort keys %ltrs) {
@@ -199,11 +201,10 @@ sub subseq {
 
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($samtools) = @{$config}{qw(samtools)};
-    #my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
     my $cmd = "$samtools faidx $fasta $loc:$start-$end > $tmp";
     $self->run_cmd($cmd);
 
-    my $id = join "_", $orient, $loc, $elem, "$start-$end";
+    my $id = join "_", $orient, $loc, $elem, $start, $end;
     if (-s $tmp) {
 	my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
 	while (my $seqobj = $seqio->next_seq) {
