@@ -371,7 +371,7 @@ sub sort_features {
 	say STDERR "\nTotal elements written: $elem_tot";
     }
     else {
-	open my $in, '<', $gff, or die die "\nERROR: Could not open file: $gff\n";
+	open my $in, '<', $gff, or die "\nERROR: Could not open file: $gff\n";
 	while (my $line = <$in>) {
 	    chomp $line;
 	    next if $line =~ /^#/;
