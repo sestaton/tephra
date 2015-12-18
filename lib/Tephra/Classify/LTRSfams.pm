@@ -122,9 +122,7 @@ sub find_gypsy_copia {
 	    #say STDERR join q{ }, "strand: $strand", $pdom_org;
 	    my ($gyp_org, $cop_org);
 	    my ($gyp_dom_ct, $cop_dom_ct) = (0, 0);
-	    if (grep { /rvt_2|ubn/i && ! /rvt_1|chromo/i } @all_pdoms) { # &&
-		#grep { ! /rvt_1|chromo/i } @all_pdoms) {
-		#my @doms = any { $_ =~ @all_poms } @gyp_exp;	
+	    if (grep { /rvt_2|ubn/i && ! /rvt_1|chromo/i } @all_pdoms) {
 		for my $d (@cop_exp) {
 		    for my $p (@all_pdoms) {
 			$cop_dom_ct++ if $p =~ /$d/i;
@@ -132,8 +130,7 @@ sub find_gypsy_copia {
 		}
 	    }
 
-	    if (grep { /rvt_1|chromo/i && ! /rvt_2|ubn/i } @all_pdoms) { # &&
-		#none { /rvt_2|ubn/i } @all_pdoms) {
+	    if (grep { /rvt_1|chromo/i && ! /rvt_2|ubn/i } @all_pdoms) {
 		for my $d (@gyp_exp) {
 		    for my $p (@all_pdoms) {
 			$gyp_dom_ct++ if $p =~ /$d/i;
@@ -172,7 +169,6 @@ sub find_unclassified {
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfast = File::Spec->catfile($path, $name."_unclassified.fasta");
-    #my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($samtools) = @{$config}{qw(samtools)};
 
@@ -189,6 +185,7 @@ sub find_unclassified {
 		my ($elem) = ($feats[8] =~ /(LTR_retrotransposon\d+)/);
 		my $id = $elem."_".$loc."_".$start."_".$end;
 		$ltr_rregion_map{$id} = $ltr;
+
 		my $tmp = $elem.".fasta";
 		my $cmd = "$samtools faidx $fasta $loc:$start-$end > $tmp";
 		$self->run_cmd($cmd);
@@ -215,9 +212,8 @@ sub search_unclassified {
 
     my ($bname, $bpath, $bsuffix) = fileparse($unc_fas, qr/\.[^.]*/);
     my ($fname, $fpath, $fsuffix) = fileparse($unc_fas, qr/\.[^.]*/);
-    my $outfile = $fname."_".$bname.".bln";
-    #my $blastn  = File::Spec->catfile($ENV{HOME}, '.tephra', 'ncbi-blast-2.2.31+', 'bin', 'blastn');
-    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my $outfile    = $fname."_".$bname.".bln";
+    my $config     = Tephra::Config::Exe->new->get_config_paths;
     my ($blastbin) = @{$config}{qw(blastpath)};
     my $blastn     =  File::Spec->catfile($blastbin, 'blastn');
 
@@ -225,7 +221,6 @@ sub search_unclassified {
 	"-outfmt 6 -num_threads 12 | sort -nrk12,12 | sort -k1,1 -u > $outfile";
 
     $self->run_cmd($blastcmd);
-    #say STDERR "debug: $outfile";
     unlink glob("$blastdb*");
 
     return $outfile;
@@ -251,19 +246,15 @@ sub annotate_unclassified {
 		$copia->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
 		delete $features->{ $ltr_rregion_map->{$f[0]} };
 	    }
-	    else {# (! defined $family) {
-		#$family = $f[1];
+	    else {
 		if ($f[1] =~ /gyp/i) {
-		    #say STDERR "debug: $f[0]";
 		    $gypsy->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
 		    delete $features->{ $ltr_rregion_map->{$f[0]} };
 		}
 		if ($f[1] =~ /cop/i) {
-		    #say STDERR "debug: $f[0]";
 		    $copia->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
 		    delete $features->{ $ltr_rregion_map->{$f[0]} };
 		}
-		#undef $family;
 	    }
 	}
     }
@@ -324,7 +315,6 @@ sub write_gypsy {
     }
     close $out;
 
-    #dd \%pdom_index and exit;
     my %tot_dom_ct;
     say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
     for my $strand (keys %pdom_index) {
@@ -421,7 +411,6 @@ sub write_copia {
     }
     close $domf;
     
-    #say STDERR join "\t", "copia_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
     my $stat = Statistics::Descriptive::Full->new;
     $stat->add_data(@lengths);
     my $min   = $stat->min;
@@ -527,7 +516,7 @@ sub _make_blastdb {
     my $dir = getcwd();
     my $db_path = Path::Class::File->new($dir, $db);
     unlink $db_path if -e $db_path;
-    #my $makeblastdb  = File::Spec->catfile($ENV{HOME}, '.tephra', 'ncbi-blast-2.2.31+', 'bin', 'makeblastdb');
+
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($blastbin) = @{$config}{qw(blastpath)};
     my $makeblastdb = File::Spec->catfile($blastbin, 'makeblastdb');
