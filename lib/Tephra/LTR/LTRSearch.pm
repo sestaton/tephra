@@ -101,11 +101,11 @@ sub ltr_search_strict {
     my $ltrg_out = File::Spec->catfile($path, $name."_ltrdigest99");
 
     my @ltrh_opts = qw(-longoutput -seqids -tabout -mintsd -maxtsd -minlenltr -maxlenltr -mindistltr 
-                       -maxdistltr -motif -similar -vic -index -out -outinner -overlaps -gff3
-                       -seed -vic -xdrop -mat -mis -ins -del);
+                       -maxdistltr -motif -similar -vic -index -out -outinner -overlaps -seed -vic 
+                       -xdrop -mat -mis -ins -del -gff3);
     my @ltrh_args = ("no","yes","no",$mintsd,$maxtsd,$minlenltr,$maxlenltr,$mindistltr,$maxdistltr,"tgca","99",
-		     "10",$index,"no","no",$overlaps,$ltrh_gff,$seedlength,$tsdradius,$xdrop,$swmat,
-		     $swmis,$swins,$swdel);
+		     "10",$index,$ltrh_out,$ltrh_out_inner,$overlaps,$seedlength,$tsdradius,$xdrop,
+		     $swmat,$swmis,$swins,$swdel,$ltrh_gff);
     @ltrh_cmd{@ltrh_opts} = @ltrh_args;
     
     my $ltr_succ  = $self->run_ltrharvest(\%ltrh_cmd);
@@ -191,12 +191,12 @@ sub ltr_search_relaxed {
     my $ltrg_out = File::Spec->catfile($path, $name."_ltrdigest85");
 
     my @ltrh_opts = qw(-longoutput -seqids -tabout -mintsd -maxtsd -minlenltr -maxlenltr 
-                       -mindistltr -maxdistltr -similar -vic -index -out -outinner -overlaps -gff3
-                       -seed -vic -xdrop -mat -mis -ins -del);
+                       -mindistltr -maxdistltr -similar -vic -index -out -outinner -overlaps
+                       -seed -vic -xdrop -mat -mis -ins -del -gff3);
 
     my @ltrh_args = ("no","yes","no",$mintsd,$maxtsd,$minlenltr,$maxlenltr,$mindistltr,$maxdistltr,"85","10",
-		     $index,"no","no",$overlaps,$ltrh_gff,$seedlength,$tsdradius,$xdrop,$swmat,
-                     $swmis,$swins,$swdel);
+		     $index,$ltrh_out,$ltrh_out_inner,$overlaps,$seedlength,$tsdradius,$xdrop,$swmat,
+                     $swmis,$swins,$swdel,$ltrh_gff);
     @ltrh_cmd{@ltrh_opts} = @ltrh_args;
     
     my $ltr_succ  = $self->run_ltrharvest(\%ltrh_cmd);
