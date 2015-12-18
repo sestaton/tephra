@@ -9,7 +9,7 @@ use File::Basename;
 use Tephra -command;
 use Tephra::LTR::LTRSearch;
 use Tephra::LTR::LTRRefine;
-use Data::Dump::Color;
+#use Data::Dump::Color;
 
 sub opt_spec {
     return (    
@@ -76,11 +76,11 @@ sub _refine_ltr_predictions {
 
     $refine_opts{remove_dup_domains} = $opt->{dedup} // 0;
     $refine_opts{remove_tnp_domains} = $opt->{tnpfilter} // 0;
-    
+    $refine_opts{outfile} = $opt->{outfile} if $opt->{outfile};
+
     my $refine_obj = Tephra::LTR::LTRRefine->new(%refine_opts);
 
     if (defined $relaxed_gff && defined $strict_gff) {
-	say STDERR join q{ }, "DEBUG: ", $relaxed_gff, $strict_gff;
 	my $relaxed_features
 	    = $refine_obj->collect_features({ gff => $relaxed_gff, pid_threshold => 85 });
 	my $strict_features
@@ -110,10 +110,6 @@ sub _refine_ltr_predictions {
 sub _run_ltr_search {
     my ($opt) = @_;
     
-    #my $search_obj = Tephra::LTR::LTRSearch->new( config => $opt->{config} );
-    #my $config     = $search_obj->get_configuration;
-    #dd $config;
-
     my @indexfiles;
     if (defined $opt->{index}) {
 	my ($name, $path, $suffix) = fileparse($opt->{index}, qr/\.[^.]*/);
@@ -146,7 +142,7 @@ sub _run_ltr_search {
 	$ltr_search->create_index(\@suff_args);
     }
     
-    my $strict_gff  = $ltr_search->ltr_search_strict($config, $opt->{index});
+    my $strict_gff  = $ltr_search->ltr_search_strict($config,  $opt->{index});
     my $relaxed_gff = $ltr_search->ltr_search_relaxed($config, $opt->{index});
 
     return ($relaxed_gff, $strict_gff);
@@ -187,7 +183,7 @@ __END__
 
 =head1 SYNOPSIS    
 
- tephra findltrs -g ref.fas -t trnadb.fas -d te_models.hmm --tnpfilter --clean
+ tephra findltrs -g ref.fas -t trnadb.fas -d te_models.hmm --config tephra_ltrs_conf.yml
 
 =head1 DESCRIPTION
  
@@ -214,6 +210,10 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =item -d, --hmmdb
 
  The HMM db in HMMERv3 format to search for coding domains.
+
+=item -c, --config
+
+ The Tephra LTR option configuration file.
 
 =back
 
