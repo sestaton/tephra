@@ -114,11 +114,11 @@ sub find_soloLTRs {
     print STDERR "Getting LTR alignments....";
     my $ltr_aln_files = $self->_get_ltr_alns($dir);
     #dd $ltr_aln_files;# and exit;
-    say STDERR "done with alignements.";
+    say STDERR "done with alignments.";
     
     ## need masked genome here
     if (@$ltr_aln_files < 1 || ! -e $genome) {
-	croak "\nERROR: No genome was found or the expected alignements files were not found. Exiting.";
+	croak "\nERROR: No genome was found or the expected alignments files were not found. Exiting.";
     }
     
     print STDERR "Getting alignment statistics...";
