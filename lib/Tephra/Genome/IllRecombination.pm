@@ -18,7 +18,6 @@ use Time::HiRes qw(gettimeofday);
 use Log::Any qw($log);
 use Tephra::Config::Exe;
 use namespace::autoclean;
-#use Data::Dump;
 
 with 'Tephra::Role::Util';
 
@@ -131,12 +130,9 @@ sub collect_align_args {
 
     for my $fam (@full) {
 	my ($name, $path, $suffix) = fileparse($fam, qr/\.[^.]*/);
-	#my $tre = File::Spec->catfile($path, $name.".dnd");
 	my $aln = File::Spec->catfile($path, $name."_muscle-out.fas");
-	#my $dnd = File::Spec->catfile($path, $name."_clustal-out.dnd");
 	my $log = File::Spec->catfile($path, $name."_muscle-out.log");
 	
-	#my $clwcmd  = "clustalw2 -infile=$fam -outfile=$aln 2>$log";
 	my $clwcmd  = "muscle -in $fam -out $aln 2>$log";
 	$aln_args{$name} = { seqs => $fam, args => $clwcmd, aln => $aln };
     }
@@ -189,8 +185,6 @@ sub find_align_gaps {
 
 	my ($fname, $fpath, $fsuffix) = fileparse($fas, qr/\.[^.]*/);
 	my $seq_out = File::Spec->catfile($fpath, $fname."_gap_flanking_sequences.fasta");
-	#say STDERR "seq_out (each_out fh): $seq_out";
-	#$seq_out .= "_gap_flanking_sequences.fasta";
 	open my $each_out, '>>', $seq_out or die "\nERROR: Could not open file: $seq_out\n";
 
 	while ( my $aln = $aln_in->next_aln() ) {
@@ -365,8 +359,7 @@ sub bl2seq_compare {
     my $outfile = $out->filename;
     my $qfile   = $qname->filename;
     my $rfile   = $rname->filename;
-    #my $blastn  = File::Spec->catfile($ENV{HOME}, '.tephra', 'ncbi-blast-2.2.31+', 'bin', 'blastn');
-    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my $config  = Tephra::Config::Exe->new->get_config_paths;
     my ($blastbin) = @{$config}{qw(blastpath)};
     my $blastn = File::Spec->catfile($blastbin, 'blastn');
 
@@ -422,31 +415,8 @@ sub bl2seq_compare {
 			my $que_start = index($qustr, $qstring);
 			my $hit_start = index($hitstr, $hstring);
 			
-			#my $match_hit_string = uc($hstring);
-		    
-			#if ($hitstr !~ /$match_hit_string/i) {
-			#print "$match_hit_string\t$hitstr\n";
-			#BioPerl bug? Why is $qstring being reported for $hstring sometimes?
-			#    next;  #This just ensures the $hstring came from the actual Hit sequence
-			#}
-			#say STDERR join "\t", "Query_ID","Hit_ID","HSP_len","Hit_start",
-		        #    "Hit_stop","Query_start","Query_stop","HSP_PID";
-			#say STDERR join "\t", $query,$hitid,$hsplen,$hstart,$hstop,$qstart,$qstop,$hpid,"\n";
-		    
-			#say STDERR "Gap length        : $indel_len";
-			#say STDERR "Query len         : $qlen";
-			#say STDERR "Query start idx   : $que_start";
-			#say STDERR "Hit len           : $hlen";
-			#say STDERR "Query string      : $qustr\n";
-			#say STDERR "Query match string: ",uc($qstring);
-			#say STDERR "Homology string   : $homstring";
-			#say STDERR "Hit match string  : ",uc($hstring),"\n";
-			#say STDERR "Hit start idx     : $hit_start";
-			#say STDERR "Hit string        : $hitstr\n";
-
 			say $each_out join "\n", ">$upstr_id", $qstring;
 			say $each_out join "\n", ">$downstr_id", $hstring;
-
 			
 			say $illrecstat_fh join "\t", "Query_ID","Hit_ID","HSP_len","Hit_start",
 			    "Hit_stop","Query_start","Query_stop","HSP_PID";
@@ -592,26 +562,21 @@ sub _cnv_align_fmt {
     my $seqout = Bio::AlignIO->new(-file => ">$fas", -format => 'fasta');
     
     my $seqct = 0;
-    #while (my $seqobj = $seqin->next_aln) { $seqct++ if defined $seqobj->seq; }
     my $index = 0; # this is a horrible hack...need to get original ids
 
-    #for my $v (1..$seqct) {
-	while (my $seqobj = $seqin->next_aln) {
-	    for my $seq ($seqobj->each_seq) {
-		my $id = $seq->id;
-		#my $id = $seqobj->id;
-		#say STDERR "Debug: $id";
-		$id .= "_$index";
-		#say STDERR "Debug: $id";
-		$seq->id($id);
-		$index++;
-	    }
-	    $seqout->write_aln($seqobj);
+    while (my $seqobj = $seqin->next_aln) {
+	for my $seq ($seqobj->each_seq) {
+	    my $id = $seq->id;
+	    $id .= "_$index";
+	    $seq->id($id);
+	    $index++;
 	}
-    #}
+	$seqout->write_aln($seqobj);
+    }
     
     return $fas;
 }
+
 sub _remove_singletons {
     my $self = shift;
     my ($args) = @_;
