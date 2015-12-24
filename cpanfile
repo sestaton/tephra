@@ -13,4 +13,13 @@ requires 'Capture::Tiny';
 requires 'HTTP::Tiny';
 requires 'HTML::TreeBuilder';
 requires 'Data::Dump';
-#requires 'BioPerl';
+requires 'BioPerl';
+requires 'File::Copy';
+requires 'File::Find';
+requires 'File::Path';
+requires 'HTML::TreeBuilder';
+requires 'HTTP::Tiny';
+requires 'List::MoreUtils';
+requires 'Net::FTP';
+requires 'Number::Range';
+
