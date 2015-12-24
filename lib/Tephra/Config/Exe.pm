@@ -3,19 +3,11 @@ package Tephra::Config::Exe;
 use 5.010;
 use Moose;
 use MooseX::Types::Path::Class;
-use Cwd;
 use File::Spec;
-use File::Find;
-use File::Copy qw(copy move);
 use File::Path qw(make_path remove_tree);
 use File::Basename;
-use Path::Class::File;
-use HTML::TreeBuilder;
-use HTTP::Tiny;
-use Net::FTP;
 use Log::Any qw($log);
 use namespace::autoclean;
-#use Data::Dump::Color;
 
 =head1 NAME
 
