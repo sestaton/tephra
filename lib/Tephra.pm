@@ -2,7 +2,7 @@ package Tephra;
 
 use Moose;
 use App::Cmd::Setup -app;
-use namespace::clean;
+use namespace::autoclean;
 
 =head1 NAME
 
