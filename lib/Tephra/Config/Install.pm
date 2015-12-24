@@ -215,7 +215,7 @@ sub fetch_blast {
     $ftp->cwd($dir)
 	or die "Cannot change working directory ", $ftp->message;
 
-    my $file = 'ncbi-blast-2.2.31+-x64-linux.tar.gz';
+    my $file = 'ncbi-blast-2.3.0+-x64-linux.tar.gz';
 
     $ftp->binary();
     my $rsize = $ftp->size($file) or die "Could not get size ", $ftp->message;
@@ -224,7 +224,7 @@ sub fetch_blast {
     die "Failed to fetch complete file: $file (local size: $lsize, remote size: $rsize)"
 	unless $rsize == $lsize;
 
-    my $ldir = 'ncbi-blast-2.2.31+';
+    my $ldir = 'ncbi-blast-2.3.0+';
     system("tar xzf $file 2>&1 > /dev/null") == 0 or die $!;
     unlink $file if -e $file;
     chdir $ldir or die $!;
