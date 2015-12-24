@@ -9,7 +9,7 @@ perl:
 
 before_install: 
   - sudo apt-get update -qq
-  - sudo apt-get install -qq hmmer emboss
+  - sudo apt-get install -qq hmmer emboss libdb-dev
 
 script: perl Makefile.PL && make && make test
 
