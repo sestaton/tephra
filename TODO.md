@@ -44,7 +44,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] add LTR_Finder
    - Domain matches 
      - [ ] adjust duplicate domain filtering to consider strand and range of matches
-     - [ ] fix reporting of overlapping domain matches by LTRdigest? (issue reported: https://github.com/genometools/genometools/issues/706)
+     - [x] fix reporting of overlapping domain matches by LTRdigest? (issue reported: https://github.com/genometools/genometools/issues/706)
      - [x] add e-value threshold option and domain filtering method 
  - [ ] add config file to handle the multitude of LTR-RT constraints
 
@@ -85,7 +85,8 @@ This file is for logging feature requests and bugs during development. Hopefully
 
 ## Meta
  - [ ] logging results/progress
- - [ ] documentation
+ - [ ] add debug options for seeing commands
+ - [ ] documentation of algorithms, in addition to usage
  - [ ] reduce LTRs/TRIMs....perhaps when combining all GFFs
  - [ ] save tnp matching ltr-rts and search for cacta tes..or just add as putative classII
  - [ ] add kmer mapping command (see tallymer2gff.pl)
