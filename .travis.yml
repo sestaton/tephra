@@ -1,7 +1,7 @@
 language: perl
 perl:
-#  - "5.20"
-  - "5.18"
+  - "5.20"
+#  - "5.18"
 #  - "5.16"
 #  - "5.14"
 #  - "5.12"
@@ -9,10 +9,14 @@ perl:
 
 before_install: 
   - sudo apt-get update -qq
-  - sudo apt-get install -qq hmmer emboss libdb-dev
+  - sudo apt-get install -qq build-essential hmmer emboss libdb-dev git
+  - git clone https://github.com/bioperl/bioperl-live.git
+  - cd bioperl-live
+  - echo "n" | perl Build.PL
+  - ./Build install
 
-install:
-  - cpanm --quiet --installdeps --notest --force .
+#install:
+#  - cpanm --quiet --installdeps --notest --force .
 
 script: perl Makefile.PL && make && make test
 

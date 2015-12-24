@@ -13,7 +13,7 @@ requires 'Capture::Tiny';
 requires 'HTTP::Tiny';
 requires 'HTML::TreeBuilder';
 requires 'Data::Dump';
-requires 'BioPerl';
+#requires 'BioPerl';
 requires 'File::Copy';
 requires 'File::Find';
 requires 'File::Path';
