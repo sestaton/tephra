@@ -30,16 +30,6 @@ Version 0.01
 our $VERSION = '0.01';
 $VERSION = eval $VERSION;
 
-#has overlaps   => ( is => 'ro', isa => 'Str', required => 0, default => 'best' );
-#has mintsd     => ( is => 'ro', isa => 'Int', required => 0, default => 4 );
-#has maxtsd     => ( is => 'ro', isa => 'Int', required => 0, default => 6 );
-#has minlenltr  => ( is => 'ro', isa => 'Int', required => 0, default => 100 );
-#has maxlenltr  => ( is => 'ro', isa => 'Int', required => 0, default => 6000 );
-#has mindistltr => ( is => 'ro', isa => 'Int', required => 0, default => 1500 );
-#has maxdistltr => ( is => 'ro', isa => 'Int', required => 0, default => 25000 );
-#has pdomcutoff => ( is => 'ro', isa => 'Str', required => 0, default => 'NONE' );
-#has pdomevalue => ( is => 'ro', isa => 'Num', required => 0, default => 10E-6 );
-
 has config => (
     is            => 'ro',
     isa           => 'Str',
@@ -54,7 +44,6 @@ sub ltr_search_strict {
     my $genome = $self->genome;
     my $hmmdb  = $self->hmmdb;
     my $trnadb = $self->trnadb;
-    #my $index  = $self->index;
 
     ## LTR constraints
     my $overlaps   = $config->{overlaps};
@@ -109,7 +98,7 @@ sub ltr_search_strict {
     @ltrh_cmd{@ltrh_opts} = @ltrh_args;
     
     my $ltr_succ  = $self->run_ltrharvest(\%ltrh_cmd);
-    if (-s $ltrh_gff) {
+    if (-s $ltrh_gff > 1) {
 	my $gffh_sort = $self->sort_gff($ltrh_gff);
 
 	my @ltrd_opts = qw(-trnas -hmms -aliout -aaout -seqfile -matchdescstart -seqnamelen -o 
