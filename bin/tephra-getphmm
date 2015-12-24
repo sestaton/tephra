@@ -9,7 +9,7 @@ use File::Spec;
 use File::Basename;
 use List::Util          qw(min);
 use File::Copy          qw(copy);
-use IPC::System::Simple qw(system capture);
+use IPC::System::Simple qw(system capture EXIT_ANY);
 use Try::Tiny;
 use Getopt::Long;
 use Tephra::Config::Exe;
@@ -38,21 +38,19 @@ open my $out, '>', $seq_file or die "\nERROR: Could not open file: $seq_file";
 say $out $seq;
 close $out;
 
-#$ENV{PATH} = join ':', $ENV{PATH}, File::Spec->catfile($ENV{HOME}, '.tephra', 'EMBOSS-6.5.7', 'bin');
 my $config = Tephra::Config::Exe->new->get_config_paths;
 my ($hmmbin, $transeq) = @{$config}{qw(hmmerbin transeq)};
 my $hmmsearch = File::Spec->catfile($hmmbin, 'hmmsearch');
 
 my $exitv;
 try {
-    $exitv = system([0..5], $transeq, "-frame=f", $seq_file, "-outseq=$pep_file", "-auto");
+    $exitv = system(EXIT_ANY, $transeq, "-frame=f", $seq_file, "-outseq=$pep_file", "-auto");
 }
 catch {
     print "\nERROR: transeq failed with exit value: $exitv. Here is the exception: $_\n";
     exit;
 };
 
-#my $hmmsearch   = find_hmmsearch();
 my @hmm_results = capture([0..5], $hmmsearch, $phmm_file, $pep_file);
 parse_hmmsearch(\@hmm_results, $pep_file);
 
@@ -85,43 +83,4 @@ sub parse_hmmsearch {
     my $best_hit = min(@evalues);
     print $best_hit;
     unlink $hmmout;
-}
-
-sub find_hmmsearch {
-    my $hmmsearch = File::Spec->catfile($ENV{HOME}, '.tephra', 'hmmer-2.3.2', 'bin', 'hmmsearch');
-    if (-e $hmmsearch && -x $hmmsearch) {
-	return $hmmsearch;
-    }
-    elsif (defined $ENV{HMMER2}) {
-	$hmmsearch = join "/", $ENV{HMMER2}, 'src', 'hmmsearch';
-	if (-e $hmmsearch && -x $hmmsearch) {
-	    return $hmmsearch;
-	}
-	else {
-	    $hmmsearch = join "/", $ENV{HMMER2}, 'bin', 'hmmsearch';
-	    if (-e $hmmsearch && -x $hmmsearch) {
-		return $hmmsearch;
-	    }
-	}
-    }
-    else {
-	my @path = split /:|;/, $ENV{PATH};
-	
-	for my $p (@path) {
-	    $hmmsearch = File::Spec->catfile($p, 'hmmsearch');
-	    if (-e $hmmsearch && -x $hmmsearch) {
-		my @out = capture([0..5], "hmmsearch", "-h");
-		my ($version) = grep { /HMMER/ } @out;		    
-		if ($version =~ /HMMER (\d\.\d\w?\d+?) \(/) {
-		    my $release = $1;                  
-		    if ($release =~ /^2/) {
-			return $hmmsearch;
-		    }
-		    else {
-			croak "\nERROR: HMMER version 2 is required but was not found. Exiting.\n";
-		    }
-		}
-	    }
-	}
-    }
 }
