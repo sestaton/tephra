@@ -261,7 +261,6 @@ sub sort_features {
     my $self = shift;
     my ($feature_ref) = @_;
     my ($gff, $combined_features) = @{$feature_ref}{qw(gff combined_features)};
-    #my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($samtools) = @{$config}{qw(samtools)};
 
@@ -288,13 +287,6 @@ sub sort_features {
 	$outfile  = File::Spec->catfile($path, $name."_combined_filtered.gff3");
     }
 
-    #use Data::Printer;
-    #p $outfile;
-    #p $outfasta;
-    #p $gff;
-    #exit;
-    
-    #open my $ogff, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     open my $ofas, '>>', $outfasta or die "\nERROR: Could not open file: $outfasta\n";
 
     my ($elem_tot, $index) = (0, 1);
@@ -302,7 +294,7 @@ sub sort_features {
 	open my $ogff, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
 	my ($header, %features);
-	open my $in, '<', $gff;
+	open my $in, '<', $gff or die "\nERROR: Could not open file: $gff\n";;
 	while (<$in>) {
 	    chomp;
 	    if (/^#/) {
