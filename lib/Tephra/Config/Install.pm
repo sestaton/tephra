@@ -52,7 +52,6 @@ sub configure_root {
     my $basedir = $self->basedir;
 
     my $config = Tephra::Config::Exe->new( basedir => $basedir )->get_config_paths;
-    #dd $config; # and exit;
 
     unless (-e $config->{gt} && -x $config->{gt}) {
 	$config->{gt} = $self->fetch_gt_exes;
