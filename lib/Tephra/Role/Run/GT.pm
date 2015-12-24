@@ -13,8 +13,6 @@ use Log::Any        qw($log);
 use Cwd;
 use Tephra::Config::Exe;
 use namespace::autoclean;
-#use Data::Dump;
-#use Data::Printer;
 
 =head1 NAME
 
@@ -76,27 +74,21 @@ sub create_index {
     unshift @$args, 'suffixerator';
     unshift @$args, $gt;
     my $cmd = join qq{ }, @$args;
-    #say STDERR $cmd;
 
     my ($stdout, $stderr, $exit);
     try {
-	#system([0..5], $cmd);
 	my @out = capture { system([0..5], $cmd) };
-	#($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
     }
     catch {
 	$log->error("Unable to make suffixerator index. Here is the exception: $_\nExiting.");
 	exit(1);
     };
-
-    #return $index;
 }
 
 sub run_ltrharvest {
     my $self = shift;
     my ($args) = @_;
 
-    #dd $args and exit;
     my $gt = $self->get_gt_exec;
     my @ltrh_args;
     push @ltrh_args, "$gt ltrharvest";
@@ -109,17 +101,13 @@ sub run_ltrharvest {
 
     my $cmd = join qq{ }, @ltrh_args;
     #say STDERR $cmd; # and exit;
-    my ($stdout, $stderr, $exit);
     try {
-	#system([0..5], $cmd);
 	my @out = capture { system([0..5], $cmd) };
-	#($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
     }
     catch {
 	$log->error("LTRharvest failed. Here is the exception: $_\nExiting.");
 	exit(1);
     };
-
 }
 
 sub run_ltrdigest {
@@ -137,17 +125,13 @@ sub run_ltrdigest {
     
     my $cmd = join qq{ }, @ltrd_args, $gff;
     #say STDERR $cmd;
-    my ($stdout, $stderr, $exit);
     try {
-	#system([0..5], $cmd);
 	my @out = capture { system([0..5], $cmd) };
-	#($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
     }
     catch {
 	$log->error("LTRdigest failed. Here is the exception: $_\nExiting.");
 	exit(1);
     };
-
 }
 
 sub run_tirvish {
@@ -165,20 +149,13 @@ sub run_tirvish {
     }
 
     my $cmd = join qq{ }, @tirv_args, ">", $gff;
-    #my $cmd = "$gt tirvish -seqids no -md5 yes -mintirlen 27 -mintirdist 100 -index $index -hmms $hmms > $gff";
-    #p $cmd;
-    my ($stdout, $stderr, $exit);
     try {
-	#system([0..5], $cmd);
 	my @out = capture { system([0..5], $cmd) };
-       #($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
     }
     catch {
 	$log->error("'gt tirvish' failed. Here is the exception: $_\nExiting.");
 	exit(1);
     };
-
-    #return $gff;
 }
 
 sub sort_gff {
@@ -191,10 +168,8 @@ sub sort_gff {
 
     my $cmd = "$gt gff3 -sort $gff > $gff_sort";
     #say STDERR $cmd;
-    my ($stdout, $stderr, $exit);
     try {
-	#system([0..5], $cmd);
-	($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
+	my @out = capture { system([0..5], $cmd) };
     }
     catch {
 	$log->error("'gt gff3 -sort' failed. Here is the exception: $_\nExiting.");
@@ -226,7 +201,6 @@ sub _build_gt_exec {
     elsif (! defined $gtexe) {
 	my $config = Tephra::Config::Exe->new->get_config_paths;
 	($gtexe) = @{$config}{qw(gt)};
-	#$gtexe = File::Spec->catfile($ENV{HOME}, '.tephra', 'gt', 'bin', 'gt');
 	if (-e $gtexe && -x $gtexe) {
 	    return $gtexe;
 	}
