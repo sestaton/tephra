@@ -1,5 +1,5 @@
 package Tephra::Command::illrecomb;
-# ABSTRACT: Characterize the distribution of illigetimate recombination in a genome.
+# ABSTRACT: Characterize the distribution of illegitimate recombination in a genome.
 
 use 5.010;
 use strict;
@@ -63,7 +63,7 @@ sub _calculate_ill_recomb {
 	clean           => $clean,
     );
     
-    $ill_obj->find_illigetimate_recombination;
+    $ill_obj->find_illegitimate_recombination;
 }
 
 sub help {
@@ -92,7 +92,7 @@ END
 
 =head1 NAME
                                                                        
- tephra illrecomb - Calculate the nature and extent of illigetimate recombination in a genome
+ tephra illrecomb - Calculate the nature and extent of illegitimate recombination in a genome
 
 =head1 SYNOPSIS    
 
@@ -100,7 +100,7 @@ END
 
 =head1 DESCRIPTION
 
- This subcommand calculates the nature of illigetimate recombination (total events, size, sequences involved),
+ This subcommand calculates the nature of illegitimate recombination (total events, size, sequences involved),
  in a genome by analyzing one TE family at a time. By comparison, it is possible to see if there are
  differences between TE families (my analyses suggest there should not be).
 

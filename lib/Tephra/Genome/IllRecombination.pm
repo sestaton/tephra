@@ -23,7 +23,7 @@ with 'Tephra::Role::Util';
 
 =head1 NAME
 
-Tephra::Genome::IllRecombination - Calculate illigetimate recombination in a genome
+Tephra::Genome::IllRecombination - Calculate illegitimate recombination in a genome
 
 =head1 VERSION
 
@@ -140,7 +140,7 @@ sub collect_align_args {
     return \%aln_args;
 }
 
-sub find_illigetimate_recombination {
+sub find_illegitimate_recombination {
     my $self = shift;
 
     my $alignments = $self->align_features;
