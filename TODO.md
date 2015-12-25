@@ -46,7 +46,7 @@ This file is for logging feature requests and bugs during development. Hopefully
      - [ ] adjust duplicate domain filtering to consider strand and range of matches
      - [x] fix reporting of overlapping domain matches by LTRdigest? (issue reported: https://github.com/genometools/genometools/issues/706)
      - [x] add e-value threshold option and domain filtering method 
- - [ ] add config file to handle the multitude of LTR-RT constraints
+ - [x] add config file to handle the multitude of LTR-RT constraints
 
 ## Command `tephra findhelitrons`
  - [x] Find helitrons in reference sequences with HelitronScanner
