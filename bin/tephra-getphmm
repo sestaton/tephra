@@ -9,7 +9,7 @@ use File::Spec;
 use File::Basename;
 use List::Util          qw(min);
 use File::Copy          qw(copy);
-use IPC::System::Simple qw(system capture EXIT_ANY);
+use IPC::System::Simple qw(system capture);
 use Try::Tiny;
 use Getopt::Long;
 use Tephra::Config::Exe;
@@ -42,12 +42,11 @@ my $config = Tephra::Config::Exe->new->get_config_paths;
 my ($hmmbin, $transeq) = @{$config}{qw(hmmerbin transeq)};
 my $hmmsearch = File::Spec->catfile($hmmbin, 'hmmsearch');
 
-my $exitv;
 try {
-    $exitv = system(EXIT_ANY, $transeq, "-frame=f", $seq_file, "-outseq=$pep_file", "-auto");
+    system($transeq, "-frame=f", $seq_file, "-outseq=$pep_file", "-auto");
 }
 catch {
-    print "\nERROR: transeq failed with exit value: $exitv. Here is the exception: $_\n";
+    print "\nERROR: transeq failed. Here is the exception: $_\n";
     exit;
 };
 
