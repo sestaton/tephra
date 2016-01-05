@@ -247,7 +247,6 @@ sub _get_ltr_alns {
     my (@ltrseqs, @aligns);
 
     find( sub { push @ltrseqs, $File::Find::name if -f and /exemplar_ltrs.fasta$/ }, $dir);
-    #my $clustalw2 = File::Spec->catfile($ENV{HOME}, '.tephra', 'clustalw-2.1', 'bin', 'clustalw2');
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($clustalw2) = @{$config}{qw(clustalw)};
 
@@ -306,9 +305,6 @@ sub _collate {
 sub _find_hmmer {
     my $self = shift; 
 
-    ## this is somewhat duplicated from the non-ltr path role. create a single role and reuse it, eh?
-
-    #my $bin = File::Spec->catdir($ENV{HOME}, '.tephra', 'hmmer-2.3.2', 'bin');
     my $config     = Tephra::Config::Exe->new->get_config_paths;
     my ($hmmerbin) = @{$config}{qw(hmmerbin)};
     my $hmmbuild   = File::Spec->catfile($hmmerbin, 'hmmbuild');
@@ -319,36 +315,7 @@ sub _find_hmmer {
 	return ($hmmbuild, $hmmsearch);
     }
     else {
-	my @path = split /:|;/, $ENV{PATH};
-	
-	for my $p (@path) {
-	    my $hmmbuild  = File::Spec->catfile($p, 'hmmbuild');
-	    my $hmmsearch = File::Spec->catfile($p, 'hmmsearch');
-	    
-	    if (-e $hmmbuild && -x $hmmbuild &&
-	    -e $hmmsearch && -x $hmmsearch) {
-
-		my @out = capture([0..5], "hmmbuild -h");
-		my ($version) = grep { /HMMER/ } @out;
-		
-		if ($version =~ /HMMER (\d\.\d\w?\d+?) \(/) {  # version 3.0
-		    my $release = $1;                    
-		    #return $release;
-		    if ($release =~ /^3/) {
-			return ($hmmbuild, $hmmsearch);
-		    }
-		    elsif ($release =~ /^2/) {
-			croak "\nERROR: HMMER version 2 was found but HMMER version 3 is required.\n";
-		    }
-		    else {
-			croak "\nERROR: Could not determine HMMER Version. Check that HMMER is in PATH.\n";
-		    }
-		} 
-		else {
-		    croak "\nERROR: Could not determine HMMER Version. Check that HMMER is in PATH.\n";
-		}
-	    }
-	}
+	croak "\nERROR: Could not get HMMERv2 programs. This likely indicates that Tephra was not configured correctly. Exiting.\n";
     }
 }
 
