@@ -19,19 +19,24 @@ my $genome   = File::Spec->catfile($testdir, 'ref.fas');
 my $repeatdb = File::Spec->catfile($testdir, 'repdb.fas');
 my $masked   = File::Spec->catfile($testdir, 'ref_masked99.fas');
 my $log      = File::Spec->catfile($testdir, 'ref_vmatch.err');
-my @assemb_results = capture { system([0..5], "$cmd maskref -h") };
+my $devtests = 0;
 
-ok(@assemb_results, 'Can execute maskref subcommand');
+SKIP: {
+    skip 'skip development tests', 3 unless $devtests;
+    my @assemb_results = capture { system([0..5], "$cmd maskref -h") };
 
-my $find_cmd = "$cmd maskref -g $genome -d $repeatdb -o $masked --clean";
-#say STDERR $find_cmd;
-
-my @ret = capture { system([0..5], $find_cmd) };
-
-ok( -e $masked, 'Can mask reference' );
-ok( -e $log, 'Can mask reference' );
-
-## clean up
-unlink $log;
+    ok(@assemb_results, 'Can execute maskref subcommand');
     
+    my $find_cmd = "$cmd maskref -g $genome -d $repeatdb -o $masked --clean";
+    #say STDERR $find_cmd;
+    
+    my @ret = capture { system([0..5], $find_cmd) };
+
+    ok( -e $masked, 'Can mask reference' );
+    ok( -e $log, 'Can mask reference' );
+    
+    ## clean up
+    unlink $log;
+};
+
 done_testing();
