@@ -6,7 +6,7 @@ use MooseX::Types::Path::Class;
 use Statistics::Descriptive;
 use Sort::Naturally;
 use List::MoreUtils qw(indexes any);
-use File::Path qw(make_path);
+use File::Path qw(make_path remove_tree);
 use File::Copy qw(move copy);
 use File::Spec;
 use File::Find;
@@ -21,7 +21,7 @@ use Cwd;
 use Try::Tiny;
 use Tephra::Config::Exe;
 use namespace::autoclean;
-#use Data::Dump;
+use Data::Dump;
 #use Data::Printer;
 
 with 'Tephra::Role::GFF',
@@ -48,7 +48,7 @@ has genome => (
     coerce   => 1,
 );
 
-has outdir => (
+has outfile => (
     is       => 'ro',
     isa      => 'Path::Class::Dir',
     required => 1,
@@ -76,9 +76,14 @@ has gff => (
 sub extract_ltr_features {
     my $self = shift;
     my $fasta = $self->genome;
-    my $dir   = $self->outdir;
     my $gff   = $self->gff;
     
+    my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
+    my $dir = File::Spec->catdir($name.'_ltrages');
+    unless ( -d $dir ) {
+	make_path( $dir, {verbose => 0, mode => 0771,} );
+    }
+
     my $gffio = Bio::Tools::GFF->new( -file => $gff, -gff_version => 3 );
 
     my ($start, $end, $elem_id, $key, %feature, %ltrs, %seen);
@@ -100,6 +105,7 @@ sub extract_ltr_features {
 	}
     }
 
+    #dd \%ltrs and exit;
     my %pdoms;
     my $ltrct = 0;
     for my $ltr (sort keys %ltrs) {
@@ -113,8 +119,8 @@ sub extract_ltr_features {
 	    if ($ltrct) {
 		$orientation = "5prime" if $strand eq '+';
 		$orientation = "3prime" if $strand eq '-';
-		$lfname .= "_$orientation-ltr.fasta" if $strand eq '+';
-		$lfname .= "_$orientation-ltr.fasta" if $strand eq '-';
+		$orientation = "unknown-l" if $strand eq '.';
+		$lfname .= "_$orientation-ltr.fasta";
 		my $fiveprime_tmp = File::Spec->catfile($dir, $lfname);
 		$self->subseq($fasta, $src, $element, $s, $e, $fiveprime_tmp, $ltrs_outfh, $orientation);
 		$ltrct = 0;
@@ -122,8 +128,8 @@ sub extract_ltr_features {
 	    else {
 		$orientation = "3prime" if $strand eq '+';
 		$orientation = "5prime" if $strand eq '-';
-		$lfname .= "_$orientation-ltr.fasta" if $strand eq '+';
-		$lfname .= "_$orientation-ltr.fasta" if $strand eq '-';
+		$orientation = "unknown-r" if $strand eq '.';
+		$lfname .= "_$orientation-ltr.fasta";
 		my $threeprime_tmp = File::Spec->catfile($dir, $lfname);
 		$self->subseq($fasta, $src, $element, $s, $e, $threeprime_tmp, $ltrs_outfh, $orientation);
 		$ltrct++;
@@ -131,11 +137,13 @@ sub extract_ltr_features {
 	    close $ltrs_outfh;
 	}
     }
+
+    return $dir;
 }
 
 sub collect_feature_args {
     my $self = shift;
-    my $dir = $self->outdir;
+    my ($dir) = @_;
 
     my (@ltrs, %aln_args);
     my $wanted  = sub { push @ltrs, $File::Find::name if -f && /ltrs.fasta$/ };
@@ -149,8 +157,15 @@ sub collect_feature_args {
 
 sub align_features {
     my $self = shift;
-    my $dir  = $self->outdir;
+    my ($dir) = @_;
     my $threads = $self->threads;
+    my $outfile = $self->outfile;
+
+    ## this will prevent problems until I redesign the parallelization issues
+    if ($threads > 1) {
+	say STDERR "\nWARNING: 'threads' option is experimental and only 1 thread will be used for now.";
+	$threads = 1;
+    }
 
     my $resdir = File::Spec->catdir($dir, 'divergence_time_stats');
     
@@ -158,7 +173,7 @@ sub align_features {
 	make_path( $resdir, {verbose => 0, mode => 0771,} );
     }
     
-    my $args = $self->collect_feature_args;
+    my $args = $self->collect_feature_args($dir);
 
     my $t0 = gettimeofday();
     my $ltrrts = 0;
@@ -185,6 +200,26 @@ sub align_features {
     }
     $pm->wait_all_children;
 
+    my @agefiles;
+    find( sub { push @agefiles, $File::Find::name if -f and /divergence\.txt$/ and -s }, $resdir );
+
+    open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    for my $file (@agefiles) {
+	$self->collate($file, $out);
+    }
+    close $out;
+
+    if ($self->clean) {
+	my @alnfiles;
+	my $wanted  = sub { push @alnfiles, $File::Find::name 
+				if -f && /ltrs.fasta$|\.aln$|\.log$|\.phy$|\.dnd$|\.ctl$/ };
+	my $process = sub { grep ! -d, @_ };
+	find({ wanted => $wanted, preprocess => $process }, $dir);
+	unlink @alnfiles;
+
+	remove_tree( $dir, { safe => 1 } );
+    }
+
     my $t2 = gettimeofday();
     my $total_elapsed = $t2 - $t0;
     my $final_time = sprintf("%.2f",$total_elapsed/60);
@@ -192,13 +227,6 @@ sub align_features {
     say $log "\n========> Finished calculating insertion time for $ltrrts LTR-RTs in $final_time minutes";
     close $log;
 
-    my @alnfiles;
-    my $wanted  = sub { push @alnfiles, $File::Find::name 
-			    if -f && /ltrs.fasta$|\.aln$|\.log$|\.phy$|\.dnd$|\.ctl$/ };
-    my $process = sub { grep ! -d, @_ };
-    find({ wanted => $wanted, preprocess => $process }, $dir);
-    unlink @alnfiles if $self->clean;
-    
     return;
 }
 
@@ -209,6 +237,7 @@ sub process_baseml_args {
     my $cwd = getcwd();
     my ($pname, $ppath, $psuffix) = fileparse($phy, qr/\.[^.]*/);
     my $divfile = File::Spec->catfile($ppath, $pname."-divergence.txt");
+    $divfile = basename($divfile);
 
     my $divergence = $self->_check_divergence($phy);
 
@@ -241,10 +270,9 @@ sub process_align_args {
     my $dnd = File::Spec->catfile($path, $name."_clustal-out.dnd");
     my $log = File::Spec->catfile($path, $name."_clustal-out.log");
 
-    #my $clustalw2 = File::Spec->catfile($ENV{HOME}, '.tephra', 'clustalw-2.1', 'bin', 'clustalw2');
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($clustalw2) = @{$config}{qw(clustalw)};
-    my $clwcmd  = "$clustalw2 -infile=$db -outfile=$aln 2>$log";
+    my $clwcmd = "$clustalw2 -infile=$db -outfile=$aln 2>$log";
     $self->capture_cmd($clwcmd);
     my $phy = $self->parse_aln($aln, $tre, $dnd);
     $self->process_baseml_args($phy, $dnd, $resdir);
@@ -254,7 +282,7 @@ sub process_align_args {
 
 sub parse_aln {
     my $self = shift;
-    my ( $aln, $tre, $dnd) = @_;
+    my ($aln, $tre, $dnd) = @_;
 
     my ($name, $path, $suffix) = fileparse($aln, qr/\.[^.]*/);
     my $phy = File::Spec->catfile($path, $name.".phy");
@@ -286,7 +314,7 @@ sub parse_aln {
 sub subseq {
     my $self = shift;
     my ($fasta, $loc, $elem, $start, $end, $tmp, $out, $orient) = @_;
-    #my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($samtools) = @{$config}{qw(samtools)};
     my $cmd = "$samtools faidx $fasta $loc:$start-$end > $tmp";
@@ -304,6 +332,17 @@ sub subseq {
 	}
     }
     unlink $tmp;
+}
+
+sub collate {
+    my $self = shift;
+    my ($file_in, $fh_out) = @_;
+    my $lines = do { 
+	local $/ = undef; 
+	open my $fh_in, '<', $file_in or die "\nERROR: Could not open file: $file_in\n";
+	<$fh_in>;
+    };
+    print $fh_out $lines;
 }
 
 sub _check_divergence {

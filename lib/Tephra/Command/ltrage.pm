@@ -12,7 +12,7 @@ sub opt_spec {
     return (
 	[ "genome|g=s",    "The genome sequences in FASTA format used to search for LTR-RTs "           ],
 	[ "gff|f=s",       "The GFF3 file of LTR-RTs in <genome> "                                      ],
-	[ "outdir|o=s",    "The output directory for placing categorized elements "                     ],
+	[ "outfile|o=s",   "The output file containing the age of each element "                        ],
 	[ "subs_rate|r=f", "The nucleotide substitution rate to use (Default: 1e-8) "                   ],
 	[ "threads|t=i",   "The number of threads to use for clustering coding domains "                ],
 	[ "clean|c",       "Clean up all the intermediate files from PAML and clustalw (Default: yes) " ],
@@ -57,26 +57,22 @@ sub _calculate_ltr_stats {
 
     my $genome    = $opt->{genome};
     my $gff       = $opt->{gff};
-    my $outdir    = $opt->{outdir};
+    my $outfile   = $opt->{outfile};
     my $subs_rate = defined $opt->{subs_rate} ? $opt->{subs_rate} : 1e-8;
     my $threads   = defined $opt->{threads} ? $opt->{threads} : 1;
     my $clean     = defined $opt->{clean} ? 1 : 0;
-
-    unless ( -d $outdir ) {
-	make_path( $outdir, {verbose => 0, mode => 0771,} );
-    }
 
     my $stats_obj = Tephra::LTR::LTRStats->new(
 	genome    => $genome,
 	gff       => $gff,
 	subs_rate => $subs_rate,
 	threads   => $threads,
-	outdir    => $outdir,
+	outfile   => $outfile,
 	clean     => $clean,
     );
 
-    $stats_obj->extract_ltr_features;
-    $stats_obj->align_features;
+    my $dir = $stats_obj->extract_ltr_features;
+    $stats_obj->align_features($dir);
 }
 
 sub help {

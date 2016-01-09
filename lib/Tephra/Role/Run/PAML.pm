@@ -69,6 +69,7 @@ sub run_baseml {
     my ($stdout, $stderr, $exit);
     try {
 	my @out = capture { system([0..5], $baseml) };
+	#system($baseml);
     }
     catch {
 	$log->error("baseml failed. Here is the exception: $_\nExiting.");
@@ -138,49 +139,25 @@ sub parse_baseml {
     my $control_file    = $args->{control_file};
     my $results_dir     = $args->{results_dir};
 
-    my $divfile = basename($divergence_file);
+    #my $divfile = basename($divergence_file);
     my $out = basename($outfile);
     my $wd  = getcwd();
     
-    open my $divin, '<', $out or die "ERROR: Could not open outfile: $!\n";
-    open my $divout, '>', $divfile or die "ERROR: Could not open divergence file: $!\n";
+    open my $divin, '<', $out or die "ERROR: Could not open outfile: $out\n";
+    open my $divout, '>', $divfile or die "ERROR: Could not open divergence file: $divfile\n";
     
-    while (<$divin>) {
-	chomp;
-	if (/^\d\w+\s+\d\.\d+\(\s/) {
-	    # 3prime_Ung         0.0269( 8.7752)
-	    my ($seqid,$divergence_time,$kappa) = split /\s+/;
-
-	    $divergence_time =~ s/\($//;
-	    $kappa =~ s/\)$//;
-	    my $time = $divergence_time/($subs_rate * 2);   # T=k/2r, k=1.0 10-8
-
-	    # alignID divergence age Ts:Tv
-	    say $divout join "\t", basename($phylip), $divergence_time, $time, $kappa;
-	}
-	elsif (/^(\d\w+)         (\d\.\d+\()(\d+\.\d+\))/) {
-	    # 3prime_RL1         0.0087(999.0000)
-
-	    my $divergence_time = $2;
-	    my $kappa = $3;
-	    $divergence_time =~ s/\($//;
-	    $kappa =~ s/\)$//;
-	    my $time = $divergence_time/(1e-8 * 2);
-
-	    # alignID divergence age Ts:Tv
-	    say $divout join "\t", basename($phylip), $divergence_time, $time, $kappa;
-	}
-	elsif (/^(\d\w+)         (\d\.\d+\()(\-\d+\.\d+\))/) {
-	    # 3prime_RL1         0.0017(-0.0025)
-
-	    my $divergence_time = $2;
-	    my $kappa = $3;
-	    $divergence_time =~ s/\($//;
-	    $kappa =~ s/\)$//;
-	    my $time = $divergence_time/(1e-8 * 2);
-
-	    # alignID divergence age Ts:Tv
-	    say $divout join "\t", basename($phylip), $divergence_time, $time, $kappa;
+    while (my $line = <$divin>) {
+	chomp $line;
+	if ($line =~ /^[35]prime?|unknown-[lr]?\s+/) {
+	    if ($line =~ /(\d+\.\d+)\(\s?(\-?\d+\.\d+)\)/) {
+		# 3prime_Ung         0.0269( 8.7752)
+		my $divergence_time = $1;
+		my $kappa = $2;
+		my $time = $divergence_time/($subs_rate * 2);
+		
+		# alignID divergence age Ts:Tv
+		say $divout join "\t", basename($phylip), $divergence_time, $time, $kappa;
+	    }
 	}
     }
     close $divin;
@@ -192,8 +169,7 @@ sub parse_baseml {
     unlink basename($control_file);
 
     if ($self->clean) {
-	# remove the PAML output but keep the summary produced
-	# by this script in a separate directory.
+	# Remove the PAML output but keep the summary produced in a separate directory.
 	unlink "2base.t", "rub", "rst", "rst1", "lnf", "rates", "in.basemlg", $divfile, $out;
     }
     
@@ -209,7 +185,6 @@ sub _build_baseml_exec { # this should probably be a separate role
         return $blexe;
     }
     elsif (! defined $blexe) {
-	#$blexe = File::Spec->catfile($ENV{HOME}, '.tephra', 'hmmer-2.3.2', 'bin', 'baseml');
 	my $config = Tephra::Config::Exe->new->get_config_paths;
 	my ($pamlbin) = @{$config}{qw(pamlbin)};
 	$blexe = File::Spec->catfile($pamlbin, 'baseml');
