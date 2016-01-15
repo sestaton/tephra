@@ -13,6 +13,7 @@ Part of the utility of Tephra is to provide family-level TE classifications and 
 
 After cloning the repo or downloading the latest release, the following commands will build and install the package:
 
+    curl -sL cpanmin.us | perl - --installdeps .
     perl Makefile.PL
     make test
     make install
