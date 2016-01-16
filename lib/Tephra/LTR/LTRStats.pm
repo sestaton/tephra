@@ -186,7 +186,7 @@ sub align_features {
 			      my $elapsed = $t1 - $t0;
 			      my $time = sprintf("%.2f",$elapsed/60);
 			      say $log basename($ident),
-			      " just finished with PID $pid and exit code: $exit_code in $time minutes";
+			          " just finished with PID $pid and exit code: $exit_code in $time minutes";
 			} );
 
     for my $type (keys %$args) {
@@ -204,6 +204,8 @@ sub align_features {
     find( sub { push @agefiles, $File::Find::name if -f and /divergence\.txt$/ and -s }, $resdir );
 
     open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    say $out join "\t", "LTR-ID", "Divergence", "Age", "Ts:Tv";
+
     for my $file (@agefiles) {
 	$self->collate($file, $out);
     }

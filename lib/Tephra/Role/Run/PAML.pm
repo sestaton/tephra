@@ -145,7 +145,9 @@ sub parse_baseml {
     
     open my $divin, '<', $out or die "ERROR: Could not open outfile: $out\n";
     open my $divout, '>', $divfile or die "ERROR: Could not open divergence file: $divfile\n";
-    
+
+    say $divout join "\t", "LTR-ID", "Divergence", "Age", "Ts:Tv";
+
     while (my $line = <$divin>) {
 	chomp $line;
 	if ($line =~ /^[35]prime?|unknown-[lr]?\s+/) {
