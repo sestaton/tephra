@@ -11,6 +11,9 @@ cp build/ci/tephra-deps-ubuntu-precise.tar.bz2 ~/
 cd
 tar xjf tephra-deps-ubuntu-precise.tar.bz2
 cd $dir
+echo "Contents of home: "
+ls -la ~/
+ls -l ~/.tephra
 
 echo "ltrharvest:
   - mintsd: 4
