@@ -3,7 +3,9 @@ requires 'MooseX::Types::Path::Class';
 requires 'Parallel::ForkManager';
 requires 'IPC::System::Simple';
 requires 'Sort::Naturally';
+requires 'List::MoreUtils';
 requires 'List::UtilsBy';
+requires 'Number::Range';
 requires 'Set::IntervalTree';
 requires 'Statistics::Descriptive';
 requires 'App::Cmd';
@@ -12,14 +14,10 @@ requires 'Try::Tiny';
 requires 'Capture::Tiny';
 requires 'HTTP::Tiny';
 requires 'HTML::TreeBuilder';
-requires 'Data::Dump';
-#requires 'BioPerl';
-requires 'File::Copy';
-requires 'File::Find';
-requires 'File::Path';
-requires 'HTML::TreeBuilder';
-requires 'HTTP::Tiny';
-requires 'List::MoreUtils';
 requires 'Net::FTP';
-requires 'Number::Range';
+#requires 'Data::Dump'; # for debugging
+#requires 'BioPerl';    # need to fix bp install for users
+#requires 'File::Copy'; # in corelist
+#requires 'File::Find'; # in corelist
+#requires 'File::Path'; # in corelist
 
