@@ -144,7 +144,7 @@ sub parse_baseml {
     my $wd  = getcwd();
     
     open my $divin, '<', $out or die "ERROR: Could not open outfile: $out\n";
-    open my $divout, '>', $divfile or die "ERROR: Could not open divergence file: $divfile\n";
+    open my $divout, '>', $divergence_file or die "ERROR: Could not open divergence file: $divergence_file\n";
 
     while (my $line = <$divin>) {
 	chomp $line;
@@ -164,13 +164,13 @@ sub parse_baseml {
     close $divout;
 
     my $resdir = basename($results_dir);
-    my $dest_file = File::Spec->catfile($resdir, $divfile);
-    copy($divfile, $dest_file) or die "\nERROR: Move failed: $!";
+    my $dest_file = File::Spec->catfile($resdir, $divergence_file);
+    copy($divergence_file, $dest_file) or die "\nERROR: Move failed: $!";
     unlink basename($control_file);
 
     if ($self->clean) {
 	# Remove the PAML output but keep the summary produced in a separate directory.
-	unlink "2base.t", "rub", "rst", "rst1", "lnf", "rates", "in.basemlg", $divfile, $out;
+	unlink "2base.t", "rub", "rst", "rst1", "lnf", "rates", "in.basemlg", $divergence_file, $out;
     }
     
     return;
