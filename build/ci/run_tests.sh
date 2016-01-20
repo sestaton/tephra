@@ -7,6 +7,11 @@ echo "n" | perl Build.PL 2>&1 > /dev/null
 ./Build install 2>&1 > /dev/null
 cd $dir
 
+cp build/ci/tephra-deps-ubuntu-precise.tar.bz2 ~/
+cd
+tar xjf tephra-deps-ubuntu-precise.tar.bz2
+cd $dir
+
 echo "ltrharvest:
   - mintsd: 4
   - maxtsd: 6
