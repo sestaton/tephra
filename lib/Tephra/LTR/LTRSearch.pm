@@ -12,7 +12,7 @@ use Log::Any            qw($log);
 use Try::Tiny;
 use YAML::Tiny;
 use namespace::autoclean;
-use Data::Dump;
+#use Data::Dump;
 
 with 'Tephra::LTR::Role::Config',
      'Tephra::Role::Run::GT';
