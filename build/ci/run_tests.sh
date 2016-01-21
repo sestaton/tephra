@@ -1,19 +1,20 @@
 #!/bin/bash
 
-dir=`pwd`
-git clone https://github.com/bioperl/bioperl-live.git
-cd bioperl-live
-echo "n" | perl Build.PL 2>&1 > /dev/null
-./Build install 2>&1 > /dev/null
-cd $dir
+#dir=`pwd`
+#git clone https://github.com/bioperl/bioperl-live.git
+#cd bioperl-live
+#echo "n" | perl Build.PL 2>&1 > /dev/null
+#./Build install 2>&1 > /dev/null
+#cd $dir
 
 cp build/ci/tephra-deps-ubuntu-precise.tar.bz2 ~/
 cd
 tar xjf tephra-deps-ubuntu-precise.tar.bz2
 cd $dir
-echo "Contents of home: "
-ls -la ~/
-ls -l ~/.tephra
+
+#echo "Contents of home: "
+#ls -la ~/
+#ls -l ~/.tephra
 
 echo "ltrharvest:
   - mintsd: 4
@@ -47,7 +48,7 @@ ltrdigest:
 
 perl Makefile.PL
 make
-#perl -Mblib blib/bin/tephra findltrs -c t/test_data/tephra_ltr_config.yml -g t/test_data/ref.fas -t t/test_data/trnas.fas -d t/test_data/te.hmm --clean
-prove -bv t/01-findltrs.t
+perl -Mblib blib/bin/tephra findltrs -c t/test_data/tephra_ltr_config.yml -g t/test_data/ref.fas -t t/test_data/trnas.fas -d t/test_data/te.hmm --clean
+#prove -bv t/01-findltrs.t
 
 
