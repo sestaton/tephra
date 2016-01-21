@@ -1,6 +1,8 @@
 #!/bin/bash
 
-#dir=`pwd`
+set -euo pipefail
+
+dir=`pwd`
 #git clone https://github.com/bioperl/bioperl-live.git
 #cd bioperl-live
 #echo "n" | perl Build.PL 2>&1 > /dev/null
