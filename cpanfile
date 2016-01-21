@@ -16,7 +16,7 @@ requires 'HTTP::Tiny';
 requires 'HTML::TreeBuilder';
 requires 'Net::FTP';
 #requires 'Data::Dump'; # for debugging
-requires 'BioPerl';    # need to fix bp install for users
+#requires 'BioPerl';    # need to fix bp install for users
 #requires 'File::Copy'; # in corelist
 #requires 'File::Find'; # in corelist
 #requires 'File::Path'; # in corelist
