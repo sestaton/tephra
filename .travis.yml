@@ -9,7 +9,7 @@ perl:
 
 before_install: 
   - sudo apt-get update -qq
-  - sudo apt-get install -qq build-essential ncbi-blast+ hmmer emboss samtools zlib1g-dev libncurses5 libncurses5-dev libdb-dev git cpanminus ibexpat1 libexpat1-dev
+  - sudo apt-get install -qq build-essential ncbi-blast+ hmmer emboss samtools zlib1g-dev libncurses5 libncurses5-dev libdb-dev git cpanminus libexpat1 libexpat1-dev
   - sudo cpanm Data::Stag DB_File
   - sudo echo "n" | cpanm -n BioPerl
 
