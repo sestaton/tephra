@@ -10,7 +10,7 @@ use Bio::SearchIO;
 use File::Find;
 use File::Spec;
 use File::Basename;
-use Data::Printer;
+#use Data::Printer;
 use Carp 'croak';
 
 with 'Tephra::NonLTR::Role::PathUtils';
