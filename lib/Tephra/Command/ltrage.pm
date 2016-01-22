@@ -85,7 +85,7 @@ sub help {
   Required:
       -g|genome     :   The genome sequences in FASTA format used to search for LTR-RTs.
       -f|gff        :   The GFF3 file of LTR-RTs in <--genome>.
-      -o|outdir     :   The output directory for placing categorized elements.
+      -o|outfile    :   The output file containing the age of each element.
     
   Options:
       -r|subs_rate  :   The nucleotide substitution rate to use (Default: 1e-8).
