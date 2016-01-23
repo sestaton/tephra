@@ -25,7 +25,7 @@ my @results = capture { system([0..5], "$cmd findltrs -h") };
 ok(@results, 'Can execute findltrs subcommand');
 
 my $find_cmd = "$cmd findltrs -c $config -g $genome -t $trnas -d $model --clean";
-say STDERR $find_cmd;
+#say STDERR $find_cmd;
 
 my ($stdout, $stderr, @ret) = capture { system([0..5], $find_cmd) };
       
@@ -45,10 +45,12 @@ for my $line (split /^/, $stderr) {
 	my @tot = ($line =~ /=(\d)/g);
 	ok( @tot == 4, 'Correct number of refinement steps' );
 	($combined) = ($line =~ /Combined=(\d)/);
+	#say STDERR "combined: $combined";
 	ok( $combined == 6, 'Correct number of combined elements' );
     }
     elsif ($line =~ /Total elements written/) {
 	my ($tot) = ($line =~ /\: (\d)/);
+	#say STDERR "tot: $tot";
 	ok( $tot == 6, 'Correct number of total elements' );
 	ok( $tot == $combined, 'Correct number of total and combined elements' );
     }
