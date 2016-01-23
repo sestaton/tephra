@@ -85,7 +85,7 @@ For now, please cite the github URL of this repo if you use Tephra. Thank you.
 
 **LICENSE AND COPYRIGHT**
 
-Copyright (C) 2015 S. Evan Staton
+Copyright (C) 2015-2016 S. Evan Staton
 
 This program is distributed under the MIT (X11) License, which should be distributed with the package.
 If not, it can be found here: http://www.opensource.org/licenses/mit-license.php
