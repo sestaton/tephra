@@ -31,6 +31,7 @@ say STDERR $find_cmd;
 my ($stdout, $stderr, @ret) = capture { system([0..5], $find_cmd) };
 say STDERR "stderr: $stderr";
 say STDERR "stdout: $stdout";
+system("ls -la $testdir");
       
 my @files;
 find( sub { push @files, $File::Find::name if /\.gff3$/ }, $testdir);
