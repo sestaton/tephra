@@ -9,6 +9,7 @@ use Capture::Tiny       qw(capture);
 use List::Util          qw(sum);
 use File::Find;
 use File::Spec;
+use Data::Printer;
 
 use Test::More tests => 9;
 
@@ -25,32 +26,39 @@ my @results = capture { system([0..5], "$cmd findltrs -h") };
 ok(@results, 'Can execute findltrs subcommand');
 
 my $find_cmd = "$cmd findltrs -c $config -g $genome -t $trnas -d $model --clean";
-#say STDERR $find_cmd;
+say STDERR $find_cmd;
 
 my ($stdout, $stderr, @ret) = capture { system([0..5], $find_cmd) };
+say STDERR "stderr: $stderr";
+say STDERR "stdout: $stdout";
       
 my @files;
 find( sub { push @files, $File::Find::name if /\.gff3$/ }, $testdir);
+p @files;
+
 ok( @files == 3, 'Can find some ltrs' ); # 2 ltrdigest files + combined file
 
 my $combined;
 for my $line (split /^/, $stderr) {
     if ($line =~ /Number of elements filtered/) {
 	my @tot = ($line =~ /=(\d)/g);
+	p @tot;
 	ok( @tot == 3, 'Correct number of filters applied to results' );
 	my $sum = sum(@tot);
+	say STDERR "sum: $sum";
 	ok( $sum == 0, 'Correct number of elements filtered' );
     }
     elsif ($line =~ /Number of elements found/) {
 	my @tot = ($line =~ /=(\d)/g);
+	p @tot;
 	ok( @tot == 4, 'Correct number of refinement steps' );
 	($combined) = ($line =~ /Combined=(\d)/);
-	#say STDERR "combined: $combined";
+	say STDERR "combined: $combined";
 	ok( $combined == 6, 'Correct number of combined elements' );
     }
     elsif ($line =~ /Total elements written/) {
 	my ($tot) = ($line =~ /\: (\d)/);
-	#say STDERR "tot: $tot";
+	say STDERR "tot: $tot";
 	ok( $tot == 6, 'Correct number of total elements' );
 	ok( $tot == $combined, 'Correct number of total and combined elements' );
     }
