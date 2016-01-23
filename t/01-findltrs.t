@@ -25,6 +25,7 @@ ok( -e $config, 'Can create config file for testing' );
 my @results = capture { system([0..5], "$cmd findltrs -h") };
 ok(@results, 'Can execute findltrs subcommand');
 
+system("hmmsearch -h");
 my $find_cmd = "$cmd findltrs -c $config -g $genome -t $trnas -d $model --clean";
 say STDERR $find_cmd;
 
