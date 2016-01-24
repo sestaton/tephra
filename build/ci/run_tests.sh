@@ -13,13 +13,9 @@ wget http://eddylab.org/software/hmmer3/3.1b2/hmmer-3.1b2-linux-intel-x86_64.tar
 tar xzf hmmer-3.1b2-linux-intel-x86_64.tar.gz
 sudo cp hmmer-3.1b2-linux-intel-x86_64/binaries/* /usr/local/bin/
 
-#echo "Contents of home: "
-#ls -la ~/
-#ls -l ~/.tephra
-
 perl Makefile.PL
-make
+make test
 #perl -Mblib blib/bin/tephra findltrs -c t/test_data/tephra_ltr_config.yml -g t/test_data/ref.fas -t t/test_data/trnas.fas -d t/test_data/te.hmm --clean
-prove -bv t/01-findltrs.t
+#prove -bv t/01-findltrs.t
 
 
