@@ -9,7 +9,7 @@ use Capture::Tiny       qw(capture);
 use File::Path          qw(remove_tree);
 use File::Find;
 use File::Spec;
-use Data::Dump;
+#use Data::Dump;
 
 use Test::More tests => 8;
 
@@ -25,44 +25,49 @@ my $seqfile   = File::Spec->catfile($modeldir,
 my $parsfile  = File::Spec->catfile($modeldir,
 				    'RLG_family0_exemplar_ltrs_clustal-out_ref_masked99_hmmer_parsed.txt');
 my $masked    = File::Spec->catfile($testdir, 'ref_masked99.fas');
-my @results   = capture { system([0..5], "$cmd sololtr -h") };
+my $devtests  = 0;
 
-ok(@results, 'Can execute sololtr subcommand');
+SKIP: {
+    skip 'skip development tests', 8 unless $devtests;
+    my @results   = capture { system([0..5], "$cmd sololtr -h") };
+    
+    ok(@results, 'Can execute sololtr subcommand');
 
-my $find_cmd = "$cmd sololtr -i $resdir -g $masked -r $allstfile -o $outfile -l 80 -c 0.09 -s";
-#say STDERR $find_cmd;
+    my $find_cmd = "$cmd sololtr -i $resdir -g $masked -r $allstfile -o $outfile -l 80 -c 0.09 -s";
+    #say STDERR $find_cmd;
 
-my @ret = capture { system([0..5], $find_cmd) };
-#system([0..5], $find_cmd);
+    my @ret = capture { system([0..5], $find_cmd) };
+    #system([0..5], $find_cmd);
 
-ok( -s $allstfile, 'Generated summary statistics for all solo-LTR matches' );
-ok( -s $parsfile,  'Generated statistics for solo-LTR matches' );
-ok( -s $seqfile,   'Generated sequences for all solo-LTR matches' );
+    ok( -s $allstfile, 'Generated summary statistics for all solo-LTR matches' );
+    ok( -s $parsfile,  'Generated statistics for solo-LTR matches' );
+    ok( -s $seqfile,   'Generated sequences for all solo-LTR matches' );
+    
+    my $seqct = 0;
+    open my $in, '<', $seqfile;
+    while (<$in>) { $seqct++ if /^>/; }
+    ok( $seqct == 2, 'Correct number of solo-LTR sequences above thresholds' );
+    close $in;
 
-my $seqct = 0;
-open my $in, '<', $seqfile;
-while (<$in>) { $seqct++ if /^>/; }
-ok( $seqct == 2, 'Correct number of solo-LTR sequences above thresholds' );
-close $in;
+    my $soloct = 0;
+    ok( -s $outfile, 'Can create GFF3 file of solo-LTRs' );
+    open my $gff, '<', $outfile;
+    while (<$gff>) {
+	chomp;
+	next if /^#/;
+	my @f = split /\t/;
+	$soloct++ if $f[2] eq 'solo_LTR';
+    }
+    close $gff;
 
-my $soloct = 0;
-ok( -s $outfile, 'Can create GFF3 file of solo-LTRs' );
-open my $gff, '<', $outfile;
-while (<$gff>) {
-    chomp;
-    next if /^#/;
-    my @f = split /\t/;
-    $soloct++ if $f[2] eq 'solo_LTR';
-}
-close $gff;
+    #say STDERR "SOLOCT: $soloct";
+    ok( $soloct == 2, 'Correct number of solo-LTRs found' );
+    ok( $seqct == $soloct, 'Same number of sequences and elements written to GFF/FASTA' );
 
-#say STDERR "SOLOCT: $soloct";
-ok( $soloct == 2, 'Correct number of solo-LTRs found' );
-ok( $seqct == $soloct, 'Same number of sequences and elements written to GFF/FASTA' );
-
-# clean up
-unlink $allstfile, $outfile;
-remove_tree( $outdir, { safe => 1 } );
-unlink $masked;
+    # clean up
+    unlink $allstfile, $outfile;
+    remove_tree( $outdir, { safe => 1 } );
+    unlink $masked;
+};
 
 done_testing();

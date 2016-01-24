@@ -1,6 +1,8 @@
 # Tephra
 Transposable Element Paleontology by Historical Reconstruction from Annotations
 
+[![Build Status](https://travis-ci.org/sestaton/tephra.svg?branch=master)](https://travis-ci.org/sestaton/tephra)
+
 ### What is Tephra?
 
 Tephra is a command line application to annotate [transposable elements](http://en.wikipedia.org/wiki/Transposable_element) from a genome assembly. The goal is to provide a high quality set of de novo annotations for all transposon types, describe the structure and evolution of those sequences, and do it without a reference set of transposon sequences (therefore being unbiased as possible).
@@ -85,7 +87,7 @@ For now, please cite the github URL of this repo if you use Tephra. Thank you.
 
 **LICENSE AND COPYRIGHT**
 
-Copyright (C) 2015 S. Evan Staton
+Copyright (C) 2015-2016 S. Evan Staton
 
 This program is distributed under the MIT (X11) License, which should be distributed with the package.
 If not, it can be found here: http://www.opensource.org/licenses/mit-license.php

@@ -26,7 +26,7 @@ my $find_cmd = "$cmd findtirs -g $genome -d $model --clean";
 my @ret = capture { system([0..5], $find_cmd) };
 
 my @files;
-find( sub { push @files, $File::Find::name if /\.gff3$/ }, $testdir);
+find( sub { push @files, $File::Find::name if /tirs_?(?:filtered)?.gff3$/ }, $testdir);
 ok( @files == 2, 'Can find some tirs' ); # original + filtered gff3
 
 ## clean up

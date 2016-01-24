@@ -77,7 +77,8 @@ sub create_index {
 
     my ($stdout, $stderr, $exit);
     try {
-	my @out = capture { system([0..5], $cmd) };
+	system($cmd);
+	#my @out = capture { system([0..5], $cmd) };
     }
     catch {
 	$log->error("Unable to make suffixerator index. Here is the exception: $_\nExiting.");
@@ -100,9 +101,10 @@ sub run_ltrharvest {
     } 
 
     my $cmd = join qq{ }, @ltrh_args;
-    #say STDERR $cmd; # and exit;
+    say STDERR $cmd; # and exit;
     try {
-	my @out = capture { system([0..5], $cmd) };
+	system($cmd);
+	#my @out = capture { system([0..5], $cmd) };
     }
     catch {
 	$log->error("LTRharvest failed. Here is the exception: $_\nExiting.");
@@ -124,9 +126,10 @@ sub run_ltrdigest {
     }
     
     my $cmd = join qq{ }, @ltrd_args, $gff;
-    #say STDERR $cmd;
+    say STDERR $cmd;
     try {
-	my @out = capture { system([0..5], $cmd) };
+	system($cmd);
+	#my @out = capture { system([0..5], $cmd) };
     }
     catch {
 	$log->error("LTRdigest failed. Here is the exception: $_\nExiting.");

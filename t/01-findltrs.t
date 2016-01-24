@@ -31,6 +31,7 @@ my ($stdout, $stderr, @ret) = capture { system([0..5], $find_cmd) };
       
 my @files;
 find( sub { push @files, $File::Find::name if /\.gff3$/ }, $testdir);
+
 ok( @files == 3, 'Can find some ltrs' ); # 2 ltrdigest files + combined file
 
 my $combined;
@@ -45,12 +46,10 @@ for my $line (split /^/, $stderr) {
 	my @tot = ($line =~ /=(\d)/g);
 	ok( @tot == 4, 'Correct number of refinement steps' );
 	($combined) = ($line =~ /Combined=(\d)/);
-	#say STDERR "combined: $combined";
 	ok( $combined == 6, 'Correct number of combined elements' );
     }
     elsif ($line =~ /Total elements written/) {
 	my ($tot) = ($line =~ /\: (\d)/);
-	#say STDERR "tot: $tot";
 	ok( $tot == 6, 'Correct number of total elements' );
 	ok( $tot == $combined, 'Correct number of total and combined elements' );
     }
