@@ -9,7 +9,7 @@ use Capture::Tiny       qw(capture);
 use File::Path          qw(remove_tree);
 use File::Find;
 use File::Spec;
-use Data::Dump;
+#use Data::Dump;
 
 use Test::More tests => 7;
 
