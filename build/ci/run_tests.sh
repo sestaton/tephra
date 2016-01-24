@@ -15,9 +15,9 @@ sudo cp hmmer-3.1b2-linux-intel-x86_64/binaries/* /usr/local/bin/
 
 perl Makefile.PL
 make
-prove -bv t/04-findtirs.t
+#prove -bv t/04-findtirs.t
 #prove -bv t/0[123]*t
-#make test
+make test
 #perl -Mblib blib/bin/tephra findltrs -c t/test_data/tephra_ltr_config.yml -g t/test_data/ref.fas -t t/test_data/trnas.fas -d t/test_data/te.hmm --clean
 #prove -bv t/01-findltrs.t
 
