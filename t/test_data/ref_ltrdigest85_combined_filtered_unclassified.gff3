@@ -1,0 +1,9 @@
+##gff-version   3
+##sequence-region   Contig57_HLAC-254L24 1 119871
+Contig57_HLAC-254L24	LTRharvest	repeat_region	4997	7096	.	+	.	ID=repeat_region1
+Contig57_HLAC-254L24	LTRharvest	target_site_duplication	4997	5000	.	+	.	Parent=repeat_region1	
+Contig57_HLAC-254L24	LTRharvest	LTR_retrotransposon	5001	7092	.	+	.	ID=LTR_retrotransposon1;Parent=repeat_region1;ltr_similarity=91.12;seq_number=0	
+Contig57_HLAC-254L24	LTRharvest	long_terminal_repeat	5001	5304	.	+	.	Parent=LTR_retrotransposon1	
+Contig57_HLAC-254L24	LTRdigest	protein_match	6283	6484	1.5e-10	+	.	Parent=LTR_retrotransposon1;name=ARID;reading_frame=1	
+Contig57_HLAC-254L24	LTRharvest	long_terminal_repeat	6789	7092	.	+	.	Parent=LTR_retrotransposon1	
+Contig57_HLAC-254L24	LTRharvest	target_site_duplication	7093	7096	.	+	.	Parent=repeat_region1	
