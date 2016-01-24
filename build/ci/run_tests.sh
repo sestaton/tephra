@@ -11,7 +11,7 @@ cd $dir
 
 wget http://eddylab.org/software/hmmer3/3.1b2/hmmer-3.1b2-linux-intel-x86_64.tar.gz
 tar xzf hmmer-3.1b2-linux-intel-x86_64.tar.gz
-cp hmmer-3.1b2-linux-intel-x86_64/binaries/* /usr/local/bin/
+sudo cp hmmer-3.1b2-linux-intel-x86_64/binaries/* /usr/local/bin/
 
 #echo "Contents of home: "
 #ls -la ~/
