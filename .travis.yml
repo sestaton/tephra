@@ -22,4 +22,4 @@ after_failure: cat /home/travis/.cpanm/build.log
 
 branches:
   only:
-    - hotfix/test_failures
+    - master
