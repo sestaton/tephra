@@ -23,6 +23,7 @@ The following commands will install the core dependencies (assuming Ubuntu/Debia
     sudo apt-get install -y -qq libncurses5 libncurses5-dev libdb-dev git cpanminus libexpat1 libexpat1-dev
 
 Now you can build and install the package with the following commands (note that the first two commands are for BioPerl, and these can be skipped if BioPerl is installed):
+    
     cpanm Data::Stag DB_File
     echo "n" | cpanm -n BioPerl
     cpanm git://github.com/sestaton/tephra.git
