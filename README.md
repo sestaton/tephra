@@ -7,20 +7,38 @@ Transposable Element Paleontology by Historical Reconstruction from Annotations
 
 Tephra is a command line application to annotate [transposable elements](http://en.wikipedia.org/wiki/Transposable_element) from a genome assembly. The goal is to provide a high quality set of de novo annotations for all transposon types, describe the structure and evolution of those sequences, and do it without a reference set of transposon sequences (therefore being unbiased as possible).
 
+**CURRENT STATUS** 
+
+Note that this project is under active development and a stable release has not been made yet. That means the output of certain commands may change or the commands themselves may change. Please check the [wiki](https://github.com/sestaton/tephra/wiki) for progress updates. 
+
 **DEPENDENCIES**
 
-Part of the utility of Tephra is to provide family-level TE classifications and infer patterns of molecular evoltion. To be efficient as possible, these tasks require a few external programs. Specifically, you will need to download [MUSCLE](http://http://drive5.com/muscle/) and [Vmatch](http://vmatch.de), both of which require a license so I cannot distribute them (but they are free). If you are only interested in TE identification, you can skip the need to download these programs. However, you do need to install [HMMER](http://hmmer.org/) version 3 and [EMBOSS](http://emboss.sourceforge.net/) at this time.
+Part of the utility of Tephra is to provide family-level TE classifications and infer patterns of molecular evoltion. To be efficient as possible, these tasks require a few external programs. Specifically, you will need to download [MUSCLE](http://http://drive5.com/muscle/) and [Vmatch](http://vmatch.de), both of which require a license so I cannot distribute them (but they are free). If you are only interested in TE identification, you can skip the need to download these programs. However, you do need to install [HMMER](http://hmmer.org/) version 3 (be sure to install the latest version because the version from most Linux package managers is too old) and [EMBOSS](http://emboss.sourceforge.net/) at this time.
 
 **INSTALLATION**
 
-After cloning the repo or downloading the latest release, the following commands will build and install the package:
+The following commands will install the core dependencies (assuming Ubuntu/Debian):
 
-    curl -sL cpanmin.us | perl - --installdeps .
+    sudo apt-get install -y -qq build-essential ncbi-blast+ emboss samtools zlib1g-dev 
+    sudo apt-get install -y -qq libncurses5 libncurses5-dev libdb-dev git cpanminus libexpat1 libexpat1-dev
+
+Now you can build and install the package with the following commands (note that the first two commands are for BioPerl, and these can be skipped if BioPerl is installed):
+    cpanm Data::Stag DB_File
+    echo "n" | cpanm -n BioPerl
+    cpanm git://github.com/sestaton/tephra.git
+
+Alternatively, download the latest release and run the following commands:
+
+    cpanm --installdeps .
     perl Makefile.PL
     make test
     make install
 
-The test step is not strictly necessary, but it is highly encouraged to ensure that everything is configured correctly.
+For developers, please run the tests with:
+
+    TEPHRA_ENV='development' make test
+
+As this project is still early in the development process, the installation may seem a bit tedious. I will soon expand the instructions to other systems and add a more automated install process (such as a single script), as well as make a container-based file available. Please report any test failures or installation issues with the [issue tracker](https://github.com/sestaton/tephra/issues).
 
 **SUPPORT AND DOCUMENTATION**
 
@@ -84,6 +102,10 @@ Typing a subcommand will show the usage of that command, for example:
 A manuscript is in preparation, which includes a description of the all the methods and their uses, a comparison to other programs, and results from model systems. These will be provided in some form ahead of publication, as soon as they are available.
 
 For now, please cite the github URL of this repo if you use Tephra. Thank you. 
+
+**CONTRIBUTING**
+
+I welcome any comments, bug reports, feature requests, or contributions to the development of the project. Please submit a new issue (preferred) or send me an email and I would be happy to talk about Tephra or transposons.
 
 **LICENSE AND COPYRIGHT**
 
