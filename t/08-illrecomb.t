@@ -13,6 +13,11 @@ use File::Spec;
 
 use Test::More tests => 8;
 
+my $devtests = 0;
+if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
+    $devtests = 1;
+}
+
 my $cmd       = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir   = File::Spec->catdir('t', 'test_data');
 my $outdir    = File::Spec->catdir($testdir, 't_family_domains');
@@ -21,7 +26,6 @@ my $allstfile = File::Spec->catfile($resdir, 'gypsy_illrecomb_stats.tsv');
 my $illstfile = File::Spec->catfile($resdir, 'gypsy_illrecomb_illrecstats.tsv');
 my $seqfile   = File::Spec->catfile($resdir, 'gypsy_illrecomb_seqs.fasta');
 my $genome    = File::Spec->catfile($testdir, 'ref.fas');
-my $devtests  = 0;
 
 SKIP: {
     skip 'skip development tests', 8 unless $devtests;

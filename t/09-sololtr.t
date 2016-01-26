@@ -13,6 +13,11 @@ use File::Spec;
 
 use Test::More tests => 8;
 
+my $devtests = 0;
+if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
+    $devtests = 1;
+}
+
 my $cmd       = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir   = File::Spec->catdir('t', 'test_data');
 my $outdir    = File::Spec->catdir($testdir, 't_family_domains');
@@ -25,7 +30,6 @@ my $seqfile   = File::Spec->catfile($modeldir,
 my $parsfile  = File::Spec->catfile($modeldir,
 				    'RLG_family0_exemplar_ltrs_clustal-out_ref_masked99_hmmer_parsed.txt');
 my $masked    = File::Spec->catfile($testdir, 'ref_masked99.fas');
-my $devtests  = 0;
 
 SKIP: {
     skip 'skip development tests', 8 unless $devtests;

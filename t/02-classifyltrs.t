@@ -15,13 +15,17 @@ use File::Spec;
 
 use Test::More tests => 4;
 
+my $devtests = 0;
+if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
+    $devtests = 1;
+}
+
 my $cmd      = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir  = File::Spec->catdir('t', 'test_data');
 my $outdir   = File::Spec->catfile($testdir, 't_family_domains');
 my $genome   = File::Spec->catfile($testdir, 'ref.fas');
 my $gff      = File::Spec->catfile($testdir, 'ref_ltrdigest85_combined_filtered.gff3');
 my $repeatdb = File::Spec->catfile($testdir, 'repdb.fas');
-my $devtests = 0;
 
 SKIP: {
     skip 'skip development tests', 4 unless $devtests;
