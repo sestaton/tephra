@@ -37,7 +37,7 @@ Alternatively, download the latest release and run the following commands:
 
 For developers, please run the tests with:
 
-    TEPHRA_ENV='development' make test
+    export TEPHRA_ENV='development' && make test
 
 As this project is still early in the development process, the installation may seem a bit tedious. I will soon expand the instructions to other systems and add a more automated install process (such as a single script), as well as make a container-based file available. Please report any test failures or installation issues with the [issue tracker](https://github.com/sestaton/tephra/issues).
 
