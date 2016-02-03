@@ -27,7 +27,7 @@ has basedir => (
     required => 0,
     coerce   => 1,
     default  => sub {
-	return Path::Class::Dir->new($ENV{HOME}, '.tephra')
+	return $ENV{TEPHRA_DIR} // Path::Class::Dir->new($ENV{HOME}, '.tephra')
     },
 );
 
