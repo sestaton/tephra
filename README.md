@@ -42,7 +42,7 @@ Please note, the above instructions will install Tephra for a single user. If yo
     make test
     make install
 
-will configure the software for all users. However, it will be necessary to set this variable prior to using Tephra so can find the configuration. In this case, just export the variable the same way:
+will configure the software for all users. However, it will be necessary to set this variable prior to using Tephra so the configuration can be found. In this case, just export the variable the same way:
 
     export TEPHRA_DIR=/usr/local/tephra
     tephra findltrs -h
