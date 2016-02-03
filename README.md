@@ -35,6 +35,18 @@ Alternatively, download the latest release and run the following commands:
     make test
     make install
 
+Please note, the above instructions will install Tephra for a single user. If you would like to configure Tephra to be installed for all users on a cluster, you will need to set the TEPHRA_DIR environment variable. For example,
+
+    export TEPHRA_DIR=/usr/local/tephra
+    perl Makefile.PL
+    make test
+    make install
+
+will configure the software for all users. However, it will be necessary to set this variable so can find the configuration. In this case, just export the variable the same way:
+
+    export TEPHRA_DIR=/usr/local/tephra
+    tephra findltrs -h
+
 For developers, please run the tests with:
 
     export TEPHRA_ENV='development' && make test
