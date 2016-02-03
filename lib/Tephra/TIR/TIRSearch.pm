@@ -49,7 +49,6 @@ sub tir_search {
     my $outfile = $self->outfile;
     my (%suf_args, %tirv_cmd);
 
-    #my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($samtools) = @{$config}{qw(samtools)};
 
@@ -81,7 +80,6 @@ sub _filter_tir_gff {
     my ($samtools, $gff, $fas) = @_;
     my $genome = $self->genome;
 
-    #my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name."_filtered.gff3");
     open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
@@ -156,7 +154,6 @@ sub _index_ref {
     my $self = shift;
     my $fasta = $self->genome;
     my ($samtools) = @_;
-    #my $samtools  = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
     my $faidx_cmd = "$samtools faidx $fasta";
     $self->run_cmd($faidx_cmd);
 }

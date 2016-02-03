@@ -660,7 +660,7 @@ sub _filter_compound_elements {
 sub _filterNpercent {
     my $self = shift;
     my ($source, $key, $fasta) = @_;
-    #my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($samtools) = @{$config}{qw(samtools)};
     my $n_perc = 0;
@@ -717,8 +717,6 @@ sub _get_source {
 sub _index_ref {
     my $self = shift;
     my ($samtools, $fasta) = @_;
-    #my $bgzip_cmd = "bgzip $fasta";
-    #my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
     my $faidx_cmd = "$samtools faidx $fasta";
     $self->run_cmd($faidx_cmd);
 }
