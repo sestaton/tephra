@@ -47,7 +47,7 @@ sub _run_nonltr_search {
     
     my $genome = $opt->{genome};
     my $outdir = $opt->{outdir};
-    my $pdir   = $opt->{pdir} // File::Spec->catdir($ENV{HOME}, '.tephra');
+    my $pdir   = $opt->{pdir} // $ENV{TEPHRA_DIR} // File::Spec->catdir($ENV{HOME}, '.tephra');
 
     my $nonltr_obj = Tephra::NonLTR::NonLTRSearch->new(
 	genome => $genome,
