@@ -90,8 +90,8 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] reduce LTRs/TRIMs....perhaps when combining all GFFs
  - [ ] save tnp matching ltr-rts and search for cacta tes..or just add as putative classII
  - [ ] add kmer mapping command (see tallymer2gff.pl)
- - [ ] create config role for setting paths
- - [ ] change config module to be an Install namespace
+ - [x] create config role for setting paths
+ - [x] change config module to be an Install namespace
  - [ ] add subcommand to merge all GFFs
  - [ ] handle compressed input/output
  - [ ] add fasta-handling classes from Transposome, which are faster than BioPerl
