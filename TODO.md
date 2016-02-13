@@ -42,11 +42,12 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] reporting of superfamilies after ltr search?.. better to do that at classification stage
  - [x] add options for LTR size parameters
  - [ ] add LTR_Finder
-   - Domain matches 
-     - [ ] adjust duplicate domain filtering to consider strand and range of matches
-     - [x] fix reporting of overlapping domain matches by LTRdigest? (issue reported: https://github.com/genometools/genometools/issues/706)
-     - [x] add e-value threshold option and domain filtering method 
  - [x] add config file to handle the multitude of LTR-RT constraints
+
+ - Domain matches 
+   - [ ] adjust duplicate domain filtering to consider strand and range of matches
+   - [x] fix reporting of overlapping domain matches by LTRdigest? (issue reported: https://github.com/genometools/genometools/issues/706)
+   - [x] add e-value threshold option and domain filtering method 
 
 ## Command `tephra findhelitrons`
  - [x] Find helitrons in reference sequences with HelitronScanner
