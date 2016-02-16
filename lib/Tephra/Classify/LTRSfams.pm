@@ -55,6 +55,18 @@ has gff => (
       coerce   => 1,
 );
 
+has blast_hit_length => (
+    is      => 'ro',
+    isa     => Int,
+    default => 80,
+);
+
+has blast_hit_pid => (
+    is      => 'ro',
+    isa     => Int,
+    default => 80,
+);
+
 #
 # methods
 #
@@ -228,6 +240,8 @@ sub search_unclassified {
 
 sub annotate_unclassified {
     my $self = shift;
+    my $hit_length = $self->blast_hit_length;
+    my $hit_pid    = $self->blast_hit_pid;
     my ($blast_out, $gypsy, $copia, $features, $ltr_rregion_map) = @_;
     open my $in, '<', $blast_out or die "\nERROR: Could not open file: $blast_out\n";
     my (%gypsy_re, %copia_re);
@@ -236,7 +250,7 @@ sub annotate_unclassified {
 	chomp;
 	my @f = split /\t/;
  
-	if ($f[2] >= 80 && $f[3] >= 80) { #make length and pid thresholds options
+	if ($f[2] >= $hit_pid && $f[3] >= $hit_length) {
 	    my ($family) = ($f[1] =~ /(^RL[GCX][_-][a-zA-Z]*\d*?)/);
 	    if (defined $family && $family =~ /^RLG/) {
 		$gypsy->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
