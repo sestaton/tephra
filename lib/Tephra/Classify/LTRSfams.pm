@@ -57,13 +57,13 @@ has gff => (
 
 has blast_hit_length => (
     is      => 'ro',
-    isa     => Int,
+    isa     => 'Int',
     default => 80,
 );
 
 has blast_hit_pid => (
     is      => 'ro',
-    isa     => Int,
+    isa     => 'Int',
     default => 80,
 );
 
