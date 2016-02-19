@@ -181,6 +181,12 @@ sub align_features {
     open my $log, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
     
     my $pm = Parallel::ForkManager->new($threads);
+    local $SIG{INT} = sub {
+        $log->warn("Caught SIGINT; Waiting for child processes to finish.");
+        $pm->wait_all_children;
+        exit 1;
+    };
+
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			      my $t1 = gettimeofday();
 			      my $elapsed = $t1 - $t0;
@@ -193,6 +199,7 @@ sub align_features {
 	for my $db (@{$args->{$type}{seqs}}) {
 	    $ltrrts++;
 	    $pm->start($db) and next;
+	    $SIG{INT} = sub { $pm->finish };
 	    $self->process_align_args($db, $resdir);
 
 	    $pm->finish(0);
