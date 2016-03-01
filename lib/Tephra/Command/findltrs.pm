@@ -13,15 +13,16 @@ use Tephra::LTR::LTRRefine;
 
 sub opt_spec {
     return (    
-	[ "config|c=s", "The Tephra LTR option configuration file " ],
-	[ "genome|g=s",     "The genome sequences in FASTA format to search for LTR-RTs "    ],
-	[ "trnadb|t=s",     "The file of tRNA sequences in FASTA format to search for PBS "  ], 
-	[ "hmmdb|d=s",      "The HMM db in HMMERv3 format to search for coding domains "     ],
-	[ "outfile|o=s",    "The final combined and filtered GFF3 file of LTR-RTs "          ],
-	[ "index|i=s",      "The suffixerator index to use for the LTR search "              ],
-	[ "dedup|r",        "Discard elements with duplicate coding domains (Default: no) "  ],
-	[ "tnpfilter",      "Discard elements containing transposase domains (Default: no) " ],
-	[ "clean",        "Clean up the index files (Default: yes) "                       ],
+	[ "config|c=s",  "The Tephra LTR option configuration file "                      ],
+	[ "genome|g=s",  "The genome sequences in FASTA format to search for LTR-RTs "    ],
+	[ "trnadb|t=s",  "The file of tRNA sequences in FASTA format to search for PBS "  ], 
+	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains "     ],
+	[ "outfile|o=s", "The final combined and filtered GFF3 file of LTR-RTs "          ],
+	[ "index|i=s",   "The suffixerator index to use for the LTR search "              ],
+	[ "dedup|r",     "Discard elements with duplicate coding domains (Default: no) "  ],
+	[ "tnpfilter",   "Discard elements containing transposase domains (Default: no) " ],
+	[ "clean",       "Clean up the index files (Default: yes) "                       ],
+	[ "debug",       "Show external command for debugging (Default: no) "             ],
     );
 }
 
@@ -130,6 +131,7 @@ sub _run_ltr_search {
     );
 
     $search_opts{clean} = $opt->{clean} // 0;
+    $search_opts{debug} = $opt->{debug} // 0;
 
     my $ltr_search = Tephra::LTR::LTRSearch->new(%search_opts);
     my $config     = $ltr_search->get_configuration;
@@ -166,7 +168,8 @@ Options:
     -i|index      :   The suffixerator index to use for the LTR search.
     -r|dedup      :   Discard elements with duplicate coding domains (Default: no).
     --tnpfilter   :   Discard elements containing transposase domains (Default: no).
-    -c|clean      :   Clean up the index files (Default: yes).
+    --clean       :   Clean up the index files (Default: yes).
+    --debug       :   Show external commands for debugging (Default: no).
 
 END
 }
@@ -274,9 +277,13 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
  Discard elements containing transposase domains (Default: no).
 
-=item -c, --clean
+=item --clean
 
  Clean up the index files (Default: yes).
+
+=item --debug
+
+ Show external commands for debugging (Default: no).
 
 =item -h, --help
 

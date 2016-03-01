@@ -66,15 +66,24 @@ has clean => (
     default  => 1,
 );
 
+has debug => (
+    is         => 'ro',
+    isa        => 'Bool',
+    predicate  => 'has_debug',
+    lazy       => 1,
+    default    => 0,
+);
+
 sub create_index {
     my $self = shift;
     my ($args) = @_;
-
+    my $debug = $self->debug;
     my $gt = $self->get_gt_exec;
     unshift @$args, 'suffixerator';
     unshift @$args, $gt;
     my $cmd = join qq{ }, @$args;
 
+    say STDERR $cmd if $debug;
     my ($stdout, $stderr, $exit);
     try {
 	system($cmd);
@@ -89,6 +98,7 @@ sub create_index {
 sub run_ltrharvest {
     my $self = shift;
     my ($args) = @_;
+    my $debug = $self->debug;
 
     my $gt = $self->get_gt_exec;
     my @ltrh_args;
@@ -101,10 +111,10 @@ sub run_ltrharvest {
     } 
 
     my $cmd = join qq{ }, @ltrh_args;
-    say STDERR $cmd; # and exit;
+    say STDERR $cmd if $debug; # and exit;
     try {
-	system($cmd);
-	#my @out = capture { system([0..5], $cmd) };
+	#system($cmd);
+	my @out = capture { system([0..5], $cmd) };
     }
     catch {
 	$log->error("LTRharvest failed. Here is the exception: $_\nExiting.");
@@ -115,6 +125,7 @@ sub run_ltrharvest {
 sub run_ltrdigest {
     my $self = shift;
     my ($args, $gff) = @_;
+    my $debug = $self->debug;
 
     my $gt = $self->get_gt_exec;
     my @ltrd_args;
@@ -126,10 +137,10 @@ sub run_ltrdigest {
     }
     
     my $cmd = join qq{ }, @ltrd_args, $gff;
-    say STDERR $cmd;
+    say STDERR $cmd if $debug;
     try {
-	system($cmd);
-	#my @out = capture { system([0..5], $cmd) };
+	#system($cmd);
+	my @out = capture { system([0..5], $cmd) };
     }
     catch {
 	$log->error("LTRdigest failed. Here is the exception: $_\nExiting.");
@@ -140,7 +151,7 @@ sub run_ltrdigest {
 sub run_tirvish {
     my $self = shift;
     my ($args, $gff) = @_;
-
+    my $debug = $self->debug;
     my $gt = $self->get_gt_exec;
     
     my @tirv_args;
@@ -152,6 +163,7 @@ sub run_tirvish {
     }
 
     my $cmd = join qq{ }, @tirv_args, ">", $gff;
+    say STDERR $cmd if $debug;
     try {
 	my @out = capture { system([0..5], $cmd) };
     }
@@ -164,13 +176,14 @@ sub run_tirvish {
 sub sort_gff {
     my $self = shift;
     my ($gff) = @_;
+    my $debug = $self->debug;
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $gff_sort = File::Spec->catfile($path, $name."_sort".$suffix);
     my $gt = $self->get_gt_exec;
 
     my $cmd = "$gt gff3 -sort $gff > $gff_sort";
-    #say STDERR $cmd;
+    say STDERR $cmd if $debug;
     try {
 	my @out = capture { system([0..5], $cmd) };
     }
