@@ -61,11 +61,11 @@ sub _calculate_soloLTR_abund {
     my $genome  = $opt->{genome};
     my $report  = $opt->{report};
     my $outfile = $opt->{outfile};
-    my $pid     = defined $opt->{percentident} ? $opt->{percentident} : 0.39;
-    my $pcov    = defined $opt->{percentcov} ? $opt->{percentcov} : 0.80;
-    my $len     = defined $opt->{matchlen} ? $opt->{matchlen} : 80;
-    my $seq     = defined $opt->{seq} ? 1 : 0;
-    my $clean   = defined $opt->{clean} ? 1 : 0;
+    my $pid     = $opt->{percentident} // 0.39;
+    my $pcov    = $opt->{percentcov} // 0.80;
+    my $len     = $opt->{matchlen} // 80;
+    my $seq     = $opt->{seq} // 0;
+    my $clean   = $opt->{clean} // 0;
 
     my $ill_obj = Tephra::Genome::SoloLTRSearch->new(
 	dir          => $dir,

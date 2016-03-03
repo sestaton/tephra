@@ -77,7 +77,7 @@ sub _run_trim_search {
     my $genome = $opt->{genome};
     my $hmmdb  = $opt->{hmmdb};
     my $trnadb = $opt->{trnadb};
-    my $clean  = defined $opt->{clean} ? $opt->{clean} : 0;
+    my $clean  = $opt->{clean} // 0;
     
     my $trim_search = Tephra::TRIM::TRIMSearch->new( 
 	genome => $genome, 
