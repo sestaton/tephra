@@ -19,9 +19,10 @@ use Time::HiRes qw(gettimeofday);
 use Parallel::ForkManager;
 use Cwd;
 use Try::Tiny;
+use Log::Any qw($log);
 use Tephra::Config::Exe;
 use namespace::autoclean;
-#use Data::Dump;
+use Data::Dump::Color;
 #use Data::Printer;
 
 with 'Tephra::Role::GFF',
@@ -162,10 +163,10 @@ sub align_features {
     my $outfile = $self->outfile;
 
     ## this will prevent problems until I redesign the parallelization issues
-    if ($threads > 1) {
-	say STDERR "\nWARNING: 'threads' option is experimental and only 1 thread will be used for now.";
-	$threads = 1;
-    }
+    #if ($threads > 1) {
+	#say STDERR "\nWARNING: 'threads' option is experimental and only 1 thread will be used for now.";
+	#$threads = 1;
+    #}
 
     my $resdir = File::Spec->catdir($dir, 'divergence_time_stats');
     
@@ -174,11 +175,12 @@ sub align_features {
     }
     
     my $args = $self->collect_feature_args($dir);
+    dd $args; ## debug
 
     my $t0 = gettimeofday();
     my $ltrrts = 0;
     my $logfile = File::Spec->catfile($dir, 'all_aln_reports.log');
-    open my $log, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
+    open my $logfh, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
     
     my $pm = Parallel::ForkManager->new($threads);
     local $SIG{INT} = sub {
@@ -188,11 +190,13 @@ sub align_features {
     };
 
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
+			      my $file = $$data_ref;
 			      my $t1 = gettimeofday();
 			      my $elapsed = $t1 - $t0;
 			      my $time = sprintf("%.2f",$elapsed/60);
-			      say $log basename($ident),
-			          " just finished with PID $pid and exit code: $exit_code in $time minutes";
+			      say $logfh basename($ident).
+			          " -> $file just finished with PID $pid and exit code: $exit_code ".
+				      "in $time minutes";
 			} );
 
     for my $type (keys %$args) {
@@ -202,7 +206,7 @@ sub align_features {
 	    $SIG{INT} = sub { $pm->finish };
 	    $self->process_align_args($db, $resdir);
 
-	    $pm->finish(0);
+	    $pm->finish(0, \$db);
 	}
     }
     $pm->wait_all_children;
@@ -233,8 +237,8 @@ sub align_features {
     my $total_elapsed = $t2 - $t0;
     my $final_time = sprintf("%.2f",$total_elapsed/60);
 
-    say $log "\n========> Finished calculating insertion time for $ltrrts LTR-RTs in $final_time minutes";
-    close $log;
+    say $logfh "\n========> Finished calculating insertion time for $ltrrts LTR-RTs in $final_time minutes";
+    close $logfh;
 
     return;
 }
