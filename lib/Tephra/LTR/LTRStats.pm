@@ -5,24 +5,24 @@ use Moose;
 use MooseX::Types::Path::Class;
 use Statistics::Descriptive;
 use Sort::Naturally;
-use List::MoreUtils qw(indexes any);
-use File::Path qw(make_path remove_tree);
-use File::Copy qw(move copy);
 use File::Spec;
 use File::Find;
 use File::Basename;
+use File::Path      qw(make_path remove_tree);
+use File::Copy      qw(move copy);
+use List::MoreUtils qw(indexes any);
+use Time::HiRes     qw(gettimeofday);
+use Log::Any        qw($log);
 use Bio::SeqIO;
 use Bio::AlignIO;
 use Bio::TreeIO;
 use Bio::Tools::GFF;
-use Time::HiRes qw(gettimeofday);
 use Parallel::ForkManager;
 use Cwd;
 use Try::Tiny;
-use Log::Any qw($log);
 use Tephra::Config::Exe;
 use namespace::autoclean;
-use Data::Dump::Color;
+#use Data::Dump::Color;
 #use Data::Printer;
 
 with 'Tephra::Role::GFF',
@@ -106,7 +106,6 @@ sub extract_ltr_features {
 	}
     }
 
-    #dd \%ltrs and exit;
     my %pdoms;
     my $ltrct = 0;
     for my $ltr (sort keys %ltrs) {
@@ -162,12 +161,6 @@ sub align_features {
     my $threads = $self->threads;
     my $outfile = $self->outfile;
 
-    ## this will prevent problems until I redesign the parallelization issues
-    #if ($threads > 1) {
-	#say STDERR "\nWARNING: 'threads' option is experimental and only 1 thread will be used for now.";
-	#$threads = 1;
-    #}
-
     my $resdir = File::Spec->catdir($dir, 'divergence_time_stats');
     
     unless ( -d $resdir ) {
@@ -175,7 +168,6 @@ sub align_features {
     }
     
     my $args = $self->collect_feature_args($dir);
-    dd $args; ## debug
 
     my $t0 = gettimeofday();
     my $ltrrts = 0;
@@ -194,9 +186,7 @@ sub align_features {
 			      my $t1 = gettimeofday();
 			      my $elapsed = $t1 - $t0;
 			      my $time = sprintf("%.2f",$elapsed/60);
-			      say $logfh basename($ident).
-			          " -> $file just finished with PID $pid and exit code: $exit_code ".
-				      "in $time minutes";
+			      say $logfh basename($ident)," just finished with PID $pid and exit code: $exit_code in $time minutes";
 			} );
 
     for my $type (keys %$args) {
@@ -249,7 +239,7 @@ sub process_baseml_args {
 
     my $cwd = getcwd();
     my ($pname, $ppath, $psuffix) = fileparse($phy, qr/\.[^.]*/);
-    my $divfile = File::Spec->catfile($ppath, $pname."-divergence.txt");
+    my $divfile = File::Spec->catfile($ppath, $pname.'-divergence.txt');
     $divfile = basename($divfile);
 
     my $divergence = $self->_check_divergence($phy);
@@ -269,7 +259,7 @@ sub process_baseml_args {
 	say $divout join "\t", basename($phy), $divergence , '0', '0';
 	close $divout;
 	my $dest_file = File::Spec->catfile($resdir, $divfile);
-	copy($divfile, $dest_file) or die "\nERROR: Move failed: $!";
+	copy($divfile, $dest_file) or die "\nERROR: Copy failed: $!";
     }
 }
 
@@ -278,14 +268,19 @@ sub process_align_args {
     my ($db, $resdir) = @_;
 
     my ($name, $path, $suffix) = fileparse($db, qr/\.[^.]*/);
-    my $tre = File::Spec->catfile($path, $name.".dnd");
-    my $aln = File::Spec->catfile($path, $name."_clustal-out.aln");
-    my $dnd = File::Spec->catfile($path, $name."_clustal-out.dnd");
-    my $log = File::Spec->catfile($path, $name."_clustal-out.log");
+    my $pdir = File::Spec->catdir($path, $name.'_pamltmp');
+    make_path( $pdir, {verbose => 0, mode => 0771,} );
+
+    my $fas = File::Spec->catfile($pdir, $name.$suffix);
+    copy($db, $fas) or die "\nERROR: Copy failed: $!";
+    my $tre = File::Spec->catfile($pdir, $name.'.dnd');
+    my $aln = File::Spec->catfile($pdir, $name.'_clustal-out.aln');
+    my $dnd = File::Spec->catfile($pdir, $name.'_clustal-out.dnd');
+    my $log = File::Spec->catfile($pdir, $name.'_clustal-out.log');
 
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($clustalw2) = @{$config}{qw(clustalw)};
-    my $clwcmd = "$clustalw2 -infile=$db -outfile=$aln 2>$log";
+    my $clwcmd = "$clustalw2 -infile=$fas -outfile=$aln 2>$log";
     $self->capture_cmd($clwcmd);
     my $phy = $self->parse_aln($aln, $tre, $dnd);
     $self->process_baseml_args($phy, $dnd, $resdir);
@@ -298,7 +293,7 @@ sub parse_aln {
     my ($aln, $tre, $dnd) = @_;
 
     my ($name, $path, $suffix) = fileparse($aln, qr/\.[^.]*/);
-    my $phy = File::Spec->catfile($path, $name.".phy");
+    my $phy = File::Spec->catfile($path, $name.'.phy');
     
     my $aln_in  = Bio::AlignIO->new(-file  => $aln,    -format => 'clustalw');
     my $aln_out = Bio::AlignIO->new(-file  => ">$phy", -format => 'phylip', -flag_SI => 1, -idlength => 20);

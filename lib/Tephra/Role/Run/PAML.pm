@@ -3,14 +3,15 @@ package Tephra::Role::Run::PAML;
 use 5.010;
 use Moose::Role;
 use MooseX::Types::Path::Class;
-use IPC::System::Simple qw(system);
-use Capture::Tiny       qw(capture);
-use Try::Tiny;
-use File::Copy qw(move copy);
 use File::Spec;
 use File::Find;
 use File::Basename;
-use Log::Any        qw($log);
+use Try::Tiny;
+use Capture::Tiny       qw(capture);
+use IPC::System::Simple qw(system);
+use File::Path          qw(remove_tree);
+use File::Copy          qw(move copy);
+use Log::Any            qw($log);
 use Cwd;
 use Tephra::Config::Exe;
 use namespace::autoclean;
@@ -83,12 +84,12 @@ sub create_baseml_files {
     my ($args) = @_;
     my $phy = $args->{phylip};
     my $dnd = $args->{treefile};
-    my $seqfile = basename($phy);
+    my $seqfile  = basename($phy);
     my $treefile = basename($dnd);
     
     my $cwd = getcwd();
     my ($pname, $ppath, $psuffix) = fileparse($phy, qr/\.[^.]*/);
-    my $outfile  = $pname."-paml.out";
+    my $outfile = $pname.'-paml.out';
     
     my $ctl_file = "      seqfile = $seqfile
      treefile = $treefile
@@ -119,7 +120,7 @@ sub create_baseml_files {
 *  fix_blength = -1  * 0: ignore, -1: random, 1: initial, 2: fixed
        method = 0  * Optimization method 0: simultaneous; 1: one branch a time";
 
-    my $control_file = File::Spec->catfile($ppath, "baseml.ctl");
+    my $control_file = File::Spec->catfile($ppath, 'baseml.ctl');
     open my $out, '>', $control_file or die "\nERROR: Could not open file: $control_file\n";
     print $out $ctl_file;
     close $out;
@@ -139,10 +140,11 @@ sub parse_baseml {
     my $control_file    = $args->{control_file};
     my $results_dir     = $args->{results_dir};
 
-    #my $divfile = basename($divergence_file);
     my $out = basename($outfile);
     my $wd  = getcwd();
-    
+    my $dirobj = Path::Class::Dir->new($wd);
+    my $parent = $dirobj->parent;
+
     open my $divin, '<', $out or die "ERROR: Could not open outfile: $out\n";
     open my $divout, '>', $divergence_file or die "ERROR: Could not open divergence file: $divergence_file\n";
 
@@ -164,14 +166,10 @@ sub parse_baseml {
     close $divout;
 
     my $resdir = basename($results_dir);
-    my $dest_file = File::Spec->catfile($resdir, $divergence_file);
+    my $dest_file = File::Spec->catfile($parent, $resdir, $divergence_file);
     copy($divergence_file, $dest_file) or die "\nERROR: Move failed: $!";
-    unlink basename($control_file);
-
-    if ($self->clean) {
-	# Remove the PAML output but keep the summary produced in a separate directory.
-	unlink "2base.t", "rub", "rst", "rst1", "lnf", "rates", "in.basemlg", $divergence_file, $out;
-    }
+    chdir $parent or die $!;
+    remove_tree($wd, { safe => 1 });
     
     return;
 }
