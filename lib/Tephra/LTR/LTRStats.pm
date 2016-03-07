@@ -22,7 +22,7 @@ use Try::Tiny;
 use Log::Any qw($log);
 use Tephra::Config::Exe;
 use namespace::autoclean;
-use Data::Dump::Color;
+#use Data::Dump::Color;
 #use Data::Printer;
 
 with 'Tephra::Role::GFF',
