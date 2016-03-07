@@ -13,6 +13,7 @@ requires 'Log::Any';
 requires 'Try::Tiny';
 requires 'Capture::Tiny';
 requires 'HTTP::Tiny';
+requires 'YAML::Tiny';
 requires 'HTML::TreeBuilder';
 requires 'autodie';
 #requires 'Net::FTP';
