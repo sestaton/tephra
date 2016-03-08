@@ -16,6 +16,7 @@ sub opt_spec {
 	[ "outfile|o=s", "The final combined and filtered GFF3 file of TIRs "         ],
 	[ "index|i=s",   "The suffixerator index to use for the TIR search "          ],
 	[ "clean",       "Clean up the index files (Default: yes) "                   ],
+	[ "debug",       "Show external command for debugging (Default: no) "         ],
     );
 }
 
@@ -51,7 +52,8 @@ sub _run_tir_search {
     my $hmmdb   = $opt->{hmmdb};
     my $index   = $opt->{index};
     my $outfile = $opt->{outfile};
-    my $clean   = defined $opt->{clean} ? $opt->{clean} : 0;
+    my $clean   = $opt->{clean} // 0;
+    my $debug   = $opt->{debug} // 0;
 
     my @indexfiles;
     if (defined $index) {
@@ -69,7 +71,8 @@ sub _run_tir_search {
 	genome  => $genome, 
 	outfile => $outfile,
 	hmmdb   => $hmmdb,
-	clean   => $clean 
+	clean   => $clean,
+	debug   => $debug,
     );
 
     unless (defined $index && @indexfiles == 7) {
@@ -99,7 +102,8 @@ Required:
 Options:
     -o|outfile    :   The final combined GFF3 file of TIRs.
     -i|index      :   The suffixerator index to use for the TIR search.
-    -c|clean      :   Clean up the index files (Default: yes).
+    --clean       :   Clean up the index files (Default: yes).
+    --debug       :   Show external commands for debugging (Default: no).
 
 END
 }
@@ -152,9 +156,13 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
  The suffixerator index to use for the LTR search.
 
-=item -c, --clean
+=item --clean
 
  Clean up the index files (Default: yes).
+
+=item --debug
+
+ Show external commands for debugging (Default: no).
 
 =item -h, --help
 

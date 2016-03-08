@@ -58,9 +58,9 @@ sub _calculate_ltr_stats {
     my $genome    = $opt->{genome};
     my $gff       = $opt->{gff};
     my $outfile   = $opt->{outfile};
-    my $subs_rate = defined $opt->{subs_rate} ? $opt->{subs_rate} : 1e-8;
-    my $threads   = defined $opt->{threads} ? $opt->{threads} : 1;
-    my $clean     = defined $opt->{clean} ? 1 : 0;
+    my $subs_rate = $opt->{subs_rate} // 1e-8;
+    my $threads   = $opt->{threads} // 1;
+    my $clean     = $opt->{clean} // 0;
 
     my $stats_obj = Tephra::LTR::LTRStats->new(
 	genome    => $genome,
@@ -85,7 +85,7 @@ sub help {
   Required:
       -g|genome     :   The genome sequences in FASTA format used to search for LTR-RTs.
       -f|gff        :   The GFF3 file of LTR-RTs in <--genome>.
-      -o|outdir     :   The output directory for placing categorized elements.
+      -o|outfile    :   The output file containing the age of each element.
     
   Options:
       -r|subs_rate  :   The nucleotide substitution rate to use (Default: 1e-8).

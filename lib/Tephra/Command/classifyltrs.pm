@@ -14,11 +14,13 @@ use File::Spec;
 
 sub opt_spec {
     return (    
-	[ "genome|g=s",   "The genome sequences in FASTA format used to search for LTR-RTs "   ],
-	[ "repeatdb|d=s", "The file of repeat sequences in FASTA format to use for classification " ], 
-	[ "gff|f=s",      "The GFF3 file of LTR-RTs in <genome> "    ],
-	[ "outdir|o=s",   "The output directory for placing categorized elements " ],
-	[ "threads|t=i",  "The number of threads to use for clustering coding domains " ],
+	[ "genome|g=s",     "The genome sequences in FASTA format used to search for LTR-RTs "                 ],
+	[ "repeatdb|d=s",   "The file of repeat sequences in FASTA format to use for classification "          ], 
+	[ "hitlength|l=i",  "The alignment length cutoff for BLAST hits to the repeat database (Default: 80) " ],
+	[ "percentid|p=i",  "The percent identity cutoff for BLAST hits to the repeat database (Default: 80) " ],
+	[ "gff|f=s",        "The GFF3 file of LTR-RTs in <genome> "                                            ],
+	[ "outdir|o=s",     "The output directory for placing categorized elements "                           ],
+	[ "threads|t=i",    "The number of threads to use for clustering coding domains "                      ],
     );
 }
 
@@ -54,7 +56,7 @@ sub _classify_ltr_predictions {
     my $repeatdb = $opt->{repeatdb};
     my $gff      = $opt->{gff};
     my $outdir   = $opt->{outdir};
-    my $threads  = defined $opt->{threads} ? $opt->{threads} : 1;
+    my $threads  = $opt->{threads} // 1;
 
     unless ( -d $outdir ) {
 	make_path( $outdir, {verbose => 0, mode => 0771,} );
@@ -131,6 +133,9 @@ Required:
 
 Options:
     -t|threads    :   The number of threads to use for clustering coding domains (Default: 1).    
+    -l|hitlength  :   The alignment length cutoff for BLAST hits to the repeat database (Default: 80).
+    -p|percentid  :   The percent identity cutoff for BLAST hits to the repeat database (Default: 80).
+
 
 END
 }
@@ -187,6 +192,14 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =item -t, --threads
 
  The number of threads to use for clustering coding domains (Default: 1).
+
+=item -l, --hitlength
+
+ The alignment length cutoff for BLAST hits to the repeat database (Default: 80). For samples where you do not have a repeat database from a closely related species, it may help to lower this value to increase the number of classified elements.
+
+=item -p, --percentid
+
+ The percent identity cutoff for BLAST hits to the repeat database (Default: 80). For samples where you do not have a repeat database from a closely related species, it may help to lower this value to increase the number of classified elements.
 
 =item -h, --help
 

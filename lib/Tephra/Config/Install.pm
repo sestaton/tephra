@@ -12,7 +12,6 @@ use File::Basename;
 use Path::Class::File;
 use HTML::TreeBuilder;
 use HTTP::Tiny;
-use Net::FTP;
 use Log::Any qw($log);
 use Tephra::Config::Exe;
 use namespace::autoclean;
@@ -36,7 +35,7 @@ has basedir => (
     required => 0,
     coerce   => 1,
     default  => sub {
-	return Path::Class::Dir->new($ENV{HOME}, '.tephra')
+	return $ENV{TEPHRA_DIR} // Path::Class::Dir->new($ENV{HOME}, '.tephra')
     },
 );
 
@@ -240,7 +239,7 @@ sub fetch_hmmer2 {
     my $root = $self->basedir;
     my $wd   = $self->workingdir;
     
-    my $urlbase = 'http://selab.janelia.org'; 
+    my $urlbase = 'http://eddylab.org'; 
     my $dir     = 'software';
     my $tool    = 'hmmer';
     my $version = '2.3.2';
@@ -370,8 +369,9 @@ sub fetch_emboss {
     my $file    = 'EMBOSS-6.5.7.tar.gz';
     my $url     = join "/", $urlbase, $dir, $tool, $release, $version, $file;
     my $outfile = File::Spec->catfile($root, $file);
-    $self->fetch_file($outfile, $url);
 
+    system("wget -q -O $outfile $url 2>&1 > /dev/null") == 0
+	or die $!;
     chdir $root;
     my $dist = 'EMBOSS-6.5.7';
     system("tar xzf $file") == 0 or die "tar failed: $!";

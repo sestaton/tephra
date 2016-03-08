@@ -55,7 +55,6 @@ sub _fasta_to_gff {
     my $outdir = $self->outdir;
     my ($seqs) = @_;
 
-    #my $samtools  = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($samtools) = @{$config}{qw(samtools)};
     my $name = basename($outdir);
@@ -169,7 +168,6 @@ sub _collate {
 sub _index_ref {
     my $self = shift;
     my ($samtools, $fasta) = @_;
-    #my $samtools  = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
     my $faidx_cmd = "$samtools faidx $fasta";
     $self->run_cmd($faidx_cmd);
 }

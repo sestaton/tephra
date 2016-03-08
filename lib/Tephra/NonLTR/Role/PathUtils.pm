@@ -22,7 +22,6 @@ our $VERSION = '0.01';
 $VERSION = eval $VERSION;
 
 sub find_hmmsearch {
-    #my $hmmsearch = File::Spec->catfile($ENV{HOME}, '.tephra', 'hmmer-2.3.2', 'bin', 'hmmsearch');
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($hmmerbin) = @{$config}{qw(hmmerbin)};
     my $hmmsearch = File::Spec->catfile($hmmerbin, 'hmmsearch');

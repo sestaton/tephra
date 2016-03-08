@@ -16,6 +16,7 @@ use List::Util          qw(sum max);
 use Path::Class::File;
 use Try::Tiny;
 use Cwd;
+use Tephra::Config::Exe;
 use namespace::autoclean;
 
 with 'Tephra::Role::GFF',
@@ -66,7 +67,7 @@ sub find_tc1_mariner {
     my $pdom_org;
     my @all_pdoms;
 
-    my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    my $samtools = $self->_get_samtools;
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name."_tc1-mariner.gff3");
     my $fas     = File::Spec->catfile($path, $name."_tc1-mariner.fasta");
@@ -179,8 +180,8 @@ sub find_hat {
     my %pdom_index;
     my $pdom_org;
     my @all_pdoms;
-    
-    my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+
+    my $samtools = $self->_get_samtools;
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name."_hAT.gff3");
     my $fas     = File::Spec->catfile($path, $name."_hAT.fasta");
@@ -285,7 +286,7 @@ sub find_mutator {
     my $pdom_org;
     my @all_pdoms;
 
-    my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    my $samtools = $self->_get_samtools;
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name."_mutator.gff3");
     my $fas     = File::Spec->catfile($path, $name."_mutator.fasta");
@@ -392,7 +393,7 @@ sub find_cacta {
     my $pdom_org;
     my @all_pdoms;
     
-    my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    my $samtools = $self->_get_samtools;
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name."_cacta.gff3");
     my $fas     = File::Spec->catfile($path, $name."_cacta.fasta");
@@ -410,7 +411,7 @@ sub find_cacta {
 	my ($id, $tmp_elem, $lines);
 	for my $feat (@{$feature->{$tir}}) {
 	    my @feats = split /\|\|/, $feat;
-	    $feats[8] =$self->_format_attribute($feats[8]);
+	    $feats[8] = $self->_format_attribute($feats[8]);
 	    if ($feats[2] =~ /protein_match/) {
 		$has_pdoms = 1;
 		my ($doms) = ($feats[8] =~ /name=\"?(\w+)\"?/);
@@ -507,7 +508,7 @@ sub write_unclassified_tirs {
     my $pdom_org;
     my @all_pdoms;
 
-    my $samtools = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    my $samtools = $self->_get_samtools;
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name."_unclassified.gff3");
     my $fas     = File::Spec->catfile($path, $name."_unclassified.fasta");
@@ -587,7 +588,7 @@ sub write_unclassified_tirs {
 sub index_ref {
     my $self = shift;
     my $fasta = $self->genome;
-    my $samtools  = File::Spec->catfile($ENV{HOME}, '.tephra', 'samtools-1.2', 'samtools');
+    my $samtools  = $self->_get_samtools;
     my $faidx_cmd = "$samtools faidx $fasta";
     $self->run_cmd($faidx_cmd);
 }
@@ -605,6 +606,15 @@ sub store_seq {
     }
 
     return $lines;
+}
+
+sub _get_samtools {
+    my $self = shift;
+
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($samtools) = @{$config}{qw(samtools)};
+
+    return $samtools;
 }
 
 sub _format_attribute {

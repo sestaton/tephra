@@ -9,21 +9,25 @@ use Capture::Tiny       qw(capture);
 use File::Path          qw(remove_tree);
 use File::Find;
 use File::Spec;
-use Data::Dump;
+#use Data::Dump;
 
 use Test::More tests => 2;
+
+my $devtests = 0;
+if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
+    $devtests = 1;
+}
 
 my $cmd     = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir = File::Spec->catdir('t', 'test_data');
 my $genome  = File::Spec->catfile($testdir, 'Ha1.fa');
 my $outdir  = File::Spec->catdir($testdir, 'nonltrdata');
-my $devtest = 0;
 
 my @results = capture { system([0..5], "$cmd findnonltrs -h") };
 ok( @results, 'Can execute findnonltrs subcommand' );
 
 SKIP: {
-    skip 'skip lengthy tests', 1 unless $devtest;
+    skip 'skip lengthy tests', 1 unless $devtests;
     my $find_cmd = "$cmd findnonltrs -g $genome";
     say STDERR $find_cmd;
 

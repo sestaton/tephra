@@ -38,7 +38,6 @@ sub find_nonltrs {
     #my $genome_dir    = $self->fastadir;
     my $program_dir   = $self->pdir;
     my $genome = $self->genome;
-    #$program_dir //= File::Spec->catdir($ENV{HOME}, '.tephra');
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($phmm_dir) = @{$config}{qw(modeldir)};
 

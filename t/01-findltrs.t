@@ -25,12 +25,13 @@ my @results = capture { system([0..5], "$cmd findltrs -h") };
 ok(@results, 'Can execute findltrs subcommand');
 
 my $find_cmd = "$cmd findltrs -c $config -g $genome -t $trnas -d $model --clean";
-say STDERR $find_cmd;
+#say STDERR $find_cmd;
 
 my ($stdout, $stderr, @ret) = capture { system([0..5], $find_cmd) };
       
 my @files;
 find( sub { push @files, $File::Find::name if /\.gff3$/ }, $testdir);
+
 ok( @files == 3, 'Can find some ltrs' ); # 2 ltrdigest files + combined file
 
 my $combined;

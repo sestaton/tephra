@@ -26,6 +26,6 @@ ltrdigest:
   - pbsoffset:      0 5
   - pbstrnaoffset:  0 5
   - pbsmaxeditdist: 1
-  - pdomevalue:     10E-6
+  - pdomevalue:     1E-6
   - pdomcutoff:     NONE
   - maxgaplen:      50

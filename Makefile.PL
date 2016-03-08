@@ -42,7 +42,7 @@ WriteMakefile(
 	'Capture::Tiny'              => 0,
 	'HTTP::Tiny'                 => 0,
 	'HTML::TreeBuilder'          => 0,
-	'Net::FTP'                   => 0,
+	'autodie'                    => 0,
     },
     INST_SCRIPT => 'blib/bin',
     EXE_FILES   => [ 'bin/tephra', 'bin/tephra-getphmm' ],
