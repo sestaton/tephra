@@ -9,7 +9,7 @@ Tephra is a command line application to annotate [transposable elements](http://
 
 **CURRENT STATUS** 
 
-Note that this project is under active development and a stable release has not been made yet. That means the output of certain commands may change or the commands themselves may change. Please check the [wiki](https://github.com/sestaton/tephra/wiki) for progress updates. 
+Please check the [wiki](https://github.com/sestaton/tephra/wiki) for progress updates. 
 
 **DEPENDENCIES**
 
