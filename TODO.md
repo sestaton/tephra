@@ -24,12 +24,12 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Create GFF with SO terms of solo-LTRs
  - [ ] parallelize hmmsearch to speed things up. likely this is faster than multiple cpus for one model at time
  - [x] check if input directory exists
- - [ ] make sure to set path to correct version of hmmer
+ - [x] make sure to set path to correct version of hmmer
 
 ## Command `tephra classifytirs`
  - [x] Classify 'best' TIR elements into superfamilies based on domain content, TSD, and/or motif
  - [x] Group TIR elements into families based on TIR similarity 
- - [ ] in tests, skip if empty output (none found). This is not a good test honestly, need a new reference
+ - [x] in tests, skip if empty output (none found). This is not a good test honestly, need a new reference
  - [ ] write fasta of each superfamily, and combined library
 
 ## Command `tephra findltrs` 
