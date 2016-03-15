@@ -48,6 +48,14 @@ has repeatdb => (
     coerce   => 1,
 );
 
+has threads => (
+    is        => 'ro',
+    isa       => 'Int',
+    predicate => 'has_threads',
+    lazy      => 1,
+    default   => 1,
+);
+
 has gff => (
       is       => 'ro',
       isa      => 'Path::Class::File',
@@ -220,6 +228,7 @@ sub search_unclassified {
     my $self = shift;
     my ($unc_fas) = @_;
     my $repeatdb = $self->repeatdb;
+    my $threads  = $self->threads;
     my $blastdb  = $self->_make_blastdb($repeatdb);
 
     my ($bname, $bpath, $bsuffix) = fileparse($unc_fas, qr/\.[^.]*/);
@@ -230,7 +239,7 @@ sub search_unclassified {
     my $blastn     =  File::Spec->catfile($blastbin, 'blastn');
 
     my $blastcmd = "$blastn -dust no -query $unc_fas -evalue 10 -db $blastdb ".
-	"-outfmt 6 -num_threads 12 | sort -nrk12,12 | sort -k1,1 -u > $outfile";
+	"-outfmt 6 -num_threads $threads | sort -nrk12,12 | sort -k1,1 -u > $outfile";
 
     $self->run_cmd($blastcmd);
     unlink glob("$blastdb*");
@@ -243,29 +252,23 @@ sub annotate_unclassified {
     my $hit_length = $self->blast_hit_length;
     my $hit_pid    = $self->blast_hit_pid;
     my ($blast_out, $gypsy, $copia, $features, $ltr_rregion_map) = @_;
+
+    my $family_map = $self->_map_repeat_types();
     open my $in, '<', $blast_out or die "\nERROR: Could not open file: $blast_out\n";
     my (%gypsy_re, %copia_re);
 
-    while (<$in>) {
-	chomp;
-	my @f = split /\t/;
+    while (my $line = <$in>) {
+	chomp $line;
+	my @f = split /\t/, $line;
  
 	if ($f[2] >= $hit_pid && $f[3] >= $hit_length) {
-	    my ($family) = ($f[1] =~ /(^RL[GCX][_-][a-zA-Z]*\d*?)/);
-	    if (defined $family && $family =~ /^RLG/) {
-		$gypsy->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
-		delete $features->{ $ltr_rregion_map->{$f[0]} };
-	    }
-	    elsif (defined $family && $family =~ /^RLC/) {
-		$copia->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
-		delete $features->{ $ltr_rregion_map->{$f[0]} };
-	    }
-	    else {
-		if ($f[1] =~ /gyp/i) {
+	    if (exists $family_map->{$f[1]}) {
+		my $sf = $family_map->{$f[1]};
+		if ($sf =~ /^rlg|gypsy/i) {
 		    $gypsy->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
 		    delete $features->{ $ltr_rregion_map->{$f[0]} };
 		}
-		if ($f[1] =~ /cop/i) {
+		elsif ($sf =~ /^rlc|copia/i) {
 		    $copia->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
 		    delete $features->{ $ltr_rregion_map->{$f[0]} };
 		}
@@ -519,6 +522,31 @@ sub write_unclassified {
     say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
 
     return $outfile;
+}
+
+sub _map_repeat_types {
+    my $self = shift;
+    my $repeatdb = $self->repeatdb;
+    my %family_map;
+
+    open my $in, '<', $repeatdb or die "\nERROR: Could not open file: $repeatdb\n";
+
+    while (my $line = <$in>) {
+        chomp $line;
+        if ($line =~ /^>/) {
+            $line =~ s/>//;
+            my ($f, $sf, $source)  = split /\t/, $line;
+            next unless defined $sf && defined $f;
+            if ($sf =~ /(\s+)/) {
+                $sf =~ s/$1/\_/;
+            }
+            $f =~ s/\s/\_/;
+            $family_map{$f} = $sf;
+        }
+    }
+    close $in;
+
+    return \%family_map;
 }
 
 sub _make_blastdb {

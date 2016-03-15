@@ -65,16 +65,17 @@ sub _classify_ltr_predictions {
     my $classify_obj = Tephra::Classify::LTRSfams->new( 
 	genome   => $genome, 
 	repeatdb => $repeatdb, 
-	gff      => $gff 
+	gff      => $gff,
+	threads  => $threads,
     );
 
     my ($header, $features) = $classify_obj->collect_gff_features($gff);
-
     my ($gypsy, $copia) = $classify_obj->find_gypsy_copia($features);
-    my ($unc_fas, $ltr_rregion_map) = $classify_obj->find_unclassified($features);
 
+    my ($unc_fas, $ltr_rregion_map) = $classify_obj->find_unclassified($features);
     my $blast_out = $classify_obj->search_unclassified($unc_fas);
     $classify_obj->annotate_unclassified($blast_out, $gypsy, $copia, $features, $ltr_rregion_map);
+
     my $gyp_gff = $classify_obj->write_gypsy($gypsy, $header);
     my $cop_gff = $classify_obj->write_copia($copia, $header);
     my $unc_gff = $classify_obj->write_unclassified($features, $header);
