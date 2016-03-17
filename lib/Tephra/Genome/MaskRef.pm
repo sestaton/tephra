@@ -18,11 +18,11 @@ Tephra::Genome::MaskRef - Mask a reference with repeats to reduce false positive
 
 =head1 VERSION
 
-Version 0.02
+Version 0.02.1
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.02.1';
 $VERSION = eval $VERSION;
 
 has genome => (
