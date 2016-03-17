@@ -1,6 +1,10 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.02.2
+
+- Fix GO term IDs modified incorrectly during version change.
+
 0.02.1	03/17/16	Vancouver, BC
 
 - Changes to fix threading issue with ltrage command.
