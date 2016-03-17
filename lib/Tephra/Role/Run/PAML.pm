@@ -152,7 +152,7 @@ sub parse_baseml {
 	chomp $line;
 	if ($line =~ /^[35]prime?|unknown-[lr]?\s+/) {
 	    if ($line =~ /(\d+\.\d+)\(\s?(\-?\d+\.\d+)\)/) {
-		# 3prime_Ung         0.02.169( 8.7752)
+		# 3prime_Ung         0.0269( 8.7752)
 		my $divergence_time = $1;
 		my $kappa = $2;
 		my $time = $divergence_time/($subs_rate * 2);
