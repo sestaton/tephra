@@ -52,7 +52,7 @@ sub _run_masking {
     my $genome   = $opt->{genome};
     my $repeatdb = $opt->{repeatdb};
     my $outfile  = $opt->{outfile};
-    my $clean    = defined $opt->{clean} ? $opt->{clean} : 0;
+    my $clean    = $opt->{clean} // 0;
 
     my $mask_obj = Tephra::Genome::MaskRef->new( 
 	genome   => $genome, 

@@ -1,6 +1,25 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.02	03/15/16	Vancouver, BC
+
+- Fix threading issue with ltrage command to allow running search in parallel.
+- Improve annotation of unclassifed LTR elements.
+- Add option for installation/configuration in any location.
+- Add configuration for 'findltrs' command to facilitate finding elements in a broader number of species.
+- Add sighandler for BLAST processes.
+- Add separate Install/Config classes for easily getting configuration information.
+- Add options for controlling the thresholds of matches when annotation LTR elements.
+- Add debug option for seeing the external commands that were executed.
+- Add 'development' option for skipping long-running commands that require software that I cannot distribute.
+- Set up Travis-CI for automated testing. This works efficiently because we are now using pre-built binaries and a pre-configured
+  Tephra root directory.
+
+- Add option for substitution rate for ltrage command.
+- Add multiple options for controlling the stringency of matches that are counted as real for the sololtrs command.
+- Add output of a single collated report from ltrage command instead of individual reports for each element.
+- Change input for findnonltrs command from directory of individual sequences to the more convenient multi-FASTA format.
+
 0.01	12/24/15	Vancouver, BC
 
 - Initial release.

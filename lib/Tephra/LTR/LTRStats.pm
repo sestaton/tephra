@@ -20,6 +20,7 @@ use Bio::Tools::GFF;
 use Parallel::ForkManager;
 use Cwd;
 use Try::Tiny;
+use Log::Any qw($log);
 use Tephra::Config::Exe;
 use namespace::autoclean;
 #use Data::Dump::Color;
@@ -35,11 +36,11 @@ Tephra::LTR::LTRStats - Calculate the age distribution of LTR retrotransposons
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 $VERSION = eval $VERSION;
 
 has genome => (
@@ -168,6 +169,7 @@ sub align_features {
     }
     
     my $args = $self->collect_feature_args($dir);
+    #dd $args; ## debug
 
     my $t0 = gettimeofday();
     my $ltrrts = 0;

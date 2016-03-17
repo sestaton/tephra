@@ -73,4 +73,5 @@ SKIP: {
     #remove_tree( $outdir, { safe => 1 } );
 };
 
+unlink $gff;
 done_testing();
