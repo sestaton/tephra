@@ -1,9 +1,12 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.02.1	03/17/16	Vancouver, BC
+
+- Changes to fix threading issue with ltrage command.
+
 0.02	03/15/16	Vancouver, BC
 
-- Fix threading issue with ltrage command to allow running search in parallel.
 - Improve annotation of unclassifed LTR elements.
 - Add option for installation/configuration in any location.
 - Add configuration for 'findltrs' command to facilitate finding elements in a broader number of species.
