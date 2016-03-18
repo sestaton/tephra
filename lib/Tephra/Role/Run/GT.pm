@@ -127,6 +127,10 @@ sub run_ltrdigest {
     my ($args, $gff) = @_;
     my $debug = $self->debug;
 
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($hmmer3bin) = @{$config}{qw(hmmer3bin)};
+    $ENV{PATH} = join ':', $ENV{PATH}, $hmmer3bin;
+
     my $gt = $self->get_gt_exec;
     my @ltrd_args;
     push @ltrd_args, "$gt ltrdigest";
@@ -153,7 +157,11 @@ sub run_tirvish {
     my ($args, $gff) = @_;
     my $debug = $self->debug;
     my $gt = $self->get_gt_exec;
-    
+
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($hmmer3bin) = @{$config}{qw(hmmer3bin)};
+    $ENV{PATH} = join ':', $ENV{PATH}, $hmmer3bin;
+
     my @tirv_args;
     push @tirv_args, "$gt tirvish";
     for my $opt (keys %$args) {

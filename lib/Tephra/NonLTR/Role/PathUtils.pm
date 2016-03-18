@@ -23,8 +23,8 @@ $VERSION = eval $VERSION;
 
 sub find_hmmsearch {
     my $config = Tephra::Config::Exe->new->get_config_paths;
-    my ($hmmerbin) = @{$config}{qw(hmmerbin)};
-    my $hmmsearch = File::Spec->catfile($hmmerbin, 'hmmsearch');
+    my ($hmmer2bin) = @{$config}{qw(hmmer2bin)};
+    my $hmmsearch   = File::Spec->catfile($hmmer2bin, 'hmmsearch');
 
     if (-e $hmmsearch && -x $hmmsearch) {
         return $hmmsearch;

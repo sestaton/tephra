@@ -305,10 +305,10 @@ sub _collate {
 sub _find_hmmer {
     my $self = shift; 
 
-    my $config     = Tephra::Config::Exe->new->get_config_paths;
-    my ($hmmerbin) = @{$config}{qw(hmmerbin)};
-    my $hmmbuild   = File::Spec->catfile($hmmerbin, 'hmmbuild');
-    my $hmmsearch  = File::Spec->catfile($hmmerbin, 'hmmsearch');
+    my $config      = Tephra::Config::Exe->new->get_config_paths;
+    my ($hmmer2bin) = @{$config}{qw(hmmer2bin)};
+    my $hmmbuild    = File::Spec->catfile($hmmer2bin, 'hmmbuild');
+    my $hmmsearch   = File::Spec->catfile($hmmer2bin, 'hmmsearch');
 
     if (-e $hmmbuild && -x $hmmbuild &&
 	-e $hmmsearch && -x $hmmsearch) {
