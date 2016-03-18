@@ -13,7 +13,7 @@ Please check the [wiki](https://github.com/sestaton/tephra/wiki) for progress up
 
 **DEPENDENCIES**
 
-Part of the utility of Tephra is to provide family-level TE classifications and infer patterns of molecular evoltion. To be efficient as possible, these tasks require a few external programs. Specifically, you will need to download [MUSCLE](http://http://drive5.com/muscle/) and [Vmatch](http://vmatch.de), both of which require a license so I cannot distribute them (but they are free). If you are only interested in TE identification, you can skip the need to download these programs.
+Part of the utility of Tephra is to provide family-level TE classifications and infer patterns of molecular evoltion. To be efficient as possible, these tasks require a few external programs. Specifically, you will need to download [MUSCLE](http://http://drive5.com/muscle/) and [Vmatch](http://vmatch.de) and add the PATH to these programs. Both of these programs are free, but they have a special license so I cannot distribute them. If you are only interested in TE identification, you can skip the installation of these programs.
 
 **INSTALLATION**
 
@@ -25,8 +25,7 @@ The following commands will install the core dependencies for Debian-based syste
 For RHEL-based systems (e.g., CentOS/Fedora):
 
     sudo yum groupinstall -y "Development Tools"
-    sudo yum install -y perl-App-cpanminus
-    sudo yum install -y ncurses ncurses-devel libdb-devel expat expat-devel zlib-devel
+    sudo yum install -y perl-App-cpanminus ncurses ncurses-devel libdb-devel expat expat-devel zlib-devel
 
 Now you can build and install the package with the following commands (note that the first two commands are for BioPerl, and these can be skipped if BioPerl is installed):
     
@@ -48,7 +47,7 @@ Please note, the above instructions will install Tephra for a single user. If yo
     make test
     make install
 
-will configure the software for all users. **Please note that it if Tephra is configured in a custom location this way it will be necessary to set this variable prior to using Tephra so the configuration can be found.** In this case, just export the variable the same way. For a regular user, this can be done with a single line as below (note that this is the same command used to install/configure Tephra):
+will configure the software for all users. Please note that if Tephra is configured in a custom location this way it will be necessary to set this variable prior to using Tephra so the configuration can be found. In this case, just export the variable the same way. For a regular user, this can be done with a single line as below (note that this is the same command used to install/configure Tephra):
 
     export TEPHRA_DIR=/usr/local/tephra
 
