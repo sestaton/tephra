@@ -21,11 +21,11 @@ Tephra::Hel::HelSearch - Find Helitrons in a reference genome
 
 =head1 VERSION
 
-Version 0.02.1
+Version 0.02.2
 
 =cut
 
-our $VERSION = '0.02.1';
+our $VERSION = '0.02.2';
 $VERSION = eval $VERSION;
 
 sub find_helitrons {

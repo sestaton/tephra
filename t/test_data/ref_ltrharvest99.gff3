@@ -1,0 +1,24 @@
+##gff-version   3
+##sequence-region   Contig57_HLAC-254L24 1 119871
+Contig57_HLAC-254L24	LTRharvest	repeat_region	60096	68658	.	?	.	ID=repeat_region1
+Contig57_HLAC-254L24	LTRharvest	target_site_duplication	60096	60100	.	?	.	Parent=repeat_region1
+Contig57_HLAC-254L24	LTRharvest	inverted_repeat	60101	60102	.	?	.	Parent=repeat_region1
+Contig57_HLAC-254L24	LTRharvest	LTR_retrotransposon	60101	68653	.	?	.	ID=LTR_retrotransposon1;Parent=repeat_region1;ltr_similarity=99.35;seq_number=0
+Contig57_HLAC-254L24	LTRharvest	long_terminal_repeat	60101	61950	.	?	.	Parent=LTR_retrotransposon1
+Contig57_HLAC-254L24	LTRharvest	long_terminal_repeat	66803	68653	.	?	.	Parent=LTR_retrotransposon1
+Contig57_HLAC-254L24	LTRharvest	inverted_repeat	61949	61950	.	?	.	Parent=repeat_region1
+Contig57_HLAC-254L24	LTRharvest	inverted_repeat	66803	66804	.	?	.	Parent=repeat_region1
+Contig57_HLAC-254L24	LTRharvest	inverted_repeat	68652	68653	.	?	.	Parent=repeat_region1
+Contig57_HLAC-254L24	LTRharvest	target_site_duplication	68654	68658	.	?	.	Parent=repeat_region1
+###
+Contig57_HLAC-254L24	LTRharvest	repeat_region	74475	85454	.	?	.	ID=repeat_region2
+Contig57_HLAC-254L24	LTRharvest	target_site_duplication	74475	74479	.	?	.	Parent=repeat_region2
+Contig57_HLAC-254L24	LTRharvest	inverted_repeat	74480	74481	.	?	.	Parent=repeat_region2
+Contig57_HLAC-254L24	LTRharvest	LTR_retrotransposon	74480	85449	.	?	.	ID=LTR_retrotransposon2;Parent=repeat_region2;ltr_similarity=99.52;seq_number=0
+Contig57_HLAC-254L24	LTRharvest	long_terminal_repeat	74480	77168	.	?	.	Parent=LTR_retrotransposon2
+Contig57_HLAC-254L24	LTRharvest	long_terminal_repeat	82762	85449	.	?	.	Parent=LTR_retrotransposon2
+Contig57_HLAC-254L24	LTRharvest	inverted_repeat	77167	77168	.	?	.	Parent=repeat_region2
+Contig57_HLAC-254L24	LTRharvest	inverted_repeat	82762	82763	.	?	.	Parent=repeat_region2
+Contig57_HLAC-254L24	LTRharvest	inverted_repeat	85448	85449	.	?	.	Parent=repeat_region2
+Contig57_HLAC-254L24	LTRharvest	target_site_duplication	85450	85454	.	?	.	Parent=repeat_region2
+###
