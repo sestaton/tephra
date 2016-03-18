@@ -4,6 +4,8 @@ Version	Date	Location
 0.02.2
 
 - Fix GO term IDs modified incorrectly during version change.
+- Add HMMERv3 to configuration to avoid version issues (HMMERv3 from package manager is too old)
+  and to simplify installation for the user.
 
 0.02.1	03/17/16	Vancouver, BC
 
