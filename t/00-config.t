@@ -10,7 +10,7 @@ use File::Copy qw(move);
 use File::Path qw(make_path);
 use Tephra::Config::Exe;
 
-use Test::More tests => 15;
+use Test::More tests => 16;
 
 BEGIN {
     use_ok( 'Tephra' ) || print "Bail out!\n";
@@ -23,24 +23,26 @@ my $cmd = File::Spec->catfile('blib', 'bin', 'tephra');
 ok( -x $cmd, 'Can execute tephra' );
 
 my $config = Tephra::Config::Exe->new->get_config_paths;
-my ($gt, $hscan, $hmmbin, $moddir, $chrdir, $mgescan, $trans, $clw, $pamlbin, $transeq, $sam, $blast)
-    = @{$config}{qw(gt hscanjar hmmerbin modeldir hmmdir mgescan transcmd clustalw pamlbin transeq samtools blastpath)};
+my ($gt, $hscan, $hmm2bin, $hmm3bin, $moddir, $chrdir, $mgescan, $trans, $clw, $pamlbin, $transeq, $sam, $blast)
+    = @{$config}{qw(gt hscanjar hmmer2bin hmmer3bin modeldir hmmdir mgescan transcmd clustalw pamlbin transeq samtools blastpath)};
 
-my $hmmsearch = File::Spec->catfile($hmmbin, 'hmmsearch');
-my $blastn    = File::Spec->catfile($blast,  'blastn');
+my $hmm2search = File::Spec->catfile($hmm2bin, 'hmmsearch');
+my $hmm3search = File::Spec->catfile($hmm3bin, 'hmmsearch');
+my $blastn     = File::Spec->catfile($blast,  'blastn');
 
-ok( -x $gt,        'Can execute gt for testing' );
-ok( -e $hscan,     'Can execute HelitronScanner for testing' );
-ok( -x $hmmsearch, 'Can execute hmmsearch' );
-ok( -e $moddir,    'Configured pHMM dir for non-LTR search' );
-ok( -e $chrdir,    'Configured HMM dir for non-LTR search' );
-ok( -e $mgescan,   'Can build custom MGEScan for non-LTR search' );
-ok( -e $trans,     'Can build translate command for non-LTR search' );
-ok( -e $clw,       'Can build clustalw for alignments' );
-ok( -e $pamlbin,   'Can build paml for analyzing LTR demography' );
-ok( -e $transeq,   'Can build transeq for identify coding domains' );
-ok( -e $sam,       'Can build samtools for indexing functions' );
-ok( -e $blastn,    'Can build blastn for sequence searches' );
+ok( -x $gt,         'Can execute gt for testing' );
+ok( -e $hscan,      'Can execute HelitronScanner for testing' );
+ok( -x $hmm2search, 'Can execute HMMERv2 hmmsearch' );
+ok( -x $hmm3search, 'Can execute HMMERv3 hmmsearch' );
+ok( -e $moddir,     'Configured pHMM dir for non-LTR search' );
+ok( -e $chrdir,     'Configured HMM dir for non-LTR search' );
+ok( -e $mgescan,    'Can build custom MGEScan for non-LTR search' );
+ok( -e $trans,      'Can build translate command for non-LTR search' );
+ok( -e $clw,        'Can build clustalw for alignments' );
+ok( -e $pamlbin,    'Can build paml for analyzing LTR demography' );
+ok( -e $transeq,    'Can build transeq for identify coding domains' );
+ok( -e $sam,        'Can build samtools for indexing functions' );
+ok( -e $blastn,     'Can build blastn for sequence searches' );
 
 done_testing();
 
