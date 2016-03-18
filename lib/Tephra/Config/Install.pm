@@ -62,9 +62,14 @@ sub configure_root {
 	print STDERR ".";
     }
     
-    unless (-e $config->{hmmerbin}) {
-	$config->{hmmerbin} = $self->fetch_hmmer2;
+    unless (-e $config->{hmmer2bin}) {
+	$config->{hmmer2bin} = $self->fetch_hmmer2;
 	print STDERR ".";
+    }
+    
+    unless (-e $config->{hmmer3bin}) {
+        $config->{hmmer3bin} = $self->fetch_hmmer3;
+        print STDERR ".";
     }
     
     unless (-e $config->{modeldir}) {
@@ -259,12 +264,39 @@ sub fetch_hmmer2 {
 	or die "make failed: $!";
     system("make install 2>&1 >/dev/null") == 0
 	 or die "make failed: $!";
-    my $hmmbin = File::Spec->catdir($cwd, 'bin');
-    my $distfile = File::Spec->catfile($root, $file);
+    my $hmmer2bin = File::Spec->catdir($cwd, 'bin');
+    my $distfile  = File::Spec->catfile($root, $file);
     unlink $distfile;
     chdir $wd;
     
-    return $hmmbin;
+    return $hmmer2bin;
+}
+
+sub fetch_hmmer3 {
+    my $self = shift;
+    my $root = $self->basedir;
+    my $wd   = $self->workingdir;
+    
+    my $urlbase = 'http://eddylab.org'; 
+    my $dir     = 'software';
+    my $tool    = 'hmmer3';
+    my $version = '3.1b2';
+    my $file    = 'hmmer-3.1b2-linux-intel-x86_64.tar.gz';
+    my $url     = join "/", $urlbase, $dir, $tool, $version, $file;
+    my $outfile = File::Spec->catfile($root, $file);
+    $self->fetch_file($outfile, $url);
+
+    chdir $root;
+    my $dist = 'hmmer-3.1b2-linux-intel-x86_64';
+    system("tar xzf $file") == 0 or die "tar failed: $!";
+    chdir $dist;
+    my $cwd = getcwd();
+    my $hmmer3bin = File::Spec->catdir($cwd, 'binaries');
+    my $distfile  = File::Spec->catfile($root, $file);
+    unlink $distfile;
+    chdir $wd;
+    
+    return $hmmer3bin;
 }
 
 sub fetch_clustalw2 {
