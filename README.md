@@ -13,14 +13,20 @@ Please check the [wiki](https://github.com/sestaton/tephra/wiki) for progress up
 
 **DEPENDENCIES**
 
-Part of the utility of Tephra is to provide family-level TE classifications and infer patterns of molecular evoltion. To be efficient as possible, these tasks require a few external programs. Specifically, you will need to download [MUSCLE](http://http://drive5.com/muscle/) and [Vmatch](http://vmatch.de), both of which require a license so I cannot distribute them (but they are free). If you are only interested in TE identification, you can skip the need to download these programs. However, you do need to install [HMMER](http://hmmer.org/) version 3 (be sure to install the latest version because the version from most Linux package managers is too old) and [EMBOSS](http://emboss.sourceforge.net/) at this time.
+Part of the utility of Tephra is to provide family-level TE classifications and infer patterns of molecular evoltion. To be efficient as possible, these tasks require a few external programs. Specifically, you will need to download [MUSCLE](http://http://drive5.com/muscle/) and [Vmatch](http://vmatch.de), both of which require a license so I cannot distribute them (but they are free). If you are only interested in TE identification, you can skip the need to download these programs.
 
 **INSTALLATION**
 
-The following commands will install the core dependencies (assuming Ubuntu/Debian):
+The following commands will install the core dependencies for Debian-based systems (e.g., Ubuntu):
 
-    sudo apt-get install -y -qq build-essential ncbi-blast+ emboss samtools zlib1g-dev 
+    sudo apt-get install -y -qq build-essential zlib1g-dev 
     sudo apt-get install -y -qq libncurses5 libncurses5-dev libdb-dev git cpanminus libexpat1 libexpat1-dev
+
+For RHEL-based systems (e.g., CentOS/Fedora):
+
+    sudo yum groupinstall -y "Development Tools"
+    sudo yum install -y perl-App-cpanminus
+    sudo yum install -y ncurses ncurses-devel libdb-devel expat expat-devel zlib-devel
 
 Now you can build and install the package with the following commands (note that the first two commands are for BioPerl, and these can be skipped if BioPerl is installed):
     
@@ -42,9 +48,12 @@ Please note, the above instructions will install Tephra for a single user. If yo
     make test
     make install
 
-will configure the software for all users. However, it will be necessary to set this variable prior to using Tephra so the configuration can be found. In this case, just export the variable the same way:
+will configure the software for all users. **Please note that it if Tephra is configured in a custom location this way it will be necessary to set this variable prior to using Tephra so the configuration can be found.** In this case, just export the variable the same way. For a regular user, this can be done with a single line as below (note that this is the same command used to install/configure Tephra):
 
     export TEPHRA_DIR=/usr/local/tephra
+
+Now you can type any command to use the usage, for example:
+
     tephra findltrs -h
 
 For developers, please run the tests with:
