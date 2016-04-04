@@ -19,11 +19,11 @@ Tephra::NonLTR::GFFWriter - Take results from non-LTR search and make an annotat
 
 =head1 VERSION
 
-Version 0.02.2
+Version 0.02.3
 
 =cut
 
-our $VERSION = '0.02.2';
+our $VERSION = '0.02.3';
 $VERSION = eval $VERSION;
 
 has fastadir => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
