@@ -160,14 +160,16 @@ sub fetch_hscan {
     my $root = $self->basedir;
     my $wd   = $self->workingdir;
     
-    my $host = 'http://sourceforge.net';
-    my $dir  = 'projects/helitronscanner/files/HelitronScanner_V1.0.zip/download';
+    my $host = 'https://sourceforge.net';
+    my $dir  = 'projects/helitronscanner/files/HelitronScanner_V1.0.zip';
     my $ldir = File::Spec->catdir($root, 'helitronscanner');
     make_path( $ldir, {verbose => 0, mode => 0771,} );
-    my $file = 'HelitronScanner.zip';
+    my $file = 'HelitronScanner_V1.0.zip';
     my $path = File::Spec->catfile($ldir, $file);
-    $self->fetch_file($path, $host."/".$dir);
+    #$self->fetch_file($path, $host."/".$dir);
+    my $remote = join "/", $host, $dir;
     chdir $ldir or die $!;
+    system("wget -q $remote") == 0 or die $!;
     system("unzip $file 2>&1 > /dev/null") == 0 or die $!;
     
     my $cwd   = getcwd();
@@ -182,13 +184,15 @@ sub fetch_samtools {
     my $root = $self->basedir;
     my $wd   = $self->workingdir;
 
-    my $host = 'http://sourceforge.net';
-    my $dir  = 'projects/samtools/files/samtools/1.2/samtools-1.2.tar.bz2/download';
+    my $host = 'https://sourceforge.net';
+    my $dir  = 'projects/samtools/files/samtools/1.2/samtools-1.2.tar.bz2';
     my $file = 'samtools-1.2.tar.bz2';
-    my $path = File::Spec->catfile($root, $file);
+    my $remote = join "/", $host, $dir;
+    #my $path = File::Spec->catfile($root, $file);
     chdir $root or die $!;
 
-    $self->fetch_file($path, $host."/".$dir);
+    #$self->fetch_file($path, $host."/".$dir);
+    system("wget -q $remote") == 0 or die $!;
     system("tar xjf $file 2>&1 > /dev/null") == 0 or die $!;
     unlink $file if -e $file;
 
