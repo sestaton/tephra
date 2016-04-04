@@ -1,7 +1,11 @@
 Revision history for Tephra
 
 Version	Date	Location
-0.02.2
+0.02.3	04/04/16	Vancouver, BC
+
+- Bug fix for getting URL of deps from sourceforge (which has changed).
+
+0.02.2	  03/17/16    Vancouver, BC
 
 - Fix GO term IDs modified incorrectly during version change.
 - Add HMMERv3 to configuration to avoid version issues (HMMERv3 from package manager is too old)
