@@ -140,6 +140,8 @@ sub parse_baseml {
     my $control_file    = $args->{control_file};
     my $results_dir     = $args->{results_dir};
 
+    my $element = basename($phylip);
+    $element =~ s/_ltrs_clustal-out.*//;
     my $out = basename($outfile);
     my $wd  = getcwd();
     my $dirobj = Path::Class::Dir->new($wd);
@@ -158,7 +160,7 @@ sub parse_baseml {
 		my $time = $divergence_time/($subs_rate * 2);
 		
 		# alignID divergence age Ts:Tv
-		say $divout join "\t", basename($phylip), $divergence_time, $time, $kappa;
+		say $divout join "\t", $element, $divergence_time, $time, $kappa;
 	    }
 	}
     }
