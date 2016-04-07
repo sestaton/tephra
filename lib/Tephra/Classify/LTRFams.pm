@@ -5,22 +5,22 @@ use Moose;
 use MooseX::Types::Path::Class;
 use Statistics::Descriptive;
 use Sort::Naturally;
-use List::MoreUtils qw(indexes any);
-use List::Util qw(min max);
 use File::Spec;
 use File::Find;
 use File::Basename;
 use Bio::SeqIO;
 use Bio::Tools::GFF;
 use Number::Range;
-use Time::HiRes qw(gettimeofday);
-use File::Path  qw(make_path);
+use List::MoreUtils qw(indexes any);
+use List::Util      qw(min max);
+use Time::HiRes     qw(gettimeofday);
+use File::Path      qw(make_path);
 use Parallel::ForkManager;
 use Cwd;
 use Try::Tiny;
 use Tephra::Config::Exe;
 use namespace::autoclean;
-#use Data::Dump::Color;
+use Data::Dump::Color;
 
 with 'Tephra::Role::GFF',
      'Tephra::Role::Util';
@@ -449,8 +449,6 @@ sub subseq {
     $self->run_cmd($cmd);
 
     my $id = join "_", $elem, $loc, $start, $end;
-    #say STDERR join q{ }, "debug:", $id, $fasta, $tmp;
-
     if (-s $tmp) {
 	my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
 	while (my $seqobj = $seqio->next_seq) {
@@ -541,16 +539,19 @@ sub parse_clusters {
     #dd \%dom_orgs;
 
     my $idx = 0;
-    my %fastas;
+    my (%fastas, %annot_ids);
     for my $str (reverse sort { @{$dom_orgs{$a}} <=> @{$dom_orgs{$b}} } keys %dom_orgs) {
 	my $famfile = $sf."_family$idx".".fasta";
 	my $outfile = File::Spec->catfile($cpath, $famfile);
 	open my $out, '>>', $outfile;
 	for my $elem (@{$dom_orgs{$str}}) {
 	    if (exists $seqstore->{$elem}) {
-		$seqstore->{$elem} =~ s/.{60}\K/\n/g;
-		say $out join "\n", ">$sfname"."_family$idx"."_$elem", $seqstore->{$elem};
+		my $coordsh = $seqstore->{$elem};
+		my $coords  = (keys %$coordsh)[0];
+		$seqstore->{$elem}{$coords} =~ s/.{60}\K/\n/g;
+		say $out join "\n", ">$sfname"."_family$idx"."_$elem"."_$coords", $seqstore->{$elem}{$coords};
 		delete $seqstore->{$elem};
+		$annot_ids{$elem} = $sfname."_family$idx";
 	    }
 	    else {
 		die "\nERROR: $elem not found in store. Exiting.";
@@ -560,21 +561,25 @@ sub parse_clusters {
 	$idx++;
 	$fastas{$outfile} = 1;
     }
+    $idx = 0;
 
     if (%$seqstore) {
 	my $famxfile = $sf."_singleton_families.fasta";
 	my $xoutfile = File::Spec->catfile($cpath, $famxfile);
 	open my $outx, '>', $xoutfile;
-	for my $k (keys %$seqstore) {
-	    my $seq = $seqstore->{$k};
-	    $seq =~ s/.{60}\K/\n/g;
-	    say $outx join "\n", ">$sfname"."_singleton_family_$k", $seq;
+	for my $k (nsort keys %$seqstore) {
+	    my $coordsh  = $seqstore->{$k};
+	    my $coords = (keys %$coordsh)[0];
+	    $seqstore->{$k}{$coords} =~ s/.{60}\K/\n/g;
+	    say $outx join "\n", ">$sfname"."_singleton_family$idx"."_$k"."_$coords", $seqstore->{$k}{$coords};
+	    $annot_ids{$k} = $sfname."_singleton_family$idx";
+	    $idx++;
 	}
 	close $outx;
 	$fastas{$xoutfile} = 1;
     }
 
-    return \%fastas;
+    return (\%fastas, \%annot_ids);
 }
 
 sub combine_families {
@@ -599,6 +604,44 @@ sub combine_families {
     close $outfile;
 }
 
+sub annotate_gff {
+    my $self = shift;
+    my ($annot_ids, $gff) = @_;
+    my $outdir = $self->outdir;
+
+    my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
+    my $outfile = File::Spec->catfile($outdir, $name.'_families.gff3');
+    open my $in, '<', $gff or die "\nERROR: Could not open file: $gff\n";
+    open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+
+    while (my $line = <$in>) {
+	chomp $line;
+	if ($line =~ /^#/) {
+	    say $out $line;
+	}
+	else {
+	    my @f = split /\t/, $line;
+	    if ($f[2] eq 'LTR_retrotransposon') {
+		my ($id) = ($f[8] =~ /ID=(LTR_retrotransposon\d+);/);
+		my $key  = $id."_$f[0]";
+		if (exists $annot_ids->{$key}) {
+		    my $family = $annot_ids->{$key};
+		    $f[8] =~ s/ID=$id\;/ID=$id;Family=$family;/;
+		    say $out join "\t", @f;
+		}
+		else {
+		    say $out join "\t", @f;
+		}
+	    }
+	    else {
+		say $out join "\t", @f;
+	    }
+	}
+    }
+    close $in;
+    close $out;
+}
+
 sub _store_seq {
     my $self = shift;
     my ($file) = @_;
@@ -607,9 +650,10 @@ sub _store_seq {
     my $seqio = Bio::SeqIO->new( -file => $file, -format => 'fasta' );
     while (my $seqobj = $seqio->next_seq) {
 	my $id  = $seqobj->id;
-	$id =~ s/_\d+-?_?\d+$//;
+	my ($coords) = ($id =~ /_(\d+-?_?\d+$)/);
+	$id =~ s/_$coords//;
 	my $seq = $seqobj->seq;
-	$hash{$id} = $seq;
+	$hash{$id} = { $coords => $seq };
     }
 
     return \%hash;
