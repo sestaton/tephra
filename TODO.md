@@ -9,7 +9,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Create FASTA files of exemplars for each LTR-RT family
  - [x] clean up logs and intermediate files from vmatch (dbluster-*)
  - [x] combine domain organization from both strands (if the same)?
- - [ ] add family classifications to GFF Name attribute and update with age
+ - [x] add family classifications to GFF Name attribute
  - [ ] incorporate legacy annotations from input GFF/reference to family classification
  - [x] merge overlapping hits in chain of protein matches, and contatenate the rest for each element
 
@@ -37,9 +37,9 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Filter elements by quality score, retaining the best elements
  - [x] Generate combined GFF3 of high-quality LTR-RTs
  - [x] Check for index (if given)
- - [ ] change header format to be ">id_source_range"
- - [ ] adjust filtering command to not increment if element has been deleted (inflated filtering stats)
- - [ ] reporting of superfamilies after ltr search?.. better to do that at classification stage
+ - [x] change header format to be ">id_source_range"
+ - [x] adjust filtering command to not increment if element has been deleted (inflated filtering stats)
+ - [x] reporting of superfamilies after ltr search?.. better to do that at classification stage
  - [x] add options for LTR size parameters
  - [ ] add LTR_Finder
  - [x] add config file to handle the multitude of LTR-RT constraints
@@ -77,6 +77,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Calculate age for each LTR-RT
  - [x] Take substitution rate as an option
  - [x] check if input directory exists
+ - [ ] write age to GFF file
 
 ## Command `tephra maskref`
  - [x] Generate masked reference from custom repeat library 
@@ -86,7 +87,7 @@ This file is for logging feature requests and bugs during development. Hopefully
 
 ## Meta
  - [ ] logging results/progress
- - [ ] add debug options for seeing commands
+ - [ ] add debug options for seeing commands (done for LTR search)
  - [ ] documentation of algorithms, in addition to usage
  - [ ] reduce LTRs/TRIMs....perhaps when combining all GFFs
  - [ ] save tnp matching ltr-rts and search for cacta tes..or just add as putative classII
