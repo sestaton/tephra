@@ -88,19 +88,21 @@ sub _classify_ltr_predictions {
 
     my $gyp_dir = $classify_fams_obj->extract_features($gyp_gff);
     my $gyp_clusters = $classify_fams_obj->cluster_features($gyp_dir);
-    my $gyp_fams = $classify_fams_obj->parse_clusters($gyp_clusters);
+    my ($gyp_fams, $gyp_ids) = $classify_fams_obj->parse_clusters($gyp_clusters);
     
     my $cop_dir = $classify_fams_obj->extract_features($cop_gff);
     my $cop_clusters = $classify_fams_obj->cluster_features($cop_dir);
-    my $cop_fams = $classify_fams_obj->parse_clusters($cop_clusters);
+    my ($cop_fams, $cop_ids) = $classify_fams_obj->parse_clusters($cop_clusters);
     
     my $unc_dir = $classify_fams_obj->extract_features($unc_gff);
     my $unc_clusters = $classify_fams_obj->cluster_features($unc_dir);
-    my $unc_fams = $classify_fams_obj->parse_clusters($unc_clusters);
+    my ($unc_fams, $unc_ids) = $classify_fams_obj->parse_clusters($unc_clusters);
 
-    my %outfiles;
-    @outfiles{keys %$_} = values %$_ for ($gyp_fams, $cop_fams, $unc_fams);
+    my (%outfiles, %annot_ids);
+    @outfiles{keys %$_}  = values %$_ for ($gyp_fams, $cop_fams, $unc_fams);
+    @annot_ids{keys %$_} = values %$_ for ($gyp_ids, $cop_ids, $unc_ids);
     $classify_fams_obj->combine_families(\%outfiles);
+    $classify_fams_obj->annotate_gff(\%annot_ids, $gff);
 
     my $gyp_exm_obj = Tephra::LTR::MakeExemplars->new(
 	genome => $genome,
@@ -117,6 +119,7 @@ sub _classify_ltr_predictions {
     );
 
     my ($cop_exem_comp, $cop_exem_lts) = $cop_exm_obj->make_exemplars;
+    unlink $gyp_gff, $cop_gff, $unc_gff;
 }
 
 sub help {
