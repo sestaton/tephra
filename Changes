@@ -1,6 +1,15 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.02.4	04/07/16	Vancouver, BC
+
+- Add method to standarize FASTA identifiers between GFF and FASTA files for the classifyltrs command.
+- Write the element name to the output file of the ltrage command instead of the tree file name. Now the FASTA
+  identifier from the combined families file will be written to the ltrage output.
+- Add LTR family name to GFF output of classifyltrs command.
+- Remove the generation of separate GFF files for each LTR superfamily as this information can be easily
+  taken from the annotated GFF file.
+
 0.02.3	04/04/16	Vancouver, BC
 
 - Bug fix for getting URL of deps from sourceforge (which has changed).
