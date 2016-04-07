@@ -9,6 +9,8 @@ Version	Date	Location
 - Add LTR family name to GFF output of classifyltrs command.
 - Remove the generation of separate GFF files for each LTR superfamily as this information can be easily
   taken from the annotated GFF file.
+- Bug fix for --clean method of ltrage method. A class attribute was missing for this option so it would have
+  never worked previously.
 
 0.02.3	04/04/16	Vancouver, BC
 
