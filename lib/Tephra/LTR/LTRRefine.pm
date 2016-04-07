@@ -29,11 +29,11 @@ Tephra::LTR::LTRRefine - Refine LTR predictions based on multiple criteria
 
 =head1 VERSION
 
-Version 0.02.3
+Version 0.02.4
 
 =cut
 
-our $VERSION = '0.02.3';
+our $VERSION = '0.02.4';
 $VERSION = eval $VERSION;
 
 has genome => (
