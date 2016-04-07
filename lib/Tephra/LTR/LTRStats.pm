@@ -20,7 +20,6 @@ use Bio::Tools::GFF;
 use Parallel::ForkManager;
 use Cwd;
 use Try::Tiny;
-use Log::Any qw($log);
 use Tephra::Config::Exe;
 use namespace::autoclean;
 #use Data::Dump::Color;
@@ -72,6 +71,13 @@ has gff => (
     coerce   => 1,
 );
 
+has clean => (
+    is       => 'ro',
+    isa      => 'Bool',
+    required => 0,
+    default  => 1,
+);
+
 #
 # methods
 #
@@ -88,13 +94,13 @@ sub extract_ltr_features {
 
     my $gffio = Bio::Tools::GFF->new( -file => $gff, -gff_version => 3 );
 
-    my ($start, $end, $elem_id, $key, %feature, %ltrs, %seen);
+    my ($start, $end, $elem_id, $family, $key, %feature, %ltrs, %seen);
     while (my $feature = $gffio->next_feature()) {
 	if ($feature->primary_tag eq 'LTR_retrotransposon') {
 	    my @string = split /\t/, $feature->gff_string;
-	    ($elem_id) = ($string[8] =~ /ID=?\s+?(LTR_retrotransposon\d+)/);
+	    ($family, $elem_id) = ($string[8] =~ /Family=?\s+?(RL._.*?family\d+)\s+\;\s+ID=?\s+?(LTR_retrotransposon\d+)\s+?/);
 	    ($start, $end) = ($feature->start, $feature->end);
-	    $key = join ".", $elem_id, $start, $end;
+	    $key = join "||", $family, $elem_id, $start, $end;
 	}
 	next unless defined $start && defined $end;
 	if ($feature->primary_tag eq 'long_terminal_repeat') {
@@ -110,12 +116,13 @@ sub extract_ltr_features {
     my %pdoms;
     my $ltrct = 0;
     for my $ltr (sort keys %ltrs) {
-	my ($element, $rstart, $rend) = split /\./, $ltr;
+	my ($family, $element, $rstart, $rend) = split /\|\|/, $ltr;
 	for my $ltr_repeat (@{$ltrs{$ltr}{'ltrs'}}) {
 	    my ($src, $ltrtag, $s, $e, $strand) = split /\|\|/, $ltr_repeat;
-	    my $ltrs_out = File::Spec->catfile($dir, $ltr."_ltrs.fasta");
-	    open my $ltrs_outfh, '>>', $ltrs_out;
-	    my $lfname = $ltr;
+	    my $ltr_file = join "_", $family, $element, $src, $rstart, $rend, 'ltrs.fasta';
+	    my $ltrs_out = File::Spec->catfile($dir, $ltr_file);
+	    open my $ltrs_outfh, '>>', $ltrs_out or die "\nERROR: Could not open file: $ltrs_out\n";
+	    my $lfname = $element;
 	    my $orientation;
 	    if ($ltrct) {
 		$orientation = "5prime" if $strand eq '+';
@@ -123,7 +130,7 @@ sub extract_ltr_features {
 		$orientation = "unknown-l" if $strand eq '.';
 		$lfname .= "_$orientation-ltr.fasta";
 		my $fiveprime_tmp = File::Spec->catfile($dir, $lfname);
-		$self->subseq($fasta, $src, $element, $s, $e, $fiveprime_tmp, $ltrs_outfh, $orientation);
+		$self->subseq($fasta, $src, $family, $element, $s, $e, $fiveprime_tmp, $ltrs_outfh, $orientation);
 		$ltrct = 0;
 	    }
 	    else {
@@ -132,7 +139,7 @@ sub extract_ltr_features {
 		$orientation = "unknown-r" if $strand eq '.';
 		$lfname .= "_$orientation-ltr.fasta";
 		my $threeprime_tmp = File::Spec->catfile($dir, $lfname);
-		$self->subseq($fasta, $src, $element, $s, $e, $threeprime_tmp, $ltrs_outfh, $orientation);
+		$self->subseq($fasta, $src, $family, $element, $s, $e, $threeprime_tmp, $ltrs_outfh, $orientation);
 		$ltrct++;
 	    }
 	    close $ltrs_outfh;
@@ -204,7 +211,7 @@ sub align_features {
     $pm->wait_all_children;
 
     my @agefiles;
-    find( sub { push @agefiles, $File::Find::name if -f and /divergence\.txt$/ and -s }, $resdir );
+    find( sub { push @agefiles, $File::Find::name if -f and /divergence.txt$/ and -s }, $resdir );
 
     open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     say $out join "\t", "LTR-ID", "Divergence", "Age", "Ts:Tv";
@@ -217,7 +224,7 @@ sub align_features {
     if ($self->clean) {
 	my @alnfiles;
 	my $wanted  = sub { push @alnfiles, $File::Find::name 
-				if -f && /ltrs.fasta$|\.aln$|\.log$|\.phy$|\.dnd$|\.ctl$/ };
+				if -f && /ltrs.fasta$|\.aln$|\.log$|\.phy$|\.dnd$|\.ctl$|\-divergence.txt$/ };
 	my $process = sub { grep ! -d, @_ };
 	find({ wanted => $wanted, preprocess => $process }, $dir);
 	unlink @alnfiles;
@@ -257,11 +264,14 @@ sub process_baseml_args {
 			      control_file    => $baseml_args->{control_file} });
     }
     else {
-	open my $divout, '>', $divfile or die "ERROR: Could not open divergence file: $divfile\n";
-	say $divout join "\t", basename($phy), $divergence , '0', '0';
+	my $element = basename($phy);
+	$element =~ s/_ltrs_clustal-out.*//;
+	open my $divout, '>', $divfile or die "\nERROR: Could not open divergence file: $divfile\n";
+	say $divout join "\t", $element, $divergence , '0', '0';
 	close $divout;
 	my $dest_file = File::Spec->catfile($resdir, $divfile);
 	copy($divfile, $dest_file) or die "\nERROR: Copy failed: $!";
+	unlink $divfile;
     }
 }
 
@@ -323,7 +333,7 @@ sub parse_aln {
 
 sub subseq {
     my $self = shift;
-    my ($fasta, $loc, $elem, $start, $end, $tmp, $out, $orient) = @_;
+    my ($fasta, $loc, $family, $elem, $start, $end, $tmp, $out, $orient) = @_;
 
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($samtools) = @{$config}{qw(samtools)};
