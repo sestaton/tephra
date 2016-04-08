@@ -12,6 +12,7 @@ use File::Basename;
 use Path::Class::File;
 use HTML::TreeBuilder;
 use HTTP::Tiny;
+use Net::FTP;
 use Log::Any qw($log);
 use Tephra::Config::Exe;
 use namespace::autoclean;

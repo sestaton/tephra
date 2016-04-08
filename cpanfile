@@ -16,6 +16,6 @@ requires 'HTTP::Tiny';
 requires 'YAML::Tiny';
 requires 'HTML::TreeBuilder';
 requires 'autodie';
-#requires 'Net::FTP';
+requires 'Net::FTP';
 
 
