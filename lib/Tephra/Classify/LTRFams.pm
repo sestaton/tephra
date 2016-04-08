@@ -20,7 +20,7 @@ use Cwd;
 use Try::Tiny;
 use Tephra::Config::Exe;
 use namespace::autoclean;
-use Data::Dump::Color;
+#use Data::Dump::Color;
 
 with 'Tephra::Role::GFF',
      'Tephra::Role::Util';
