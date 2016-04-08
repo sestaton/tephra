@@ -25,7 +25,7 @@ my @results = capture { system([0..5], "$cmd findltrs -h") };
 ok(@results, 'Can execute findltrs subcommand');
 
 my $find_cmd = "$cmd findltrs -c $config -g $genome -t $trnas -d $model --clean";
-#say STDERR $find_cmd;
+say STDERR $find_cmd;
 
 my ($stdout, $stderr, @ret) = capture { system([0..5], $find_cmd) };
       
@@ -59,7 +59,7 @@ for my $line (split /^/, $stderr) {
 my @outfiles;
 find( sub { push @outfiles, $File::Find::name if /^ref_ltr/ && ! /combined_filtered.gff3$/ }, $testdir);
 unlink @outfiles;
-unlink $config;
+#unlink $config;
     
 done_testing();
 
