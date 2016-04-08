@@ -11,6 +11,8 @@ Version	Date	Location
   taken from the annotated GFF file.
 - Bug fix for --clean method of ltrage method. A class attribute was missing for this option so it would have
   never worked previously.
+- Disable building GUI apps for EMBOSS, which are not used internally.
+- Add Perl import for configuration (Net::FTP) which is not available in core for older Perls.
 
 0.02.3	04/04/16	Vancouver, BC
 
