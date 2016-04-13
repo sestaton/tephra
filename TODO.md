@@ -94,6 +94,8 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] add kmer mapping command (see tallymer2gff.pl)
  - [x] create config role for setting paths
  - [x] change config module to be an Install namespace
- - [ ] add subcommand to merge all GFFs
+ - [ ] add subcommand to merge all GFFs (can be done with `gt gff3 sort`, though we want to be careful
+       not to bake in too many subcommands for things that are easily done at the command line already,
+       as this will make the package harder to use and maintain).
  - [ ] handle compressed input/output
  - [ ] add fasta-handling classes from Transposome, which are faster than BioPerl
