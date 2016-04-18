@@ -58,6 +58,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Find all non-overlapping TRIMs under strict and relaxed conditions
  - [x] Filter elements by quality score, retaining the best elements
  - [x] Generate combined GFF3 of high-quality TRIMs
+ - [ ] Create a feature type called 'TRIM_retrotransposon' to distinguish these elements from other LTR-RTs
 
 ## Command `tephra findnonltrs`
  - [ ] break chromosomes to reduce memory usage in hmmsearch (only applies to HMMERv3)
