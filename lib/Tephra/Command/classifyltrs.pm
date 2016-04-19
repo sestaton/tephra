@@ -152,7 +152,7 @@ __END__
 
 =head1 NAME
                                                                        
- tephra classifyltrs - Classify LTR retrotransposons into superfamilies 
+ tephra classifyltrs - Classify LTR retrotransposons into superfamilies and families
 
 =head1 SYNOPSIS    
 
