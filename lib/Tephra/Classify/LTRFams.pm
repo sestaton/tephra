@@ -214,6 +214,7 @@ sub extract_features {
 		for my $ltr_repeat (@{$ltrs{$ltr}{'pdoms'}{$model_name}}) {
 		    my ($src, $pdomtag, $name, $s, $e, $str) = split /\|\|/, $ltr_repeat;
 		    #"Ha10||protein_match||UBN2||132013916||132014240",
+		    next if $name =~ /transpos(?:ase)/i; # Do not classify elements based spurious matches 
 		    push @{$pdoms{$src}{$element}{$name}}, join "||", $s, $e, $str;
 		}
 	    }
