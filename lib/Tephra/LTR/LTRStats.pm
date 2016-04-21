@@ -23,7 +23,6 @@ use Try::Tiny;
 use Tephra::Config::Exe;
 use namespace::autoclean;
 #use Data::Dump::Color;
-#use Data::Printer;
 
 with 'Tephra::Role::GFF',
      'Tephra::Role::Util',
@@ -35,11 +34,11 @@ Tephra::LTR::LTRStats - Calculate the age distribution of LTR retrotransposons
 
 =head1 VERSION
 
-Version 0.02.4
+Version 0.02.5
 
 =cut
 
-our $VERSION = '0.02.4';
+our $VERSION = '0.02.5';
 $VERSION = eval $VERSION;
 
 has genome => (
@@ -125,18 +124,18 @@ sub extract_ltr_features {
 	    my $lfname = $element;
 	    my $orientation;
 	    if ($ltrct) {
-		$orientation = "5prime" if $strand eq '+';
-		$orientation = "3prime" if $strand eq '-';
-		$orientation = "unknown-l" if $strand eq '.';
+		$orientation = '5prime' if $strand eq '+';
+		$orientation = '3prime' if $strand eq '-';
+		$orientation = 'unknown-l' if $strand eq '.';
 		$lfname .= "_$orientation-ltr.fasta";
 		my $fiveprime_tmp = File::Spec->catfile($dir, $lfname);
 		$self->subseq($fasta, $src, $family, $element, $s, $e, $fiveprime_tmp, $ltrs_outfh, $orientation);
 		$ltrct = 0;
 	    }
 	    else {
-		$orientation = "3prime" if $strand eq '+';
-		$orientation = "5prime" if $strand eq '-';
-		$orientation = "unknown-r" if $strand eq '.';
+		$orientation = '3prime' if $strand eq '+';
+		$orientation = '5prime' if $strand eq '-';
+		$orientation = 'unknown-r' if $strand eq '.';
 		$lfname .= "_$orientation-ltr.fasta";
 		my $threeprime_tmp = File::Spec->catfile($dir, $lfname);
 		$self->subseq($fasta, $src, $family, $element, $s, $e, $threeprime_tmp, $ltrs_outfh, $orientation);

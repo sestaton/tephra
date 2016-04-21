@@ -7,17 +7,17 @@ use File::Spec;
 use File::Find;
 use File::Basename;
 use File::Copy;
-use File::Path qw(make_path remove_tree);
+use File::Path          qw(make_path remove_tree);
+use IPC::System::Simple qw(capture system);
 use Path::Class::File;
 use Bio::AlignIO;
 use Bio::SearchIO;
 use Sort::Naturally;
 use Set::IntervalTree;
-use IPC::System::Simple qw(capture system);
 use Carp 'croak';
 use Tephra::Config::Exe;
 use namespace::autoclean;
-#use Data::Dump;
+#use Data::Dump::Color;
 
 with 'Tephra::Role::Util';
 
@@ -27,11 +27,11 @@ Tephra::Genome::SoloLTRSearch - Find solo-LTRs in a refence genome
 
 =head1 VERSION
 
-Version 0.02.4
+Version 0.02.5
 
 =cut
 
-our $VERSION = '0.02.4';
+our $VERSION = '0.02.5';
 $VERSION = eval $VERSION;
 
 has dir => (
@@ -113,7 +113,6 @@ sub find_soloLTRs {
 
     print STDERR "Getting LTR alignments....";
     my $ltr_aln_files = $self->_get_ltr_alns($dir);
-    #dd $ltr_aln_files;# and exit;
     say STDERR "done with alignments.";
     
     ## need masked genome here
@@ -123,7 +122,6 @@ sub find_soloLTRs {
     
     print STDERR "Getting alignment statistics...";
     my $aln_stats = $self->_get_aln_len($ltr_aln_files); # return a hash-ref
-    #dd $aln_stats;# and exit;
     say STDERR "done with alignment statistics.";
 
     # make one directory
@@ -142,7 +140,6 @@ sub find_soloLTRs {
     my @ltr_hmm_files;
     find( sub { push @ltr_hmm_files, $File::Find::name if -f and /\.hmm$/ }, $model_dir);
     my ($gname, $gpath, $gsuffix) = fileparse($genome, qr/\.[^.]*/);
-    #dd \@ltr_hmm_files; # and exit;
 
     print STDERR "Search genome with models...";
     for my $hmm (@ltr_hmm_files) {

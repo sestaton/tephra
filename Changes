@@ -1,6 +1,14 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.02.5	04/21/16	Vancouver, BC
+
+- When classifying LTR-RT families, skip transposase domain matches to avoid artifacts in the family assignment.
+- Bug fix in 'findhelitrons' command that was writing the coordinates in the wrong order for elements
+  on the minus strand.
+- Bug fix in the 'make_exemplars' method for the LTR-RT classification, which was writing empty files.
+- Standardize IDs with other methods when creating LTR-RT exemplars.
+
 0.02.4	04/07/16	Vancouver, BC
 
 - Add method to standarize FASTA identifiers between GFF and FASTA files for the classifyltrs command.

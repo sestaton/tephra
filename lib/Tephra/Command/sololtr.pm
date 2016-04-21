@@ -4,8 +4,8 @@ package Tephra::Command::sololtr;
 use 5.010;
 use strict;
 use warnings;
-use Tephra::Genome::SoloLTRSearch;
 use Tephra -command;
+use Tephra::Genome::SoloLTRSearch;
 
 sub opt_spec {
     return (

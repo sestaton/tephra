@@ -4,13 +4,13 @@ package Tephra::Command::classifyltrs;
 use 5.010;
 use strict;
 use warnings;
+use File::Path qw(make_path remove_tree);
+use File::Basename;
+use File::Spec;
 use Tephra -command;
 use Tephra::Classify::LTRSfams;
 use Tephra::Classify::LTRFams;
 use Tephra::LTR::MakeExemplars;
-use File::Path qw(make_path remove_tree);
-use File::Basename;
-use File::Spec;
 
 sub opt_spec {
     return (    
@@ -110,7 +110,7 @@ sub _classify_ltr_predictions {
 	gff    => $gyp_gff
     );
 
-    my ($gyp_exem_comp, $gyp_exem_lts) = $gyp_exm_obj->make_exemplars;
+    $gyp_exm_obj->make_exemplars;
 
     my $cop_exm_obj = Tephra::LTR::MakeExemplars->new(
 	genome => $genome,
@@ -118,7 +118,7 @@ sub _classify_ltr_predictions {
 	gff    => $cop_gff
     );
 
-    my ($cop_exem_comp, $cop_exem_lts) = $cop_exm_obj->make_exemplars;
+    $cop_exm_obj->make_exemplars;
     unlink $gyp_gff, $cop_gff, $unc_gff;
 }
 

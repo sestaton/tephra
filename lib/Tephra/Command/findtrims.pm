@@ -4,14 +4,14 @@ package Tephra::Command::findtrims;
 use 5.010;
 use strict;
 use warnings;
-use Tephra -command;
-use Tephra::TRIM::TRIMSearch;
-use Tephra::LTR::LTRRefine;
 use Cwd                 qw(abs_path);
 use IPC::System::Simple qw(system);
 use Capture::Tiny       qw(:all);
 use File::Basename;
 use File::Spec;
+use Tephra -command;
+use Tephra::TRIM::TRIMSearch;
+use Tephra::LTR::LTRRefine;
 
 sub opt_spec {
     return (    

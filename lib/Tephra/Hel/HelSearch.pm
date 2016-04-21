@@ -21,11 +21,11 @@ Tephra::Hel::HelSearch - Find Helitrons in a reference genome
 
 =head1 VERSION
 
-Version 0.02.4
+Version 0.02.5
 
 =cut
 
-our $VERSION = '0.02.4';
+our $VERSION = '0.02.5';
 $VERSION = eval $VERSION;
 
 sub find_helitrons {
@@ -113,8 +113,15 @@ sub make_hscan_gff {
 	my $strand = $strand{$str};
 
 	# seqid source type start end score strand phase attribs
-	my $gff_str = join "||", $ref, "HelitronScanner", 'helitron', $start, $stop, '.', 
+	my $gff_str;
+	if ($start > $stop && $strand eq '-') {
+	    $gff_str = join "||", $ref, "HelitronScanner", 'helitron', $stop, $start, '.', 
 	    $strand, '.', "ID=helitron$helct;Ontology_term=SO:0000544";
+	}
+	else {
+	    $gff_str = join "||", $ref, "HelitronScanner", 'helitron', $start, $stop, '.',
+            $strand, '.', "ID=helitron$helct;Ontology_term=SO:0000544";
+	}
 	push @{$hel{$ref}}, $gff_str;
     }
 

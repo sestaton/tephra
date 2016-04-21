@@ -4,13 +4,13 @@ package Tephra::Command::classifytirs;
 use 5.010;
 use strict;
 use warnings;
-use Tephra -command;
-use Tephra::Classify::TIRSfams;
 use Cwd                 qw(abs_path);
 use IPC::System::Simple qw(system);
 use Capture::Tiny       qw(:all);
 use File::Basename;
 use File::Spec;
+use Tephra -command;
+use Tephra::Classify::TIRSfams;
 
 sub opt_spec {
     return (    
