@@ -25,6 +25,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] parallelize hmmsearch to speed things up. likely this is faster than multiple cpus for one model at time
  - [x] check if input directory exists
  - [x] make sure to set path to correct version of hmmer
+ - [ ] add family name to GFF output
 
 ## Command `tephra classifytirs`
  - [x] Classify 'best' TIR elements into superfamilies based on domain content, TSD, and/or motif
