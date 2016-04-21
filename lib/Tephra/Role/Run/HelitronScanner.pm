@@ -3,17 +3,16 @@ package Tephra::Role::Run::HelitronScanner;
 use 5.010;
 use Moose::Role;
 use MooseX::Types::Path::Class;
+use Log::Any            qw($log);
 use IPC::System::Simple qw(system);
 use Capture::Tiny       qw(capture);
 use Try::Tiny;
 use File::Spec;
 use File::Find;
 use File::Basename;
-use Log::Any        qw($log);
 use Cwd;
 use namespace::autoclean;
-#use Data::Dump;
-#use Data::Printer;
+#use Data::Dump::Color;
 
 =head1 NAME
 
@@ -49,11 +48,18 @@ has outfile => (
     coerce   => 1,
 );
 
+has debug => (
+    is         => 'ro',
+    isa        => 'Bool',
+    predicate  => 'has_debug',
+    lazy       => 1,
+    default    => 0,
+);
+
 sub run_hscan_headtail {
     my $self = shift;
     my ($args, $jar, $subcmd) = @_;
-
-    #dd $args and exit;
+    
     my @scan_args;
     push @scan_args, "java -jar $jar $subcmd";
 
@@ -65,7 +71,7 @@ sub run_hscan_headtail {
     push @scan_args, "--rc";
     
     my $cmd = join qq{ }, @scan_args;
-    say STDERR $cmd;# and exit;
+    say STDERR $cmd if $self->debug;
 
     my ($stdout, $stderr, $exit);
     try {
@@ -94,7 +100,7 @@ sub run_hscan_pair {
     push @pair_args, "--rc";
 
     my $cmd = join qq{ }, @pair_args;
-    say STDERR $cmd; # and exit;
+    say STDERR $cmd if $self->debug;
     my ($stdout, $stderr, $exit);
     try {
 	my @out = capture { system([0..5], $cmd) };
@@ -121,7 +127,7 @@ sub run_hscan_draw {
 
     my $cmd = join qq{ }, @draw_args;
     $cmd .= " --pure --flanking --ext";
-    say STDERR $cmd; # and exit;
+    say STDERR $cmd if $self->debug;
     my ($stdout, $stderr, $exit);
     try {
 	my @out = capture { system([0..5], $cmd) };

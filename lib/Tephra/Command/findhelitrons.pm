@@ -14,6 +14,7 @@ sub opt_spec {
 	[ "genome|g=s",           "The genome sequences in FASTA format to search for Helitrons "   ],
 	[ "helitronscanner|j=s",  "The HelitronScanner .jar file (configured automatically) "       ],
 	[ "outfile|o=s",          "The final combined and filtered GFF3 file of Helitrons "         ],
+	[ "debug",                "Show external command for debugging (Default: no) "              ],
     );
 }
 
@@ -48,16 +49,18 @@ sub _run_helitron_search {
     my $genome   = $opt->{genome};
     my $hscan    = $opt->{helitronscanner};
     my $gff      = $opt->{outfile};
+    my $debug    = $opt->{debug} // 0;
     my $config   = Tephra::Config::Exe->new->get_config_paths;
     my ($hscanj) = @{$config}{qw(hscanjar)};
 
     $hscan //= $hscanj;
 
-    say STDERR "hscandir: $hscan";
+    #say STDERR "hscandir: $hscan";
     my $hel_search = Tephra::Hel::HelSearch->new( 
-	genome  => $genome, 
+	genome          => $genome, 
 	helitronscanner => $hscan,
-	outfile => $gff
+	outfile         => $gff,
+	debug           => $debug,
     );
 
     my $hel_seqs = $hel_search->find_helitrons;
@@ -80,10 +83,10 @@ Required:
 Options:
     -d|helitronscanner_dir  :   The HelitronScanner directory containing the ".jar" files and Training Set.
                                 This should be configured automatically upon a successful install.
+    --debug                 :   Show external command for debugging (Default: no).
 
 END
 }
-
 
 1;
 __END__
@@ -128,6 +131,10 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
  The HelitronScanner directory. This should not have to be used except by developers as it
  should be configured automatically during the installation.
+
+=item --debug
+
+  Show external command for debugging (Default: no).
 
 =item -h, --help
 

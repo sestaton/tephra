@@ -41,16 +41,16 @@ sub find_helitrons {
 	$name =~ s/$1//;
     }
  
-    my $g_headlcvs = File::Spec->catfile($path, $name."_hscan_head.lcvs");
-    my $g_taillcvs = File::Spec->catfile($path, $name."_hscan_tail.lcvs");
-    my $g_paired   = File::Spec->catfile($path, $name."_hscan_paired.txt");
-    my $g_helname  = File::Spec->catfile($path, $name."_tephra_hscan_helitrons");
-    my $full_hels  = $g_helname.".hel.fa";
+    my $g_headlcvs = File::Spec->catfile($path, $name.'_hscan_head.lcvs');
+    my $g_taillcvs = File::Spec->catfile($path, $name.'_hscan_tail.lcvs');
+    my $g_paired   = File::Spec->catfile($path, $name.'_hscan_paired.txt');
+    my $g_helname  = File::Spec->catfile($path, $name.'_tephra_hscan_helitrons');
+    my $full_hels  = $g_helname.'.hel.fa';
 
     #my $jar  = File::Spec->catfile($hscan_dir, "HelitronScanner.jar");
     my $parent = $jar->parent->parent; # unfortunately, the dist does not unpack in a separate dir
-    my $lcvs = File::Spec->catfile($parent, "TrainingSet", "head.lcvs");
-    my $rcvs = File::Spec->catfile($parent, "TrainingSet", "tail.lcvs");
+    my $lcvs = File::Spec->catfile($parent, 'TrainingSet', 'head.lcvs');
+    my $rcvs = File::Spec->catfile($parent, 'TrainingSet', 'tail.lcvs');
 
     my @scanh_opts = qw(-g -lf -o -tl -buffer_size);
     my @scanh_args = ($genome, $lcvs, $g_headlcvs, '10', '1000000');
@@ -81,7 +81,7 @@ sub make_hscan_gff {
     my ($helitrons) = @_;
     my $gff = $self->outfile;
     my $genome = $self->genome;
-    open my $out, '>', $gff;
+    open my $out, '>', $gff or die "\nERROR: Could not open file: $gff\n";
     
     my %refs;
     my %seqsin = (
@@ -115,11 +115,11 @@ sub make_hscan_gff {
 	# seqid source type start end score strand phase attribs
 	my $gff_str;
 	if ($start > $stop && $strand eq '-') {
-	    $gff_str = join "||", $ref, "HelitronScanner", 'helitron', $stop, $start, '.', 
+	    $gff_str = join "||", $ref, 'HelitronScanner', 'helitron', $stop, $start, '.', 
 	    $strand, '.', "ID=helitron$helct;Ontology_term=SO:0000544";
 	}
 	else {
-	    $gff_str = join "||", $ref, "HelitronScanner", 'helitron', $start, $stop, '.',
+	    $gff_str = join "||", $ref, 'HelitronScanner', 'helitron', $start, $stop, '.',
             $strand, '.', "ID=helitron$helct;Ontology_term=SO:0000544";
 	}
 	push @{$hel{$ref}}, $gff_str;
