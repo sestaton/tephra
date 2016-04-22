@@ -627,7 +627,7 @@ sub annotate_gff {
 		my $key  = $id."_$f[0]";
 		if (exists $annot_ids->{$key}) {
 		    my $family = $annot_ids->{$key};
-		    $f[8] =~ s/ID=$id\;/ID=$id;Family=$family;/;
+		    $f[8] =~ s/ID=$id\;/ID=$id;family=$family;/;
 		    say $out join "\t", @f;
 		}
 		else {
