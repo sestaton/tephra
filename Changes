@@ -1,6 +1,10 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.02.6	04/22/16	Vancouver, BC
+
+- Bug fix with LTR-RT exemplar IDs causing issues with generating the LTR exemplar files.
+
 0.02.5	04/21/16	Vancouver, BC
 
 - When classifying LTR-RT families, skip transposase domain matches to avoid artifacts in the family assignment.

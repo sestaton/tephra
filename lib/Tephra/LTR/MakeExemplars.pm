@@ -20,11 +20,11 @@ Tephra::LTR::MakeExemplars - Make exemplars from a LTR retrotransposon family
 
 =head1 VERSION
 
-Version 0.02.5
+Version 0.02.6
 
 =cut
 
-our $VERSION = '0.02.5';
+our $VERSION = '0.02.6';
 $VERSION = eval $VERSION;
 
 has dir => (
@@ -88,7 +88,7 @@ sub make_exemplars {
 	    }
 	}
     }
-
+ 
     my %pdoms;
     my $ltrct = 0;
     for my $ltr (sort keys %ltrs) {
@@ -97,19 +97,19 @@ sub make_exemplars {
 
 	# full element
 	my ($source, $prim_tag, $start, $end, $strand, $family) = split /\|\|/, $ltrs{$ltr}{'full'};
-	my $exemcomp = File::Spec->catfile($dir, $family."_exemplar_complete.fasta");
-	my $ltrs_out = File::Spec->catfile($dir, $family."_exemplar_ltrs.fasta");
+	my $exemcomp = File::Spec->catfile($dir, $family.'_exemplar_complete.fasta');
+	my $ltrs_out = File::Spec->catfile($dir, $family.'_exemplar_ltrs.fasta');
 
 	open my $allfh, '>>', $exemcomp or die "\nERROR: Could not open file: $exemcomp\n";
 	open my $ltrs_outfh, '>>', $ltrs_out or die "\nERROR: Could not open file: $ltrs_out\n";;
 	
-	my $full_tmp = File::Spec->catfile($dir, $family."_exemplar.fasta");
+	my $full_tmp = File::Spec->catfile($dir, $family.'_exemplar.fasta');
 	$self->subseq($fasta, $source, $element, $start, $end, $full_tmp, $allfh, undef);
 	
 	# ltrs
 	for my $ltr_repeat (@{$ltrs{$ltr}{'ltrs'}}) {
 	    my ($src, $ltrtag, $s, $e, $strand) = split /\|\|/, $ltr_repeat;
-	    my $lfname = $ltr;
+	    my $lfname = $element;
 	    my $orientation;
 	    if ($ltrct) {
 		$orientation = '5prime' if $strand eq '+';
@@ -200,10 +200,8 @@ sub subseq {
 	my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
 	while (my $seqobj = $seqio->next_seq) {
 	    my $seq = $seqobj->seq;
-	    if ($seq) {
-		$seq =~ s/.{60}\K/\n/g;
-		say $out join "\n", ">".$id, $seq;
-	    }
+	    $seq =~ s/.{60}\K/\n/g;
+	    say $out join "\n", ">".$id, $seq;
 	}
     }
     unlink $tmp;
