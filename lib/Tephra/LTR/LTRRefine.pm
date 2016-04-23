@@ -525,6 +525,7 @@ sub _get_ltr_score_dups {
 sub _summarize_features {
     my $self = shift;
     my ($feature) = @_;
+    #dd $feature;
     my ($three_pr_tsd, $five_pr_tsd, $ltr_sim);
     my ($has_pbs, $has_ppt, $has_pdoms, $has_ir, $tsd_eq, $tsd_ct) = (0, 0, 0, 0, 0, 0);
     for my $feat (@$feature) {
@@ -539,7 +540,7 @@ sub _summarize_features {
 	    }
 	}
 	elsif ($part[2] eq 'LTR_retrotransposon') {
-	    ($ltr_sim) = ($part[8] =~ /ltr_similarity \"(\d+.\d+)\"/); 
+	    ($ltr_sim) = ($part[8] =~ /ltr_similarity=?\s+?\"?(\d+.\d+)\"?/); 
 	}
 	$has_pbs = 1 if $part[2] eq 'primer_binding_site';
 	$has_ppt = 1 if $part[2] eq 'RR_tract';
@@ -547,7 +548,8 @@ sub _summarize_features {
 	$has_pdoms++ if $part[2] eq 'protein_match';
     }
 
-    die unless defined $ltr_sim;
+    die "\nERROR: 'ltr_similarity' is not defined in GFF3. This is a bug, please report it.\n"
+	unless defined $ltr_sim;
     $tsd_eq = 1 if $five_pr_tsd == $three_pr_tsd;
 
     my $ltr_score = sum($has_pbs, $has_ppt, $has_pdoms, $has_ir, $tsd_eq);
