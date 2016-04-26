@@ -44,6 +44,29 @@ sub capture_cmd {
     };
 }
 
+sub get_SO_terms {
+    my $self = shift;
+
+    my %table = (
+        'LTR_retrotransposon'     => 'SO:0000186',
+        'non_LTR_retrotransposon' => 'SO:0000189',
+        
+        'U_box'                => 'SO:0001788',
+        'RR_tract'             => 'SO:0000435',
+        'long_terminal_repeat' => 'SO:0000286',
+        'inverted_repeat'      => 'SO:0000294',
+        'primer_binding_site'  => 'SO:0005850',
+        'protein_match'        => 'SO:0000349',
+        
+        'terminal_inverted_repeat_element' => 'SO:0000208',
+        'terminal_inverted_repeat'         => 'SO:0000481',
+        'helitron'                         => 'SO:0000544',
+        'MITE'                             => 'SO:0000338',
+        'DNA_transposon'                   => 'SO:0000182' );
+
+    return \%table;
+}
+
 =head1 AUTHOR
 
 S. Evan Staton, C<< <statonse at gmail.com> >>
