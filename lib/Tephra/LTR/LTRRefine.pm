@@ -7,18 +7,18 @@ use Cwd;
 use File::Spec;
 use File::Find;
 use File::Basename;
-use File::Copy qw(move);
-use Bio::SeqIO;
-use Bio::Tools::GFF;
+use File::Copy          qw(move);
 use IPC::System::Simple qw(system EXIT_ANY);
 use Sort::Naturally     qw(nsort);
 use List::UtilsBy       qw(nsort_by);
 use List::Util          qw(sum max);
+use Bio::SeqIO;
+use Bio::Tools::GFF;
 use Set::IntervalTree;
 use Path::Class::File;
 use Try::Tiny;
 use Tephra::Config::Exe;
-#use Data::Printer;
+#use Data::Dump::Color;
 use namespace::autoclean;
 
 with 'Tephra::Role::Util';
@@ -140,6 +140,7 @@ sub get_overlaps {
 		my ($reg, $start, $end, $length) = split /\./, $rregion;
 		my $res = $chr_intervals{$source}->fetch($start, $end);
 
+		next unless defined $partfeatures->{$source}{$rregion};
 		my ($score99, $sim99) = $self->_summarize_features($partfeatures->{$source}{$rregion});
 		
 		$scores{$source}{$rregion} = $score99;
@@ -149,8 +150,9 @@ sub get_overlaps {
 		for my $over (@$res) {
 		    my ($s, $e, $l) = split /\./, $intervals->{$over};
 		    my $region_key = join ".", $over, $s, $e, $l;
+		    next unless defined $allfeatures->{$source}{$region_key};
 		    my ($score85, $sim85) = $self->_summarize_features($allfeatures->{$source}{$region_key});
-		    
+
 		    $scores{$source}{$region_key} = $score85;
 		    $sims{$source}{$region_key} = $sim85;
 		}
@@ -180,8 +182,6 @@ sub reduce_features {
     my $part_stats = $strict_features->{stats};
     
     my ($all, $best, $part, $comb) = (0, 0, 0, 0);
-    #my $fasta = $self->genome;
-    #$self->_index_ref($fasta);
     
     my (%best_features, %all_features, %best_stats);
 
@@ -266,16 +266,8 @@ sub sort_features {
 
     my $fasta = $self->genome;
     $self->_index_ref($samtools, $fasta);
-    my $outfile;
-    my $outfasta;
+    my ($outfile, $outfasta);
  
-    #unless (-s $gff) {
-	# should never get here, this test can be removed
-	#say "\nNo LTR retrotransposons found. Refinement step will be skipped. Exiting.\n";
-	#unlink $gff;
-	#exit(0);
-    #}
-
     if ($self->has_outfile) {
 	$outfile = $self->outfile;
 	my ($name, $path, $suffix) = fileparse($outfile, qr/\.[^.]*/);
@@ -308,14 +300,12 @@ sub sort_features {
 	chomp $header;
 	say $ogff $header;
 	
-	#my ($elem_tot, $index) = (0, 1);
 	for my $chromosome (nsort keys %$combined_features) {
 	    for my $ltr (nsort_by { m/repeat_region\d+\_\d+\.(\d+)\.\d+/ and $1 }
 			 keys %{$combined_features->{$chromosome}}) {
 		my ($rreg, $rreg_start, $rreg_end, $rreg_length) = split /\./, $ltr;
 		my $new_rreg = $rreg;
 		$new_rreg =~ s/\d+.*/$index/;
-		#$new_rreg .= $index;
 		my ($first) = @{$combined_features->{$chromosome}{$ltr}}[0];
 		my ($source, $strand) = (split /\|\|/, $first)[1,6];
 		say $ogff join "\t", $chromosome, $source, 'repeat_region', 
@@ -340,17 +330,6 @@ sub sort_features {
 			$elem =~ s/\d+.*//;
 			$elem .= $index;
 			my $id = $elem."_".$chromosome."_".$start."_".$end;
-			#my $tmp = $elem.".fasta";
-			#my $cmd = "$samtools faidx $fasta $chromosome:$start-$end > $tmp";
-			#$self->run_cmd($cmd);
-			
-			#my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
-			#while (my $seqobj = $seqio->next_seq) {
-			    #my $seq = $seqobj->seq;
-			    #$seq =~ s/.{60}\K/\n/g;
-			    #say $ofas join "\n", ">".$id, $seq;
-			#}   
-			#unlink $tmp;
 			$self->_get_ltr_range($samtools, $fasta, $elem, $id, $chromosome, $start, $end, $ofas);
 		    }
 		}
@@ -358,7 +337,6 @@ sub sort_features {
 	    }
 	}
 	close $ogff;
-	#close $ofas;
 	
 	say STDERR "\nTotal elements written: $elem_tot";
     }
@@ -376,17 +354,6 @@ sub sort_features {
 		$elem =~ s/\d+.*//;
 		$elem .= $index;
 		my $id = $elem."_".$chromosome."_".$start."_".$end;
-		#my $tmp = $elem.".fasta";
-		#my $cmd = "$samtools faidx $fasta $chromosome:$start-$end > $tmp";
-		#$self->run_cmd($cmd);
-		
-		#my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
-		#while (my $seqobj = $seqio->next_seq) {
-		    #my $seq = $seqobj->seq;
-		    #$seq =~ s/.{60}\K/\n/g;
-		    #say $ofas join "\n", ">".$id, $seq;
-		#}
-		#unlink $tmp;
 		$self->_get_ltr_range($samtools, $fasta, $elem, $id, $chromosome, $start, $end, $ofas);
 	    }
 	}
@@ -403,11 +370,6 @@ sub sort_features {
 sub _get_ltr_range {
     my $self = shift;
     my ($samtools, $fasta, $elem, $id, $chromosome, $start, $end, $ofh) = @_;
-    #my ($start, $end) = @feats[3..4];
-    #my ($elem) = ($feats[8] =~ /(LTR_retrotransposon\d+)/);
-    #$elem =~ s/\d+.*//;
-    #$elem .= $index;
-    #my $id = $elem."_".$chromosome."_".$start."_".$end;
     my $tmp = $elem.".fasta";
     my $cmd = "$samtools faidx $fasta $chromosome:$start-$end > $tmp";
     $self->run_cmd($cmd);
@@ -460,8 +422,8 @@ sub _get_ltr_score_dups {
 	    @{$sicounts{ $sims->{$source}{$best_sim_key} }} == 1  &&
 	    $best_score_key eq $best_sim_key) {
 	    $score_best = 1;
-	    my $bscore = $scores->{$source}{$best_score_key};
-	    my $bsim   = $sims->{$source}{$best_score_key};
+	    my $bscore  = $scores->{$source}{$best_score_key};
+	    my $bsim    = $sims->{$source}{$best_score_key};
 	    if (exists $partfeatures->{$source}{$best_score_key}) {
 		$best_element{$source}{$best_score_key} = $partfeatures->{$source}{$best_score_key};
 	    }
@@ -469,14 +431,14 @@ sub _get_ltr_score_dups {
 		$best_element{$source}{$best_score_key} = $allfeatures->{$source}{$best_score_key};
 	    }
 	    else {
-		say "\nERROR: Something went wrong....'$best_score_key' not found in hash. This is a bug.";
+		say "\nERROR: Something went wrong....'$best_score_key' not found in hash. This is a bug, please report it.";
 		exit(1);
 	    }
 	}
 	elsif (@{$sccounts{ $scores->{$source}{$best_score_key} }} >= 1 && 
 	       @{$sicounts{ $sims->{$source}{$best_sim_key} }} >=  1) {
 	    $sims_best = 1;
-	    my $best = @{$sicounts{ $sims->{$source}{$best_sim_key} }}[0];
+	    my $best   = @{$sicounts{ $sims->{$source}{$best_sim_key} }}[0];
 	    my $bscore = $scores->{$source}{$best_score_key};
 	    my $bsim   = $sims->{$source}{$best_score_key};
 	    if (exists $partfeatures->{$source}{$best}) {
@@ -486,7 +448,7 @@ sub _get_ltr_score_dups {
 		$best_element{$source}{$best_score_key} = $allfeatures->{$source}{$best};
 	    }
 	    else {
-		say "\nERROR: Something went wrong....'$best' not found in hash. This is a bug.";
+		say "\nERROR: Something went wrong....'$best' not found in hash. This is a bug, please report it.";
 		exit(1);
 	    }
 	}
@@ -525,7 +487,6 @@ sub _get_ltr_score_dups {
 sub _summarize_features {
     my $self = shift;
     my ($feature) = @_;
-    #dd $feature;
     my ($three_pr_tsd, $five_pr_tsd, $ltr_sim);
     my ($has_pbs, $has_ppt, $has_pdoms, $has_ir, $tsd_eq, $tsd_ct) = (0, 0, 0, 0, 0, 0);
     for my $feat (@$feature) {
@@ -684,29 +645,6 @@ sub _filterNpercent {
     return $n_perc;
 }
 
-sub _get_SO_terms {
-    my $self = shift;
-
-    my %table = (
-	'LTR_retrotransposon'     => 'SO:0000186',
-	'non_LTR_retrotransposon' => 'SO:0000189',
-	
-	'U_box'                => 'SO:0001788',
-	'RR_tract'             => 'SO:0000435',
-	'long_terminal_repeat' => 'SO:0000286',
-	'inverted_repeat'      => 'SO:0000294',
-	'primer_binding_site'  => 'SO:0005850',
-	'protein_match'        => 'SO:0000349',
-	
-	'terminal_inverted_repeat_element' => 'SO:0000208',
-	'terminal_inverted_repeat'         => 'SO:0000481',
-	'helitron'                         => 'SO:0000544',
-	'MITE'                             => 'SO:0000338',
-	'DNA_transposon'                   => 'SO:0000182' );
-
-    return \%table;
-}
-    
 sub _get_source {
     my $self = shift;
     my ($ref) = @_;
