@@ -1,9 +1,11 @@
 Revision history for Tephra
 
 Version	Date	Location
-0.02.6	04/22/16	Vancouver, BC
+0.02.6	04/26/16	Vancouver, BC
 
 - Bug fix with LTR-RT exemplar IDs causing issues with generating the LTR exemplar files.
+- Bug fix in LTR-RT refinement step to check that elements exist before trying to summarize features.
+- Remove used method for getting TE SO terms (added to the 'Util' role to be used by other classes).
 
 0.02.5	04/21/16	Vancouver, BC
 
