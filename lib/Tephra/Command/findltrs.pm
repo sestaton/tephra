@@ -63,7 +63,7 @@ sub execute {
 
     exit(0) if $self->app->global_options->{man} ||
 	$self->app->global_options->{help};
-
+    
     my ($relaxed_gff, $strict_gff) = _run_ltr_search($opt);
     my $some = _refine_ltr_predictions($relaxed_gff, $strict_gff, $opt);
 }
@@ -173,7 +173,6 @@ Options:
 
 END
 }
-
 
 1;
 __END__
