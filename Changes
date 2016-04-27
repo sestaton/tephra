@@ -1,6 +1,10 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.02.7
+
+- Bug fix with HMMERv2 path not being set correctly.
+
 0.02.6	04/26/16	Vancouver, BC
 
 - Bug fix with LTR-RT exemplar IDs causing issues with generating the LTR exemplar files.
