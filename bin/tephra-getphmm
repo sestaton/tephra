@@ -39,7 +39,7 @@ say $out $seq;
 close $out;
 
 my $config = Tephra::Config::Exe->new->get_config_paths;
-my ($hmmbin, $transeq) = @{$config}{qw(hmmerbin transeq)};
+my ($hmmbin, $transeq) = @{$config}{qw(hmmer2bin transeq)};
 my $hmmsearch = File::Spec->catfile($hmmbin, 'hmmsearch');
 
 try {
