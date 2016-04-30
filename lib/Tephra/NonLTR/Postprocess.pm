@@ -8,7 +8,7 @@ use File::Find;
 use File::Spec;
 use File::Path qw(make_path);
 use File::Basename;
-#use Data::Printer;
+use namespace::autoclean;
 
 =head1 NAME
 
@@ -23,9 +23,10 @@ Version 0.02.6
 our $VERSION = '0.02.6';
 $VERSION = eval $VERSION;
 
-has fastadir => ( is => 'ro', isa => 'Path::Class::File', required => 1, coerce  => 1 );
-has outdir   => ( is => 'ro', isa => 'Path::Class::Dir',  required => 1, coerce  => 1 );
-has reverse  => ( is => 'ro', isa => 'Bool',              required => 0, default => 1 );
+has fastadir    => ( is => 'ro', isa => 'Path::Class::File', required => 1, coerce  => 1 );
+has outdir      => ( is => 'ro', isa => 'Path::Class::Dir',  required => 1, coerce  => 1 );
+has reverse     => ( is => 'ro', isa => 'Bool', required => 0, default => 1 );
+has n_threshold => ( is => 'ro', isa => 'Num',  required => 0, default => 0.30 );
 
 sub postprocess {
     my $self = shift;
@@ -34,16 +35,16 @@ sub postprocess {
     my $rev     = $self->reverse;
 
     # identify full and frag
-    my $outf_dir  = File::Spec->catdir($out_dir, 'out1');
-    my $outr_dir  = File::Spec->catdir($out_dir, 'out2');
+    my $outf_dir = File::Spec->catdir($out_dir, 'out1');
+    my $outr_dir = File::Spec->catdir($out_dir, 'out2');
     my $outr_full_file = File::Spec->catfile($out_dir, 'out2', 'full');   # full-length
     my $outr_frag_file = File::Spec->catfile($out_dir, 'out2', 'frag');   # fragmented
     $self->merge_thmm($outf_dir, $outr_dir, $outr_full_file, $outr_frag_file, $dna_dir);
     
     # convert minus coordinates to plus coordinates
     if ($rev == 1){
-	my $full_result = $outr_full_file."_converted";
-	my $frag_result = $outr_frag_file."_converted";
+	my $full_result = $outr_full_file.'_converted';
+	my $frag_result = $outr_frag_file.'_converted';
 	$self->convert_minus_to_plus($outr_full_file, $full_result, $dna_dir);
 	$self->convert_minus_to_plus($outr_frag_file, $frag_result, $dna_dir);
     }    
@@ -66,9 +67,9 @@ sub convert_minus_to_plus {
     open my $out, '>', $result_file or die "\nERROR: Could not open file: $result_file";
     open my $in, '<', $out_file or die "\nERROR: Could not open file: $out_file";
 
-    while (my $each_line = <$in>){
-	chomp $each_line;
-	my @temp = split /\s+/, $each_line;
+    while (my $line = <$in>){
+	chomp $line;
+	my @temp = split /\s+/, $line;
 	say $out join "\t", 
 	    $temp[0], eval($len{$temp[0]}-$temp[2]), eval($len{$temp[0]}-$temp[1]), @temp[3..4];
     }
@@ -79,6 +80,7 @@ sub convert_minus_to_plus {
 sub merge_thmm {
     my $self = shift;
     my ($outf_dir, $outr_dir, $outr_full_file, $outr_frag_file, $dna_dir) = @_;
+    my $n_thresh = $self->n_threshold;
 
     my @fasfiles;
     find( sub { push @fasfiles, $File::Find::name if -f and /\.fa.*$/ }, $dna_dir );
@@ -126,48 +128,54 @@ sub merge_thmm {
 	    elsif ($temp[1] != 0 && $te > 0){
 		print $each_line."\n";
 	    }
-	    elsif ($temp[1] == 0){
-		if ($count == 3 || ($count == 1 && $te > 30)){   #full-length elements
-		    if ($te <= 3 ){
-			$te_name = "Jockey";
-		    }elsif($te <= 6){
-			$te_name = "I";
-		    }elsif($te <= 9){
-			$te_name = "CR1";
-		    }elsif($te <= 12){
-			$te_name = "Rex";
-		    }elsif($te <= 15){
-			$te_name = "R1";
-		    }elsif($te <= 18){
-			$te_name = "Tad1";
-		    }elsif($te <= 21){
-			$te_name = "RTE";
-		    }elsif($te <= 24){
-			$te_name = "L1";
-		    }elsif($te <= 27){
-			$te_name = "RandI";
-		    }elsif($te <= 30){
-			$te_name = "L2";
-		    }elsif($te <= 31){
-			$te_name = "CRE";
-		    }elsif($te <= 32){
-			$te_name = "R2";
+	    elsif ($temp[1] == 0) {
+		if ($count == 3 || ($count == 1 && $te > 30)) {   #full-length elements
+		    if ($te <= 3 ) {
+			$te_name = 'Jockey';
+		    }
+		    elsif ($te <= 6) {
+			$te_name = 'I';
+		    }
+		    elsif ($te <= 9) {
+			$te_name = 'CR1';
+		    }
+		    elsif ($te <= 12) {
+			$te_name = 'Rex';
+		    }
+		    elsif ($te <= 15) {
+			$te_name = 'R1';
+		    }
+		    elsif ($te <= 18) {
+			$te_name = 'Tad1';
+		    }
+		    elsif ($te <= 21) {
+			$te_name = 'RTE';
+		    }
+		    elsif ($te <= 24) {
+			$te_name = 'L1';
+		    }
+		    elsif ($te <= 27) {
+			$te_name = 'RandI';
+		    }
+		    elsif ($te <= 30) {
+			$te_name = 'L2';
+		    }
+		    elsif ($te <= 31) {
+			$te_name = 'CRE';
+		    }
+		    elsif ($te <= 32) {
+			$te_name = 'R2';
 		    }
 		    
-		    #say $out join "\t",  $name, $temp[0], $end, eval($end-$temp[0]), $te_name;
-		    say $out join "\t",  $filename, $temp[0], $end, eval($end-$temp[0]), $te_name;
-		    
-		    my $seq_file = File::Spec->catfile($outr_dir, $te_name."_full"); #$_[1].$te_name."_full";
+		    my $seq_file = File::Spec->catfile($outr_dir, $te_name.'_full'); #$_[1].$te_name."_full";
 		    open my $out1, '>>', $seq_file or die "\nERROR: Could not open file: $seq_file";
-		    #say $out1 ">".$name."_".$temp[0];
-		    say $out1 ">".$filename."_".$temp[0]."-".$end;
-		    
+		    my $header = '>'.$filename.'_'.$temp[0].'-'.$end;
+
 		    my ($genome, $head) = $self->get_sequence($chr_file);
-		    #say $out1 ">".$filename."_".$temp[0]."-".$end;
 
 		    my $start_pos;
 		    my $end_pos;
-		    if ($temp[0] < 2000){
+		    if ($temp[0] < 2000) {
 			$start_pos = 0;
 		    }
 		    else{
@@ -179,45 +187,64 @@ sub merge_thmm {
 		    else{
 			$end_pos = $end + 2000;
 		    }
-		    say $out1 substr($genome, $start_pos, eval($end_pos-$start_pos+1));
-		    close $out1;
-		}
-		elsif ($count == 1){ #fragmented elements
 		    
-		    if ($te <= 3 ){
-			$te_name = "Jockey";
-		    }elsif($te <= 6){
-			$te_name = "I";
-		    }elsif($te <= 9){
-			$te_name = "CR1";
-		    }elsif($te <= 12){
-			$te_name = "Rex";
-		    }elsif($te <= 15){
-			$te_name = "R1";
-		    }elsif($te <= 18){
-			$te_name = "Tad1";
-		    }elsif($te <= 21){
-			$te_name = "RTE";
-		    }elsif($te <= 24){
-			$te_name = "L1";
-		    }elsif($te <= 27){
-			$te_name = "RandI";
-		    }elsif($te <= 30){
-			$te_name = "L2";
+		    my $sequence = substr($genome, $start_pos, eval($end_pos-$start_pos+1));
+		    my $n_perc = $self->_filterNpercent($sequence);
+		    if ($n_perc <= $n_thresh) {
+			$sequence =~ s/.{60}\K/\n/g;
+			say $out1 join "\n", $header, $sequence;
+			say $out join "\t",  $filename, $temp[0], $end, eval($end-$temp[0]), $te_name;
+		    }
+		    close $out1;
+		    unlink $seq_file unless -s $seq_file;
+		}
+		elsif ($count == 1) { #fragmented elements		    
+		    if ($te <= 3) {
+			$te_name = 'Jockey';
+		    }
+		    elsif ($te <= 6) {
+			$te_name = 'I';
+		    }
+		    elsif ($te <= 9) {
+			$te_name ='CR1';
+		    }
+		    elsif ($te <= 12) {
+			$te_name = 'Rex';
+		    }
+		    elsif ($te <= 15) {
+			$te_name = 'R1';
+		    }
+		    elsif ($te <= 18) {
+			$te_name = 'Tad1';
+		    }
+		    elsif ($te <= 21) {
+			$te_name = 'RTE';
+		    }
+		    elsif ($te <= 24) {
+			$te_name = 'L1';
+		    }
+		    elsif ($te <= 27) {
+			$te_name = 'RandI';
+		    }
+		    elsif ($te <= 30) {
+			$te_name = 'L2';
 		    }
 		    
-		    #say $frag join "\t", $name, $temp[0], $end, eval($end-$temp[0]), $te_name;
-		    say $frag join "\t", $filename, $temp[0], $end, eval($end-$temp[0]), $te_name;
-		    
-		    my $seq_file = File::Spec->catfile($outr_dir, $te_name."_frag"); #$_[1].$te_name."_frag";
+		    my $seq_file = File::Spec->catfile($outr_dir, $te_name.'_frag'); #$_[1].$te_name."_frag";
 		    open my $out1, '>>', $seq_file or die "\nERROR: Could not open file: $seq_file";
-		    #say $out1 ">".$name."_".$temp[0];
-		    say $out1 ">".$filename."_".$temp[0]."-".$end;
+		    my $header = '>'.$filename.'_'.$temp[0].'-'.$end; ;
 
 		    my ($genome, $head) = $self->get_sequence($chr_file);
-			
-		    say $out1 substr($genome, $temp[0], eval($end-$temp[0]+1));
+
+		    my $sequence = substr($genome, $temp[0], eval($end-$temp[0]+1));
+                    my $n_perc = $self->_filterNpercent($sequence);
+                    if ($n_perc <= $n_thresh) {
+			$sequence =~ s/.{60}\K/\n/g;
+                        say $out1 join "\n", $header, $sequence;
+                        say $frag join "\t",  $filename, $temp[0], $end, eval($end-$temp[0]), $te_name;
+                    }
 		    close $out1;
+		    unlink $seq_file unless -s $seq_file;
 		}
 		$te = 0;
 	    }
@@ -232,6 +259,9 @@ sub merge_thmm {
     }
     close $out;
     close $frag;
+
+    unlink $outr_full_file unless -s $outr_full_file;
+    unlink $outr_frag_file unless -s $outr_frag_file;
 }
 
 sub get_sequence {  # file name, variable for seq, variable for header
@@ -246,6 +276,17 @@ sub get_sequence {  # file name, variable for seq, variable for header
     }
 
     return ($genome, $head);
+}
+
+sub _filterNpercent {
+    my $self = shift;
+    my ($sequence) = @_;
+
+    my $length  = length($sequence);
+    my $n_count = ($sequence =~ tr/Nn//);
+    my $n_perc  = sprintf("%.2f",$n_count/$length);
+
+    return $n_perc;
 }
 
 =head1 AUTHOR

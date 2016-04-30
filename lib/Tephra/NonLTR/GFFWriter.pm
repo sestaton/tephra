@@ -26,8 +26,9 @@ Version 0.02.6
 our $VERSION = '0.02.6';
 $VERSION = eval $VERSION;
 
-has fastadir => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
-has outdir   => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
+has fastadir    => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
+has outdir      => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
+has n_threshold => ( is => 'ro', isa => 'Num',        required => 0, default => 0.30 );
 
 sub write_gff {
     my $self = shift;
@@ -40,7 +41,7 @@ sub write_gff {
 
     for my $clade (@cladedirs) {
         my $name = basename($clade);
-	my $filename = $name.".dna";
+	my $filename = $name.'.dna';
         if (-d $clade) {
 	    find( sub { push @nonltrs, $File::Find::name if -f and /$filename/ }, $clade ); 	    
         }
@@ -58,8 +59,8 @@ sub _fasta_to_gff {
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($samtools) = @{$config}{qw(samtools)};
     my $name = basename($outdir);
-    my $outfile = File::Spec->catfile($outdir, $name."_tephra_nonltr.gff3");
-    my $fas     = File::Spec->catfile($outdir, $name."_tephra_nonltr.fasta");
+    my $outfile = File::Spec->catfile($outdir, $name.'_tephra_nonltr.gff3');
+    my $fas     = File::Spec->catfile($outdir, $name.'_tephra_nonltr.fasta');
     open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     open my $faout, '>', $fas or die "\nERROR: Could not open file: $fas\n";
     my ($lens, $combined) = $self->_get_seq_region;
@@ -109,21 +110,18 @@ sub _fasta_to_gff {
 		my $seqname = $seqid;
 		$seqname =~ s/\.fa.*//;
 		my $elem = "non_LTR_retrotransposon$ct";
-                my $tmp = $elem.".fasta";
-                my $id  = $elem."_".$seqname."_".$start."_".$end;
+                my $tmp = $elem.'.fasta';
+                my $id  = join "_", $elem, $seqname, $start, $end;
                 my $cmd = "$samtools faidx $combined $seqname:$start-$end > $tmp";
                 $self->run_cmd($cmd);
-		my $seqio = Bio::SeqIO->new(-file => $tmp, -format => 'fasta');
-		while (my $seqobj = $seqio->next_seq) {
-		    my $seq = $seqobj->seq;
-		    $seq =~ s/.{60}\K/\n/g;
-		    say $faout join "\n", ">".$id, $seq;
-		}
-		unlink $tmp;
 		
-		say $out join "\t", $name, 'Tephra', 'non_LTR_retrotransposon', $start, $end, '.', '?', '.', 
-		    "ID=non_LTR_retrotransposon$ct;Name=$clade;Ontology_term=SO:0000189"; 
-		$ct++;
+		my $seq = $self->_filterNpercent($tmp);
+		if (defined $seq) {
+		    say $faout join "\n", ">$id", $seq;
+		    say $out join "\t", $name, 'Tephra', 'non_LTR_retrotransposon', $start, $end, '.', '?', '.', 
+		        "ID=non_LTR_retrotransposon$ct;Name=$clade;Ontology_term=SO:0000189"; 
+		    $ct++;
+		}
 	    }
 	} 
     }
@@ -152,6 +150,28 @@ sub _get_seq_region {
     }
 
     return (\%lens, $combined);
+}
+
+sub _filterNpercent {
+    my $self = shift;
+    my ($tmp) = @_;
+    my $n_thresh = $self->n_threshold;
+
+    my $seqobj  = Bio::SeqIO->new(-file => $tmp, -format => 'fasta')->next_seq;
+    my $seq     = $seqobj->seq;
+    my $length  = $seqobj->length;
+    my $n_count = ($seq =~ tr/Nn//);
+    my $n_perc  = sprintf("%.2f",$n_count/$length);
+	
+    if ($n_perc <= $n_thresh) {
+	$seq =~ s/.{60}\K/\n/g;
+    }
+    else {
+	undef $seq;
+    }
+    unlink $tmp;
+
+    return $seq;
 }
 
 sub _collate {
