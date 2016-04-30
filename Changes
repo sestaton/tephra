@@ -1,9 +1,10 @@
 Revision history for Tephra
 
 Version	Date	Location
-0.02.7
+0.02.7	04/30/16	Vancouver, BC
 
-- Bug fix with HMMERv2 path not being set correctly.
+- Bug fix with HMMERv2 path not being set correctly for 'findnonltrs' command.
+- Add threshold for percent of Ns in non-LTR-RTs.
 
 0.02.6	04/26/16	Vancouver, BC
 
