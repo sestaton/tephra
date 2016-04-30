@@ -27,15 +27,13 @@ Version 0.02.6
 our $VERSION = '0.02.6';
 $VERSION = eval $VERSION;
 
-has genome   => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
-#has fastadir => ( is => 'ro', isa => 'Path::Class::File', required => 1, coerce => 1 );
-has outdir   => ( is => 'ro', isa => 'Maybe[Str]',  required => 0 );
-has pdir     => ( is => 'ro', isa => 'Maybe[Str]',  required => 0 );
+has genome => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
+has outdir => ( is => 'ro', isa => 'Maybe[Str]',  required => 0 );
+has pdir   => ( is => 'ro', isa => 'Maybe[Str]',  required => 0 );
 
 sub find_nonltrs {
     my $self = shift;
     my $main_data_dir = $self->outdir;
-    #my $genome_dir    = $self->fastadir;
     my $program_dir   = $self->pdir;
     my $genome = $self->genome;
     my $config = Tephra::Config::Exe->new->get_config_paths;
@@ -55,7 +53,7 @@ sub find_nonltrs {
 
     my $plus_out_dir  = File::Spec->catdir($main_data_dir, 'f');
     my $minus_out_dir = File::Spec->catdir($main_data_dir, 'b');
-    my $minus_dna_dir = $genome_dir."_b";
+    my $minus_dna_dir = $genome_dir.'_b';
 
     unless (-e $minus_dna_dir) {
 	make_path( $minus_dna_dir, {verbose => 0, mode => 0771,} );
