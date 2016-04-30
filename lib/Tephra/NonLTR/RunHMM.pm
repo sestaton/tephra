@@ -12,7 +12,6 @@ use File::Find;
 use Bio::SeqIO;
 use Bio::SearchIO;
 use Try::Tiny;
-#use Data::Dump;
 use Tephra::Config::Exe;
 use namespace::autoclean;
 
@@ -44,8 +43,8 @@ sub run_mgescan {
     my $pdir     = $self->pdir;
 
     my ($dna_name, $dna_path, $dna_suffix) = fileparse($dna_file, qr/\.[^.]*/);
-    my $outf_dir = File::Spec->catdir($out_dir, "out1");
-    my $pos_dir  = File::Spec->catdir($out_dir, "pos");
+    my $outf_dir = File::Spec->catdir($out_dir, 'out1');
+    my $pos_dir  = File::Spec->catdir($out_dir, 'pos');
     unless ( -d $outf_dir ) {
 	make_path( $outf_dir, {verbose => 0, mode => 0771,} );
     }
@@ -57,29 +56,29 @@ sub run_mgescan {
     # get signal for some state of ORF1, RT, and APE
     print "Getting signal...\n";
     print "    Protein sequence...\n";
-    my $pep_file = File::Spec->catfile($out_dir, $dna_name.$dna_suffix.".pep");
+    my $pep_file = File::Spec->catfile($out_dir, $dna_name.$dna_suffix.'.pep');
     $self->translate_forward($dna_file, $pep_file);
 
     print "    RT signal...\n";
-    my $phmm_file = File::Spec->catfile($phmm_dir, "ebi_ds36752_seq.hmm");
-    my $domain_rt_pos_file = File::Spec->catfile($pos_dir, $dna_name.$dna_suffix.".rt.pos");
+    my $phmm_file = File::Spec->catfile($phmm_dir, 'ebi_ds36752_seq.hmm');
+    my $domain_rt_pos_file = File::Spec->catfile($pos_dir, $dna_name.$dna_suffix.'.rt.pos');
     $self->get_signal_domain($pep_file, $phmm_file, $domain_rt_pos_file);
     
     print "    APE signal...\n";
-    $phmm_file = File::Spec->catfile($phmm_dir, "ebi_ds36736_seq.hmm");
-    my $domain_ape_pos_file = File::Spec->catfile($pos_dir, $dna_name.$dna_suffix.".ape.pos");
+    $phmm_file = File::Spec->catfile($phmm_dir, 'ebi_ds36736_seq.hmm');
+    my $domain_ape_pos_file = File::Spec->catfile($pos_dir, $dna_name.$dna_suffix.'.ape.pos');
     $self->get_signal_domain($pep_file, $phmm_file, $domain_ape_pos_file);
     
     # generate corresponsing empty domains files if either of them does not exist 
     if (-e $domain_rt_pos_file || -e $domain_ape_pos_file ){
 	print $dna_name."\n";	
 	if (! -e $domain_rt_pos_file){
-	    open my $out, '>', $domain_rt_pos_file;
+	    open my $out, '>', $domain_rt_pos_file or die "\nERROR: Could not open file: $domain_rt_pos_file\n";
 	    print $out "";
 	    close $out;
 	}
 	elsif (! -e $domain_ape_pos_file){
-	    open my $out, '>', $domain_ape_pos_file;
+	    open my $out, '>', $domain_ape_pos_file or die "\nERROR: Could not open file: $domain_ape_pos_file\n";
 	    print $out "";
 	    close $out;
 	}
@@ -94,6 +93,8 @@ sub run_mgescan {
 	$outf_dir .= "/";
 	my $tephra_dir = $ENV{TEPHRA_DIR} // File::Spec->catfile($ENV{HOME}, '.tephra');
 	$ENV{PATH} = join ':', $ENV{PATH}, File::Spec->catfile($tephra_dir, 'EMBOSS-6.5.7', 'bin');
+	#my $cmd = "$mgescan -m $chrhmm -s $dna_file -r $domain_rt_pos_file -a $domain_ape_pos_file -o $out_file -p $ldir -d $outf_dir";
+	#say STDERR "CMD: $cmd"; ##TODO: add debug option
 	system("$mgescan -m $chrhmm -s $dna_file -r $domain_rt_pos_file -a $domain_ape_pos_file -o $out_file -p $ldir -d $outf_dir");
     }
     unlink $pep_file if -e $pep_file;
@@ -104,13 +105,11 @@ sub translate_forward {
     my ($in, $out) = @_;
     my $pdir = $self->pdir;
 
-    # // translate cmd
     my $name = basename($in);
-    #my $translate = File::Spec->catfile($pdir, 'hmm', 'tephra-translate');
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($translate) = @{$config}{qw(transcmd)};
     my $cmd = "$translate -d $in -h $name -p $out";
-    #say STDERR "CMD: $cmd";
+    #say STDERR "CMD: $cmd"; #TODO: add debug option
     try {
 	system($cmd);
     }
@@ -118,8 +117,9 @@ sub translate_forward {
 	say "\nERROR: tephra-translate died. Here is the exception: $_\n";
 	exit(1);
     };
-    # //
 
+    # // Below is some work-in-progress to parallelize translation of all frames
+    # // at the same time. 
     #my @parts;
     #my ($name, $path, $suffix) = fileparse($out, qr/\.[^.]*/);
     #my $seqin = Bio::SeqIO->new(-file => $in, -format => 'fasta');
@@ -161,19 +161,19 @@ sub get_signal_domain {
 
     # debugging
     my ($pname, $ppath, $psuffix) = fileparse($phmm_file, qr/\.[^.]*/);
-    my $signal_out = $pep_file."_".$pname."_signal_searchout.txt";
+    my $signal_out = $pep_file.'_'.$pname.'_signal_searchout.txt';
 
     my %domain_start;
     my %domain_end;
     my %domain_pos;
     my $evalue;
-    my $temp_file   =  $domain_rt_pos_file."temp";
-    my $stemp_file  =  $domain_rt_pos_file."temp_sorted";
-    my $output_file =  $domain_rt_pos_file;
+    my $temp_file   = $domain_rt_pos_file.'temp';
+    my $stemp_file  = $domain_rt_pos_file.'temp_sorted';
+    my $output_file = $domain_rt_pos_file;
 
     # run hmmsearch to find the domain and save it in the temprary file
     my $hmmsearch   = $self->find_hmmsearch;
-    my @hmm_results = capture([0..5], $hmmsearch, "-E", "0.00001", $phmm_file, $pep_file);
+    my @hmm_results = capture([0..5], $hmmsearch, '-E', '0.00001', $phmm_file, $pep_file);
     $self->_parse_hmmsearch(\@hmm_results, $signal_out, $temp_file);
 
     if (-s $temp_file) {	
@@ -186,7 +186,7 @@ sub get_signal_domain {
         while (my $each_line = <$in>) {
 	    chomp $each_line;
             my @temp = split /\t/, $each_line;
-            if ($temp[0] - $pre[1] < 300 ) {
+            if ($temp[0] - $pre[1] < 300) {
                 $end = $temp[1];
                 $evalue = $evalue * $temp[5];
             }
@@ -218,7 +218,6 @@ sub _parse_hmmsearch {
     close $o;
 
     if (-s $signal_out) {
-	#say "debug hmmer file: $signal_out";
 	open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 	my $hmmer_in = Bio::SearchIO->new(-file => $signal_out, -format => 'hmmer');
 	
@@ -248,6 +247,7 @@ sub _sort_matches {
 
     open my $in, '<', $unsorted or die "\nERROR: Could not open file: $unsorted\n";
     open my $out, '>', $sorted or die "\nERROR: Could not open file: $sorted\n";
+
     while (my $l = <$in>) {
 	chomp $l;
 	my @f = split /\t/, $l;

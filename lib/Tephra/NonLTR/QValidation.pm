@@ -10,7 +10,6 @@ use Bio::SearchIO;
 use File::Find;
 use File::Spec;
 use File::Basename;
-#use Data::Printer;
 use Carp 'croak';
 
 with 'Tephra::NonLTR::Role::PathUtils';
@@ -194,15 +193,15 @@ sub get_domain_pep_seq {
     open my $in, '<', $pep_file or die "\nERROR: Could not open file: $pep_file";
     open my $out, '>', $result_pep_file or die "\nERROR: Could not open file: $result_pep_file";
 
-    while (my $each_line = <$in>){
-	chomp $each_line;
-	if ($each_line =~ /\>/){
+    while (my $line = <$in>){
+	chomp $line;
+	if ($line =~ /\>/){
 	    if (defined $head && length($head) > 0 && $flag == 1) {
-		say $out ">".$head."_".$result_start{$head}."-".$result_end{$head}; #put region in header
+		say $out '>'.$head.'_'.$result_start{$head}.'-'.$result_end{$head}; #put region in header
 		say $out substr($seq, $result_start{$head}, eval($result_end{$head}-$result_start{$head}+1));
 	    }
 
-	    my @temp = split /\s+/, $each_line;
+	    my @temp = split /\s+/, $line;
 
 	    if (exists $result_start{substr($temp[0], 1, length($temp[0])-1)}) {
 		$flag = 1;
@@ -215,13 +214,13 @@ sub get_domain_pep_seq {
 	}
 	else {
 	    if ($flag == 1) {
-	        $seq .= $each_line;
+	        $seq .= $line;
 	    }
 	}
     }
     if ($flag == 1) {
 	#say $out ">".$head;
-	say $out ">".$head."_".$result_start{$head}."_".$result_end{$head}; # get region in header
+	say $out '>'.$head.'_'.$result_start{$head}.'_'.$result_end{$head}; # get region in header
 	say $out substr($seq, $result_start{$head}, eval($result_end{$head}-$result_start{$head}+1));
     }
     close $in;
@@ -283,7 +282,7 @@ sub get_domain_dna_seq {
 	if ($each_line =~ /\>/){
 	    if (defined $head && length($head) > 0 && $flag == 1){
 		#say $out ">".$head;
-		say $out ">".$head."_".$result_start{$head}."_".$result_end{$head}; # header
+		say $out '>'.$head.'_'.$result_start{$head}.'_'.$result_end{$head}; # header
 		say $out substr($seq, $result_start{$head}*3-3, 
 				eval(($result_end{$head}-$result_start{$head}+1)*3+3));
 	    }
@@ -307,7 +306,7 @@ sub get_domain_dna_seq {
     }
     if ($flag == 1){
 	#say $out ">".$head;
-	say $out ">".$head."_".$result_start{$head}."_".$result_end{$head};
+	say $out '>'.$head.'_'.$result_start{$head}.'_'.$result_end{$head};
 	say $out substr($seq, $result_start{$head}*3-3, eval(($result_end{$head}-$result_start{$head}+1)*3+3));
     }
     close $in;
@@ -334,7 +333,7 @@ sub vote_hmmsearch {
 	    my $uniq_key = substr($each_line, 1, length($each_line)-1);
 	    $evalue{$uniq_key}      = 1000;
 	    $save_evalue{$uniq_key} = 1000;
-	    $clade{$uniq_key}       = "-";
+	    $clade{$uniq_key}       = '-';
 	    $sig{$uniq_key}         = 1;
 	}
     }
