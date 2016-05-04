@@ -111,14 +111,15 @@ sub _fasta_to_gff {
 		$seqname =~ s/\.fa.*//;
 		my $elem = "non_LTR_retrotransposon$ct";
                 my $tmp = $elem.'.fasta';
-                my $id  = join "_", $elem, $seqname, $start, $end;
+                #my $id  = join "_", $elem, $seqname, $start, $end;
                 my $cmd = "$samtools faidx $combined $seqname:$start-$end > $tmp";
                 $self->run_cmd($cmd);
 		
-		my $seq = $self->_filterNpercent($tmp);
+		my ($seq, $adj_start, $adj_end) = $self->_filterNpercent($tmp, $start, $end);
 		if (defined $seq) {
+		    my $id = join "_", $elem, $seqname, $adj_start, $adj_end;
 		    say $faout join "\n", ">$id", $seq;
-		    say $out join "\t", $name, 'Tephra', 'non_LTR_retrotransposon', $start, $end, '.', '?', '.', 
+		    say $out join "\t", $name, 'Tephra', 'non_LTR_retrotransposon', $adj_start, $adj_end, '.', '?', '.', 
 		        "ID=non_LTR_retrotransposon$ct;Name=$clade;Ontology_term=SO:0000189"; 
 		    $ct++;
 		}
@@ -154,24 +155,47 @@ sub _get_seq_region {
 
 sub _filterNpercent {
     my $self = shift;
-    my ($tmp) = @_;
+    my ($tmp, $start, $end) = @_;
     my $n_thresh = $self->n_threshold;
 
-    my $seqobj  = Bio::SeqIO->new(-file => $tmp, -format => 'fasta')->next_seq;
-    my $seq     = $seqobj->seq;
+    my ($adj_start, $adj_end);
+    my $seqobj = Bio::SeqIO->new(-file => $tmp, -format => 'fasta')->next_seq;
+    my $seq    = $seqobj->seq;
+    ## This method is for removing gap ends, which arise when going back to DNA
+    ## coordinates with gappy draft genomes. Added in v0.02.8.
+    my ($s) = ($seq =~ /(^N+[ATCG]{0,10}?N+?)/ig);
+    my ($e) = ($seq =~ /(N+?[ATCG]{0,10}?N+$)/ig);
+    if ($s) {
+	my $sl = length($s);
+	$adj_start = $start + $sl;
+	$seq =~ s/^$s//g;
+    }
+    else {
+	$adj_start = $start;
+    }
+
+    if ($e) {
+	my $el = length($e);
+	$adj_end = $end - $el;
+	$seq =~ s/$e$//g;
+    }
+    else {
+	$adj_end = $end;
+    }
+    ##
     my $length  = $seqobj->length;
     my $n_count = ($seq =~ tr/Nn//);
     my $n_perc  = sprintf("%.2f",$n_count/$length);
-	
-    if ($n_perc <= $n_thresh) {
-	$seq =~ s/.{60}\K/\n/g;
-    }
-    else {
-	undef $seq;
-    }
     unlink $tmp;
 
-    return $seq;
+    if ($n_perc <= $n_thresh) {
+	$seq =~ s/.{60}\K/\n/g;
+	return ($seq, $adj_start, $adj_end);
+    }
+    else {
+	#undef $seq;
+	return (undef, undef, undef);
+    }
 }
 
 sub _collate {
