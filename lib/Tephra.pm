@@ -1,8 +1,8 @@
 package Tephra;
 
-use Moose;
+use strict;
+use warnings;
 use App::Cmd::Setup -app;
-use namespace::autoclean;
 
 =head1 NAME
 
@@ -49,7 +49,5 @@ This program is distributed under the MIT (X11) License, which should be distrib
 If not, it can be found here: L<http://www.opensource.org/licenses/mit-license.php>
 
 =cut
-
-__PACKAGE__->meta->make_immutable;
 
 1;

@@ -5,8 +5,6 @@ use 5.010;
 use strict;
 use warnings;
 use File::Path qw(make_path remove_tree);
-use File::Basename;
-use File::Spec;
 use Tephra -command;
 use Tephra::Classify::LTRSfams;
 use Tephra::Classify::LTRFams;
@@ -28,11 +26,13 @@ sub validate_args {
     my ($self, $opt, $args) = @_;
 
     my $command = __FILE__;
-    if ($self->app->global_options->{man}) {
-	system([0..5], "perldoc $command");
+    if ($opt->{man}) {
+        system('perldoc', $command) == 0 or die $!;
+        exit(0);
     }
-    elsif ($self->app->global_options->{help}) {
-	$self->help;
+    elsif ($opt->{help}) {
+        $self->help;
+        exit(0);
     }
     elsif (!$opt->{genome} || !$opt->{repeatdb} || !$opt->{gff}) {
 	say "\nERROR: Required arguments not given.";
@@ -42,9 +42,6 @@ sub validate_args {
 
 sub execute {
     my ($self, $opt, $args) = @_;
-
-    exit(0) if $self->app->global_options->{man} ||
-	$self->app->global_options->{help};
 
     my $some = _classify_ltr_predictions($opt);
 }

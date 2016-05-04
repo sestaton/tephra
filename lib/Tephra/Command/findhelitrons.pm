@@ -15,6 +15,8 @@ sub opt_spec {
 	[ "helitronscanner|j=s",  "The HelitronScanner .jar file (configured automatically) "       ],
 	[ "outfile|o=s",          "The final combined and filtered GFF3 file of Helitrons "         ],
 	[ "debug",                "Show external command for debugging (Default: no) "              ],
+	[ "help|h",               "Display the usage menu and exit. "                               ],
+        [ "man|m",                "Display the full manual. "                                       ],
     );
 }
 
@@ -22,11 +24,13 @@ sub validate_args {
     my ($self, $opt, $args) = @_;
 
     my $command = __FILE__;
-    if ($self->app->global_options->{man}) {
-	system([0..5], "perldoc $command");
+    if ($opt->{man}) {
+        system('perldoc', $command) == 0 or die $!;
+        exit(0);
     }
-    elsif ($self->app->global_options->{help}) {
-	$self->help;
+    elsif ($opt->{help}) {
+        $self->help;
+        exit(0);
     }
     elsif (!$opt->{genome} || !$opt->{outfile}) {
 	say "\nERROR: Required arguments not given.";

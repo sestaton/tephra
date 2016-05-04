@@ -4,6 +4,9 @@ package Tephra::Command::sololtr;
 use 5.010;
 use strict;
 use warnings;
+#use Pod::Find     qw(pod_where);
+#use Pod::Usage    qw(pod2usage);
+#use Capture::Tiny qw(:all);
 use Tephra -command;
 use Tephra::Genome::SoloLTRSearch;
 
@@ -18,6 +21,8 @@ sub opt_spec {
 	[ "report|r=s",       "Parse hmmsearch of each sequence and produce a summary of align statistics." ],
 	[ "seq|s",            "Extract query sequence from domain alignment."                               ],
 	[ "clean",            "Clean up the intermediate alignment files (Default: yes) "                   ],
+	[ "help|h",           "Display the usage menu and exit. "                                           ],
+	[ "man|m",            "Display the full manual. "                                                   ],
 	);
 }
 
@@ -25,11 +30,13 @@ sub validate_args {
     my ($self, $opt, $args) = @_;
 
     my $command = __FILE__;
-    if ($self->app->global_options->{man}) {
-	system([0..5], "perldoc $command");
+    if ($opt->{man}) {
+	system('perldoc', $command) == 0 or die $!;
+	exit(0);
     }
-    elsif ($self->app->global_options->{help}) {
+    elsif ($opt->{help}) {
 	$self->help;
+	exit(0);
     }
     elsif (!$opt->{indir} || !$opt->{genome} || !$opt->{outfile}) {
 	say "\nERROR: Required arguments not given.";
@@ -47,9 +54,6 @@ sub validate_args {
 
 sub execute {
     my ($self, $opt, $args) = @_;
-
-    exit(0) if $self->app->global_options->{man} ||
-	$self->app->global_options->{help};
 
     my $some = _calculate_soloLTR_abund($opt);
 }
@@ -83,6 +87,12 @@ sub _calculate_soloLTR_abund {
 }
 
 sub help {
+    #my $stdout = capture_merged {
+	#pod2usage(-verbose => 99, -sections => "NAME|SYNOPSIS|DESCRIPTION", -exitval => "noexit",
+	#    -input => pod_where({-inc => 1}, __PACKAGE__));
+    #};
+    #chomp $stdout;
+
     print STDERR<<END
 
  USAGE: tephra sololtr [-h] [-m]

@@ -4,11 +4,6 @@ package Tephra::Command::maskref;
 use 5.010;
 use strict;
 use warnings;
-use Cwd                 qw(abs_path);
-use IPC::System::Simple qw(system);
-use Capture::Tiny       qw(:all);
-use File::Basename;
-use File::Spec;
 use Tephra -command;
 use Tephra::Genome::MaskRef;
 
@@ -18,6 +13,8 @@ sub opt_spec {
 	[ "outfile|o=s",  "The output filename to use for the masked genome "           ],
 	[ "repeatdb|d=s", "The database of repeat sequences to use for masking "        ],
 	[ "clean",        "Clean up the index files (Default: yes) "                    ],
+	[ "help|h",       "Display the usage menu and exit. "                           ],
+        [ "man|m",        "Display the full manual. "                                   ],
     );
 }
 
@@ -25,11 +22,13 @@ sub validate_args {
     my ($self, $opt, $args) = @_;
 
     my $command = __FILE__;
-    if ($self->app->global_options->{man}) {
-	system([0..5], "perldoc $command");
+    if ($opt->{man}) {
+        system('perldoc', $command) == 0 or die $!;
+        exit(0);
     }
-    elsif ($self->app->global_options->{help}) {
-	$self->help;
+    elsif ($opt->{help}) {
+        $self->help;
+        exit(0);
     }
     elsif (!$opt->{genome} || !$opt->{repeatdb}) {
 	say "\nERROR: Required arguments not given.";
@@ -39,9 +38,6 @@ sub validate_args {
 
 sub execute {
     my ($self, $opt, $args) = @_;
-
-    exit(0) if $self->app->global_options->{man} ||
-	$self->app->global_options->{help};
 
     my $gff = _run_masking($opt);
 }

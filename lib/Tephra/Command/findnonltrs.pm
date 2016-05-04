@@ -4,7 +4,7 @@ package Tephra::Command::findnonltrs;
 use 5.010;
 use strict;
 use warnings;
-use File::Basename;
+use File::Spec;
 use Tephra -command;
 use Tephra::NonLTR::NonLTRSearch;
 use Tephra::NonLTR::GFFWriter;
@@ -14,6 +14,8 @@ sub opt_spec {
 	[ "genome|g=s",  "The genome sequences in FASTA format to search for non-LTR-RTs " ],
 	[ "pdir|d=s",    "The directory to search for HMMs (configured automatically) "    ],
 	[ "outdir|o=s",  "The location to place the results "                              ],
+	[ "help|h",      "Display the usage menu and exit. "                               ],
+        [ "man|m",       "Display the full manual. "                                       ],
     );
 }
 
@@ -21,11 +23,13 @@ sub validate_args {
     my ($self, $opt, $args) = @_;
 
     my $command = __FILE__;
-    if ($self->app->global_options->{man}) {
-	system([0..5], "perldoc $command");
+    if ($opt->{man}) {
+        system('perldoc', $command) == 0 or die $!;
+        exit(0);
     }
-    elsif ($self->app->global_options->{help}) {
-	$self->help;
+    elsif ($opt->{help}) {
+        $self->help;
+        exit(0);
     }
     elsif (!$opt->{genome}) {
 	say "\nERROR: Required arguments not given.";
@@ -35,9 +39,6 @@ sub validate_args {
 
 sub execute {
     my ($self, $opt, $args) = @_;
-
-    exit(0) if $self->app->global_options->{man} ||
-	$self->app->global_options->{help};
 
     my ($gff) = _run_nonltr_search($opt);
 }

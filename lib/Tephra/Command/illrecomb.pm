@@ -16,6 +16,8 @@ sub opt_spec {
 	[ "repeatpid|p=i",   "The percent identity threshold for retaining repeats that flank gaps. "      ],
 	[ "threads|t=i",     "The number of threads to use for alignments (Default: 1) "                   ],
 	[ "clean|c",         "Clean up the intermediate alignment files (Default: yes) "                   ],
+	[ "help|h",          "Display the usage menu and exit. "                                           ],
+        [ "man|m",           "Display the full manual. "                                                   ],
 	);
 }
 
@@ -23,11 +25,13 @@ sub validate_args {
     my ($self, $opt, $args) = @_;
 
     my $command = __FILE__;
-    if ($self->app->global_options->{man}) {
-	system([0..5], "perldoc $command");
+    if ($opt->{man}) {
+        system('perldoc', $command) == 0 or die $!;
+        exit(0);
     }
-    elsif ($self->app->global_options->{help}) {
-	$self->help;
+    elsif ($opt->{help}) {
+        $self->help;
+        exit(0);
     }
     elsif (!$opt->{indir} || !$opt->{outfile} || !$opt->{statsfile}) {
 	say "\nERROR: Required arguments not given.";
@@ -37,9 +41,6 @@ sub validate_args {
 
 sub execute {
     my ($self, $opt, $args) = @_;
-
-    exit(0) if $self->app->global_options->{man} ||
-	$self->app->global_options->{help};
 
     my $some = _calculate_ill_recomb($opt);
 }

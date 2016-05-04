@@ -4,11 +4,7 @@ package Tephra::Command::findtrims;
 use 5.010;
 use strict;
 use warnings;
-use Cwd                 qw(abs_path);
-use IPC::System::Simple qw(system);
-use Capture::Tiny       qw(:all);
 use File::Basename;
-use File::Spec;
 use Tephra -command;
 use Tephra::TRIM::TRIMSearch;
 use Tephra::LTR::LTRRefine;
@@ -19,6 +15,8 @@ sub opt_spec {
 	[ "trnadb|t=s",  "The file of tRNA sequences in FASTA format to search for PBS " ], 
 	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains "    ],
 	[ "clean",       "Clean up the index files (Default: yes) "                      ],
+	[ "help|h",      "Display the usage menu and exit. "                             ],
+        [ "man|m",       "Display the full manual. "                                     ],
     );
 }
 
@@ -26,11 +24,13 @@ sub validate_args {
     my ($self, $opt, $args) = @_;
 
     my $command = __FILE__;
-    if ($self->app->global_options->{man}) {
-	system([0..5], "perldoc $command");
+    if ($opt->{man}) {
+        system('perldoc', $command) == 0 or die $!;
+        exit(0);
     }
-    elsif ($self->app->global_options->{help}) {
-	$self->help;
+    elsif ($opt->{help}) {
+        $self->help;
+        exit(0);
     }
     elsif (!$opt->{genome}) {
 	say "\nERROR: Required arguments not given.";
@@ -41,9 +41,6 @@ sub validate_args {
 sub execute {
     my ($self, $opt, $args) = @_;
 
-    exit(0) if $self->app->global_options->{man} ||
-	$self->app->global_options->{help};
-
     my ($relaxed_gff, $strict_gff) = _run_trim_search($opt);
     if ($relaxed_gff && $strict_gff) {
 	my $some = _refine_trim_predictions($relaxed_gff, $strict_gff, $opt->{genome});
@@ -53,7 +50,7 @@ sub execute {
 sub _refine_trim_predictions {
     my ($relaxed_gff, $strict_gff, $fasta) = @_;
 
-    my $refine_obj = Tephra::LTR::LTRRefine->new( genome  => $fasta );
+    my $refine_obj = Tephra::LTR::LTRRefine->new( genome => $fasta );
 	
     my $relaxed_features
 	= $refine_obj->collect_features({ gff => $relaxed_gff, pid_threshold => 85 });
@@ -87,7 +84,7 @@ sub _run_trim_search {
     );
 
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
-    my $index = $genome.".index";
+    my $index = $genome.'.index';
 
     my @suff_args = qq(-db $genome -indexname $index -tis -suf -lcp -ssp -sds -des -dna);
     $trim_search->create_index(\@suff_args);

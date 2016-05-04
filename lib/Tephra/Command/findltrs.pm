@@ -23,6 +23,8 @@ sub opt_spec {
 	[ "tnpfilter",   "Discard elements containing transposase domains (Default: no) " ],
 	[ "clean",       "Clean up the index files (Default: yes) "                       ],
 	[ "debug",       "Show external command for debugging (Default: no) "             ],
+	[ "help|h",      "Display the usage menu and exit. "                              ],
+        [ "man|m",       "Display the full manual. "                                      ],
     );
 }
 
@@ -30,11 +32,13 @@ sub validate_args {
     my ($self, $opt, $args) = @_;
 
     my $command = __FILE__;
-    if ($self->app->global_options->{man}) {
-	system([0..5], "perldoc $command");
+    if ($opt->{man}) {
+        system('perldoc', $command) == 0 or die $!;
+        exit(0);
     }
-    elsif ($self->app->global_options->{help}) {
-	$self->help;
+    elsif ($opt->{help}) {
+        $self->help;
+        exit(0);
     }
     elsif (!$opt->{config} || !$opt->{genome} || !$opt->{hmmdb} || !$opt->{trnadb}) {
 	say "\nERROR: Required arguments not given.";
@@ -61,9 +65,6 @@ sub validate_args {
 sub execute {
     my ($self, $opt, $args) = @_;
 
-    exit(0) if $self->app->global_options->{man} ||
-	$self->app->global_options->{help};
-    
     my ($relaxed_gff, $strict_gff) = _run_ltr_search($opt);
     my $some = _refine_ltr_predictions($relaxed_gff, $strict_gff, $opt);
 }

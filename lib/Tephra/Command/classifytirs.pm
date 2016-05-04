@@ -4,11 +4,6 @@ package Tephra::Command::classifytirs;
 use 5.010;
 use strict;
 use warnings;
-use Cwd                 qw(abs_path);
-use IPC::System::Simple qw(system);
-use Capture::Tiny       qw(:all);
-use File::Basename;
-use File::Spec;
 use Tephra -command;
 use Tephra::Classify::TIRSfams;
 
@@ -16,6 +11,8 @@ sub opt_spec {
     return (    
 	[ "genome|g=s",   "The genome sequences in FASTA format to search for TIRs "   ],
 	[ "gff|f=s",      "The GFF3 file of TIR TEs in <genome> "                      ],
+	[ "help|h",       "Display the usage menu and exit. "                          ],
+        [ "man|m",        "Display the full manual. "                                  ],
     );
 }
 
@@ -23,11 +20,13 @@ sub validate_args {
     my ($self, $opt, $args) = @_;
 
     my $command = __FILE__;
-    if ($self->app->global_options->{man}) {
-	system([0..5], "perldoc $command");
+    if ($opt->{man}) {
+        system('perldoc', $command) == 0 or die $!;
+        exit(0);
     }
-    elsif ($self->app->global_options->{help}) {
-	$self->help;
+    elsif ($opt->{help}) {
+        $self->help;
+        exit(0);
     }
     elsif (!$opt->{genome} || !$opt->{gff}) {
 	say "\nERROR: Required arguments not given.";
@@ -41,9 +40,6 @@ sub validate_args {
 
 sub execute {
     my ($self, $opt, $args) = @_;
-
-    exit(0) if $self->app->global_options->{man} ||
-	$self->app->global_options->{help};
 
     my $some = _classify_tir_predictions($opt);
 }

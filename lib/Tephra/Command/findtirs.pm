@@ -4,8 +4,8 @@ package Tephra::Command::findtirs;
 use 5.010;
 use strict;
 use warnings;
-use File::Basename;
 use File::Find;
+use File::Basename;
 use Tephra -command;
 use Tephra::TIR::TIRSearch;
 
@@ -17,6 +17,8 @@ sub opt_spec {
 	[ "index|i=s",   "The suffixerator index to use for the TIR search "          ],
 	[ "clean",       "Clean up the index files (Default: yes) "                   ],
 	[ "debug",       "Show external command for debugging (Default: no) "         ],
+	[ "help|h",      "Display the usage menu and exit. "                          ],
+        [ "man|m",       "Display the full manual. "                                  ],
     );
 }
 
@@ -24,11 +26,13 @@ sub validate_args {
     my ($self, $opt, $args) = @_;
 
     my $command = __FILE__;
-    if ($self->app->global_options->{man}) {
-	system([0..5], "perldoc $command");
+    if ($opt->{man}) {
+        system('perldoc', $command) == 0 or die $!;
+        exit(0);
     }
-    elsif ($self->app->global_options->{help}) {
-	$self->help;
+    elsif ($opt->{help}) {
+        $self->help;
+        exit(0);
     }
     elsif (!$opt->{genome} || !$opt->{hmmdb}) {
 	say "\nERROR: Required arguments not given.";
@@ -38,9 +42,6 @@ sub validate_args {
 
 sub execute {
     my ($self, $opt, $args) = @_;
-
-    exit(0) if $self->app->global_options->{man} ||
-	$self->app->global_options->{help};
 
     my $gff = _run_tir_search($opt);
 }
@@ -77,7 +78,7 @@ sub _run_tir_search {
 
     unless (defined $index && @indexfiles == 7) {
 	my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
-	$index = $genome.".index";
+	$index = $genome.'.index';
 
 	my @suff_args = qq(-db $genome -indexname $index -tis -suf -lcp -des -ssp -dna -mirrored);
 	$tir_search->create_index(\@suff_args);
