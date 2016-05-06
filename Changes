@@ -1,10 +1,13 @@
 Revision history for Tephra
 
 Version	Date	Location
-0.02.7	04/30/16	Vancouver, BC
+0.02.7	05/06/16	Vancouver, BC
 
 - Bug fix with HMMERv2 path not being set correctly for 'findnonltrs' command.
 - Add threshold for percent of Ns in non-LTR-RTs.
+- Bug fix to get --help and --man options working correctly.
+- Add method to remove leading or trailing gap sequences in 'findnonltrs' command.
+- Expand list of transposase-related models to filter prior to LTR family classification.
 
 0.02.6	04/26/16	Vancouver, BC
 
