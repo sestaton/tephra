@@ -183,9 +183,11 @@ sub get_signal_domain {
         open my $in, '<', $stemp_file or die "\nERROR: Could not open file: $stemp_file\n";
         open my $out, '>', $output_file or die "\nERROR: Could not open file: $output_file\n";
 
+	## NB hard thresholds: length = 300, evalue = 1e-5 
         while (my $each_line = <$in>) {
 	    chomp $each_line;
             my @temp = split /\t/, $each_line;
+	    # seq_start seq_end domain_start domain_end score evalue
             if ($temp[0] - $pre[1] < 300) {
                 $end = $temp[1];
                 $evalue = $evalue * $temp[5];
@@ -244,6 +246,17 @@ sub _sort_matches {
     my $self = shift;
     my ($unsorted, $sorted) = @_;
     my %hash;
+
+    ##NB: This method returns the parsed HMM matches in order by coordinate. 
+    # Input:
+    #46927035 46928451 -87.4 39e-08
+    #84073929 84075108 -115.7 6.1e-07
+    #217494303 217495593 -75.2 1.2e-08
+    #
+    # Output:
+    #217494303 2174955931492 -75.2 1.2e-08
+    #46927035 469284511492 -87.4 3.9e-08
+    #84073929 840751081492 -115.7 6.1e-07
 
     open my $in, '<', $unsorted or die "\nERROR: Could not open file: $unsorted\n";
     open my $out, '>', $sorted or die "\nERROR: Could not open file: $sorted\n";
