@@ -42,7 +42,7 @@ sub postprocess {
     $self->merge_thmm($outf_dir, $outr_dir, $outr_full_file, $outr_frag_file, $dna_dir);
     
     # convert minus coordinates to plus coordinates
-    if ($rev == 1){
+    if ($rev == 1) {
 	my $full_result = $outr_full_file.'_converted';
 	my $frag_result = $outr_frag_file.'_converted';
 	$self->convert_minus_to_plus($outr_full_file, $full_result, $dna_dir);
@@ -67,7 +67,12 @@ sub convert_minus_to_plus {
     open my $out, '>', $result_file or die "\nERROR: Could not open file: $result_file";
     open my $in, '<', $out_file or die "\nERROR: Could not open file: $out_file";
 
-    while (my $line = <$in>){
+    ## Output: seqname start end length clade
+    #Ha1.fasta 172342043 172344615 2572 L1
+    #Ha1.fasta 162671813 162674406 2593 L1
+    #Ha1.fasta 123785696 123788295 2599 L1
+
+    while (my $line = <$in>) {
 	chomp $line;
 	my @temp = split /\s+/, $line;
 	say $out join "\t", 
@@ -117,10 +122,15 @@ sub merge_thmm {
 	my $count = 0;
 	open my $in, '<', $file or die "\nERROR: Could not open file: $file";
 	
+	## Input: 
+	#303624192 24 26.225023
+	#303623033 0 16.655420
+	#194759853 24 16.298745
+
 	while (my $each_line = <$in>){
 	    chomp $each_line;
 	    my @temp = split /\s+/, $each_line;
-	    if ($te == $temp[1] + 1 && $temp[1] != 0){
+	    if ($te == $temp[1] + 1 && $temp[1] != 0) {
 		$start = $temp[0];
 		$te    = $temp[1];
 		$count += 1;
@@ -169,7 +179,7 @@ sub merge_thmm {
 		    
 		    my $seq_file = File::Spec->catfile($outr_dir, $te_name.'_full'); #$_[1].$te_name."_full";
 		    open my $out1, '>>', $seq_file or die "\nERROR: Could not open file: $seq_file";
-		    my $header = '>'.$filename.'_'.$temp[0].'-'.$end;
+		    my $header = '>'.$filename.'_'.$temp[0].'_'.$end;
 
 		    my ($genome, $head) = $self->get_sequence($chr_file);
 
@@ -189,16 +199,16 @@ sub merge_thmm {
 		    }
 		    
 		    my $sequence = substr($genome, $start_pos, eval($end_pos-$start_pos+1));
-		    my $n_perc = $self->_filterNpercent($sequence);
-		    if ($n_perc <= $n_thresh) {
+		    #my $n_perc = $self->_filterNpercent($sequence);
+		    #if ($n_perc <= $n_thresh) {
 			$sequence =~ s/.{60}\K/\n/g;
 			say $out1 join "\n", $header, $sequence;
 			say $out join "\t",  $filename, $temp[0], $end, eval($end-$temp[0]), $te_name;
-		    }
+		    #}
 		    close $out1;
 		    unlink $seq_file unless -s $seq_file;
 		}
-		elsif ($count == 1) { #fragmented elements		    
+		elsif ($count == 1) { # fragmented elements		    
 		    if ($te <= 3) {
 			$te_name = 'Jockey';
 		    }
@@ -232,17 +242,17 @@ sub merge_thmm {
 		    
 		    my $seq_file = File::Spec->catfile($outr_dir, $te_name.'_frag'); #$_[1].$te_name."_frag";
 		    open my $out1, '>>', $seq_file or die "\nERROR: Could not open file: $seq_file";
-		    my $header = '>'.$filename.'_'.$temp[0].'-'.$end; ;
+		    my $header = '>'.$filename.'_'.$temp[0].'_'.$end; ;
 
 		    my ($genome, $head) = $self->get_sequence($chr_file);
 
 		    my $sequence = substr($genome, $temp[0], eval($end-$temp[0]+1));
-                    my $n_perc = $self->_filterNpercent($sequence);
-                    if ($n_perc <= $n_thresh) {
+                    #my $n_perc = $self->_filterNpercent($sequence);
+                    #if ($n_perc <= $n_thresh) {
 			$sequence =~ s/.{60}\K/\n/g;
                         say $out1 join "\n", $header, $sequence;
                         say $frag join "\t",  $filename, $temp[0], $end, eval($end-$temp[0]), $te_name;
-                    }
+                    #}
 		    close $out1;
 		    unlink $seq_file unless -s $seq_file;
 		}
@@ -264,7 +274,7 @@ sub merge_thmm {
     unlink $outr_frag_file unless -s $outr_frag_file;
 }
 
-sub get_sequence {  # file name, variable for seq, variable for header
+sub get_sequence {
     my $self = shift;
     my ($chr_file) = @_;
 
