@@ -5,7 +5,7 @@ use Moose;
 use Bio::SeqIO;
 use File::Find;
 use File::Spec;
-use File::Path qw(make_path);
+use File::Path qw(make_path remove_tree);
 use File::Basename;
 use Sort::Naturally;
 use Tephra::Config::Exe;
@@ -28,7 +28,7 @@ $VERSION = eval $VERSION;
 
 has fastadir    => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
 has outdir      => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
-has n_threshold => ( is => 'ro', isa => 'Num',        required => 0, default => 0.30 );
+has n_threshold => ( is => 'ro', isa => 'Num', required => 0, default => 0.30 );
 
 sub write_gff {
     my $self = shift;
@@ -49,6 +49,14 @@ sub write_gff {
 
     $self->_fasta_to_gff(\@nonltrs);
     say STDERR "Done with non-LTR search.";
+
+    ## clean up
+    my $fdir = File::Spec->catdir($outdir, 'f');
+    my $rdir = File::Spec->catdir($outdir, 'b');
+
+    for my $dir ($fdir, $rdir) {
+	remove_tree( $dir, { safe => 1 } );
+    }
 }
 
 sub _fasta_to_gff {
@@ -74,13 +82,13 @@ sub _fasta_to_gff {
 	while (my $line = <$in>) {
 	    chomp $line;
 	    if ($line =~ /^>/) {
-		my ($id, $start, $end) = ($line =~ /^\>(.*\.?fa(?:s?t?a?))_(\d+)-(\d+)/);
+		my ($id, $start, $end, $strand) = ($line =~ /^\>(.*\.?fa(?:s?t?a?))_(\d+)(?:-|_)(\d+)_(\+|\-)/);
 		if (defined $id) {		    
-		    $regions{$name}{$id}{$start} = join "||", $start, $end;
+		    $regions{$name}{$id}{$start} = join "||", $start, $end, $strand;
 		}
 		else {
 		    warn "\nERROR: Could not parse sequence ID for header: '$line'. ".
-			"This is a bug, please report it.\n";;
+			"This is a bug, please report it.\n";
 		}
 	    }
 	}
@@ -106,7 +114,7 @@ sub _fasta_to_gff {
 	for my $seqid (nsort keys %{$regions{$clade}}) {
 	    my ($name, $path, $suffix) = fileparse($seqid, qr/\.[^.]*/);
 	    for my $start (sort { $a <=> $b } keys %{$regions{$clade}{$seqid}}) {
-	        my ($start, $end) = split /\|\|/, $regions{$clade}{$seqid}{$start};
+	        my ($start, $end, $strand) = split /\|\|/, $regions{$clade}{$seqid}{$start};
 		my $seqname = $seqid;
 		$seqname =~ s/\.fa.*//;
 		my $elem = "non_LTR_retrotransposon$ct";
@@ -119,7 +127,7 @@ sub _fasta_to_gff {
 		if (defined $seq) {
 		    my $id = join "_", $elem, $seqname, $adj_start, $adj_end;
 		    say $faout join "\n", ">$id", $seq;
-		    say $out join "\t", $name, 'Tephra', 'non_LTR_retrotransposon', $adj_start, $adj_end, '.', '?', '.', 
+		    say $out join "\t", $name, 'Tephra', 'non_LTR_retrotransposon', $adj_start, $adj_end, '.', $strand, '.', 
 		        "ID=non_LTR_retrotransposon$ct;Name=$clade;Ontology_term=SO:0000189"; 
 		    $ct++;
 		}
@@ -162,7 +170,7 @@ sub _filterNpercent {
     my $seqobj = Bio::SeqIO->new(-file => $tmp, -format => 'fasta')->next_seq;
     my $seq    = $seqobj->seq;
     ## This method is for removing gap ends, which arise when going back to DNA
-    ## coordinates with gappy draft genomes. Added in v0.02.8.
+    ## coordinates with gappy draft genomes. Added in v0.02.7.
     my ($s) = ($seq =~ /(^N+[ATCG]{0,10}?N+?)/ig);
     my ($e) = ($seq =~ /(N+?[ATCG]{0,10}?N+$)/ig);
     if ($s) {
@@ -182,18 +190,19 @@ sub _filterNpercent {
     else {
 	$adj_end = $end;
     }
-    ##
-    my $length  = $seqobj->length;
-    my $n_count = ($seq =~ tr/Nn//);
-    my $n_perc  = sprintf("%.2f",$n_count/$length);
     unlink $tmp;
 
-    if ($n_perc <= $n_thresh) {
+    my $length = length($seq); # need to get length of seq after removing gaps
+    return (undef, undef, undef) unless $length;
+
+    my $n_count = ($seq =~ tr/Nn//);
+    my $n_perc  = sprintf("%.2f",$n_count/$length);
+
+    if ($n_perc <= $n_thresh && $length >= 300) {
 	$seq =~ s/.{60}\K/\n/g;
 	return ($seq, $adj_start, $adj_end);
     }
     else {
-	#undef $seq;
 	return (undef, undef, undef);
     }
 }
