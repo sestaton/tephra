@@ -58,11 +58,11 @@ sub validate_q_score {
     make_path( $validation_dir, {verbose => 0, mode => 0771,} );
     
     my $domain          = 'en';
-    my $seq_dir         = File::Spec->catdir($dir, 'info', 'full');
+    #my $seq_dir         = File::Spec->catdir($dir, 'info', 'full');
     my $validation_file = File::Spec->catfile($validation_dir, $domain);
     my $evalue_file     = File::Spec->catfile($validation_dir, $domain.'_evalue');
 
-    my @cladedirs = map { File::Spec->catdir($seq_dir, $_) } @all_clade;
+    my @cladedirs = map { File::Spec->catdir($fulldir, $_) } @all_clade;
 
     for my $clade (@cladedirs) {
 	my $name = basename($clade);
@@ -124,17 +124,17 @@ sub get_full_frag {
 
 	# copy full length in + strand
 	if (-e $file_f) {
-	    my $of = File::Spec->catfile($clade_dir, $clade.".dna");
+	    my $of = File::Spec->catfile($clade_dir, $clade.'.dna');
 	    open my $fh_out, '>', $of or die"\nERROR: Could not open file: $of";
-	    $self->collate($file_f, $fh_out);
+	    $self->collate($file_f, $fh_out, '+');
 	    close $fh_out;
 	}
 
 	# copy full length in - strand
 	if (-e $file_b) {
-	    my $of = File::Spec->catfile($clade_dir, $clade.".dna");
+	    my $of = File::Spec->catfile($clade_dir, $clade.'.dna');
             open my $fh_out, '>>', $of or die"\nERROR: Could not open file: $of";
-            $self->collate($file_b, $fh_out);
+            $self->collate($file_b, $fh_out, '-');
 	    close $fh_out;
 	}
 
@@ -162,7 +162,6 @@ sub get_domain_pep_seq {
     open my $o, '>', $hmmout or die "\nERROR: Could not open file: $hmmout";
     print $o @hmm_results;
     close $o;
-    #say "debug99: $hmmout";
     my $hmmer_in = Bio::SearchIO->new(-file => $hmmout, -format => 'hmmer');
 
     while ( my $result = $hmmer_in->next_result ) {    
@@ -197,7 +196,7 @@ sub get_domain_pep_seq {
 	chomp $line;
 	if ($line =~ /\>/){
 	    if (defined $head && length($head) > 0 && $flag == 1) {
-		say $out '>'.$head.'_'.$result_start{$head}.'-'.$result_end{$head}; #put region in header
+		say $out '>'.$head.'_'.$result_start{$head}.'_'.$result_end{$head}; #put region in header
 		say $out substr($seq, $result_start{$head}, eval($result_end{$head}-$result_start{$head}+1));
 	    }
 
@@ -240,7 +239,7 @@ sub get_domain_dna_seq {
     #Ha1.fa_79699679_3    1/1     668   899 ..     1   260 []   185.0  4.4e-55
     #my @temp = split /\s+/, $1;
     my ($name, $path, $suffix) = fileparse($pep_file, qr/\.[^.]*/);
-    my $hmmout = File::Spec->catfile($path, $name."_hmmsearch.txt");
+    my $hmmout = File::Spec->catfile($path, $name.'_hmmsearch.txt');
     open my $o, '>', $hmmout or die "\nERROR: Could not open file: $hmmout";;
     print $o @hmm_results;
     close $o;
@@ -299,7 +298,7 @@ sub get_domain_dna_seq {
 	    $seq = "";
 	}
 	else {
-	    if ($flag == 1){
+	    if ($flag == 1) {
 	        $seq .= $each_line;
 	    }
 	}
@@ -326,11 +325,11 @@ sub vote_hmmsearch {
     my $i;
     my $anno_clade; 
 
-    open my $in, '<', $seq or croak "\nERROR: Could not open file: $seq";
-    while (my $each_line = <$in>){
-	if ($each_line =~ /\>/){
-	    chomp $each_line;
-	    my $uniq_key = substr($each_line, 1, length($each_line)-1);
+    open my $in, '<', $seq or die "\nERROR: Could not open file: $seq";
+    while (my $line = <$in>) {
+	if ($line =~ /\>/) {
+	    chomp $line;
+	    my $uniq_key = substr($line, 1, length($line)-1);
 	    $evalue{$uniq_key}      = 1000;
 	    $save_evalue{$uniq_key} = 1000;
 	    $clade{$uniq_key}       = '-';
@@ -345,7 +344,7 @@ sub vote_hmmsearch {
 	my @hmm_results = capture([0..5], $hmmsearch, $phmm_file, $seq);
 
 	my ($name, $path, $suffix) = fileparse($seq, qr/\.[^.]*/);
-	my $hmmout = File::Spec->catfile($path, $name."_hmmsearch.txt");
+	my $hmmout = File::Spec->catfile($path, $name.'_hmmsearch.txt');
 	open my $o, '>', $hmmout or die "\nERROR: Could not open file: $hmmout";;
 	print $o @hmm_results;
 	close $o;
@@ -394,20 +393,27 @@ sub vote_hmmsearch {
 
 sub collate {
     my $self = shift;
-    my ($file_in, $fh_out) = @_;
-    my $lines = do { 
-        local $/ = undef; 
-        open my $fh_in, '<', $file_in or die "\nERROR: Could not open file: $file_in\n";
-        <$fh_in>;
-    };
-    print $fh_out $lines;
+    my ($file_in, $fh_out, $strand) = @_;
+    open my $fh_in, '<', $file_in or die "\nERROR: Could not open file: $file_in\n";
+
+    while (my $line = <$fh_in>) {
+	chomp $line;
+	if ($line =~ /^>/) {
+	    $line .= "_$strand";
+	    say $fh_out $line;
+	}
+	else {
+	    say $fh_out $line;
+	}
+    }
+    close $fh_in;
 }
 
 sub _add_clade_to_header {
     my $self = shift;
     my ($clade, $result_file) = @_;
 
-    my $outfile = $result_file."p";
+    my $outfile = $result_file.'p';
     open my $in, '<', $result_file or die "\nERROR: Could open file: $result_file\n";
     open my $out, '>', $outfile or die "\nERROR: Could open file: $outfile\n";
 
