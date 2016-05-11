@@ -54,6 +54,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Find helitrons in reference sequences with HelitronScanner
  - [x] Generate GFF3 of full-length helitrons
  - [ ] Annotate coding domains in helitrons and include domains in GFF 
+ - [ ] Adjust header for full length elements to match output of other commands
 
 ## Command `tephra findtrims`
  - [x] Find all non-overlapping TRIMs under strict and relaxed conditions
