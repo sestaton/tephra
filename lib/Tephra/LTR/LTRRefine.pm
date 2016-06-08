@@ -15,7 +15,7 @@ use Bio::DB::HTS::Kseq;
 use Bio::DB::HTS::Faidx;
 use Set::IntervalTree;
 use Path::Class::File;
-use Carp 'croak'
+use Carp 'croak';
 #use Data::Dump::Color;
 use namespace::autoclean;
 
