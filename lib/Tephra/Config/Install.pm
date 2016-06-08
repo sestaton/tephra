@@ -107,6 +107,12 @@ sub configure_root {
         $config->{blastpath} = $self->fetch_blast;
 	print STDERR ".";
     }
+
+    unless (-e $config->{htslibdir}) {
+        $config->{htslibdir} = $self->fetch_htslib;
+	print STDERR ".";
+    }
+
     print STDERR "Done.\n";
 
     return $config;
@@ -394,6 +400,46 @@ sub fetch_emboss {
     chdir $wd;
 
     return $transeq;
+}
+
+sub fetch_htslib {
+    my $self = shift;
+    my $root = $self->basedir;
+    my $wd   = $self->workingdir;
+
+    my $urlbase = 'https://github.com';
+    my $dir     = 'samtools';
+    my $tool    = 'htslib';
+    my $release = 'releases/download';
+    my $version = '1.3.1';
+    my $file    = 'htslib-1.3.1.tar.bz2';
+    my $url     = join "/", $urlbase, $dir, $tool, $release, $version, $file;
+    my $outfile = File::Spec->catfile($root, $file);
+
+    system("wget -q -O $outfile $url 2>&1 > /dev/null") == 0
+	or die $!;
+    chdir $root;
+    my $dist = 'htslib-1.3.1';
+    my $libdir = File::Spec->catdir($dist, 'htslib');
+    system("tar xzf $file") == 0 or die "tar failed: $!";
+    chdir $dist;
+    my $cwd = getcwd();
+    system("./configure --prefix=$cwd 2>&1 > /dev/null") == 0
+	or die "configure failed: $!";
+    system("make -j4 2>&1 > /dev/null") == 0 
+	or die "make failed: $!";
+    system("make install 2>&1 > /dev/null") == 0
+	or die "make failed: $!";
+    
+    my $distfile = File::Spec->catfile($root, $file);
+    unlink $distfile;
+    chdir $wd;
+
+    $ENV{HTSLIB_DIR} = $libdir;
+    system("cpanm -q Bio::DB::HTS") == 0
+	or die "Installing Bio::DB::HTS failed. Here is the HTSLIB_DIR: $libdir\n"
+
+    return $libdir;
 }
 
 sub fetch_hmm_models {
