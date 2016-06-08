@@ -7,6 +7,7 @@ use File::Spec;
 use File::Find;
 use File::Basename;
 use File::Path qw(make_path);
+use Bio::DB::HTS::Kseq;
 use Tephra::NonLTR::RunHMM;
 use Tephra::NonLTR::Postprocess;
 use Tephra::NonLTR::QValidation;
@@ -122,9 +123,10 @@ sub _split_genome {
     my $self = shift;
     my ($genome, $genome_dir) = @_;
 
-    my $seqio = Bio::SeqIO->new(-file => $genome, -format => 'fasta');
-    while (my $seqobj = $seqio->next_seq) {
-	my $id = $seqobj->id;
+    my $kseq = Bio::DB::HTS::Kseq->new($genome);
+    my $iter = $kseq->iterator;
+    while (my $seqobj = $iter->next_seq) {
+	my $id = $seqobj->name;
 	my $outfile = File::Spec->catfile($genome_dir, $id.'.fasta');
 	open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 	say $out join "\n", ">".$id, $seqobj->seq;
