@@ -3,7 +3,7 @@ package Tephra::Role::GFF;
 use 5.010;
 use Moose::Role;
 use Bio::GFF3::LowLevel qw(gff3_parse_feature);
-use Path::Class::File
+use Path::Class::File;
 #use Data::Dump::Color;
 use namespace::autoclean;
 
