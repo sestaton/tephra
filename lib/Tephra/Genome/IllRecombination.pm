@@ -10,6 +10,7 @@ use File::Temp;
 use Path::Class::File;
 use Bio::Seq;
 use Bio::SeqIO;
+use Bio::DB::HTS::Kseq;
 use Bio::AlignIO;
 use Bio::SearchIO;
 use Parallel::ForkManager;
@@ -137,8 +138,8 @@ sub collect_align_args {
 
     for my $fam (@full) {
 	my ($name, $path, $suffix) = fileparse($fam, qr/\.[^.]*/);
-	my $aln = File::Spec->catfile($path, $name."_muscle-out.fas");
-	my $log = File::Spec->catfile($path, $name."_muscle-out.log");
+	my $aln = File::Spec->catfile($path, $name.'_muscle-out.fas');
+	my $log = File::Spec->catfile($path, $name.'_muscle-out.log');
 	
 	my $clwcmd  = "muscle -in $fam -out $aln 2>$log";
 	$aln_args{$name} = { seqs => $fam, args => $clwcmd, aln => $aln };
@@ -175,14 +176,14 @@ sub find_align_gaps {
     my @indels;
     my @flanking_seqs;
     
-    $dr_pid = defined($dr_pid) ? $dr_pid : '10'; ## make class attribute
+    $dr_pid //= 10; ## make class attribute
     my $cwd = getcwd();
     open my $illrecstat_fh, '>>', $illrecstatsfile or die "\nERROR: Could not open file: $!";
     
-    my $statstmp = $statsfile.".tmp";
+    my $statstmp = $statsfile.'.tmp';
     open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     open my $stats_out_tmp, '>>', $statstmp or die "\nERROR: Could not open file: $statstmp\n";
-    say $stats_out_tmp join "\t", "#LTR_retro_name", "Total_num_gap_sites", "Num_diff_gap_sizes", 
+    say $stats_out_tmp join "\t", "LTR_retro_name", "Total_num_gap_sites", "Num_diff_gap_sizes", 
         "Percent_gap_sites", "Mean_gap_size", "Min_gap_size", "Max_gap_size";
 
     my ($seqs_in_aln, $count) = $self->split_aln($aln_file);
@@ -239,8 +240,8 @@ sub find_align_gaps {
 		    my $upstr_seq   = $seq->subseq($upstream_spos,   $upstream_epos);
 		    my $downstr_seq = $seq->subseq($downstream_spos, $downstream_epos);
 
-		    my $upstr_id   = $seq->id."_upstr-del-".$del."_".$upstream_spos."-".$upstream_epos;
-		    my $downstr_id = $seq->id."_downstr-del-".$del."_".$downstream_spos."-".$downstream_epos;
+		    my $upstr_id   = $seq->id.'_upstr-del-'.$del.'_'.$upstream_spos.'-'.$upstream_epos;
+		    my $downstr_id = $seq->id.'_downstr-del-'.$del.'_'.$downstream_spos.'-'.$downstream_epos;
 
 		    ## Devos et al. 2002 (I think) defined a threshold of 2bp of non-matching bases
 		    ## following a gap
@@ -283,37 +284,37 @@ sub split_aln {
 
     my ($iname, $ipath, $isuffix) = fileparse($input, qr/\.[^.]*/);
 
-    my $seq_in  = Bio::SeqIO->new(-file  => $input, -format => 'fasta');
-    my $count = 0;
+    my $kseq = Bio::DB::HTS::Kseq->new($input);
+    my $iter = $kseq->iterator();
+
+    my $count  = 0;
     my $fcount = 1;
     my @split_files;
     $iname =~ s/\.fa.*//;
     my $cwd = getcwd();
     
-    my $tmpiname = $iname."_".$fcount."_XXXX";
+    my $tmpiname = $iname.'_'.$fcount.'_XXXX';
     my $fname = File::Temp->new( TEMPLATE => $tmpiname,
 				 DIR      => $ipath,
 				 UNLINK   => 0,
-				 SUFFIX   => ".fasta");
+				 SUFFIX   => '.fasta');
 
-    my $seq_out = Bio::SeqIO->new(-file   => ">$fname", -format => 'fasta');
+    open my $out, '>', $fname or die "\nERROR: Could not open file: $fname\n";
 
     push @split_files, $fname;
-    while (my $seq = $seq_in->next_seq) {
+    while (my $seq = $iter->next_seq) {
 	if ($count % 1 == 0 && $count > 0) {
 	    $fcount++;
-	    $tmpiname = $iname."_".$fcount."_XXXX";
+	    $tmpiname = $iname.'_'.$fcount.'_XXXX';
 	    $fname = File::Temp->new( TEMPLATE => $tmpiname,
 				      DIR      => $ipath,
 				      UNLINK   => 0,
-				      SUFFIX   => ".fasta");
+				      SUFFIX   => '.fasta');
 
-	    $seq_out = Bio::SeqIO->new(-file   => ">$fname",
-				       -format => 'fasta');
-
+	    open $out, '>', $fname or die "\nERROR: Could not open file: $fname\n";
 	    push @split_files, $fname;
 	}
-	$seq_out->write_seq($seq);
+	say $out join "\n", '>'.$seq->name, $seq->seq;
 	$count++;
     }
 
@@ -373,8 +374,7 @@ sub bl2seq_compare {
     say $qname join "\n", ">".$upstr_id, $upstr_seq;
     say $rname join "\n", ">".$downstr_id, $downstr_seq;
     my $blcmd = "$blastn -query $qname -subject $rname -word_size 4 -outfmt 5 -out $outfile 2>&1 | ";
-    $blcmd .= "grep -v \"CFastaReader: Hyphens are invalid and will be ignored\""; ## what is worse, this hack or the stupid warnings?
-    #say STDERR $blcmd;
+    $blcmd .= "grep -v \"CFastaReader: Hyphens are invalid and will be ignored\""; ## this is a hack for these stupid warnings
     $self->run_cmd($blcmd);
     unlink $qname, $rname;
 
@@ -449,7 +449,7 @@ sub get_stats {
     my $self = shift;
     my ($fas, $pos, $gap, $indel_lengths, $fname) = @_;
 
-    my $gap_stats = $fname."_gap_stats.txt";
+    my $gap_stats = $fname.'_gap_stats.txt';
     open my $statsout, '>', $gap_stats or die "\nERROR: Could not open file: $gap_stats\n";
     my $stat = Statistics::Descriptive::Full->new;
 
@@ -489,12 +489,12 @@ sub collate_gap_stats {
     my (@repeat_names, @total_gap_char, @diff_gap_sizes, @gap_char_perc, 
 	@mean_gap_size, @min_gap_size, @max_gap_size);
 
-    while (<$gap_stats_fh_in>) {
-	if (/^\#/) {
-	    print $gap_stats_fh_out $_;
+    while (my $line = <$gap_stats_fh_in>) {
+	if ($line =~ /^\#/) {
+	    print $gap_stats_fh_out $line;
 	}
 	else {
-	    my @all_gap_stats = split /\t/, $_;
+	    my @all_gap_stats = split /\t/, $line;
 	    push @repeat_names,   $all_gap_stats[0];
 	    push @total_gap_char, $all_gap_stats[1];
 	    push @diff_gap_sizes, $all_gap_stats[2];
@@ -503,9 +503,10 @@ sub collate_gap_stats {
 	    push @min_gap_size,   $all_gap_stats[5];
 	    push @max_gap_size,   $all_gap_stats[6];
 
-	    print $gap_stats_fh_out $_;
+	    print $gap_stats_fh_out $line;
 	}
     }
+    close $gap_stats_fh_in;
 
     my $fam_name = pop @repeat_names;
     $fam_name =~ s/\_\d+\_.*//;
@@ -545,16 +546,14 @@ sub collate_gap_stats {
 	"(stdev)\tMean_fam_gap_size (stddev)\tMean_gap_min_size ".
 	"(stddev)\tMean_gap_max_size (stddev)";
 
-    say $gap_stats_fh_out $fam_name."\t".$grand_mean_fam_count."\t".
-	$grand_gap_char_mean." (".$grand_gap_char_sd.")"."\t".
-	$grand_gap_size_mean." (".$grand_gap_size_sd.")"."\t".
-	$grand_gap_char_perc." (".$grand_gap_char_perc_sd.")"."\t".
-	$grand_mean_gap_size." (".$grand_gap_size_mean_sd.")"."\t".
-	$grand_gap_size_min." (".$grand_gap_size_min_sd.")"."\t".
-	$grand_gap_size_max." (".$grand_gap_size_max_sd.")"."\n";
+    say $gap_stats_fh_out join "\t", $fam_name, $grand_mean_fam_count, 
+	$grand_gap_char_mean.' ('.$grand_gap_char_sd.')',
+	$grand_gap_size_mean.' ('.$grand_gap_size_sd.')',
+	$grand_gap_char_perc.' ('.$grand_gap_char_perc_sd.')',
+	$grand_mean_gap_size.' ('.$grand_gap_size_mean_sd.')',
+	$grand_gap_size_min.' ('.$grand_gap_size_min_sd.')',
+	$grand_gap_size_max.' ('.$grand_gap_size_max_sd.')',"\n";
 
-
-    close $gap_stats_fh_in;
     close $gap_stats_fh_out;
 }
 
@@ -569,7 +568,7 @@ sub _cnv_align_fmt {
     my $seqout = Bio::AlignIO->new(-file => ">$fas", -format => 'fasta');
     
     my $seqct = 0;
-    my $index = 0; # this is a horrible hack...need to get original ids
+    my $index = 0;
 
     while (my $seqobj = $seqin->next_aln) {
 	for my $seq ($seqobj->each_seq) {
@@ -592,8 +591,9 @@ sub _remove_singletons {
     my $seqct = 0;
     for my $name (keys %$args) {
 	my $db = $args->{$name}{seqs};
-	my $seqio = Bio::SeqIO->new( -file => $db, -format => 'fasta' );
-	while (my $seqobj = $seqio->next_seq) { $seqct++ if defined $seqobj->seq; }
+	my $kseq = Bio::DB::HTS::Kseq->new($db);
+	my $iter = $kseq->iterator();
+	while (my $seqobj = $iter->next_seq) { $seqct++ if defined $seqobj->seq; }
 	if ($seqct < 2) {
 	    push @singles, $name;
 	    unlink $db;
