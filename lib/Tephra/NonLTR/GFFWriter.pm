@@ -2,7 +2,7 @@ package Tephra::NonLTR::GFFWriter;
 
 use 5.010;
 use Moose;
-use Bio::SeqIO;
+use Bio::DB::HTS::Kseq;
 use File::Find;
 use File::Spec;
 use File::Path qw(make_path remove_tree);
@@ -26,6 +26,7 @@ Version 0.02.7
 our $VERSION = '0.02.7';
 $VERSION = eval $VERSION;
 
+has genome      => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
 has fastadir    => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
 has outdir      => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
 has n_threshold => ( is => 'ro', isa => 'Num', required => 0, default => 0.30 );
@@ -62,17 +63,17 @@ sub write_gff {
 sub _fasta_to_gff {
     my $self = shift;
     my $outdir = $self->outdir;
+    my $genome = $self->genome;
     my ($seqs) = @_;
 
-    my $config = Tephra::Config::Exe->new->get_config_paths;
-    my ($samtools) = @{$config}{qw(samtools)};
+    my $index = $self->index_ref($genome);
+
     my $name = basename($outdir);
     my $outfile = File::Spec->catfile($outdir, $name.'_tephra_nonltr.gff3');
     my $fas     = File::Spec->catfile($outdir, $name.'_tephra_nonltr.fasta');
     open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     open my $faout, '>', $fas or die "\nERROR: Could not open file: $fas\n";
     my ($lens, $combined) = $self->_get_seq_region;
-    $self->_index_ref($samtools, $combined) unless -e $combined.'.fai';
 
     my %regions;
     for my $file (@$seqs) {
@@ -108,7 +109,7 @@ sub _fasta_to_gff {
 	}
     }
 
-    ##TODO: How to get the strand correct?
+    ##TODO: How to get the strand correct? Added in v0.03.0.
     my $ct = 0;
     for my $clade (keys %regions) {
 	for my $seqid (nsort keys %{$regions{$clade}}) {
@@ -119,14 +120,13 @@ sub _fasta_to_gff {
 		$seqname =~ s/\.fa.*//;
 		my $elem = "non_LTR_retrotransposon$ct";
                 my $tmp = $elem.'.fasta';
-                #my $id  = join "_", $elem, $seqname, $start, $end;
-                my $cmd = "$samtools faidx $combined $seqname:$start-$end > $tmp";
-                $self->run_cmd($cmd);
 		
-		my ($seq, $adj_start, $adj_end) = $self->_filterNpercent($tmp, $start, $end);
-		if (defined $seq) {
+		my $seq = $self->_get_full_seq($index, $seqname, $start, $end);
+		
+		my ($filtered_seq, $adj_start, $adj_end) = $self->_filterNpercent($seq, $start, $end);
+		if (defined $filtered_seq) {
 		    my $id = join "_", $elem, $seqname, $adj_start, $adj_end;
-		    say $faout join "\n", ">$id", $seq;
+		    say $faout join "\n", ">$id", $filtered_seq;
 		    say $out join "\t", $name, 'Tephra', 'non_LTR_retrotransposon', $adj_start, $adj_end, '.', $strand, '.', 
 		        "ID=non_LTR_retrotransposon$ct;Name=$clade;Ontology_term=SO:0000189"; 
 		    $ct++;
@@ -150,10 +150,13 @@ sub _get_seq_region {
     for my $seq (nsort @seqs) {
 	next if $seq =~ /tephra/;
 	$self->_collate($seq, $out);
-	my $seqio = Bio::SeqIO->new(-file => $seq, -format => 'fasta');
-	while (my $seqobj = $seqio->next_seq) {
-	    my $id  = $seqobj->id;
-	    my $len = $seqobj->length;
+	my $kseq = Bio::DB::HTS::Kseq->new($seq);
+	my $iter = $kseq->iterator();
+
+	while (my $seqobj = $iter->next_seq) {
+	    my $id  = $seqobj->name;
+	    my $seq = $seqobj->seq;
+	    my $len = length($seq);
 	    $lens{$id} = $len;
 	}
     }
@@ -161,14 +164,21 @@ sub _get_seq_region {
     return (\%lens, $combined);
 }
 
+sub _get_full_seq {
+    my $self = shift;
+    my ($index, $chromosome, $start, $end) = @_;
+    my $location = "$chromosome:$start-$end";
+    my ($seq, $length) = $index->get_sequence($location);
+
+    return $seq;
+}
+
 sub _filterNpercent {
     my $self = shift;
-    my ($tmp, $start, $end) = @_;
+    my ($seq, $start, $end) = @_;
     my $n_thresh = $self->n_threshold;
 
     my ($adj_start, $adj_end);
-    my $seqobj = Bio::SeqIO->new(-file => $tmp, -format => 'fasta')->next_seq;
-    my $seq    = $seqobj->seq;
     ## This method is for removing gap ends, which arise when going back to DNA
     ## coordinates with gappy draft genomes. Added in v0.02.7.
     my ($s) = ($seq =~ /(^N+[ATCG]{0,10}?N+?)/ig);
@@ -190,7 +200,6 @@ sub _filterNpercent {
     else {
 	$adj_end = $end;
     }
-    unlink $tmp;
 
     my $length = length($seq); # need to get length of seq after removing gaps
     return (undef, undef, undef) unless $length;
@@ -216,13 +225,6 @@ sub _collate {
         <$fh_in>;
     };
     print $fh_out $lines;
-}
-
-sub _index_ref {
-    my $self = shift;
-    my ($samtools, $fasta) = @_;
-    my $faidx_cmd = "$samtools faidx $fasta";
-    $self->run_cmd($faidx_cmd);
 }
 
 =head1 AUTHOR
