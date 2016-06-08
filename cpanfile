@@ -17,5 +17,5 @@ requires 'YAML::Tiny';
 requires 'HTML::TreeBuilder';
 requires 'autodie';
 requires 'Net::FTP';
-
+requires 'Bio::GFF3::LowLevel';
 
