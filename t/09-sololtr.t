@@ -9,6 +9,7 @@ use Capture::Tiny       qw(capture);
 use File::Path          qw(remove_tree);
 use File::Find;
 use File::Spec;
+use File::Copy;
 #use Data::Dump;
 
 use Test::More tests => 8;
@@ -20,6 +21,7 @@ if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
 
 my $cmd       = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir   = File::Spec->catdir('t', 'test_data');
+my $testfile  = File::Spec->catfile($testdir, 'RLG_family0_exemplar_ltrs.fasta');
 my $outdir    = File::Spec->catdir($testdir, 't_family_domains');
 my $resdir    = File::Spec->catdir($outdir, 'ref_ltrdigest85_combined_filtered_gypsy');
 my $modeldir  = File::Spec->catdir($resdir, 'Tephra_LTR_exemplar_models');
@@ -33,6 +35,8 @@ my $masked    = File::Spec->catfile($testdir, 'ref_masked99.fas');
 
 SKIP: {
     skip 'skip development tests', 8 unless $devtests;
+    copy $testfile, $resdir or die "\nERROR: copy failed $!";
+
     my @results   = capture { system([0..5], "$cmd sololtr -h") };
     
     ok(@results, 'Can execute sololtr subcommand');
@@ -50,7 +54,7 @@ SKIP: {
     my $seqct = 0;
     open my $in, '<', $seqfile;
     while (<$in>) { $seqct++ if /^>/; }
-    ok( $seqct == 2, 'Correct number of solo-LTR sequences above thresholds' );
+    ok( $seqct == 1, 'Correct number of solo-LTR sequences above thresholds' );
     close $in;
 
     my $soloct = 0;
@@ -64,8 +68,8 @@ SKIP: {
     }
     close $gff;
 
-    #say STDERR "SOLOCT: $soloct";
-    ok( $soloct == 2, 'Correct number of solo-LTRs found' );
+    say STDERR "SOLOCT: $soloct";
+    ok( $soloct == 1, 'Correct number of solo-LTRs found' );
     ok( $seqct == $soloct, 'Same number of sequences and elements written to GFF/FASTA' );
 
     # clean up
