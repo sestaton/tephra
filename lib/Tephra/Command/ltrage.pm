@@ -14,6 +14,7 @@ sub opt_spec {
 	[ "outfile|o=s",   "The output file containing the age of each element "                        ],
 	[ "subs_rate|r=f", "The nucleotide substitution rate to use (Default: 1e-8) "                   ],
 	[ "threads|t=i",   "The number of threads to use for clustering coding domains "                ],
+	[ "indir|i=s",     "The input directory of superfamily exemplars "                              ],
 	[ "clean",         "Clean up all the intermediate files from PAML and clustalw (Default: yes) " ],
 	[ "help|h",        "Display the usage menu and exit. "                                          ],
         [ "man|m",         "Display the full manual. "                                                  ],
@@ -32,16 +33,12 @@ sub validate_args {
         $self->help;
         exit(0);
     }
-    elsif (!$opt->{genome} || !$opt->{gff}) {
-	say "\nERROR: Required arguments not given.";
+    elsif (!$opt->{indir}) {
+	say "\nERROR: The '--indir' directory does not appear to exist. Check input.";
 	$self->help and exit(0);
     }
     elsif (! -e $opt->{genome}) {
         say "\nERROR: The '--genome' file does not appear to exist. Check input.";
-        $self->help and exit(0);
-    }
-    elsif (! -e $opt->{gff}) {
-        say "\nERROR: The '--gff' file does not appear to exist. Check input.";
         $self->help and exit(0);
     }
 }
@@ -55,6 +52,7 @@ sub execute {
 sub _calculate_ltr_stats {
     my ($opt) = @_;
 
+    my $indir     = $opt->{indir};
     my $genome    = $opt->{genome};
     my $gff       = $opt->{gff};
     my $outfile   = $opt->{outfile};
@@ -63,6 +61,7 @@ sub _calculate_ltr_stats {
     my $clean     = $opt->{clean} // 0;
 
     my $stats_obj = Tephra::LTR::LTRStats->new(
+	dir       => $indir,
 	genome    => $genome,
 	gff       => $gff,
 	subs_rate => $subs_rate,
@@ -71,8 +70,7 @@ sub _calculate_ltr_stats {
 	clean     => $clean,
     );
 
-    my $dir = $stats_obj->extract_ltr_features;
-    $stats_obj->align_features($dir);
+    $stats_obj->calculate_ltr_ages;
 }
 
 sub help {
@@ -86,7 +84,8 @@ sub help {
       -g|genome     :   The genome sequences in FASTA format used to search for LTR-RTs.
       -f|gff        :   The GFF3 file of LTR-RTs in <--genome>.
       -o|outfile    :   The output file containing the age of each element.
-    
+      -i|indir      :   The input directory of superfamily exemplars.
+
   Options:
       -r|subs_rate  :   The nucleotide substitution rate to use (Default: 1e-8).
       -t|threads    :   The number of threads to use for clustering coding domains (Default: 1).
