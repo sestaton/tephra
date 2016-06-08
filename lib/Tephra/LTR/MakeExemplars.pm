@@ -5,11 +5,10 @@ use Moose;
 use MooseX::Types::Path::Class;
 use File::Find;
 use File::Basename;
-use Bio::SeqIO;
-use Bio::Tools::GFF;
-use Tephra::Config::Exe;
-use namespace::autoclean;
+use Bio::GFF3::LowLevel qw(gff3_parse_feature);
+use Carp 'croak';
 #use Data::Dump::Color;
+use namespace::autoclean;
 
 with 'Tephra::Role::GFF',
      'Tephra::Role::Util';
@@ -56,38 +55,52 @@ sub make_exemplars {
     my $dir   = $self->dir;
     my $gff   = $self->gff;
     my $fasta = $self->genome;
-    
+   
+    my $index = $self->index_ref($fasta);
     my $exemplars = $self->process_vmatch_args($dir);
  
-    my $gffio = Bio::Tools::GFF->new( -file => $gff, -gff_version => 3 );
+    open my $gffio, '<', $gff or die "\nERROR: Could not open file: $gff\n";
 
-    my ($start, $end, $source, $elem_id, $key, $full_feats, $exempid, %feature, %ltrs, %seen);
-    
-    while (my $feature = $gffio->next_feature()) {
-	if ($feature->primary_tag eq 'LTR_retrotransposon') {
-	    my @string = split /\t/, $feature->gff_string;
-	    ($elem_id) = ($string[8] =~ /ID=?\s+?(LTR_retrotransposon\d+)/);
-	    ($source, $start, $end) = ($string[0], $feature->start, $feature->end);
+    my ($source_id, $type, $strand, $exemplar_id_form, 
+	$start, $end, $source, $elem_id, $key, $full_feats, 
+	$exempid, %feature, %ltrs, %coord_map);
+
+    while (my $line = <$gffio>) {
+	chomp $line;
+	next if $line =~ /^#/;
+	my $feature = gff3_parse_feature( $line );
+	if ($feature->{type} eq 'LTR_retrotransposon') {
+	    $elem_id = @{$feature->{attributes}{ID}}[0];
+	    ($source_id, $source, $type, $start, $end, $strand) 
+		= @{$feature}{qw(seq_id source type start end strand)};
+	    $strand //= '?';
+
 	    $key = join "||", $elem_id, $start, $end;
-	    $full_feats = join "||", $source, $feature->primary_tag, @string[3,4,6];
+	    $full_feats = join "||", $source_id, $type, $start, $end, $strand;
+	    $coord_map{$elem_id} = join "||", $source_id, $start, $end;
+	 
+	    $exemplar_id_form = join "_", $elem_id, $source_id, $start, $end;
 	}
-	next unless defined $start && defined $end;
-	my $exemplar_id_form = join "_", $elem_id, $source, $start, $end;
-	
+	next unless defined $elem_id && defined $source_id && defined $start && defined $end;
+
 	if (exists $exemplars->{$exemplar_id_form}) {
 	    my $family = $exemplars->{$exemplar_id_form};
-	    
 	    $ltrs{$key}{'full'} = join "||", $full_feats, $family;
-	    if ($feature->primary_tag eq 'long_terminal_repeat') {
-		my @string = split /\t/, $feature->gff_string;
-		if ($feature->start >= $start && $feature->end <= $end) {
-		    my $ltrkey = join "||", $string[0], $feature->primary_tag, @string[3,4,6];
-		    push @{$ltrs{$key}{'ltrs'}}, $ltrkey unless exists $seen{$ltrkey};
-		    $seen{$ltrkey} = 1;
+
+	    if ($feature->{type} eq 'long_terminal_repeat') {
+		my $parent = @{$feature->{attributes}{Parent}}[0];
+		my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
+		if ($seq_id eq $feature->{seq_id}) {
+		    my ($seq_id, $type, $start, $end, $strand) =
+			@{$feature}{qw(seq_id type start end strand)};
+		    $strand //= '?';
+		    my $ltrkey = join "||", $seq_id, $type, $start, $end, $strand, $family;
+		    push @{$ltrs{$pkey}{'ltrs'}}, $ltrkey;
 		}
 	    }
 	}
     }
+    close $gffio;
  
     my %pdoms;
     my $ltrct = 0;
@@ -103,30 +116,25 @@ sub make_exemplars {
 	open my $allfh, '>>', $exemcomp or die "\nERROR: Could not open file: $exemcomp\n";
 	open my $ltrs_outfh, '>>', $ltrs_out or die "\nERROR: Could not open file: $ltrs_out\n";;
 	
-	my $full_tmp = File::Spec->catfile($dir, $family.'_exemplar.fasta');
-	$self->subseq($fasta, $source, $element, $start, $end, $full_tmp, $allfh, undef);
+	$self->subseq($index, $source, $element, $start, $end, $allfh, undef, $family);
 	
 	# ltrs
 	for my $ltr_repeat (@{$ltrs{$ltr}{'ltrs'}}) {
-	    my ($src, $ltrtag, $s, $e, $strand) = split /\|\|/, $ltr_repeat;
+	    my ($src, $ltrtag, $s, $e, $strand, $fam) = split /\|\|/, $ltr_repeat;
 	    my $lfname = $element;
 	    my $orientation;
 	    if ($ltrct) {
 		$orientation = '5prime' if $strand eq '+';
 		$orientation = '3prime' if $strand eq '-';
-		$lfname .= "_$orientation-ltr.fasta" if $strand eq '+';
-		$lfname .= "_$orientation-ltr.fasta" if $strand eq '-';
-		my $fiveprime_tmp = File::Spec->catfile($dir, $lfname);
-		$self->subseq($fasta, $src, $element, $s, $e, $fiveprime_tmp, $ltrs_outfh, $orientation);
+		$orientation = 'unk-primer' if $strand eq '?';
+		$self->subseq($index, $src, $element, $s, $e, $ltrs_outfh, $orientation, $family);
 		$ltrct = 0;
 	    }
 	    else {
 		$orientation = '3prime' if $strand eq '+';
 		$orientation = '5prime' if $strand eq '-';
-		$lfname .= "_$orientation-ltr.fasta" if $strand eq '+';
-		$lfname .= "_$orientation-ltr.fasta" if $strand eq '-';
-		my $threeprime_tmp = File::Spec->catfile($dir, $lfname);
-		$self->subseq($fasta, $src, $element, $s, $e, $threeprime_tmp, $ltrs_outfh, $orientation);
+		$orientation = 'unk-primef' if $strand eq '?';
+		$self->subseq($index, $src, $element, $s, $e, $ltrs_outfh, $orientation, $family);
 		$ltrct++;
 	    }
 	}
@@ -186,25 +194,20 @@ sub parse_vmatch {
 
 sub subseq {
     my $self = shift;
-    my ($fasta, $loc, $elem, $start, $end, $tmp, $out, $orient) = @_;
+    my ($index, $loc, $elem, $start, $end, $out, $orient, $family) = @_;
 
-    my $config = Tephra::Config::Exe->new->get_config_paths;
-    my ($samtools) = @{$config}{qw(samtools)};
-    my $cmd = "$samtools faidx $fasta $loc:$start-$end > $tmp";
-    $self->run_cmd($cmd);
+    my $location = "$loc:$start-$end";
+    my ($seq, $length) = $index->get_sequence($location);
+
+    croak "\nERROR: Something went wrong, this is a bug. Please report it.\n"
+	unless $length;
 
     my $id;
-    $id = join "_", $elem, $loc, $start, $end if !$orient;
-    $id = join "_", $orient, $elem, $loc, $start, $end if $orient; # for unique IDs with clustalw
-    if (-s $tmp) {
-	my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
-	while (my $seqobj = $seqio->next_seq) {
-	    my $seq = $seqobj->seq;
-	    $seq =~ s/.{60}\K/\n/g;
-	    say $out join "\n", ">".$id, $seq;
-	}
-    }
-    unlink $tmp;
+    $id = join "_", $family, $elem, $loc, $start, $end if !$orient;
+    $id = join "_", $orient, $family, $elem, $loc, $start, $end if $orient; # for unique IDs with clustalw
+
+    $seq =~ s/.{60}\K/\n/g;
+    say $out join "\n", ">$id", $seq;
 }
 
 sub clean_index {
