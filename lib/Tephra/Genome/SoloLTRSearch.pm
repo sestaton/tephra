@@ -10,6 +10,7 @@ use File::Copy;
 use File::Path          qw(make_path remove_tree);
 use IPC::System::Simple qw(capture system);
 use Path::Class::File;
+use Bio::DB::HTS::Kseq;
 use Bio::AlignIO;
 use Bio::SearchIO;
 use Sort::Naturally;
@@ -105,11 +106,8 @@ sub find_soloLTRs {
     my $dir = $self->dir;
     my $genome = $self->genome;
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
-    my $hmmsearch_summary = $self->report // File::Spec->catfile($path, $name."_tephra_soloLTRs.tsv");
+    my $hmmsearch_summary = $self->report // File::Spec->catfile($path, $name.'_tephra_soloLTRs.tsv');
     my ($hmmbuild, $hmmsearch) = $self->_find_hmmer;
-
-    ## 1) generate exemplar for each family (vmatch to cts)
-    ## 2) get aligned ltrs from clustalw
 
     print STDERR "Getting LTR alignments....";
     my $ltr_aln_files = $self->_get_ltr_alns($dir);
@@ -125,7 +123,7 @@ sub find_soloLTRs {
     say STDERR "done with alignment statistics.";
 
     # make one directory
-    my $model_dir = File::Spec->catdir($dir, "Tephra_LTR_exemplar_models");
+    my $model_dir = File::Spec->catdir($dir, 'Tephra_LTR_exemplar_models');
     unless ( -e $model_dir ) {
 	make_path( $model_dir, {verbose => 0, mode => 0771,} );
     }
@@ -148,7 +146,7 @@ sub find_soloLTRs {
 	
 	my $hmmsearch_out = $hmm;
 	$hmmsearch_out =~ s/\.hmm.*$//;
-	$hmmsearch_out .= "_".$gname.".hmmer";
+	$hmmsearch_out .= '_'.$gname.'.hmmer';
 	
 	$self->search_with_models($hmmsearch_out, $hmm, $hmmsearch, $genome);
 	    
@@ -249,11 +247,11 @@ sub _get_ltr_alns {
 
     for my $ltrseq (@ltrseqs) {
 	my ($name, $path, $suffix) = fileparse($ltrseq, qr/\.[^.]*/);
-	my $tre = File::Spec->catfile($path, $name.".dnd");
-	my $aln = File::Spec->catfile($path, $name."_clustal-out.aln");
-	my $log = File::Spec->catfile($path, $name."_clustal-out.log");
+	my $tre = File::Spec->catfile($path, $name.'.dnd');
+	my $aln = File::Spec->catfile($path, $name.'_clustal-out.aln');
+	my $log = File::Spec->catfile($path, $name.'_clustal-out.log');
 	
-	my $clwcmd  = "$clustalw2 -infile=$ltrseq -outfile=$aln 2>$log";
+	my $clwcmd = "$clustalw2 -infile=$ltrseq -outfile=$aln 2>$log";
 	$self->capture_cmd($clwcmd);
 	unlink $tre, $log;
 	push @aligns, $aln;
@@ -266,6 +264,7 @@ sub _collate {
     my $self = shift;
     my ($files, $outfile) = @_;
 
+    ##TODO: use lexical vars instead for array indexes
     my (%seen, %parsed_alns);
     for my $file (@$files) {
 	open my $fh_in, '<', $file or die "\nERROR: Could not open file: $file\n";
@@ -312,7 +311,7 @@ sub _find_hmmer {
 	return ($hmmbuild, $hmmsearch);
     }
     else {
-	croak "\nERROR: Could not get HMMERv2 programs. This likely indicates that Tephra was not configured correctly. Exiting.\n";
+	croak "\nERROR: Could not get HMMERv2 PATH. This indicates that Tephra was not configured correctly. Exiting.\n";
     }
 }
 
@@ -322,11 +321,13 @@ sub _get_seq_len {
     
     my %len;
 
-    my $seq_in = Bio::SeqIO->new(-file => $genome, -format => 'fasta');
+    my $kseq = Bio::DB::HTS::Kseq->new($genome);
+    my $iter = $kseq->iterator();
 
-    while ( my $seq = $seq_in->next_seq() ) {
-	my $id = $seq->id;
-	$len{$id} = $seq->length;
+    while ( my $seq = $iter->next_seq() ) {
+	my $id  = $seq->name;
+	my $seq = $seq->seq;
+	$len{$id} = length($seq);
     }       
 
     return \%len;
@@ -365,7 +366,7 @@ sub write_hmmsearch_report {
     $seqfile =~ s/\.txt$/\_seq.fasta/;
     my $element = $search_report;
 
-    my $model_type = "local";
+    my $model_type = 'local';
 
     my ($gname, $gpath, $gsuffix) = fileparse($genome, qr/\.[^.]*/);
     my ($name, $path, $suffix)    = fileparse($search_report, qr/\.[^.]*/);
@@ -412,7 +413,7 @@ sub write_hmmsearch_report {
 			        $hstop, $model_type;
 
 			    if ($self->seq) {
-				my $seqid = ">".$query."|".$hitid."_".$hstart."-".$hstop; 
+				my $seqid = '>'.$query.'_'.$hitid.'_'.$hstart.'_'.$hstop; 
 				## It makes more sense to show the location of the hit
 				## Also, this would pave the way for creating a gff of solo-LTRs
 				## my $seqid = ">".$query."|".$hitid."_".$hstart."-".$hstop
