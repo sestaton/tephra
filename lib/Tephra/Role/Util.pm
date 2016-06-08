@@ -2,6 +2,7 @@ package Tephra::Role::Util;
 
 use 5.010;
 use Moose::Role;
+use Bio::DB::HTS::Faidx;
 use IPC::System::Simple qw(system);
 use Capture::Tiny       qw(capture);
 use Try::Tiny;
@@ -42,6 +43,14 @@ sub capture_cmd {
     catch {
 	die "\nERROR: $cmd failed. Here is the exception: $_\n";
     };
+}
+
+sub index_ref {
+    my $self = shift;
+    my ($fasta) = @_;
+
+    my $index = Bio::DB::HTS::Faidx->new($fasta);
+    return $index;
 }
 
 sub get_SO_terms {
