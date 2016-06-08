@@ -5,22 +5,24 @@ use Moose;
 use MooseX::Types::Path::Class;
 use Statistics::Descriptive;
 use Sort::Naturally;
+use Number::Range;
 use File::Spec;
 use File::Find;
 use File::Basename;
-use Bio::SeqIO;
-use Bio::Tools::GFF;
-use Number::Range;
-use List::MoreUtils qw(indexes any);
-use List::Util      qw(min max);
-use Time::HiRes     qw(gettimeofday);
-use File::Path      qw(make_path);
+use Bio::DB::HTS::Kseq;
+use Bio::DB::HTS::Faidx;
+use Bio::GFF3::LowLevel qw(gff3_parse_feature);
+use List::MoreUtils     qw(indexes any);
+use List::Util          qw(min max);
+use Time::HiRes         qw(gettimeofday);
+use File::Path          qw(make_path);
 use Parallel::ForkManager;
 use Cwd;
+use Carp 'croak';
 use Try::Tiny;
 use Tephra::Config::Exe;
-use namespace::autoclean;
 #use Data::Dump::Color;
+use namespace::autoclean;
 
 with 'Tephra::Role::GFF',
      'Tephra::Role::Util';
@@ -99,6 +101,8 @@ sub extract_features {
     my $dir    = $self->outdir;
     my ($infile) = @_;
     
+    my $index = $self->index_ref($fasta);
+
     my ($name, $path, $suffix) = fileparse($infile, qr/\.[^.]*/);
     my $type = ($name =~ /(?:gypsy|copia|unclassified)$/i);
     die "\nERROR: Unexpected input. Should match /gypsy|copia|unclassified$/i. Exiting."
@@ -109,11 +113,11 @@ sub extract_features {
 	make_path( $resdir, {verbose => 0, mode => 0771,} );
     }
     
-    my $comp = File::Spec->catfile($resdir, $name."_complete.fasta");
-    my $ppts = File::Spec->catfile($resdir, $name."_ppt.fasta");
-    my $pbs  = File::Spec->catfile($resdir, $name."_pbs.fasta");
-    my $five_pr_ltrs  = File::Spec->catfile($resdir, $name."_5prime-ltrs.fasta");
-    my $three_pr_ltrs = File::Spec->catfile($resdir, $name."_3prime-ltrs.fasta");
+    my $comp = File::Spec->catfile($resdir, $name.'_complete.fasta');
+    my $ppts = File::Spec->catfile($resdir, $name.'_ppt.fasta');
+    my $pbs  = File::Spec->catfile($resdir, $name.'_pbs.fasta');
+    my $five_pr_ltrs  = File::Spec->catfile($resdir, $name.'_5prime-ltrs.fasta');
+    my $three_pr_ltrs = File::Spec->catfile($resdir, $name.'_3prime-ltrs.fasta');
 
     open my $allfh, '>>', $comp or die "\nERROR: Could not open file: $comp\n";
     open my $pptfh, '>>', $ppts or die "\nERROR: Could not open file: $ppts\n";
@@ -121,90 +125,91 @@ sub extract_features {
     open my $fivefh, '>>', $five_pr_ltrs or die "\nERROR: Could not open file: $five_pr_ltrs\n";
     open my $threfh, '>>', $three_pr_ltrs or die "\nERROR: Could not open file: $three_pr_ltrs\n";
 
-    my $gffio = Bio::Tools::GFF->new( -file => $infile, -gff_version => 3 );
+    open my $gffio, '<', $infile or die "\nERROR: Could not open file: $infile\n";
 
-    my ($start, $end, $elem_id, $key, %feature, %ltrs, %seen);
-    while (my $feature = $gffio->next_feature()) {
-	if ($feature->primary_tag eq 'LTR_retrotransposon') {
-	    my @string = split /\t/, $feature->gff_string;
-	    ($elem_id) = ($string[8] =~ /ID=?\s+?(LTR_retrotransposon\d+)/);
-	    ($start, $end) = ($feature->start, $feature->end);
-	    $key = join ".", $elem_id, $start, $end;
-	    $ltrs{$key}{'full'} = join "||", $string[0], $feature->primary_tag, @string[3..4];
+    my (%feature, %ltrs, %coord_map, %seen);
+    while (my $line = <$gffio>) {
+	chomp $line;
+	next if $line =~ /^#/;
+	my $feature = gff3_parse_feature($line);
+
+	if ($feature->{type} eq 'LTR_retrotransposon') {
+	    my $elem_id = @{$feature->{attributes}{ID}}[0];
+	    my ($start, $end) = @{$feature}{qw(start end)};
+	    my $key = join "||", $elem_id, $start, $end;
+	    $ltrs{$key}{'full'} = join "||", @{$feature}{qw(seq_id type start end)};
+	    $coord_map{$elem_id} = join "||", @{$feature}{qw(seq_id start end)};
 	}
-	next unless defined $start && defined $end;
-	if ($feature->primary_tag eq 'long_terminal_repeat') {
-	    my @string = split /\t/, $feature->gff_string;
-	    if ($feature->start >= $start && $feature->end <= $end) {
-		my $ltrkey = join "||", $string[0], $feature->primary_tag, @string[3,4,6];
-		push @{$ltrs{$key}{'ltrs'}}, $ltrkey unless exists $seen{$ltrkey};
+	if ($feature->{type} eq 'long_terminal_repeat') {
+	    my $parent = @{$feature->{attributes}{Parent}}[0];
+	    my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
+	    if ($seq_id eq $feature->{seq_id}) {
+		my ($seq_id, $type, $start, $end, $strand) = 
+		    @{$feature}{qw(seq_id type start end strand)};
+		$strand //= '?';
+		my $ltrkey = join "||", $seq_id, $type, $start, $end, $strand;
+		push @{$ltrs{$pkey}{'ltrs'}}, $ltrkey unless exists $seen{$ltrkey};
 		$seen{$ltrkey} = 1;
 	    }
 	}
-	elsif ($feature->primary_tag eq 'primer_binding_site') {
-	    my @string = split /\t/, $feature->gff_string;
-	    if ($feature->start >= $start && $feature->end <= $end) {
-		my ($name) = ($string[8] =~ /trna \"?(\w+.*)\"?\s+\;/);
-		$ltrs{$key}{'pbs'} =
-		    join "||", $string[0], $feature->primary_tag, $name, @string[3..4];
+	elsif ($feature->{type} eq 'primer_binding_site') {
+	    my $name = $feature->{attributes}{trna};
+	    my $parent = @{$feature->{attributes}{Parent}}[0];
+	    my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
+            if ($seq_id eq $feature->{seq_id}) {
+		$ltrs{$pkey}{'pbs'} =
+		    join "||", @{$feature}{qw(seq_id type)}, $name, @{$feature}{qw(start end)};
 	    }
 	}
-	elsif ($feature->primary_tag eq 'protein_match') {
-	    my @string = split /\t/, $feature->gff_string;
-	    if ($feature->start >= $start && $feature->end <= $end) {
-		my ($name) = ($string[8] =~ /name \"?(\w+)\"?/);
-		my $pdomkey = join "||", $string[0], $feature->primary_tag, $name, @string[3,4,6];
-		push @{$ltrs{$key}{'pdoms'}{$name}}, $pdomkey unless exists $seen{$pdomkey};
+	elsif ($feature->{type} eq 'protein_match') {
+	    my $name = @{$feature->{attributes}{name}}[0];
+	    my $parent = @{$feature->{attributes}{Parent}}[0];
+	    my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
+            if ($seq_id eq $feature->{seq_id}) {
+		my $pdomkey = join "||", @{$feature}{qw(seq_id type)}, $name, @{$feature}{qw(start end strand)};
+		push @{$ltrs{$pkey}{'pdoms'}{$name}}, $pdomkey unless exists $seen{$pdomkey};
 		$seen{$pdomkey} = 1;
 	    }
 	}
-	elsif ($feature->primary_tag eq 'RR_tract') {
-	    my @string = split /\t/, $feature->gff_string;
-	    if ($feature->start >= $start && $feature->end <= $end) {
-		$ltrs{$key}{'ppt'} =
-		    join "||", $string[0], $feature->primary_tag, @string[3..4];
+	elsif ($feature->{type} eq 'RR_tract') {
+	    my $parent = @{$feature->{attributes}{Parent}}[0];
+	    my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
+            if ($seq_id eq $feature->{seq_id}) {
+		$ltrs{$pkey}{'ppt'} =
+		    join "||", @{$feature}{qw(seq_id type start end)};
 	    }
 	}
     }
+    close $gffio;
 
-    my %pdoms;
+    my (%pdoms, %seen_pdoms);
     my $ltrct = 0;
     for my $ltr (sort keys %ltrs) {
-	my ($element, $rstart, $rend) = split /\./, $ltr;
+	my ($element, $rstart, $rend) = split /\|\|/, $ltr;
 	# full element
 	my ($source, $prim_tag, $fstart, $fend) = split /\|\|/, $ltrs{$ltr}{'full'};
-	my $full_tmp = File::Spec->catfile($resdir, $ltr.".fasta");
-	$self->subseq($fasta, $source, $element, $fstart, $fend, $full_tmp, $allfh);
+	$self->subseq($index, $source, $element, $fstart, $fend, $allfh);
 
 	# pbs
 	if ($ltrs{$ltr}{'pbs'}) {
 	    my ($pbssource, $pbstag, $trna, $pbsstart, $pbsend) = split /\|\|/, $ltrs{$ltr}{'pbs'};
-	    my $pbs_tmp = File::Spec->catfile($resdir, $ltr."_pbs.fasta");
-	    $self->subseq($fasta, $pbssource, $element, $pbsstart, $pbsend, $pbs_tmp, $pbsfh);
+	    $self->subseq($index, $pbssource, $element, $pbsstart, $pbsend, $pbsfh);
 	}
 
 	# ppt
 	if ($ltrs{$ltr}{'ppt'}) {
 	    my ($pptsource, $ppttag, $pptstart, $pptend) = split /\|\|/, $ltrs{$ltr}{'ppt'};
-	    my $ppt_tmp = File::Spec->catfile($resdir, $ltr."_ppt.fasta");
-	    $self->subseq($fasta, $source, $element, $pptstart, $pptend, $ppt_tmp, $pptfh);
+	    $self->subseq($index, $source, $element, $pptstart, $pptend, $pptfh);
 	}
 
 	for my $ltr_repeat (@{$ltrs{$ltr}{'ltrs'}}) {
 	    my ($src, $ltrtag, $s, $e, $strand) = split /\|\|/, $ltr_repeat;
-	    my $lfname = $ltr;
 	    if ($ltrct) {
-		$lfname .= "_5prime-ltr.fasta" if $strand eq '+';
-		$lfname .= "_3prime-ltr.fasta" if $strand eq '-';
-		my $fiveprime_tmp = File::Spec->catfile($resdir, $lfname);
-		$self->subseq($fasta, $src, $element, $s, $e, $fiveprime_tmp, $fivefh);
+		$self->subseq($index, $src, $element, $s, $e, $fivefh);
 		$ltrct = 0;
 	    }
 	    else {
-		$lfname .= "_3prime-ltr.fasta" if $strand eq '+';
-		$lfname .= "_5prime-ltr.fasta" if $strand eq '-';
-		my $threeprime_tmp = File::Spec->catfile($resdir, $lfname);
-		$self->subseq($fasta, $src, $element, $s, $e, $threeprime_tmp, $threfh);
+		$self->subseq($index, $src, $element, $s, $e, $threfh);
 		$ltrct++;
 	    }
 	}
@@ -213,9 +218,10 @@ sub extract_features {
 	    for my $model_name (keys %{$ltrs{$ltr}{'pdoms'}}) {
 		for my $ltr_repeat (@{$ltrs{$ltr}{'pdoms'}{$model_name}}) {
 		    my ($src, $pdomtag, $name, $s, $e, $str) = split /\|\|/, $ltr_repeat;
-		    #"Ha10||protein_match||UBN2||132013916||132014240",
-		    next if $name =~ /transpos(?:ase)?|mule|(?:dbd|dde)?_tnp_(?:hat)?|duf4216/i; # Do not classify elements based spurious matches 
-		    push @{$pdoms{$src}{$element}{$name}}, join "||", $s, $e, $str;
+                    #"Ha10||protein_match||UBN2||132013916||132014240|+",
+		    next if $model_name =~ /transpos(?:ase)?|mule|(?:dbd|dde)?_tnp_(?:hat)?|duf4216/i; 
+		    # The above is so we do not classify elements based spurious matches 
+		    push @{$pdoms{$src}{$element}{$model_name}}, join "||", $s, $e, $str;
 		}
 	    }
 	}
@@ -228,12 +234,12 @@ sub extract_features {
 
     ## This is where we merge overlapping hits in a chain and concatenate non-overlapping hits
     ## to create a single domain sequence for each element
-     for my $src (keys %pdoms) {
+    for my $src (keys %pdoms) {
 	for my $element (keys %{$pdoms{$src}}) {
 	    my ($pdom_s, $pdom_e, $str);
 	    for my $pdom_type (keys %{$pdoms{$src}{$element}}) {
 		my (%lrange, %seqs, $union);
-		my $pdom_file = File::Spec->catfile($resdir, $pdom_type."_pdom.fasta");
+		my $pdom_file = File::Spec->catfile($resdir, $pdom_type.'_pdom.fasta');
 		open my $fh, '>>', $pdom_file or die "\nERROR: Could not open file: $pdom_file\n";
 		for my $split_dom (@{$pdoms{$src}{$element}{$pdom_type}}) {
 		    ($pdom_s, $pdom_e, $str) = split /\|\|/, $split_dom;
@@ -244,23 +250,21 @@ sub extract_features {
 		    {
 			no warnings; # Number::Range warns on EVERY single interger that overlaps
 			my $range = Number::Range->new(@{$lrange{$src}{$element}{$pdom_type}});
-			$union    = $range->range;
+			$union = $range->range;
 		    }
-		    
+		            
 		    for my $r (split /\,/, $union) {
 			my ($ustart, $uend) = split /\.\./, $r;
-			my $tmp = File::Spec->catfile($resdir, $element."_".$pdom_type.".fasta");
-			my $seq = $self->subseq_pdoms($fasta, $src, $element, $ustart, $uend, $tmp);
+			my $seq = $self->subseq_pdoms($index, $src, $ustart, $uend);
 			my $k = join "_", $ustart, $uend;
 			$seqs{$k} = $seq;
 		    }
-		    
+		            
 		    $self->concat_pdoms($src, $element, \%seqs, $fh);
 		}
 		else {
 		    my ($nustart, $nuend, $str) = split /\|\|/, @{$pdoms{$src}{$element}{$pdom_type}}[0];
-		    my $tmp = File::Spec->catfile($resdir, $element."_".$pdom_type.".fasta");
-		    $self->subseq($fasta, $src, $element, $nustart, $nuend, $tmp, $fh);
+		    $self->subseq($index, $src, $element, $nustart, $nuend, $fh);
 		}
 		close $fh;
 		%seqs   = ();
@@ -279,21 +283,12 @@ sub extract_features {
 
 sub subseq_pdoms {
     my $self = shift;
-    my ($fasta, $loc, $elem, $start, $end, $tmp) = @_;
+    my ($index, $loc, $start, $end) = @_;
 
-    my $config = Tephra::Config::Exe->new->get_config_paths;
-    my ($samtools) = @{$config}{qw(samtools)};
-    my $cmd = "$samtools faidx $fasta $loc:$start-$end > $tmp";
-    $self->run_cmd($cmd);
-
-    my $seq;
-    if (-s $tmp) {
-	my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
-	while (my $seqobj = $seqio->next_seq) {
-	    $seq = $seqobj->seq;
-	}
-    }
-    unlink $tmp;
+    my $location = "$loc:$start-$end";
+    my ($seq, $length) = $index->get_sequence($location);
+    croak "\nERROR: Something went wrong. This is a bug, please report it.\n"
+	unless $length;
     return $seq;
 }
 
@@ -326,12 +321,12 @@ sub collect_feature_args {
 
     # ltr
     my $ltr5name = File::Spec->catfile($dir, 'dbcluster-5primeseqs');
-    my $fiveargs = "-dbcluster 80 20 $ltr5name -p -d -seedlength 10 ";
+    my $fiveargs = "-qspeedup 2 -dbcluster 80 20 $ltr5name -p -d -seedlength 30 ";
     $fiveargs .= "-exdrop 7 -l 80 -showdesc 0 -sort ld -best 100 -identity 80";
     $vmatch_args{fiveltr} = { seqs => \@fiveltrs, args => $fiveargs };
 
     my $ltr3name  = File::Spec->catfile($dir, 'dbcluster-3primeseqs');
-    my $threeargs = "-dbcluster 80 20 $ltr3name -p -d -seedlength 10 ";
+    my $threeargs = "-qspeedup 2 -dbcluster 80 20 $ltr3name -p -d -seedlength 30 ";
     $threeargs .= "-exdrop 7 -l 80 -showdesc 0 -sort ld -best 100 -identity 80";
     $vmatch_args{threeltr} = { seqs => \@threeltrs, args => $threeargs };
 
@@ -348,7 +343,7 @@ sub collect_feature_args {
 
     # pdoms
     my $pdomname = File::Spec->catfile($dir, 'dbcluster-pdoms');
-    my $pdomargs = "-dbcluster 80 80 $pdomname -p -d -seedlength 10 -exdrop 3 ";
+    my $pdomargs = "-qspeedup 2 -dbcluster 80 80 $pdomname -p -d -seedlength 30 -exdrop 3 ";
     $pdomargs .= "-l 40 -showdesc 0 -sort ld -best 100";
     $vmatch_args{pdoms} = { seqs => \@pdoms, args => $pdomargs };
 
@@ -422,9 +417,9 @@ sub process_cluster_args {
     my ($args, $type, $db) = @_;
 
     my ($name, $path, $suffix) = fileparse($db, qr/\.[^.]*/);
-    my $index = File::Spec->catfile($path, $name.".index");
-    my $vmrep = File::Spec->catfile($path, $name."_vmatch-out.txt");
-    my $log   = File::Spec->catfile($path, $name."_vmatch-out.log");;
+    my $index = File::Spec->catfile($path, $name.'.index');
+    my $vmrep = File::Spec->catfile($path, $name.'_vmatch-out.txt');
+    my $log   = File::Spec->catfile($path, $name.'_vmatch-out.log');;
 
     my $mkvtreecmd = "mkvtree -db $db -dna -indexname $index -allout -v -pl ";
     if (defined $args->{$type}{prefixlen}) {
@@ -442,25 +437,17 @@ sub process_cluster_args {
 
 sub subseq {
     my $self = shift;
-    my ($fasta, $loc, $elem, $start, $end, $tmp, $out) = @_;
+    my ($index, $loc, $elem, $start, $end, $out) = @_;
 
-    my $config = Tephra::Config::Exe->new->get_config_paths;
-    my ($samtools) = @{$config}{qw(samtools)};
-    my $cmd = "$samtools faidx $fasta $loc:$start-$end > $tmp";
-    $self->run_cmd($cmd);
+    my $location = "$loc:$start-$end";
+    my ($seq, $length) = $index->get_sequence($location);
+    croak "\nERROR: Something went wrong. This is a bug, please report it.\n"
+	unless $length;
 
     my $id = join "_", $elem, $loc, $start, $end;
-    if (-s $tmp) {
-	my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
-	while (my $seqobj = $seqio->next_seq) {
-	    my $seq = $seqobj->seq;
-	    if ($seq) {
-		$seq =~ s/.{60}\K/\n/g;
-		say $out join "\n", ">$id", $seq;
-	    }
-	}
-    }
-    unlink $tmp;
+
+    $seq =~ s/.{60}\K/\n/g;
+    say $out join "\n", ">$id", $seq;
 }
 
 sub parse_clusters {
@@ -536,15 +523,12 @@ sub parse_clusters {
 	undef $string;
     }
 
-    #dd $seqstore;
-    #dd \%dom_orgs;
-
     my $idx = 0;
     my (%fastas, %annot_ids);
     for my $str (reverse sort { @{$dom_orgs{$a}} <=> @{$dom_orgs{$b}} } keys %dom_orgs) {
 	my $famfile = $sf."_family$idx".".fasta";
 	my $outfile = File::Spec->catfile($cpath, $famfile);
-	open my $out, '>>', $outfile;
+	open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 	for my $elem (@{$dom_orgs{$str}}) {
 	    if (exists $seqstore->{$elem}) {
 		my $coordsh = $seqstore->{$elem};
@@ -565,12 +549,12 @@ sub parse_clusters {
     $idx = 0;
 
     if (%$seqstore) {
-	my $famxfile = $sf."_singleton_families.fasta";
+	my $famxfile = $sf.'_singleton_families.fasta';
 	my $xoutfile = File::Spec->catfile($cpath, $famxfile);
-	open my $outx, '>', $xoutfile;
+	open my $outx, '>', $xoutfile or die "\nERROR: Could not open file: $xoutfile\n";
 	for my $k (nsort keys %$seqstore) {
-	    my $coordsh  = $seqstore->{$k};
-	    my $coords = (keys %$coordsh)[0];
+	    my $coordsh = $seqstore->{$k};
+	    my $coords  = (keys %$coordsh)[0];
 	    $seqstore->{$k}{$coords} =~ s/.{60}\K/\n/g;
 	    say $outx join "\n", ">$sfname"."_singleton_family$idx"."_$k"."_$coords", $seqstore->{$k}{$coords};
 	    $annot_ids{$k} = $sfname."_singleton_family$idx";
@@ -591,12 +575,13 @@ sub combine_families {
     
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($outdir, $name."_combined_LTR_families.fasta");
-    open my $out, '>', $outfile;
+    open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
     for my $file (nsort keys %$outfiles) {
-	my $seqio = Bio::SeqIO->new( -file => $file, -format => 'fasta' );
-	while (my $seqobj = $seqio->next_seq) {
-	    my $id  = $seqobj->id;
+	my $kseq = Bio::DB::HTS::Kseq->new($file);
+	my $iter = $kseq->iterator();
+	while (my $seqobj = $iter->next_seq) {
+	    my $id  = $seqobj->name;
 	    my $seq = $seqobj->seq;
 	    $seq =~ s/.{60}\K/\n/g;
 	    say $out join "\n", ">$id", $seq;
@@ -648,10 +633,11 @@ sub _store_seq {
     my ($file) = @_;
 
     my %hash;
-    my $seqio = Bio::SeqIO->new( -file => $file, -format => 'fasta' );
-    while (my $seqobj = $seqio->next_seq) {
-	my $id  = $seqobj->id;
-	my ($coords) = ($id =~ /_(\d+-?_?\d+$)/);
+    my $kseq = Bio::DB::HTS::Kseq->new($file);
+    my $iter = $kseq->iterator();
+    while (my $seqobj = $iter->next_seq) {
+	my $id = $seqobj->name;
+	my ($coords) = ($id =~ /_(\d+_\d+)$/);
 	$id =~ s/_$coords//;
 	my $seq = $seqobj->seq;
 	$hash{$id} = { $coords => $seq };
@@ -669,8 +655,9 @@ sub _remove_singletons {
     for my $type (keys %$args) {
 	delete $args->{$type} if ! @{$args->{$type}{seqs}};
 	for my $db (@{$args->{$type}{seqs}}) {
-	    my $seqio = Bio::SeqIO->new( -file => $db, -format => 'fasta' );
-	    while (my $seqobj = $seqio->next_seq) { $seqct++ if defined $seqobj->seq; }
+	    my $kseq = Bio::DB::HTS::Kseq->new($db);
+	    my $iter = $kseq->iterator();
+	    while (my $seqobj = $iter->next_seq) { $seqct++ if defined $seqobj->seq; }
 	    if ($seqct < 2) {
 		push @singles, $index;
 		unlink $db;
