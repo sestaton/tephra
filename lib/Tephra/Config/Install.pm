@@ -103,11 +103,6 @@ sub configure_root {
 	print STDERR ".";
     }
 
-    unless (-e $config->{samtools}) {
-        $config->{samtools} = $self->fetch_samtools;
-	print STDERR ".";
-    }
-
     unless (-e $config->{blastpath}) {
         $config->{blastpath} = $self->fetch_blast;
 	print STDERR ".";
@@ -178,34 +173,6 @@ sub fetch_hscan {
     chdir $wd;
     
      return $hscan;
-}
-
-sub fetch_samtools {
-    my $self = shift;
-    my $root = $self->basedir;
-    my $wd   = $self->workingdir;
-
-    my $host = 'https://sourceforge.net';
-    my $dir  = 'projects/samtools/files/samtools/1.2/samtools-1.2.tar.bz2';
-    my $file = 'samtools-1.2.tar.bz2';
-    my $remote = join "/", $host, $dir;
-    #my $path = File::Spec->catfile($root, $file);
-    chdir $root or die $!;
-
-    #$self->fetch_file($path, $host."/".$dir);
-    system("wget -q $remote") == 0 or die $!;
-    system("tar xjf $file 2>&1 > /dev/null") == 0 or die $!;
-    unlink $file if -e $file;
-
-    my $dist = 'samtools-1.2';
-    chdir $dist or die $!;
-    system("make -j4 2>&1 > /dev/null") == 0 or die $!;
-
-    my $cwd = getcwd();
-    my $samtools = File::Spec->catfile($cwd, 'samtools');
-    chdir $wd or die $!;
-
-    return $samtools;
 }
 
 sub fetch_blast {

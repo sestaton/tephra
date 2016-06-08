@@ -51,21 +51,16 @@ sub get_config_paths {
     my $clw      = File::Spec->catfile($root,   'clustalw-2.1', 'bin', 'clustalw2');
     my $pamlbin  = File::Spec->catdir($root,    'paml4.8', 'bin');
     my $transeq  = File::Spec->catdir($root,    'EMBOSS-6.5.7', 'bin', 'transeq');
-    my $sam      = File::Spec->catfile($root,   'samtools-1.2', 'samtools');
     my $blastph  = File::Spec->catdir($root,    'ncbi-blast-2.3.0+', 'bin');
 
     # this is to avoid building each time
     my @path = split /:|;/, $ENV{PATH};    
     for my $p (@path) {
 	my $texe  = File::Spec->catfile($p, 'transeq');
-	my $sexe  = File::Spec->catfile($p, 'samtools');
 	my $bexe  = File::Spec->catfile($p, 'blastn');
 	if (-e $texe && -x $texe) {
 	    $transeq = $texe;
 	}
-	if (-e $sexe && -x $sexe) {
-	    $sam = $sexe;
-	}	
 	if (-e $bexe && -x $bexe) {
 	    $blastph = $p;
 	}
@@ -83,7 +78,6 @@ sub get_config_paths {
         clustalw   => $clw,
         pamlbin    => $pamlbin,
         transeq    => $transeq,
-        samtools   => $sam,
         blastpath  => $blastph });
 }
 
