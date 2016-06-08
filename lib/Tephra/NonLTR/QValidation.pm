@@ -5,12 +5,12 @@ use Moose;
 use MooseX::Types::Path::Class;
 use IPC::System::Simple qw(system capture);
 use File::Path          qw(make_path);
-use Bio::SeqIO;
 use Bio::SearchIO;
 use File::Find;
 use File::Spec;
 use File::Basename;
 use Carp 'croak';
+use namespace::autoclean;
 
 with 'Tephra::NonLTR::Role::PathUtils';
 
@@ -58,7 +58,6 @@ sub validate_q_score {
     make_path( $validation_dir, {verbose => 0, mode => 0771,} );
     
     my $domain          = 'en';
-    #my $seq_dir         = File::Spec->catdir($dir, 'info', 'full');
     my $validation_file = File::Spec->catfile($validation_dir, $domain);
     my $evalue_file     = File::Spec->catfile($validation_dir, $domain.'_evalue');
 
@@ -218,7 +217,6 @@ sub get_domain_pep_seq {
 	}
     }
     if ($flag == 1) {
-	#say $out ">".$head;
 	say $out '>'.$head.'_'.$result_start{$head}.'_'.$result_end{$head}; # get region in header
 	say $out substr($seq, $result_start{$head}, eval($result_end{$head}-$result_start{$head}+1));
     }
@@ -278,9 +276,8 @@ sub get_domain_dna_seq {
 
     while (my $each_line = <$in>) {
 	chomp $each_line;
-	if ($each_line =~ /\>/){
+	if ($each_line =~ /\>/) {
 	    if (defined $head && length($head) > 0 && $flag == 1){
-		#say $out ">".$head;
 		say $out '>'.$head.'_'.$result_start{$head}.'_'.$result_end{$head}; # header
 		say $out substr($seq, $result_start{$head}*3-3, 
 				eval(($result_end{$head}-$result_start{$head}+1)*3+3));
@@ -303,8 +300,7 @@ sub get_domain_dna_seq {
 	    }
 	}
     }
-    if ($flag == 1){
-	#say $out ">".$head;
+    if ($flag == 1) {
 	say $out '>'.$head.'_'.$result_start{$head}.'_'.$result_end{$head};
 	say $out substr($seq, $result_start{$head}*3-3, eval(($result_end{$head}-$result_start{$head}+1)*3+3));
     }
@@ -317,7 +313,6 @@ sub vote_hmmsearch {
     my ($seq, $hmm_dir, $domain, $validation_file, $evalue_file, $en_clade) = @_;
 
     my $hmmsearch = $self->find_hmmsearch;
-    #my @line = @$en_clade;
     my %evalue;
     my %save_evalue;
     my %clade;
@@ -338,7 +333,6 @@ sub vote_hmmsearch {
     }
     close $in;
     
-    #for ($i=0; $i<=$#line; $i++){
     for my $clade (@$en_clade) {
 	my $phmm_file = File::Spec->catfile($hmm_dir, $clade.'.'.$domain.'.hmm');
 	my @hmm_results = capture([0..5], $hmmsearch, $phmm_file, $seq);
@@ -348,7 +342,6 @@ sub vote_hmmsearch {
 	open my $o, '>', $hmmout or die "\nERROR: Could not open file: $hmmout";;
 	print $o @hmm_results;
 	close $o;
-	#say "debug2: $hmmout";
 
 	my $hmmer_in = Bio::SearchIO->new(-file => $hmmout, -format => 'hmmer');
 
