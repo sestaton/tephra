@@ -1,6 +1,23 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.03.0	06/08/16	Vancouver, BC
+
+- Remove use of SAMtools for indexing/extracting subsequences.
+- Remove use of Bio::SeqIO (BioPerl) for parsing sequence files.
+- Add Bio::DB::HTS for extracting subsequences and parsing sequences.
+- Fix bugs in getting TIR element range (previously off by 1).
+- Rework solo-LTR search to look for exemplars and extract LTR features of all
+  elements if they are not found. This avoids duplicating work done in the exemplar-finding step.
+- Add test file of exemplars to speed up testing (also, no exemplars would be found in
+  the small test set)
+- Remove use of Bio::Tools::GFF (BioPerl) in favor of Bio::GFF3::LowLevel for parsing GFF features. 
+  This is a made a huge performance improvement, as well as simplifying how features would be formatted
+  for writing.
+- Add strand to non-LTR output (GFF).
+- Add the same transposase filtering method to all steps of LTR classification.
+- Adjust gap filtering step in non-LTR search to filter elements only in the final stage of classification.
+
 0.02.7	05/06/16	Vancouver, BC
 
 - Bug fix with HMMERv2 path not being set correctly for 'findnonltrs' command.
