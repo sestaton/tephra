@@ -7,8 +7,7 @@ use Statistics::Descriptive;
 use File::Spec;
 use File::Find;
 use File::Basename;
-use Bio::SeqIO;
-use Bio::Tools::GFF;
+use Bio::GFF3::LowLevel qw(gff3_format_feature);
 use IPC::System::Simple qw(capture);
 use Sort::Naturally     qw(nsort);
 use List::UtilsBy       qw(nsort_by);
@@ -16,6 +15,7 @@ use List::Util          qw(sum max);
 use Path::Class::File;
 use Try::Tiny;
 use Cwd;
+use Carp 'croak';
 use Tephra::Config::Exe;
 use namespace::autoclean;
 
@@ -67,63 +67,55 @@ sub find_tc1_mariner {
     my $pdom_org;
     my @all_pdoms;
 
-    my $samtools = $self->_get_samtools;
+    my $index = $self->index_ref($fasta);
+
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $outfile = File::Spec->catfile($path, $name."_tc1-mariner.gff3");
-    my $fas     = File::Spec->catfile($path, $name."_tc1-mariner.fasta");
-    my $domoutfile = File::Spec->catfile($path, $name."_tc1-mariner_domain_org.tsv");
+    my $outfile = File::Spec->catfile($path, $name.'_tc1-mariner.gff3');
+    my $fas     = File::Spec->catfile($path, $name.'_tc1-mariner.fasta');
+    my $domoutfile = File::Spec->catfile($path, $name.'_tc1-mariner_domain_org.tsv');
     open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     open my $faout, '>>', $fas or die "\nERROR: Could not open file: $fas\n";
     open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";;
     say $out $header;
 
-    for my $tir (nsort_by { m/repeat_region(\d+)/ and $1 } keys %$feature) {
-	my ($rreg, $s, $e) = split /\./, $tir;
-	my $len = ($e - $s) + 1;
-	my $region = @{$feature->{$tir}}[0];
-	my ($loc, $source, $strand) = (split /\|\|/, $region)[0,1,6];
-	my ($id, $tmp_elem, $lines);
-	for my $feat (@{$feature->{$tir}}) {
-	    my @feats = split /\|\|/, $feat;
-	    $feats[8] = $self->_format_attribute($feats[8]);
-	    if ($feats[2] =~ /protein_match/) {
+    my ($len, $lines, $seq_id, $source, $start, $end, $strand);
+    for my $rep_region (nsort_by { m/repeat_region\d+\|\|(\d+)\|\|\d+/ and $1 } keys %$feature) {
+	my ($rreg_id, $s, $e) = split /\|\|/, $rep_region;
+	for my $tir_feature (@{$feature->{$rep_region}}) {
+	    if ($tir_feature->{type} eq 'protein_match') {
 		$has_pdoms = 1;
-		my ($doms) = ($feats[8] =~ /name=\"?(\w+)\"?/);
-		push @all_pdoms, $doms;
+		my $pdom_name = $tir_feature->{attributes}{name}[0];
+		push @all_pdoms, $pdom_name;
 	    }
 
-	    if ($feats[2] eq 'target_site_duplication') {
-		my $tsd_len = ($feats[4] - $feats[3]) + 1;
+	    if ($tir_feature->{type} eq 'target_site_duplication') {
+		my ($seq_id, $tsd_start, $tsd_end) = @{$tir_feature}{qw(seq_id start end)};
+		my $tsd_len = $tsd_end - $tsd_start + 1;
 		if ($tsd_len == 2) {
-		    my $tmp = $tir.".fasta";
-		    my $cmd = "$samtools faidx $fasta $loc:$feats[3]-$feats[4] > $tmp";
-		    $self->run_cmd($cmd);		    
-		    my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
-		    while (my $seqobj = $seqio->next_seq) {
-			my $seq = $seqobj->seq;
-			$is_mariner = 1 if $seq =~ /ta/i;
-		    }
-		    unlink $tmp;
+		    my $seq = $self->subseq($index, $seq_id, undef, $tsd_start, $tsd_end, undef);
+		    $is_mariner = 1 if $seq =~ /ta/i;
 		}
 	    }
 
-	    if ($feats[2] eq 'terminal_inverted_repeat_element') {
-		my ($elem) = ($feats[8] =~ /ID=(terminal_inverted_repeat_element\d+)/);
-		$tmp_elem = $tir."_full.fasta";
-		$id = "DTT_".$elem."_".$loc."_".$feats[3]."_".$feats[4];
-		my $cmd = "$samtools faidx $fasta $loc:$feats[3]-$feats[4] > $tmp_elem";
-		$self->run_cmd($cmd);
-		$lines = $self->store_seq($id, $tmp_elem);
-		unlink $tmp_elem;
+	    if ($tir_feature->{type} eq 'terminal_inverted_repeat_element') {
+		my $elem_id = $tir_feature->{attributes}{ID}[0];
+		($seq_id, $source, $start, $end, $strand) 
+		    = @{$tir_feature}{qw(seq_id source start end strand)};
+		my $seq = $self->subseq($index, $seq_id, $elem_id, $start, $end, undef);
+		my $id = join "_", 'DTT', $elem_id, $seq_id, $start, $end;
+
+		$lines .= join "\n", ">".$id, $seq;
+		$len = $end - $start + 1;
             }
-	    $mar_feats .= join "\t", @feats, "\n";
+	    my $gff3_str = gff3_format_feature($tir_feature);
+	    $mar_feats .= $gff3_str;
 	}
 
 	if ($is_mariner) {
 	    chomp $mar_feats;
-	    say $out join "\t", $loc, $source, 'repeat_region', $s, $e, '.', '?', '.', "ID=$rreg";
+	    say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
 	    say $out $mar_feats;
-	    delete $feature->{$tir};
+	    delete $feature->{$rep_region};
 	    push @lengths, $len;
 	    $pdom_org = join ",", @all_pdoms;
 	    $pdom_index{$strand}{$pdom_org}++ if $pdom_org;
@@ -133,7 +125,9 @@ sub find_tc1_mariner {
 	}	    
 	undef $mar_feats;
 	undef $pdom_org;
-	@all_pdoms = ();
+	undef $lines;
+
+	@all_pdoms  = ();
 	$is_mariner = 0;
 	$has_pdoms  = 0;
     }
@@ -181,53 +175,52 @@ sub find_hat {
     my $pdom_org;
     my @all_pdoms;
 
-    my $samtools = $self->_get_samtools;
+    my $index = $self->index_ref($fasta);
+
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $outfile = File::Spec->catfile($path, $name."_hAT.gff3");
-    my $fas     = File::Spec->catfile($path, $name."_hAT.fasta");
-    my $domoutfile = File::Spec->catfile($path, $name."_hAT_domain_org.tsv");
+    my $outfile = File::Spec->catfile($path, $name.'_hAT.gff3');
+    my $fas     = File::Spec->catfile($path, $name.'_hAT.fasta');
+    my $domoutfile = File::Spec->catfile($path, $name.'_hAT_domain_org.tsv');
     open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     open my $faout, '>>', $fas or die "\nERROR: Could not open file: $fas\n";
     open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";
     say $out $header;
 
-    for my $tir (nsort_by { m/repeat_region(\d+)/ and $1 } keys %$feature) {
-	my ($rreg, $s, $e) = split /\./, $tir;
-	my $len = ($e - $s) + 1;
-	my $region = @{$feature->{$tir}}[0];
-	my ($loc, $source, $strand) = (split /\|\|/, $region)[0,1,6];
-	my ($id, $tmp_elem, $lines);
-	for my $feat (@{$feature->{$tir}}) {
-	    my @feats = split /\|\|/, $feat;
-	    $feats[8] =$self->_format_attribute($feats[8]);
-	    if ($feats[2] =~ /protein_match/) {
-		$has_pdoms = 1;
-		my ($doms) = ($feats[8] =~ /name=\"?(\w+)\"?/);
-		push @all_pdoms, $doms;
-	    }
-
-	    if ($feats[2] eq 'target_site_duplication') {
-		my $tsd_len = ($feats[4] - $feats[3]) + 1;
-		$is_hat = 1 if $tsd_len == 8;
-	    }
-
-	    if ($feats[2] eq 'terminal_inverted_repeat_element') {
-		my ($elem) = ($feats[8] =~ /ID=(terminal_inverted_repeat_element\d+)/);
-                $tmp_elem = $tir."_full.fasta";
-                $id = "DTA_".$elem."_".$loc."_".$feats[3]."_".$feats[4];
-                my $cmd = "$samtools faidx $fasta $loc:$feats[3]-$feats[4] > $tmp_elem";
-                $self->run_cmd($cmd);
-		$lines = $self->store_seq($id, $tmp_elem);
-                unlink $tmp_elem;
+    my ($len, $lines, $id, $seq_id, $source, $start, $end, $strand);
+    for my $rep_region (nsort_by { m/repeat_region\d+\|\|(\d+)\|\|\d+/ and $1 } keys %$feature) {
+        my ($rreg_id, $s, $e) = split /\|\|/, $rep_region;
+        for my $tir_feature (@{$feature->{$rep_region}}) {
+            if ($tir_feature->{type} eq 'protein_match') {
+                $has_pdoms = 1;
+                my $pdom_name = $tir_feature->{attributes}{name}[0];
+                push @all_pdoms, $pdom_name;
             }
-	    $hat_feats .= join "\t", @feats, "\n";
+
+            if ($tir_feature->{type} eq 'target_site_duplication') {
+                my ($seq_id, $tsd_start, $tsd_end) = @{$tir_feature}{qw(seq_id start end)};
+                my $tsd_len = $tsd_end - $tsd_start + 1;
+		$is_hat = 1 if $tsd_len == 8;
+            }
+
+	    if ($tir_feature->{type} eq 'terminal_inverted_repeat_element') {
+		my $elem_id = $tir_feature->{attributes}{ID}[0];
+                ($seq_id, $source, $start, $end, $strand) 
+                    = @{$tir_feature}{qw(seq_id source start end strand)};
+                my $seq = $self->subseq($index, $seq_id, $elem_id, $start, $end, undef);
+                $id = join "_", 'DTA', $elem_id, $seq_id, $start, $end;
+
+                $lines .= join "\n", ">".$id, $seq;
+                $len = $end - $start + 1;
+            }
+            my $gff3_str = gff3_format_feature($tir_feature);
+            $hat_feats .= $gff3_str;
 	}
 
 	if ($is_hat) {
 	    chomp $hat_feats;
-	    say $out join "\t", $loc, $source, 'repeat_region', $s, $e, '.', '?', '.', "ID=$rreg";
-	    say $out $hat_feats;
-	    delete $feature->{$tir};
+	    say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
+            say $out $hat_feats;
+            delete $feature->{$rep_region};
 	    push @lengths, $len;
 	    $pdom_org = join ",", @all_pdoms;
 	    $pdom_index{$strand}{$pdom_org}++ if $pdom_org;
@@ -237,8 +230,10 @@ sub find_hat {
 	}
 	undef $hat_feats;
 	undef $pdom_org;
+	undef $lines;
+
 	@all_pdoms = ();
-	$is_hat = 0;
+	$is_hat    = 0;
 	$has_pdoms = 0;
     }
     close $out;
@@ -286,55 +281,54 @@ sub find_mutator {
     my $pdom_org;
     my @all_pdoms;
 
-    my $samtools = $self->_get_samtools;
+    my $index = $self->index_ref($fasta);
+
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $outfile = File::Spec->catfile($path, $name."_mutator.gff3");
-    my $fas     = File::Spec->catfile($path, $name."_mutator.fasta");
-    my $domoutfile = File::Spec->catfile($path, $name."_mutator_domain_org.tsv");
+    my $outfile = File::Spec->catfile($path, $name.'_mutator.gff3');
+    my $fas     = File::Spec->catfile($path, $name.'_mutator.fasta');
+    my $domoutfile = File::Spec->catfile($path, $name.'_mutator_domain_org.tsv');
     open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     open my $faout, '>>', $fas or die "\nERROR: Could not open file: $fas\n";
     open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";
     say $out $header;
 
-    for my $tir (nsort_by { m/repeat_region(\d+)/ and $1 } keys %$feature) {
-	my ($rreg, $s, $e) = split /\./, $tir;
-	my $len = ($e - $s) + 1;
-	my $region = @{$feature->{$tir}}[0];
-	my ($loc, $source, $strand) = (split /\|\|/, $region)[0,1,6];
-	my ($id, $tmp_elem, $lines);
-	for my $feat (@{$feature->{$tir}}) {
-	    my @feats = split /\|\|/, $feat;
-	    $feats[8] =$self->_format_attribute($feats[8]);
-	    if ($feats[2] =~ /protein_match/) {
-		$has_pdoms = 1;
-		my ($doms) = ($feats[8] =~ /name=\"?(\w+)\"?/);
-		push @all_pdoms, $doms;
-	    }
+    my ($len, $lines, $id, $seq_id, $source, $start, $end, $strand);
+    for my $rep_region (nsort_by { m/repeat_region\d+\|\|(\d+)\|\|\d+/ and $1 } keys %$feature) {
+        my ($rreg_id, $s, $e) = split /\|\|/, $rep_region;
+        for my $tir_feature (@{$feature->{$rep_region}}) {
+            if ($tir_feature->{type} eq 'protein_match') {
+                $has_pdoms = 1;
+                my $pdom_name = $tir_feature->{attributes}{name}[0];
+                push @all_pdoms, $pdom_name;
+            }
 
-	    if ($feats[2] eq 'target_site_duplication') {
-		my $tsd_len = ($feats[4] - $feats[3]) + 1;
+            if ($tir_feature->{type} eq 'target_site_duplication') {
+                my ($seq_id, $tsd_start, $tsd_end) = @{$tir_feature}{qw(seq_id start end)};
+                my $tsd_len = $tsd_end - $tsd_start + 1;
 		if ($tsd_len >= 8 && $tsd_len <= 11) {
 		    $is_mutator = 1;
 		}
 	    }
 
-	    if ($feats[2] eq 'terminal_inverted_repeat_element') {
-		my ($elem) = ($feats[8] =~ /ID=(terminal_inverted_repeat_element\d+)/);
-                $tmp_elem = $tir."_full.fasta";
-                $id = "DTM_".$elem."_".$loc."_".$feats[3]."_".$feats[4];
-                my $cmd = "$samtools faidx $fasta $loc:$feats[3]-$feats[4] > $tmp_elem";
-                $self->run_cmd($cmd);
-		$lines = $self->store_seq($id, $tmp_elem);
-                unlink $tmp_elem;
-            }
+	    if ($tir_feature->{type} eq 'terminal_inverted_repeat_element') {
+                my $elem_id = $tir_feature->{attributes}{ID}[0];
+                ($seq_id, $source, $start, $end, $strand) 
+                    = @{$tir_feature}{qw(seq_id source start end strand)};
+                my $seq = $self->subseq($index, $seq_id, $elem_id, $start, $end, undef);
+                my $id = join "_", 'DTM', $elem_id, $seq_id, $start, $end;
 
-	    $mut_feats .= join "\t", @feats, "\n";
-	}
-	if ($is_mutator) {
-	    chomp $mut_feats;
-	    say $out $mut_feats;
-	    say $out join "\t", $loc, $source, 'repeat_region', $s, $e, '.', '?', '.', "ID=$rreg";
-	    delete $feature->{$tir};
+                $lines .= join "\n", ">".$id, $seq;
+                $len = $end - $start + 1;
+            }
+            my $gff3_str = gff3_format_feature($tir_feature);
+            $mut_feats .= $gff3_str;
+        }
+
+        if ($is_mutator) {
+            chomp $mut_feats;
+            say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
+            say $out $mut_feats;
+            delete $feature->{$rep_region};
 	    push @lengths, $len;
 	    $pdom_org = join ",", @all_pdoms;
 	    $pdom_index{$strand}{$pdom_org}++ if $pdom_org;
@@ -344,9 +338,11 @@ sub find_mutator {
 	}
 	undef $mut_feats;
 	undef $pdom_org;
-	@all_pdoms = ();
+	undef $lines;
+
+	@all_pdoms  = ();
 	$is_mutator = 0;
-	$has_pdoms = 0;
+	$has_pdoms  = 0;
     }
     close $out;
     close $faout;
@@ -393,74 +389,70 @@ sub find_cacta {
     my $pdom_org;
     my @all_pdoms;
     
-    my $samtools = $self->_get_samtools;
+    my $index = $self->index_ref($fasta);
+
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $outfile = File::Spec->catfile($path, $name."_cacta.gff3");
-    my $fas     = File::Spec->catfile($path, $name."_cacta.fasta");
-    my $domoutfile = File::Spec->catfile($path, $name."_cacta_domain_org.tsv");
+    my $outfile = File::Spec->catfile($path, $name.'_cacta.gff3');
+    my $fas     = File::Spec->catfile($path, $name.'_cacta.fasta');
+    my $domoutfile = File::Spec->catfile($path, $name.'_cacta_domain_org.tsv');
     open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     open my $faout, '>>', $fas or die "\nERROR: Could not open file: $fas\n";
     open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";
     say $out $header;
 
-    for my $tir (nsort_by { m/repeat_region(\d+)/ and $1 } keys %$feature) {
-	my ($rreg, $s, $e) = split /\./, $tir;
-	my $len = ($e - $s) + 1;
-	my $region = @{$feature->{$tir}}[0];
-	my ($loc, $source, $strand) = (split /\|\|/, $region)[0,1,6];
-	my ($id, $tmp_elem, $lines);
-	for my $feat (@{$feature->{$tir}}) {
-	    my @feats = split /\|\|/, $feat;
-	    $feats[8] = $self->_format_attribute($feats[8]);
-	    if ($feats[2] =~ /protein_match/) {
-		$has_pdoms = 1;
-		my ($doms) = ($feats[8] =~ /name=\"?(\w+)\"?/);
-		push @all_pdoms, $doms;
-	    }
-
-	    if ($feats[2] eq 'target_site_duplication') {
-		my $tsd_len = ($feats[4] - $feats[3]) + 1;
-		if ($tsd_len >= 2 && $tsd_len <= 3) {
-		    my $tmp = $tir.".fasta";
-		    my $cmd = "$samtools faidx $fasta $loc:$feats[3]-$feats[4] > $tmp";
-		    $self->run_cmd($cmd);
-		    my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
-		    while (my $seqobj = $seqio->next_seq) {
-			my $seq = $seqobj->seq;
-			$is_cacta = 1 if $seq =~ /^cact[ag]/i;
-		    }
-		    unlink $tmp;
-		}
-	    }
-	    
-	    if ($feats[2] eq 'terminal_inverted_repeat_element') {
-		my ($elem) = ($feats[8] =~ /ID=(terminal_inverted_repeat_element\d+)/);
-                $tmp_elem = $tir."_full.fasta";
-                $id = "DTC_".$elem."_".$loc."_".$feats[3]."_".$feats[4];
-                my $cmd = "$samtools faidx $fasta $loc:$feats[3]-$feats[4] > $tmp_elem";
-                $self->run_cmd($cmd);
-		$lines = $self->store_seq($id, $tmp_elem);
-                unlink $tmp_elem;
+    my ($len, $lines, $seq_id, $source, $start, $end, $strand, $tir_len);
+    for my $rep_region (nsort_by { m/repeat_region\d+\|\|(\d+)\|\|\d+/ and $1 } keys %$feature) {
+        my ($rreg_id, $s, $e) = split /\|\|/, $rep_region;
+        for my $tir_feature (@{$feature->{$rep_region}}) {
+            if ($tir_feature->{type} eq 'protein_match') {
+                $has_pdoms = 1;
+                my $pdom_name = $tir_feature->{attributes}{name}[0];
+                push @all_pdoms, $pdom_name;
             }
-	    $cac_feats .= join "\t", @feats, "\n";
-	}
 
-	if ($is_cacta) {
-	    chomp $cac_feats;
-	    say $out $cac_feats;
-	    say $out join "\t", $loc, $source, 'repeat_region', $s, $e, '.', '?', '.', "ID=$rreg";
-	    delete $feature->{$tir};
+	    if ($tir_feature->{type} eq 'terminal_inverted_repeat') {
+		my ($tir_start, $tir_end) = @{$tir_feature}{qw(start end)};                            
+		$tir_len = $tir_end - $tir_start + 1; 
+	    }
+
+	    if ($tir_feature->{type} eq 'terminal_inverted_repeat_element') {
+                my $elem_id = $tir_feature->{attributes}{ID}[0];
+                ($seq_id, $source, $start, $end, $strand) 
+                    = @{$tir_feature}{qw(seq_id source start end strand)};
+                my $seq = $self->subseq($index, $seq_id, $elem_id, $start, $end, undef);
+		if ($seq =~ /^cact(?:a|g)?|cact(?:a|g)?$/i) {
+		    # Lewin, 1997 http://www.plantphysiol.org/content/132/1/52.full
+		    # provides this TIR length definition, but it seems to remove all predictions
+		    $is_cacta = 1; # if $tir_len >= 10 && $tir_len <= 28;
+		}
+		
+                my $id = join "_", 'DTC', $elem_id, $seq_id, $start, $end;
+
+                $lines .= join "\n", ">".$id, $seq;
+                $len = $end - $start + 1;
+            }
+            my $gff3_str = gff3_format_feature($tir_feature);
+            $cac_feats .= $gff3_str;
+        }
+
+        if ($is_cacta) {
+            chomp $cac_feats;
+            say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
+            say $out $cac_feats;
+            delete $feature->{$rep_region};
 	    push @lengths, $len;
 	    $pdom_org = join ",", @all_pdoms;
 	    $pdom_index{$strand}{$pdom_org}++ if $pdom_org;
 	    $pdoms++ if $has_pdoms;
 
-	    say $faout $lines
+	    say $faout $lines;
 	}
 	undef $cac_feats;
 	undef $pdom_org;
+	undef $lines;
+
 	@all_pdoms = ();
-	$is_cacta = 0;
+	$is_cacta  = 0;
 	$has_pdoms = 0;
     }
     close $out;
@@ -508,47 +500,50 @@ sub write_unclassified_tirs {
     my $pdom_org;
     my @all_pdoms;
 
-    my $samtools = $self->_get_samtools;
+    my $index = $self->index_ref($fasta);
+
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $outfile = File::Spec->catfile($path, $name."_unclassified.gff3");
-    my $fas     = File::Spec->catfile($path, $name."_unclassified.fasta");
-    my $domoutfile = File::Spec->catfile($path, $name."_unclassified_domain_org.tsv");
+    my $outfile = File::Spec->catfile($path, $name.'_unclassified.gff3');
+    my $fas     = File::Spec->catfile($path, $name.'_unclassified.fasta');
+    my $domoutfile = File::Spec->catfile($path, $name.'_unclassified_domain_org.tsv');
     open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     open my $faout, '>>', $fas or die "\nERROR: Could not open file: $fas\n";
     open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";
     say $out $header;
 
-    for my $tir (nsort_by { m/repeat_region(\d+)/ and $1 } keys %$feature) {
-	my ($rreg, $s, $e) = split /\./, $tir;
-	my $len = ($e - $s) + 1;
-	my $region = @{$feature->{$tir}}[0];
-	my ($loc, $source, $strand) = (split /\|\|/, $region)[0,1,6];
-	for my $feat (@{$feature->{$tir}}) {
-	    my @feats = split /\|\|/, $feat;
-	    $feats[8] =$self->_format_attribute($feats[8]);
+    my ($len, $lines, $seq_id, $source, $start, $end, $strand);
+    for my $rep_region (nsort_by { m/repeat_region\d+\|\|(\d+)\|\|\d+/ and $1 } keys %$feature) {
+        my ($rreg_id, $s, $e) = split /\|\|/, $rep_region;
+        for my $tir_feature (@{$feature->{$rep_region}}) {
+            if ($tir_feature->{type} eq 'protein_match') {
+                $has_pdoms = 1;
+                my $pdom_name = $tir_feature->{attributes}{name}[0];
+                push @all_pdoms, $pdom_name;
+            }
 
-	    if ($feats[2] eq 'terminal_inverted_repeat_element') {
-		my ($elem) = ($feats[8] =~ /ID=(terminal_inverted_repeat_element\d+)/);
-                my $tmp_elem = $tir."_full.fasta";
-                my $id = "DTX_".$elem."_".$loc."_".$feats[3]."_".$feats[4];
-                my $cmd = "$samtools faidx $fasta $loc:$feats[3]-$feats[4] > $tmp_elem";
-                $self->run_cmd($cmd);
-		my $lines = $self->store_seq($id, $tmp_elem);
-                unlink $tmp_elem;
-		
-		say $faout $lines;
-		unlink $tmp_elem;
-	    }
+            if ($tir_feature->{type} eq 'terminal_inverted_repeat_element') {
+                my $elem_id = $tir_feature->{attributes}{ID}[0];
+                ($seq_id, $source, $start, $end, $strand) 
+                    = @{$tir_feature}{qw(seq_id source start end strand)};
+                my $seq = $self->subseq($index, $seq_id, $elem_id, $start, $end, undef);
+                my $id = join "_", 'DTX', $elem_id, $seq_id, $start, $end;
 
-	    if ($feats[2] =~ /protein_match/) {
-		$has_pdoms = 1;
-		my ($doms) = ($feats[8] =~ /name=\"?(\w+)\"?/);
-		push @all_pdoms, $doms;
-	    }
-	    say $out join "\t", $loc, $source, 'repeat_region', $s, $e, '.', '?', '.', "ID=$rreg";
-	    say $out join "\t", @feats;
+                $lines .= join "\n", ">".$id, $seq;
+                $len = $end - $start + 1;
+            }
+            my $gff3_str = gff3_format_feature($tir_feature);
+            $unc_feats .= $gff3_str;
 	}
-	delete $feature->{$tir};
+	
+	chomp $unc_feats;
+	say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
+	say $out $unc_feats;
+	say $faout $lines;
+
+	undef $unc_feats;
+	undef $lines;
+
+	delete $feature->{$rep_region};
 	push @lengths, $len;
 	$pdom_org = join ",", @all_pdoms;
 	$pdom_index{$strand}{$pdom_org}++ if $pdom_org;
@@ -585,50 +580,18 @@ sub write_unclassified_tirs {
     }
 }
 
-sub index_ref {
+sub subseq {
     my $self = shift;
-    my $fasta = $self->genome;
-    my $samtools  = $self->_get_samtools;
-    my $faidx_cmd = "$samtools faidx $fasta";
-    $self->run_cmd($faidx_cmd);
-}
+    my ($index, $loc, $elem, $start, $end, $out) = @_;
 
-sub store_seq {
-    my $self = shift;
-    my ($id, $file_in) = @_;
-    my $lines;
+    my $location = "$loc:$start-$end";
+    my ($seq, $length) = $index->get_sequence($location);
+    croak "\nERROR: Something went wrong. This is a bug, please report it.\n"
+        unless $length;
 
-    my $seqio = Bio::SeqIO->new(-file => $file_in, -format => 'fasta');
-    while (my $seqobj = $seqio->next_seq) {
-	my $seq = $seqobj->seq;
-	$seq =~ s/.{60}\K/\n/g;
-	$lines .= join "\n", ">".$id, $seq;
-    }
+    $seq =~ s/.{60}\K/\n/g;
 
-    return $lines;
-}
-
-sub _get_samtools {
-    my $self = shift;
-
-    my $config = Tephra::Config::Exe->new->get_config_paths;
-    my ($samtools) = @{$config}{qw(samtools)};
-
-    return $samtools;
-}
-
-sub _format_attribute {
-    my $self = shift;
-    my ($str) = @_;
-
-    $str =~ s/\s\;\s/\;/g;
-    $str =~ s/\s+/=/g;
-    $str =~ s/\s+$//;
-    $str =~ s/=$//;
-    $str =~ s/=\;/;/g;
-    $str =~ s/\"//g;
-    
-    return $str;
+    return $seq;
 }
 
 =head1 AUTHOR
