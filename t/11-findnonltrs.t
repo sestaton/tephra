@@ -21,7 +21,7 @@ if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
 my $cmd     = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir = File::Spec->catdir('t', 'test_data');
 my $genome  = File::Spec->catfile($testdir, 'Ha1.fa');
-my $outdir  = File::Spec->catdir($testdir, 'nonltrdata');
+my $outdir  = File::Spec->catdir($testdir, 'Ha1_nonLTRs');
 
 my @results = capture { system([0..5], "$cmd findnonltrs -h") };
 ok( @results, 'Can execute findnonltrs subcommand' );
