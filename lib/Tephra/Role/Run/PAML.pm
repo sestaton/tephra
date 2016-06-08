@@ -169,6 +169,7 @@ sub parse_baseml {
 
     my $resdir = basename($results_dir);
     my $dest_file = File::Spec->catfile($parent, $resdir, $divergence_file);
+    #say STDERR join q{ }, $divergence_file, $dest_file;
     copy($divergence_file, $dest_file) or die "\nERROR: Move failed: $!";
     chdir $parent or die $!;
     remove_tree($wd, { safe => 1 });
