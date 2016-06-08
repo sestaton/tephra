@@ -3,7 +3,7 @@ package Tephra::NonLTR::Postprocess;
 use 5.010;
 use Moose;
 use MooseX::Types::Path::Class;
-use Bio::SeqIO;
+use Bio::DB::HTS::Kseq;
 use File::Find;
 use File::Spec;
 use File::Path qw(make_path);
@@ -59,7 +59,7 @@ sub convert_minus_to_plus {
     find( sub { push @fasfiles, $File::Find::name if -f and /\.fa.*$/ }, $dna_dir );
 
     for my $file (sort @fasfiles) {
-	my ($genome, $head) = $self->get_sequence($file);
+	my ($genome, $head) = $self->get_sequence_id($file);
 	my $filename = basename($file);
 	$len{$filename} = length($genome);
     }
@@ -139,7 +139,7 @@ sub merge_thmm {
 		print $each_line."\n";
 	    }
 	    elsif ($temp[1] == 0) {
-		if ($count == 3 || ($count == 1 && $te > 30)) {   #full-length elements
+		if ($count == 3 || ($count == 1 && $te > 30)) { # full-length elements
 		    if ($te <= 3 ) {
 			$te_name = 'Jockey';
 		    }
@@ -181,7 +181,7 @@ sub merge_thmm {
 		    open my $out1, '>>', $seq_file or die "\nERROR: Could not open file: $seq_file";
 		    my $header = '>'.$filename.'_'.$temp[0].'_'.$end;
 
-		    my ($genome, $head) = $self->get_sequence($chr_file);
+		    my ($genome, $head) = $self->get_sequence_id($chr_file);
 
 		    my $start_pos;
 		    my $end_pos;
@@ -199,12 +199,10 @@ sub merge_thmm {
 		    }
 		    
 		    my $sequence = substr($genome, $start_pos, eval($end_pos-$start_pos+1));
-		    #my $n_perc = $self->_filterNpercent($sequence);
-		    #if ($n_perc <= $n_thresh) {
-			$sequence =~ s/.{60}\K/\n/g;
-			say $out1 join "\n", $header, $sequence;
-			say $out join "\t",  $filename, $temp[0], $end, eval($end-$temp[0]), $te_name;
-		    #}
+		    $sequence =~ s/.{60}\K/\n/g;
+		    say $out1 join "\n", $header, $sequence;
+		    say $out join "\t",  $filename, $temp[0], $end, eval($end-$temp[0]), $te_name;
+
 		    close $out1;
 		    unlink $seq_file unless -s $seq_file;
 		}
@@ -244,15 +242,13 @@ sub merge_thmm {
 		    open my $out1, '>>', $seq_file or die "\nERROR: Could not open file: $seq_file";
 		    my $header = '>'.$filename.'_'.$temp[0].'_'.$end; ;
 
-		    my ($genome, $head) = $self->get_sequence($chr_file);
+		    my ($genome, $head) = $self->get_sequence_id($chr_file);
 
 		    my $sequence = substr($genome, $temp[0], eval($end-$temp[0]+1));
-                    #my $n_perc = $self->_filterNpercent($sequence);
-                    #if ($n_perc <= $n_thresh) {
-			$sequence =~ s/.{60}\K/\n/g;
-                        say $out1 join "\n", $header, $sequence;
-                        say $frag join "\t",  $filename, $temp[0], $end, eval($end-$temp[0]), $te_name;
-                    #}
+		    $sequence =~ s/.{60}\K/\n/g;
+		    say $out1 join "\n", $header, $sequence;
+		    say $frag join "\t",  $filename, $temp[0], $end, eval($end-$temp[0]), $te_name;
+
 		    close $out1;
 		    unlink $seq_file unless -s $seq_file;
 		}
@@ -274,14 +270,15 @@ sub merge_thmm {
     unlink $outr_frag_file unless -s $outr_frag_file;
 }
 
-sub get_sequence {
+sub get_sequence_id {
     my $self = shift;
     my ($chr_file) = @_;
 
     my ($genome, $head);
-    my $seqio = Bio::SeqIO->new(-file => $chr_file, -format => 'fasta');
-    while (my $seqobj = $seqio->next_seq) {
-	$head   = $seqobj->id;
+    my $kseq = Bio::DB::HTS::Kseq->new($chr_file);
+    my $iter = $kseq->iterator;
+    while (my $seqobj = $iter->next_seq) {
+	$head   = $seqobj->name;
 	$genome = $seqobj->seq;
     }
 
