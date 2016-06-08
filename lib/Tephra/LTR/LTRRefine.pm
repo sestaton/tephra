@@ -2,22 +2,20 @@ package Tephra::LTR::LTRRefine;
 
 use 5.010;
 use Moose;
-use autodie;
 use Cwd;
 use File::Spec;
 use File::Find;
 use File::Basename;
 use File::Copy          qw(move);
-use IPC::System::Simple qw(system EXIT_ANY);
 use Sort::Naturally     qw(nsort);
 use List::UtilsBy       qw(nsort_by);
 use List::Util          qw(sum max);
-use Bio::SeqIO;
-use Bio::Tools::GFF;
+use Bio::GFF3::LowLevel qw(gff3_parse_feature gff3_format_feature);
+use Bio::DB::HTS::Kseq;
+use Bio::DB::HTS::Faidx;
 use Set::IntervalTree;
 use Path::Class::File;
-use Try::Tiny;
-use Tephra::Config::Exe;
+use Carp 'croak'
 #use Data::Dump::Color;
 use namespace::autoclean;
 
@@ -71,6 +69,7 @@ has remove_tnp_domains => (
     lazy      => 1,
     default   => 0,
 );
+
 #
 # methods
 #
@@ -79,42 +78,143 @@ sub collect_features {
     my ($gff_thresh_ref) = @_;
     my ($gff, $pid_thresh) = @{$gff_thresh_ref}{qw(gff pid_threshold)};
 
-    my %intervals;
-    my $fasta = $self->genome;
-    my $gffio = Bio::Tools::GFF->new( -file => $gff, -gff_version => 3 );
+    my (%features, %intervals, %coord_map);
+    my ($source, $seq_id, $start, $end, $length, $region);
 
-    my ($source, $start, $end, $length, $region, %features);
-    while (my $feature = $gffio->next_feature()) {
-	if ($feature->primary_tag eq 'repeat_region') {
-	    my @string = split /\t/, $feature->gff_string;
-	    $source = $string[0];
-	    ($region) = ($string[8] =~ /ID=?\s+?(repeat_region\d+)/);
-	    ($start, $end) = ($feature->start, $feature->end);
-	    $length = $end - $start + 1;
+    open my $gffio, '<', $gff or die "\nERROR: Could not open file: $gff\n";
+
+    while (my $line = <$gffio>) {
+	chomp $line;
+	next if $line =~ /^#/;
+	my $feature = gff3_parse_feature( $line );
+	if ($feature->{type} eq 'repeat_region') {
+	    $region = @{$feature->{attributes}{ID}}[0];
+	    ($seq_id, $start, $end)  = @{$feature}{qw(seq_id start end)};
+	    $length = $end - $start + 1; 
+	    my $region_key = join "||", $region."_".$pid_thresh, $start, $end, $length;
+	    $features{$seq_id}{$region_key} = [];
+	    $coord_map{$region} = join "||", $seq_id, $start, $end;
+	    $intervals{$region."_".$pid_thresh} = join "||", $start, $end, $length;
 	}
-	next $feature unless defined $start && defined $end;
-	if ($feature->primary_tag ne 'repeat_region') {
-	    if ($feature->start >= $start && $feature->end <= $end) {
-		$intervals{$region."_".$pid_thresh} = join ".", $start, $end, $length;
-		my $region_key = join ".", $region."_".$pid_thresh, $start, $end, $length;
-		my @feats = split /\t/, $feature->gff_string;
-		if ($feats[8] =~ /(repeat_region\d+)/) {
+	
+	if ($feature->{type} ne 'repeat_region') {
+	    my $id = @{$feature->{attributes}{ID}}[0];
+	    my $parent = @{$feature->{attributes}{Parent}}[0];
+	        
+	    if ($feature->{start} >= $start && $feature->{end} <= $end) {
+		my $region_key = join "||", $region."_".$pid_thresh, $start, $end, $length;
+		if ($parent =~ /(repeat_region\d+)/) {
 		    my $old_parent = $1;
-		    my $new_parent = $old_parent."_".$pid_thresh;
-		    $feats[8] =~ s/$old_parent/$new_parent/g;
+		    my $new_parent = join "_", $old_parent, $pid_thresh;
+		    $parent =~ s/$old_parent/$new_parent/g;
+		    $feature->{attributes}{Parent}[0] = $parent;
 		}
-		push @{$features{$source}{$region_key}}, join "||", @feats;
+		push @{$features{$seq_id}{$region_key}}, $feature;
 	    }
 	}
     }
 
-    my ($filtered, $stats) = $self->_filter_compound_elements(\%features, $fasta);
+    my ($filtered, $stats) = $self->filter_compound_elements(\%features);
     return ({ collected_features => $filtered, stats => $stats, intervals => \%intervals });
 }
+
+sub filter_compound_elements {
+    my $self = shift;
+    my ($features) = @_;
+    my (@pdoms, %classII);
+    my $is_gypsy   = 0;
+    my $is_copia   = 0;
+    my $has_tpase  = 0;
+    my $has_pdoms  = 0;
+    my $len_thresh = 25000; # are elements > 25kb real? probably not for most systems
+
+    my ($allct, $curct) = (0, 0);
+    my ($gyp_cop_filtered, $dup_pdoms_filtered, $len_filtered, 
+	$n_perc_filtered, $classII_filtered) = (0, 0, 0, 0, 0);
+    
+    for my $source (keys %$features) {
+	for my $ltr (keys %{$features->{$source}}) {
+	    $allct++;
+	}
+    }
+    
+    for my $source (keys %$features) {
+	for my $ltr (keys %{$features->{$source}}) {
+	    $curct++;
+	    my ($rreg, $start, $end, $length) = split /\|\|/, $ltr;
+
+	    for my $feature (@{$features->{$source}{$ltr}}) {
+		if ($feature->{type} eq 'protein_match') {
+		    my $pdom_name = $feature->{attributes}{name}[0];
+		    push @pdoms, $pdom_name;
+		    $has_pdoms = 1;
+
+		    if ($pdom_name =~ /RVT_1|Chromo/i) {
+			$is_gypsy  = 1;
+		    }
+		    elsif ($pdom_name =~ /RVT_2/i) {
+			$is_copia  = 1;
+		    }
+		    elsif ($pdom_name =~ /transpos(?:ase)?|mule|(?:dbd|dde)?_tnp_(?:hat)?|duf4216/i) {
+			# same regex when filtering elements for LTR family classification
+			$has_tpase = 1;
+		    }
+		}
+	    }
+	            
+	    if ($is_gypsy && $is_copia && exists $features->{$source}{$ltr}) {
+		delete $features->{$source}{$ltr};
+		$gyp_cop_filtered++;
+	    }
+
+	    if ($self->remove_tnp_domains && $has_tpase && exists $features->{$source}{$ltr}) {
+		delete $features->{$source}{$ltr};
+		$classII_filtered++;
+	    }
+	        
+	    my %uniq;
+	    if ($self->remove_dup_domains && $has_pdoms) {
+		for my $element (@pdoms) {
+		    $element =~ s/\;.*//;
+		    next if $element =~ /chromo/i; # we expect these elements to be duplicated
+		    if (exists $features->{$source}{$ltr} && $uniq{$element}++) {
+			delete $features->{$source}{$ltr};
+			$dup_pdoms_filtered++;# if $uniq{$element}++;
+		    }
+		}
+	    }
+	            
+	    if ($length >= $len_thresh && exists $features->{$source}{$ltr}) {
+		delete $features->{$source}{$ltr};
+		$len_filtered++;
+	    }
+
+	    @pdoms = ();
+	    $is_gypsy  = 0;
+	    $is_copia  = 0;
+	    $has_pdoms = 0;
+	    $has_tpase = 0;
+	}
+    }
+
+    my %stats = ( compound_gyp_cop_filtered => $gyp_cop_filtered, 
+		  length_filtered           => $len_filtered );
+
+    if ($self->remove_dup_domains) {
+	$stats{dup_pdoms_filtered} = $dup_pdoms_filtered;
+    }
+    if ($self->remove_tnp_domains) {
+	$stats{class_II_filtered} = $classII_filtered;
+    }
+    
+    return $features, \%stats;
+}
+
 
 sub get_overlaps {
     my $self = shift;
     my ($feature_ref) = @_;
+
     my ($relaxed_features, $strict_features) = @{$feature_ref}{qw(relaxed_features strict_features)};
     my $allfeatures  = $relaxed_features->{collected_features};
     my $partfeatures = $strict_features->{collected_features}; 
@@ -126,7 +226,7 @@ sub get_overlaps {
 	my $tree = Set::IntervalTree->new;
 	
 	for my $rregion (keys %{$allfeatures->{$source}}) {
-	    my ($reg, $start, $end, $length) = split /\./, $rregion;
+	    my ($reg, $start, $end, $length) = split /\|\|/, $rregion;
 	    $tree->insert($reg, $start, $end);
 	    $chr_intervals{$source} = $tree;
 	}
@@ -137,21 +237,21 @@ sub get_overlaps {
 	    my (%scores, %sims);
 
 	    if (exists $chr_intervals{$source}) {
-		my ($reg, $start, $end, $length) = split /\./, $rregion;
+		my ($reg, $start, $end, $length) = split /\|\|/, $rregion;
 		my $res = $chr_intervals{$source}->fetch($start, $end);
 
 		next unless defined $partfeatures->{$source}{$rregion};
-		my ($score99, $sim99) = $self->_summarize_features($partfeatures->{$source}{$rregion});
+		my ($score99, $sim99) = $self->summarize_features($partfeatures->{$source}{$rregion});
 		
 		$scores{$source}{$rregion} = $score99;
 		$sims{$source}{$rregion} = $sim99;
 		
 		## collect all features, then compare scores/sim...
 		for my $over (@$res) {
-		    my ($s, $e, $l) = split /\./, $intervals->{$over};
-		    my $region_key = join ".", $over, $s, $e, $l;
+		    my ($s, $e, $l) = split /\|\|/, $intervals->{$over};
+		    my $region_key = join "||", $over, $s, $e, $l;
 		    next unless defined $allfeatures->{$source}{$region_key};
-		    my ($score85, $sim85) = $self->_summarize_features($allfeatures->{$source}{$region_key});
+		    my ($score85, $sim85) = $self->summarize_features($allfeatures->{$source}{$region_key});
 
 		    $scores{$source}{$region_key} = $score85;
 		    $sims{$source}{$region_key} = $sim85;
@@ -159,7 +259,7 @@ sub get_overlaps {
 
 		if (@$res > 0) {
 		    my $best_element 
-			= $self->_get_ltr_score_dups(\%scores, \%sims, $allfeatures, $partfeatures);
+			= $self->get_ltr_score_dups(\%scores, \%sims, $allfeatures, $partfeatures);
 		    push @best_elements, $best_element;
 		}
 	    }
@@ -169,10 +269,144 @@ sub get_overlaps {
     return \@best_elements;
 }
 
+sub summarize_features {
+    my $self = shift;
+    my ($feature) = @_;
+    my ($three_pr_tsd, $five_pr_tsd, $ltr_sim);
+    my ($has_pbs, $has_ppt, $has_pdoms, $has_ir, $tsd_eq, $tsd_ct) = (0, 0, 0, 0, 0, 0);
+
+    for my $feat (@$feature) {
+	if ($feat->{type} eq 'target_site_duplication') {
+	    if ($tsd_ct > 0) {
+		$five_pr_tsd = $feat->{end} - $feat->{start} + 1;
+	    }
+	    else {
+		$three_pr_tsd = $feat->{end} - $feat->{start} + 1;
+		$tsd_ct++;
+	    }
+	}
+	elsif ($feat->{type} eq 'LTR_retrotransposon') {
+	    $ltr_sim = $feat->{attributes}{ltr_similarity}[0];
+	}
+	$has_pbs = 1 if $feat->{type} eq 'primer_binding_site';
+	$has_ppt = 1 if $feat->{type} eq 'RR_tract';
+	$has_ir  = 1 if $feat->{type} eq 'inverted_repeat';
+	$has_pdoms++ if $feat->{type} eq 'protein_match';
+    }
+
+    croak "\nERROR: 'ltr_similarity' is not defined in GFF3. This is a bug, please report it.\n"
+	unless defined $ltr_sim;
+    $tsd_eq = 1 if $five_pr_tsd == $three_pr_tsd;
+
+    my $ltr_score = sum($has_pbs, $has_ppt, $has_pdoms, $has_ir, $tsd_eq);
+    return ($ltr_score, $ltr_sim);
+}
+
+sub get_ltr_score_dups {
+    my $self = shift;
+    my ($scores, $sims, $allfeatures, $partfeatures) = @_;
+    my %sccounts;
+    my %sicounts;
+    my %best_element;
+    my ($score_best, $sims_best) = (0, 0);
+    
+    my $max_score = max(values %$scores);
+    my $max_sims  = max(values %$sims);
+
+    for my $source (sort keys %$scores) {
+	for my $score_key (sort keys %{$scores->{$source}}) {
+	    my $score_value = $scores->{$source}{$score_key};
+	    push @{$sccounts{$score_value}}, $score_key;
+	}
+    }
+
+    for my $source (sort keys %$sims) {
+	for my $sim_key (sort keys %{$sims->{$source}}) {
+	    my $sim_value = $sims->{$source}{$sim_key};
+	    push @{$sicounts{$sim_value}}, $sim_key;
+	}
+    }
+
+    my ($best_score_key, $best_sim_key);
+    for my $src (keys %$scores) {
+	$best_score_key = (reverse sort { $scores->{$src}{$a} <=> $scores->{$src}{$b} } keys %{$scores->{$src}})[0];
+    }
+
+    for my $src (keys %$sims) {
+	$best_sim_key = (reverse sort { $sims->{$src}{$a} <=> $sims->{$src}{$b} } keys %{$sims->{$src}})[0];
+    }
+
+    for my $source (keys %$scores) {
+	if (@{$sccounts{ $scores->{$source}{$best_score_key} }} == 1 &&
+	    @{$sicounts{ $sims->{$source}{$best_sim_key} }} == 1  &&
+	    $best_score_key eq $best_sim_key) {
+	    $score_best = 1;
+	    my $bscore  = $scores->{$source}{$best_score_key};
+	    my $bsim    = $sims->{$source}{$best_score_key};
+	    if (exists $partfeatures->{$source}{$best_score_key}) {
+		$best_element{$source}{$best_score_key} = $partfeatures->{$source}{$best_score_key};
+	    }
+	    elsif (exists $allfeatures->{$source}{$best_score_key}) {
+		$best_element{$source}{$best_score_key} = $allfeatures->{$source}{$best_score_key};
+	    }
+	    else {
+		croak "\nERROR: Something went wrong....'$best_score_key' not found in hash. This is a bug, please report it.";
+	    }
+	}
+	elsif (@{$sccounts{ $scores->{$source}{$best_score_key} }} >= 1 && 
+	       @{$sicounts{ $sims->{$source}{$best_sim_key} }} >=  1) {
+	    $sims_best = 1;
+	    my $best   = @{$sicounts{ $sims->{$source}{$best_sim_key} }}[0];
+	    my $bscore = $scores->{$source}{$best_score_key};
+	    my $bsim   = $sims->{$source}{$best_score_key};
+	    if (exists $partfeatures->{$source}{$best}) {
+		$best_element{$source}{$best_score_key} = $partfeatures->{$source}{$best};
+	    }
+	    elsif (exists $allfeatures->{$source}{$best}) {
+		$best_element{$source}{$best_score_key} = $allfeatures->{$source}{$best};
+	    }
+	    else {
+		croak "\nERROR: Something went wrong....'$best' not found in hash. This is a bug, please report it.";
+	    }
+	}
+    }
+
+    if ($score_best) {
+	for my $src (keys %$scores) {
+	    for my $element (keys %{$scores->{$src}}) {
+		if (exists $allfeatures->{$src}{$element}) {
+		    delete $allfeatures->{$src}{$element};
+		}
+		elsif (exists $partfeatures->{$src}{$element}) {
+		    delete $partfeatures->{$src}{$element};
+		}
+	    }
+	}
+    }
+    elsif ($sims_best) {
+	for my $src (keys %$sims) {
+	    for my $element (keys %{$sims->{$src}}) {
+		if (exists $allfeatures->{$src}{$element}) {
+		    delete $allfeatures->{$src}{$element};
+		}
+		elsif (exists $partfeatures->{$src}{$element}) {
+		    delete $partfeatures->{$src}{$element};
+		}
+	    }
+	}
+    }
+    $score_best = 0;
+    $sims_best  = 0;
+    
+    return \%best_element;
+}
+
 sub reduce_features {
     my $self = shift;
-    my $fasta = $self->genome;
     my ($feature_ref) = @_;
+    my $fasta = $self->genome;
+    my $index = $self->index_ref($fasta);
+
     my ($relaxed_features, $strict_features, $best_elements)
 	= @{$feature_ref}{qw(relaxed_features strict_features best_elements)};
 
@@ -231,10 +465,10 @@ sub reduce_features {
     for my $source (keys %best_features) {
 	for my $element (keys %{$best_features{$source}}) {
 	    $comb++;
-	    my ($region, $start, $end, $length) = split /\./, $element;
+	    my ($region, $start, $end, $length) = split /\|\|/, $element;
 	    my $key = join "||", $region, $start, $end;
-
-	    my $n_perc = $self->_filterNpercent($source, $key, $fasta);
+	    
+	    my $n_perc = $self->_filterNpercent($source, $key, $index);
 	    if ($n_perc >= $n_thresh) {
 		#say STDERR "=====> Over thresh: $n_perc";
 		delete $best_features{$source}{$element};
@@ -261,11 +495,8 @@ sub sort_features {
     my $self = shift;
     my ($feature_ref) = @_;
     my ($gff, $combined_features) = @{$feature_ref}{qw(gff combined_features)};
-    my $config = Tephra::Config::Exe->new->get_config_paths;
-    my ($samtools) = @{$config}{qw(samtools)};
-
     my $fasta = $self->genome;
-    $self->_index_ref($samtools, $fasta);
+    my $index = $self->index_ref($fasta);
     my ($outfile, $outfasta);
  
     if ($self->has_outfile) {
@@ -281,7 +512,7 @@ sub sort_features {
 
     open my $ofas, '>>', $outfasta or die "\nERROR: Could not open file: $outfasta\n";
 
-    my ($elem_tot, $index) = (0, 1);
+    my ($elem_tot, $count) = (0, 1);
     if (defined $combined_features) {
 	open my $ogff, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
@@ -301,39 +532,45 @@ sub sort_features {
 	say $ogff $header;
 	
 	for my $chromosome (nsort keys %$combined_features) {
-	    for my $ltr (nsort_by { m/repeat_region\d+\_\d+\.(\d+)\.\d+/ and $1 }
+	    for my $ltr (nsort_by { m/repeat_region\d+\_\d+\|\|(\d+)\|\|\d+/ and $1 }
 			 keys %{$combined_features->{$chromosome}}) {
-		my ($rreg, $rreg_start, $rreg_end, $rreg_length) = split /\./, $ltr;
+		my ($rreg, $rreg_start, $rreg_end, $rreg_length) = split /\|\|/, $ltr;
 		my $new_rreg = $rreg;
-		$new_rreg =~ s/\d+.*/$index/;
+		$new_rreg =~ s/\d+.*/$count/;
+
 		my ($first) = @{$combined_features->{$chromosome}{$ltr}}[0];
-		my ($source, $strand) = (split /\|\|/, $first)[1,6];
+		my ($source, $strand) = @{$first}{qw(source strand)};
+
 		say $ogff join "\t", $chromosome, $source, 'repeat_region', 
-	            $rreg_start, $rreg_end, '.', $strand, '.', "ID=$new_rreg";
+		    $rreg_start, $rreg_end, '.', $strand, '.', "ID=$new_rreg";
+
+		my ($parent, $gff_feats);
 		for my $entry (@{$combined_features->{$chromosome}{$ltr}}) {
-		    my @feats = split /\|\|/, $entry;
-		    $feats[8] =~ s/\s\;\s/\;/g;
-		    $feats[8] =~ s/\s+$//;
-		    $feats[8] =~ s/\"//g;
-		    $feats[8] =~ s/(\;\w+)\s/$1=/g;
-		    $feats[8] =~ s/\s;/;/;
-		    $feats[8] =~ s/^(\w+)\s/$1=/;
-		    $feats[8] =~ s/repeat_region\d+_\d+/$new_rreg/g;
-		    $feats[8] =~ s/LTR_retrotransposon\d+/LTR_retrotransposon$index/g;
-		    say $ogff join "\t", @feats;
-		    
-		    if ($feats[2] eq 'LTR_retrotransposon') {
-			#$feats[8] .= ";SO:0000186";
+		    if ($entry->{type} eq 'LTR_retrotransposon') {
 			$elem_tot++;
-			my ($start, $end) = @feats[3..4];
-			my ($elem) = ($feats[8] =~ /(LTR_retrotransposon\d+)/);
+
+			my ($start, $end) = @{$entry}{qw(start end)};
+			my $elem = $entry->{attributes}{ID}[0];
 			$elem =~ s/\d+.*//;
-			$elem .= $index;
-			my $id = $elem."_".$chromosome."_".$start."_".$end;
-			$self->_get_ltr_range($samtools, $fasta, $elem, $id, $chromosome, $start, $end, $ofas);
+			$elem .= $count;
+			my $id = join "_", $elem, $chromosome, $start, $end;
+			$self->_get_ltr_range($index, $id, $chromosome, $start, $end, $ofas);
+			$entry->{attributes}{ID}[0] = $elem;
+			$entry->{attributes}{Parent}[0] = $new_rreg;
+			$parent = $elem;
 		    }
+		    elsif ($entry->{type} eq 'target_site_duplication' || $entry->{type} eq 'inverted_repeat') {
+			$entry->{attributes}{Parent}[0] = $new_rreg;
+		    }
+		    else {
+			$entry->{attributes}{Parent}[0] = $parent;
+		    }
+		    my $gff3_str = gff3_format_feature($entry);
+		    $gff_feats .= $gff3_str;
 		}
-		$index++;
+		print $ogff $gff_feats;
+		$count++;
+		undef $gff_feats;
 	    }
 	}
 	close $ogff;
@@ -345,16 +582,17 @@ sub sort_features {
 	while (my $line = <$in>) {
 	    chomp $line;
 	    next if $line =~ /^#/;
-	    my @feats = split /\t/, $line;
-	    if ($feats[2] eq 'LTR_retrotransposon') {
-		#$feats[8] .= ";SO:0000186";                                                            
+	    my $feature = gff3_parse_feature( $line );
+
+	    if ($feature->{type} eq 'LTR_retrotransposon') {
 		$elem_tot++;
-		my ($chromosome, $start, $end) = @feats[0,3,4];
-		my ($elem) = ($feats[8] =~ /(LTR_retrotransposon\d+)/);
+		my ($chromosome, $start, $end) = @{$feature}{qw(seq_id start end)};
+
+		my $elem = $feature->{attributes}{ID}[0];
 		$elem =~ s/\d+.*//;
-		$elem .= $index;
-		my $id = $elem."_".$chromosome."_".$start."_".$end;
-		$self->_get_ltr_range($samtools, $fasta, $elem, $id, $chromosome, $start, $end, $ofas);
+		$elem .= $count;
+		my $id = join "_", $elem, $chromosome, $start, $end;
+		$self->_get_ltr_range($index, $id, $chromosome, $start, $end, $ofas);
 	    }
 	}
 	close $in;
@@ -369,296 +607,26 @@ sub sort_features {
 
 sub _get_ltr_range {
     my $self = shift;
-    my ($samtools, $fasta, $elem, $id, $chromosome, $start, $end, $ofh) = @_;
-    my $tmp = $elem.".fasta";
-    my $cmd = "$samtools faidx $fasta $chromosome:$start-$end > $tmp";
-    $self->run_cmd($cmd);
+    my ($index, $id, $chromosome, $start, $end, $ofh) = @_;
+    my $location = "$chromosome:$start-$end";
+    my ($seq, $length) = $index->get_sequence($location);
 
-    my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
-    while (my $seqobj = $seqio->next_seq) {
-	my $seq = $seqobj->seq;
-	$seq =~ s/.{60}\K/\n/g;
-	say $ofh join "\n", ">".$id, $seq;
-    }
-    unlink $tmp;
-}
-
-sub _get_ltr_score_dups {
-    my $self = shift;
-    my ($scores, $sims, $allfeatures, $partfeatures) = @_;
-    my %sccounts;
-    my %sicounts;
-    my %best_element;
-    my ($score_best, $sims_best) = (0, 0);
-    
-    my $max_score = max(values %$scores);
-    my $max_sims  = max(values %$sims);
-
-    for my $source (sort keys %$scores) {
-	for my $score_key (sort keys %{$scores->{$source}}) {
-	    my $score_value = $scores->{$source}{$score_key};
-	    push @{$sccounts{$score_value}}, $score_key;
-	}
-    }
-
-    for my $source (sort keys %$sims) {
-	for my $sim_key (sort keys %{$sims->{$source}}) {
-	    my $sim_value = $sims->{$source}{$sim_key};
-	    push @{$sicounts{$sim_value}}, $sim_key;
-	}
-    }
-
-    my ($best_score_key, $best_sim_key);
-    for my $src (keys %$scores) {
-	$best_score_key = (reverse sort { $scores->{$src}{$a} <=> $scores->{$src}{$b} } keys %{$scores->{$src}})[0];
-    }
-
-    for my $src (keys %$sims) {
-	$best_sim_key = (reverse sort { $sims->{$src}{$a} <=> $sims->{$src}{$b} } keys %{$sims->{$src}})[0];
-    }
-
-    for my $source (keys %$scores) {
-	if (@{$sccounts{ $scores->{$source}{$best_score_key} }} == 1 &&
-	    @{$sicounts{ $sims->{$source}{$best_sim_key} }} == 1  &&
-	    $best_score_key eq $best_sim_key) {
-	    $score_best = 1;
-	    my $bscore  = $scores->{$source}{$best_score_key};
-	    my $bsim    = $sims->{$source}{$best_score_key};
-	    if (exists $partfeatures->{$source}{$best_score_key}) {
-		$best_element{$source}{$best_score_key} = $partfeatures->{$source}{$best_score_key};
-	    }
-	    elsif (exists $allfeatures->{$source}{$best_score_key}) {
-		$best_element{$source}{$best_score_key} = $allfeatures->{$source}{$best_score_key};
-	    }
-	    else {
-		say "\nERROR: Something went wrong....'$best_score_key' not found in hash. This is a bug, please report it.";
-		exit(1);
-	    }
-	}
-	elsif (@{$sccounts{ $scores->{$source}{$best_score_key} }} >= 1 && 
-	       @{$sicounts{ $sims->{$source}{$best_sim_key} }} >=  1) {
-	    $sims_best = 1;
-	    my $best   = @{$sicounts{ $sims->{$source}{$best_sim_key} }}[0];
-	    my $bscore = $scores->{$source}{$best_score_key};
-	    my $bsim   = $sims->{$source}{$best_score_key};
-	    if (exists $partfeatures->{$source}{$best}) {
-		$best_element{$source}{$best_score_key} = $partfeatures->{$source}{$best};
-	    }
-	    elsif (exists $allfeatures->{$source}{$best}) {
-		$best_element{$source}{$best_score_key} = $allfeatures->{$source}{$best};
-	    }
-	    else {
-		say "\nERROR: Something went wrong....'$best' not found in hash. This is a bug, please report it.";
-		exit(1);
-	    }
-	}
-    }
-
-    if ($score_best) {
-	for my $src (keys %$scores) {
-	    for my $element (keys %{$scores->{$src}}) {
-		if (exists $allfeatures->{$src}{$element}) {
-		    delete $allfeatures->{$src}{$element};
-		}
-		elsif (exists $partfeatures->{$src}{$element}) {
-		    delete $partfeatures->{$src}{$element};
-		}
-	    }
-	}
-    }
-    elsif ($sims_best) {
-	for my $src (keys %$sims) {
-	    for my $element (keys %{$sims->{$src}}) {
-		if (exists $allfeatures->{$src}{$element}) {
-		    delete $allfeatures->{$src}{$element};
-		}
-		elsif (exists $partfeatures->{$src}{$element}) {
-		    delete $partfeatures->{$src}{$element};
-		}
-	    }
-	}
-    }
-    $score_best = 0;
-    $sims_best  = 0;
-    
-    return \%best_element;
-}
-
-sub _summarize_features {
-    my $self = shift;
-    my ($feature) = @_;
-    my ($three_pr_tsd, $five_pr_tsd, $ltr_sim);
-    my ($has_pbs, $has_ppt, $has_pdoms, $has_ir, $tsd_eq, $tsd_ct) = (0, 0, 0, 0, 0, 0);
-    for my $feat (@$feature) {
-	my @part = split /\|\|/, $feat;
-	if ($part[2] eq 'target_site_duplication') {
-	    if ($tsd_ct > 0) {
-		$five_pr_tsd = $part[4] - $part[3] + 1;
-	    }
-	    else {
-		$three_pr_tsd = $part[4] - $part[3] + 1;
-		$tsd_ct++;
-	    }
-	}
-	elsif ($part[2] eq 'LTR_retrotransposon') {
-	    ($ltr_sim) = ($part[8] =~ /ltr_similarity=?\s+?\"?(\d+.\d+)\"?/); 
-	}
-	$has_pbs = 1 if $part[2] eq 'primer_binding_site';
-	$has_ppt = 1 if $part[2] eq 'RR_tract';
-	$has_ir  = 1 if $part[2] eq 'inverted_repeat';
-	$has_pdoms++ if $part[2] eq 'protein_match';
-    }
-
-    die "\nERROR: 'ltr_similarity' is not defined in GFF3. This is a bug, please report it.\n"
-	unless defined $ltr_sim;
-    $tsd_eq = 1 if $five_pr_tsd == $three_pr_tsd;
-
-    my $ltr_score = sum($has_pbs, $has_ppt, $has_pdoms, $has_ir, $tsd_eq);
-    return ($ltr_score, $ltr_sim);
-}
-
-sub _filter_compound_elements {
-    my $self = shift;
-    my ($features, $fasta) = @_;
-    my (@pdoms, %classII);
-    my $is_gypsy   = 0;
-    my $is_copia   = 0;
-    my $has_tpase  = 0;
-    my $has_pdoms  = 0;
-    my $len_thresh = 25000; # are elements > 25kb real? probably not
-
-    my ($allct, $curct) = (0, 0);
-    my ($gyp_cop_filtered, $dup_pdoms_filtered, $len_filtered, 
-	$n_perc_filtered, $classII_filtered) = (0, 0, 0, 0, 0);
-    
-    for my $source (keys %$features) {
-	for my $ltr (keys %{$features->{$source}}) {
-	    $allct++;
-	}
-    }
-    
-    for my $source (keys %$features) {
-	for my $ltr (keys %{$features->{$source}}) {
-	    $curct++;
-	    my ($rreg, $s, $e, $l) = split /\./, $ltr;
-	    
-	    for my $feat (@{$features->{$source}{$ltr}}) {
-		my @feats = split /\|\|/, $feat;
-		$feats[8] =~ s/\s\;\s/\;/g;
-		$feats[8] =~ s/\s+/=/g;
-		$feats[8] =~ s/\s+$//;
-		$feats[8] =~ s/=$//;
-		$feats[8] =~ s/=\;/;/g;
-		$feats[8] =~ s/\"//g;
-
-		if ($feats[2] =~ /protein_match/) {
-		    $has_pdoms = 1;
-		    @pdoms = ($feats[8] =~ /name=(\S+)/g);
-		    if ($feats[8] =~ /name=RVT_1|name=Chromo/i) {
-			$is_gypsy  = 1;
-		    }
-		    elsif ($feats[8] =~ /name=RVT_2/i) {
-			$is_copia  = 1;
-		    }
-		    elsif ($feats[8] =~ /transpos|mule|dde|tnp_/i) {
-			$has_tpase = 1;
-		    }
-		}
-	    }
-	    
-	    if ($is_gypsy && $is_copia) {
-		if (exists $features->{$source}{$ltr}) {
-		    delete $features->{$source}{$ltr};
-		    $gyp_cop_filtered++;
-		}
-	    }
-
-	    if ($self->remove_tnp_domains && $has_tpase) {
-		if (exists $features->{$source}{$ltr}) {
-		    delete $features->{$source}{$ltr};
-		    $classII_filtered++;
-		}
-	    }
-	    
-	    my %uniq;
-	    if ($self->remove_dup_domains && $has_pdoms) {
-		for my $element (@pdoms) {
-		    $element =~ s/\;.*//;
-		    next if $element =~ /chromo/i; # we expect these elements to be duplicated
-		    if (exists $features->{$source}{$ltr} && $uniq{$element}++) {
-			delete $features->{$source}{$ltr};
-			$dup_pdoms_filtered++;# if $uniq{$element}++;
-		    }
-		}
-	    }
-	    
-	    if ($l >= $len_thresh) {
-		if (exists $features->{$source}{$ltr}) {
-		    delete $features->{$source}{$ltr};
-		    $len_filtered++;
-		}
-	    }
-
-	    @pdoms = ();
-	    $is_gypsy  = 0;
-	    $is_copia  = 0;
-	    $has_pdoms = 0;
-	    $has_tpase = 0;
-	}
-    }
-
-    my %stats = ( compound_gyp_cop_filtered   => $gyp_cop_filtered, 
-		  length_filtered             => $len_filtered );
-
-    if ($self->remove_dup_domains) {
-	$stats{dup_pdoms_filtered} = $dup_pdoms_filtered;
-    }
-    if ($self->remove_tnp_domains) {
-	$stats{class_II_filtered}  = $classII_filtered;
-    }
-    
-    return $features, \%stats;
+    $seq =~ s/.{60}\K/\n/g;
+    say $ofh join "\n", ">".$id, $seq;
 }
 
 sub _filterNpercent {
     my $self = shift;
-    my ($source, $key, $fasta) = @_;
+    my ($source, $key, $index) = @_;
 
-    my $config = Tephra::Config::Exe->new->get_config_paths;
-    my ($samtools) = @{$config}{qw(samtools)};
-    my $n_perc = 0;
     my ($element, $start, $end) = split /\|\|/, $key;
-    my $tmp = $element.".fasta";    
-    my $cmd = "$samtools faidx $fasta $source:$start-$end > $tmp";
-    $self->run_cmd($cmd);
-    
-    my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
-    while (my $seqobj = $seqio->next_seq) {
-	my $seq = $seqobj->seq;
-	my $ltrlength = $seqobj->length;
-	die unless length($seq) == $ltrlength;
-	my $n_count = ($seq =~ tr/Nn//);
-	$n_perc  = sprintf("%.2f",$n_count/$ltrlength);
-    }
-    unlink $tmp;
+    my $location = "$source:$start-$end";
+    my ($seq, $length) = $index->get_sequence($location);
+
+    my $n_count = ($seq =~ tr/Nn//);
+    my $n_perc  = sprintf("%.2f",$n_count/$length);
 
     return $n_perc;
-}
-
-sub _get_source {
-    my $self = shift;
-    my ($ref) = @_;
-    for my $feat (@$ref) {
-	my @feats = split /\|\|/, $feat;
-	return ($feats[0]);
-    }
-}
-
-sub _index_ref {
-    my $self = shift;
-    my ($samtools, $fasta) = @_;
-    my $faidx_cmd = "$samtools faidx $fasta";
-    $self->run_cmd($faidx_cmd);
 }
 
 =head1 AUTHOR
