@@ -2,8 +2,9 @@ package Tephra::Role::GFF;
 
 use 5.010;
 use Moose::Role;
-use Bio::Tools::GFF;
-use Path::Class::File;
+use Bio::GFF3::LowLevel qw(gff3_parse_feature);
+use Path::Class::File
+#use Data::Dump::Color;
 use namespace::autoclean;
 
 =head1 NAME
@@ -41,35 +42,38 @@ sub collect_gff_features {
     close $in;
     chomp $header;
 
-    my $gffio = Bio::Tools::GFF->new( -file => $gff, -gff_version => 3 );
+    open my $gffio, '<', $gff or die "\nERROR: Could not open file: $gff\n";
 
-    my ($start, $end, $region, %features);
-    while (my $feature = $gffio->next_feature()) {
-	if ($feature->primary_tag eq 'repeat_region') {
-	    my @string = split /\t/, $feature->gff_string;
-	    ($region) = ($string[8] =~ /ID=?\s+?(repeat_region\d+)/);
-	    ($start, $end) = ($feature->start, $feature->end);
-	}
-	next $feature unless defined $start && defined $end;
-	if ($feature->primary_tag ne 'repeat_region') {
-	    if ($feature->start >= $start && $feature->end <= $end) {
-		push @{$features{$region.".".$start.".".$end}}, join "||", split /\t/, $feature->gff_string;
-	    }
-	}
+    my ($start, $end, $region, $key, %features);
+    while (my $line = <$gffio>) {
+        chomp $line;
+        next if $line =~ /^#/;
+        my $feature = gff3_parse_feature( $line );
+        if ($feature->{type} eq 'repeat_region') {
+            $region = @{$feature->{attributes}{ID}}[0];
+            ($start, $end) = @{$feature}{qw(start end)};
+	    $key = join "||", $region, $start, $end;
+
+        }
+	if ($feature->{type} ne 'repeat_region') {
+            if ($feature->{start} >= $start && $feature->{end} <= $end) {
+		push @{$features{$key}}, $feature;
+            }
+        }
     }
+    close $gffio;
 
     return ($header, \%features);
 }
 
-sub get_source {
+sub get_parent_coords {
     my $self = shift;
-    my ($ref) = @_;
-    for my $feat (@$ref) {
-	for my $rfeat (@$feat) {
-	    my @feats = split /\|\|/, $rfeat;
-	    return ($feats[0], $feats[1]);
-	}
-    }
+    my ($parent, $coord_map) = @_;
+
+    my ($seq_id, $start, $end) = split /\|\|/, $coord_map->{$parent};
+    my $pkey = join "||", $parent, $start, $end;
+
+    return ($seq_id, $pkey);
 }
 
 =head1 AUTHOR
