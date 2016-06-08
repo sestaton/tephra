@@ -6,6 +6,7 @@ use Cwd;
 use File::Spec;
 use File::Find;
 use File::Basename;
+use Bio::DB::HTS::Kseq;
 use Sort::Naturally;
 use IPC::System::Simple qw(system EXIT_ANY);
 use Path::Class::File;
@@ -84,13 +85,20 @@ sub make_hscan_gff {
     open my $out, '>', $gff or die "\nERROR: Could not open file: $gff\n";
     
     my %refs;
+    my $gkseq = Bio::DB::HTS::Kseq->new($genome);
+    my $giter = $gkseq->iterator;
+    my $hkseq = Bio::DB::HTS::Kseq->new($helitrons);
+    my $hiter = $hkseq->iterator;
+
     my %seqsin = (
-	'genome'    =>  Bio::SeqIO->new( -file => $genome,    -format => 'fasta' ),
-	'helitrons' =>  Bio::SeqIO->new( -file => $helitrons, -format => 'fasta' ),
+        'genome'    =>  $giter,
+        'helitrons' =>  $hiter,
     );
 
     while (my $gseqs = $seqsin{genome}->next_seq) {
-	$refs{$gseqs->id} = $gseqs->length;
+	my $name = $gseqs->name;
+	my $seq  = $gseqs->seq;
+	$refs{$name} = length($seq);
     }
 
     my $header = "##gff-version 3";
@@ -103,24 +111,22 @@ sub make_hscan_gff {
     
     my %hel;
     my $helct = 0;
-    my $seqin = Bio::SeqIO->new( -file => $helitrons, -format => 'fasta' );
-    while (my $seqobj = $seqin->next_seq) {
+    while(my $hseqs = $seqsin{helitrons}->next_seq) {
 	$helct++;
-	my $id   = $seqobj->id;
-	my $desc = $seqobj->description;
+	my $id = $hseqs->name;
 	my ($ref, $start, $stop) = ($id =~ /(^\S+)_\#SUB_(\d+)-(\d+)/);
-	my ($str) = ($desc =~ /^\[(forward|reverse)\]/);
+	my ($str) = ($id =~ /^\[(forward|reverse)\]/);
 	my $strand = $strand{$str};
 
 	# seqid source type start end score strand phase attribs
 	my $gff_str;
 	if ($start > $stop && $strand eq '-') {
 	    $gff_str = join "||", $ref, 'HelitronScanner', 'helitron', $stop, $start, '.', 
-	    $strand, '.', "ID=helitron$helct;Ontology_term=SO:0000544";
+	        $strand, '.', "ID=helitron$helct;Ontology_term=SO:0000544";
 	}
 	else {
 	    $gff_str = join "||", $ref, 'HelitronScanner', 'helitron', $start, $stop, '.',
-            $strand, '.', "ID=helitron$helct;Ontology_term=SO:0000544";
+                $strand, '.', "ID=helitron$helct;Ontology_term=SO:0000544";
 	}
 	push @{$hel{$ref}}, $gff_str;
     }
