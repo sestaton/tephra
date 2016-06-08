@@ -126,14 +126,14 @@ sub make_exemplars {
 	    if ($ltrct) {
 		$orientation = '5prime' if $strand eq '+';
 		$orientation = '3prime' if $strand eq '-';
-		$orientation = 'unk-primer' if $strand eq '?';
+		$orientation = 'unk-prime-r' if $strand eq '?';
 		$self->subseq($index, $src, $element, $s, $e, $ltrs_outfh, $orientation, $family);
 		$ltrct = 0;
 	    }
 	    else {
 		$orientation = '3prime' if $strand eq '+';
 		$orientation = '5prime' if $strand eq '-';
-		$orientation = 'unk-primef' if $strand eq '?';
+		$orientation = 'unk-prime-f' if $strand eq '?';
 		$self->subseq($index, $src, $element, $s, $e, $ltrs_outfh, $orientation, $family);
 		$ltrct++;
 	    }

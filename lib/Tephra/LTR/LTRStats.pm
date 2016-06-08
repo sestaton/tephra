@@ -148,14 +148,14 @@ sub extract_ltr_features {
             if ($ltrct) {
 		$orientation = '5prime' if $strand eq '-';
                 $orientation = '3prime'  if $strand eq '+';
-                $orientation = 'R-unk-prime' if $strand eq '?';
+                $orientation = 'unk-prime-r' if $strand eq '?';
 		$self->subseq($index, $src, $element, $s, $e, $ltrs_outfh, $orientation, $family);
                 $ltrct = 0;
             }
             else {
 		$orientation = '5prime' if $strand eq '+';
                 $orientation = '3prime' if $strand eq '-';
-                $orientation = 'F-unk-prime' if $strand eq '?';
+                $orientation = 'unk-prime-f' if $strand eq '?';
 		$self->subseq($index, $src, $element, $s, $e, $ltrs_outfh, $orientation, $family);
                 $ltrct++;
             }
