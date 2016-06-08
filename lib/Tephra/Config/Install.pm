@@ -420,7 +420,7 @@ sub fetch_htslib {
 	or die $!;
     chdir $root;
     my $dist = 'htslib-1.3.1';
-    my $libdir = File::Spec->catdir($root, $dist, 'htslib');
+    my $libdir = File::Spec->catdir($root, $dist); #, 'htslib');
     system("tar xjf $file") == 0 or die "tar failed: $!";
     chdir $dist;
     my $cwd = getcwd();
