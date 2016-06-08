@@ -14,7 +14,7 @@ use Path::Class::File;
 use Try::Tiny;
 use Cwd;
 use Tephra::Config::Exe;
-use Data::Dump::Color;
+#use Data::Dump::Color;
 use namespace::autoclean;
 
 with 'Tephra::Role::GFF',
