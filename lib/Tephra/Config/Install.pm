@@ -24,11 +24,11 @@ Tephra::Config::Install - Class for setting up Tephra dependencies
 
 =head1 VERSION
 
-Version 0.02.7
+Version 0.03.0
 
 =cut
 
-our $VERSION = '0.02.7';
+our $VERSION = '0.03.0';
 
 has basedir => (
     is       => 'ro',
@@ -421,7 +421,7 @@ sub fetch_htslib {
     chdir $root;
     my $dist = 'htslib-1.3.1';
     my $libdir = File::Spec->catdir($dist, 'htslib');
-    system("tar xzf $file") == 0 or die "tar failed: $!";
+    system("tar xjf $file") == 0 or die "tar failed: $!";
     chdir $dist;
     my $cwd = getcwd();
     system("./configure --prefix=$cwd 2>&1 > /dev/null") == 0
@@ -437,7 +437,7 @@ sub fetch_htslib {
 
     $ENV{HTSLIB_DIR} = $libdir;
     system("cpanm -q Bio::DB::HTS") == 0
-	or die "Installing Bio::DB::HTS failed. Here is the HTSLIB_DIR: $libdir\n"
+	or die "Installing Bio::DB::HTS failed. Here is the HTSLIB_DIR: $libdir. ERROR: $!\n";
 
     return $libdir;
 }

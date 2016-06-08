@@ -29,7 +29,7 @@ my $iindir  = File::Spec->catfile($outdir, 'ref_ltrdigest85_combined_filtered_un
 my @dirs = ($gindir, $cindir, $iindir);
 
 SKIP: {
-    skip 'skip development tests', 2 unless $devtests;
+    skip 'skip development tests', 3 unless $devtests;
     my @results = capture { system([0..5], "$cmd ltrage -h") };
 
     ok(@results, 'Can execute ltrage subcommand');

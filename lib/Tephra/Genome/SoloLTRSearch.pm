@@ -28,11 +28,11 @@ Tephra::Genome::SoloLTRSearch - Find solo-LTRs in a refence genome
 
 =head1 VERSION
 
-Version 0.02.7
+Version 0.03.0
 
 =cut
 
-our $VERSION = '0.02.7';
+our $VERSION = '0.03.0';
 $VERSION = eval $VERSION;
 
 has dir => (

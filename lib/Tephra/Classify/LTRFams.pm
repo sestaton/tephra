@@ -33,11 +33,11 @@ Tephra::Classify::LTRFams - Classify LTR retrotransposons into families
 
 =head1 VERSION
 
-Version 0.02.7
+Version 0.03.0
 
 =cut
 
-our $VERSION = '0.02.7';
+our $VERSION = '0.03.0';
 $VERSION = eval $VERSION;
 
 =head1 SYNOPSIS
