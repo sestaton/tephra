@@ -58,6 +58,7 @@ sub _run_nonltr_search {
     my ($genomedir, $outputdir) = $nonltr_obj->find_nonltrs;
 
     my $gff_obj = Tephra::NonLTR::GFFWriter->new(
+	genome   => $genome,
         fastadir => $genomedir,
 	outdir   => $outputdir );
 
