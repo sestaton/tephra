@@ -34,11 +34,11 @@ Tephra::LTR::LTRStats - Calculate the age distribution of LTR retrotransposons
 
 =head1 VERSION
 
-Version 0.03.0
+Version 0.03.1
 
 =cut
 
-our $VERSION = '0.03.0';
+our $VERSION = '0.03.1';
 $VERSION = eval $VERSION;
 
 has genome => (
@@ -58,7 +58,7 @@ has outfile => (
 has dir => (
     is       => 'ro',
     isa      => 'Path::Class::Dir',
-    required => 1,
+    required => 0,
     coerce   => 1,
 );
 
@@ -73,7 +73,7 @@ has threads => (
 has gff => (
     is       => 'ro',
     isa      => 'Path::Class::File',
-    required => 1,
+    required => 0,
     coerce   => 1,
 );
 
@@ -84,118 +84,25 @@ has clean => (
     default  => 1,
 );
 
+has all => (
+    is       => 'ro',
+    isa      => 'Bool',
+    required => 0,
+    default  => 1,
+);
+
 #
 # methods
 #
-sub extract_ltr_features {
-    my $self = shift;
-    my $fasta = $self->genome;
-    my $gff   = $self->gff;
-    
-    my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $dir = File::Spec->catdir($path, $name.'_ltrages');
-    unless ( -d $dir ) {
-	make_path( $dir, {verbose => 0, mode => 0771,} );
-    }
-
-    my ($header, $features) = $self->collect_gff_features($gff);
-
-    my $index = $self->index_ref($fasta);
-
-    
-    my ($family, %ltrs, %seen, %coord_map);
-    for my $rep_region (keys %$features) {
-        for my $ltr_feature (@{$features->{$rep_region}}) {
-	    if ($ltr_feature->{type} eq 'LTR_retrotransposon') {
-		my $elem_id = @{$ltr_feature->{attributes}{ID}}[0];
-		$family  = @{$ltr_feature->{attributes}{family}}[0];
-		my ($start, $end) = @{$ltr_feature}{qw(start end)};
-		my $key = join "||", $family, $elem_id, $start, $end;
-		$ltrs{$key}{'full'} = join "||", @{$ltr_feature}{qw(seq_id type start end)};
-		$coord_map{$elem_id} = join "||", @{$ltr_feature}{qw(seq_id start end)};
-	    }
-	    if ($ltr_feature->{type} eq 'long_terminal_repeat') {
-		my $parent = @{$ltr_feature->{attributes}{Parent}}[0];
-		my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
-		if ($seq_id eq $ltr_feature->{seq_id}) {
-		    my ($type, $start, $end, $strand) = 
-			@{$ltr_feature}{qw(type start end strand)};
-		    $strand //= '?';
-		    my $ltrkey = join "||", $seq_id, $type, $start, $end, $strand;
-		    $pkey = join "||", $family, $pkey;
-		    push @{$ltrs{$pkey}{'ltrs'}}, $ltrkey unless exists $seen{$ltrkey};
-		    $seen{$ltrkey} = 1;
-		}
-	    }
-	}
-    }
-
-    my @files;
-    my $ltrct = 0;
-    my $orientation;
-    for my $ltr (sort keys %ltrs) {
-	my ($family, $element, $rstart, $rend) = split /\|\|/, $ltr;
-	my ($seq_id, $type, $start, $end) = split /\|\|/, $ltrs{$ltr}{'full'};
-	my $ltr_file = join "_", $family, $element, $seq_id, $start, $end, 'ltrs.fasta';
-	my $ltrs_out = File::Spec->catfile($dir, $ltr_file);
-	push @files, $ltrs_out;
-	open my $ltrs_outfh, '>>', $ltrs_out or die "\nERROR: Could not open file: $ltrs_out\n";
-
-	for my $ltr_repeat (@{$ltrs{$ltr}{'ltrs'}}) {
-	    #ltr: Contig57_HLAC-254L24||long_terminal_repeat||60101||61950||+
-            my ($src, $ltrtag, $s, $e, $strand) = split /\|\|/, $ltr_repeat;
-
-            if ($ltrct) {
-		$orientation = '5prime' if $strand eq '-';
-                $orientation = '3prime'  if $strand eq '+';
-                $orientation = 'unk-prime-r' if $strand eq '?';
-		$self->subseq($index, $src, $element, $s, $e, $ltrs_outfh, $orientation, $family);
-                $ltrct = 0;
-            }
-            else {
-		$orientation = '5prime' if $strand eq '+';
-                $orientation = '3prime' if $strand eq '-';
-                $orientation = 'unk-prime-f' if $strand eq '?';
-		$self->subseq($index, $src, $element, $s, $e, $ltrs_outfh, $orientation, $family);
-                $ltrct++;
-            }
-        }
-    }
-
-    return (\@files, $dir);
-}
-
-sub collect_feature_args {
-    my $self = shift;
-    my $dir = $self->dir;
-
-    my (@ltrs, %aln_args);
-    my $wanted  = sub { push @ltrs, $File::Find::name if -f && /exemplar_ltrs.fasta$/ };
-    my $process = sub { grep ! -d, @_ };
-    find({ wanted => $wanted, preprocess => $process }, $dir);
-    
-    if (@ltrs > 1) {
-	$aln_args{ltrs} = { seqs => \@ltrs };
-	$aln_args{resdir} = $dir;
-    }
-    else {
-	my ($files, $wdir) = $self->extract_ltr_features;
-	$aln_args{ltrs} = { seqs => $files };
-	$aln_args{resdir} = $wdir;
-    }
-
-    return \%aln_args;
-}
-
 sub calculate_ltr_ages {
     my $self = shift;
-    my $dir = $self->dir;
+    #my $dir = $self->dir;
     my $threads = $self->threads;
     my $outfile = $self->outfile;
 
-    my $args = $self->collect_feature_args($dir);
+    my $args = $self->collect_feature_args;
     #dd $args; ## debug
-
+    
     my $resdir = File::Spec->catdir($args->{resdir}, 'divergence_time_stats');
     
     unless ( -d $resdir ) {
@@ -204,7 +111,7 @@ sub calculate_ltr_ages {
     
     my $t0 = gettimeofday();
     my $ltrrts = 0;
-    my $logfile = File::Spec->catfile($dir, 'all_aln_reports.log');
+    my $logfile = File::Spec->catfile($resdir, 'all_aln_reports.log');
     open my $logfh, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
     
     my $pm = Parallel::ForkManager->new($threads);
@@ -218,7 +125,8 @@ sub calculate_ltr_ages {
 			      my $t1 = gettimeofday();
 			      my $elapsed = $t1 - $t0;
 			      my $time = sprintf("%.2f",$elapsed/60);
-			      say $logfh basename($ident)," just finished with PID $pid and exit code: $exit_code in $time minutes";
+			      say $logfh basename($ident),
+			          " just finished with PID $pid and exit code: $exit_code in $time minutes";
 			} );
 
     for my $type (keys %$args) {
@@ -265,6 +173,122 @@ sub calculate_ltr_ages {
     close $logfh;
 
     return;
+}
+
+sub collect_feature_args {
+    my $self = shift;
+    my $dir = $self->dir;
+
+    my (@ltrs, %aln_args);
+    if ($self->all) {
+	my ($files, $wdir) = $self->extract_ltr_features;
+        $aln_args{ltrs} = { seqs => $files };
+        $aln_args{resdir} = $wdir;
+    }
+    else {
+	my $wanted  = sub { push @ltrs, $File::Find::name if -f && /exemplar_ltrs.fasta$/ };
+	my $process = sub { grep ! -d, @_ };
+	find({ wanted => $wanted, preprocess => $process }, $dir);
+
+	if (@ltrs > 0) {
+	    $aln_args{ltrs} = { seqs => \@ltrs };
+	    $aln_args{resdir} = $dir;
+	}
+	else {
+	    unless (-e $self->gff) {
+		croak "\nERROR: No exemplar files were found in the input directory ".
+		    "and the input GFF file does not appear to exist. Exiting.\n";
+	    }
+
+	    warn "\nWARNING: No exemplar files were found in the input directory. LTR age will be ".
+		"calculated from LTR-RT elements in the input GFF.\n";
+
+	    my ($files, $wdir) = $self->extract_ltr_features;
+	    $aln_args{ltrs} = { seqs => $files };
+	    $aln_args{resdir} = $wdir;
+	}
+    }
+
+    return \%aln_args;
+}
+
+sub extract_ltr_features {
+    my $self = shift;
+    my $fasta = $self->genome;
+    my $gff   = $self->gff;
+    
+    my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
+    my $dir = File::Spec->catdir($path, $name.'_ltrages');
+    unless ( -d $dir ) {
+	make_path( $dir, {verbose => 0, mode => 0771,} );
+    }
+
+    my ($header, $features) = $self->collect_gff_features($gff);
+
+    my $index = $self->index_ref($fasta);
+    
+    my ($family, %ltrs, %seen, %coord_map);
+    for my $rep_region (keys %$features) {
+        for my $ltr_feature (@{$features->{$rep_region}}) {
+	    if ($ltr_feature->{type} eq 'LTR_retrotransposon') {
+		my $elem_id = @{$ltr_feature->{attributes}{ID}}[0];
+		$family  = @{$ltr_feature->{attributes}{family}}[0];
+		my ($start, $end) = @{$ltr_feature}{qw(start end)};
+		my $key = join "||", $family, $elem_id, $start, $end;
+		$ltrs{$key}{'full'} = join "||", @{$ltr_feature}{qw(seq_id type start end)};
+		$coord_map{$elem_id} = join "||", @{$ltr_feature}{qw(seq_id start end)};
+	    }
+	    if ($ltr_feature->{type} eq 'long_terminal_repeat') {
+		my $parent = @{$ltr_feature->{attributes}{Parent}}[0];
+		my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
+		if ($seq_id eq $ltr_feature->{seq_id}) {
+		    my ($type, $start, $end, $strand) = 
+			@{$ltr_feature}{qw(type start end strand)};
+		    $strand //= '?';
+		    my $ltrkey = join "||", $seq_id, $type, $start, $end, $strand;
+		    $pkey = join "||", $family, $pkey;
+		    push @{$ltrs{$pkey}{'ltrs'}}, $ltrkey unless exists $seen{$ltrkey};
+		    $seen{$ltrkey} = 1;
+		}
+	    }
+	}
+    }
+
+    my @files;
+    my $ltrct = 0;
+    my $orientation;
+    for my $ltr (sort keys %ltrs) {
+	my ($family, $element, $rstart, $rend) = split /\|\|/, $ltr;
+	my ($seq_id, $type, $start, $end) = split /\|\|/, $ltrs{$ltr}{'full'};
+	my $ltr_file = join "_", $family, $element, $seq_id, $start, $end, 'ltrs.fasta';
+	my $ltrs_out = File::Spec->catfile($dir, $ltr_file);
+	die "\nERROR: $ltrs_out exists. This will cause problems downstream. Please remove the previous ".
+	    "results and try again. Exiting.\n" if -e $ltrs_out;
+	push @files, $ltrs_out;
+	open my $ltrs_outfh, '>>', $ltrs_out or die "\nERROR: Could not open file: $ltrs_out\n";
+
+	for my $ltr_repeat (@{$ltrs{$ltr}{'ltrs'}}) {
+	    #ltr: Contig57_HLAC-254L24||long_terminal_repeat||60101||61950||+
+            my ($src, $ltrtag, $s, $e, $strand) = split /\|\|/, $ltr_repeat;
+
+            if ($ltrct) {
+		$orientation = '5prime' if $strand eq '-';
+                $orientation = '3prime'  if $strand eq '+';
+                $orientation = 'unk-prime-r' if $strand eq '?';
+		$self->subseq($index, $src, $element, $s, $e, $ltrs_outfh, $orientation, $family);
+                $ltrct = 0;
+            }
+            else {
+		$orientation = '5prime' if $strand eq '+';
+                $orientation = '3prime' if $strand eq '-';
+                $orientation = 'unk-prime-f' if $strand eq '?';
+		$self->subseq($index, $src, $element, $s, $e, $ltrs_outfh, $orientation, $family);
+                $ltrct++;
+            }
+        }
+    }
+
+    return (\@files, $dir);
 }
 
 sub process_baseml_args {

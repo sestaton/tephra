@@ -15,7 +15,8 @@ sub opt_spec {
 	[ "subs_rate|r=f", "The nucleotide substitution rate to use (Default: 1e-8) "                   ],
 	[ "threads|t=i",   "The number of threads to use for clustering coding domains "                ],
 	[ "indir|i=s",     "The input directory of superfamily exemplars "                              ],
-	[ "clean",         "Clean up all the intermediate files from PAML and clustalw (Default: yes) " ],
+	[ "all|a",         "Calculate age of all LTR-RTs in <gff> instead of exemplars in <indir> "     ],
+	[ "clean|c",       "Clean up all the intermediate files from PAML and clustalw (Default: yes) " ],
 	[ "help|h",        "Display the usage menu and exit. "                                          ],
         [ "man|m",         "Display the full manual. "                                                  ],
 	);
@@ -33,12 +34,20 @@ sub validate_args {
         $self->help;
         exit(0);
     }
-    elsif (!$opt->{indir}) {
-	say "\nERROR: The '--indir' directory does not appear to exist. Check input.";
-	$self->help and exit(0);
-    }
-    elsif (! -e $opt->{genome}) {
+    elsif (! $opt->{genome} || ! -e $opt->{genome}) {
         say "\nERROR: The '--genome' file does not appear to exist. Check input.";
+        $self->help and exit(0);
+    }
+    elsif (! $opt->{outfile}) {
+	say "\nERROR: The '--outfile' argument is missing. Check input.";
+        $self->help and exit(0);
+    }
+    elsif ($opt->{all} && ! -e $opt->{gff}) {
+        say "\nERROR: The '--gff' file does not appear to exist. Check input.";
+        $self->help and exit(0);
+    }
+    elsif (! $opt->{indir} && ! $opt->{all}) {
+        say "\nERROR: The '--indir' option must be given if no gff file and '--all' option is given. Check input.";
         $self->help and exit(0);
     }
 }
@@ -52,23 +61,19 @@ sub execute {
 sub _calculate_ltr_stats {
     my ($opt) = @_;
 
-    my $indir     = $opt->{indir};
-    my $genome    = $opt->{genome};
-    my $gff       = $opt->{gff};
-    my $outfile   = $opt->{outfile};
-    my $subs_rate = $opt->{subs_rate} // 1e-8;
-    my $threads   = $opt->{threads} // 1;
-    my $clean     = $opt->{clean} // 0;
-
-    my $stats_obj = Tephra::LTR::LTRStats->new(
-	dir       => $indir,
-	genome    => $genome,
-	gff       => $gff,
-	subs_rate => $subs_rate,
-	threads   => $threads,
-	outfile   => $outfile,
-	clean     => $clean,
+    my %ltrstats_opts = (
+	genome  => $opt->{genome},
+	outfile => $opt->{outfile},
     );
+    
+    $ltrstats_opts{all}       = $opt->{all} // 0;
+    $ltrstats_opts{dir}       = $opt->{indir} // 0;
+    $ltrstats_opts{gff}       = $opt->{gff} // 0;
+    $ltrstats_opts{subs_rate} = $opt->{subs_rate} // 1e-8;
+    $ltrstats_opts{threads}   = $opt->{threads} // 1;
+    $ltrstats_opts{clean}     = $opt->{clean} // 0;
+
+    my $stats_obj = Tephra::LTR::LTRStats->new(%ltrstats_opts);
 
     $stats_obj->calculate_ltr_ages;
 }
@@ -90,7 +95,8 @@ sub help {
       -r|subs_rate  :   The nucleotide substitution rate to use (Default: 1e-8).
       -t|threads    :   The number of threads to use for clustering coding domains (Default: 1).
       -c|clean      :   Clean up all the intermediate files from PAML and clustalw (Default: yes).
-    
+      -a|all        :   Calculate age of all LTR-RTs in <gff> instead of exemplars in <indir>.   
+   
 END
 }
 
@@ -150,6 +156,10 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =item -c, --clean
 
  Clean up all the intermediate files from PAML and clustalw (Default: yes).
+
+=item -a, --all
+
+ Calculate age of all LTR-RTs in <gff> instead of exemplars in <indir>.
 
 =item -h, --help
 
