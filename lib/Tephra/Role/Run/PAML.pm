@@ -152,7 +152,7 @@ sub parse_baseml {
 
     while (my $line = <$divin>) {
 	chomp $line;
-	if ($line =~ /^[35]prime?|unknown-[lr]?\s+/) {
+	if ($line =~ /^[35]prime?|unk-prime-[fr]?\s+/) {
 	    if ($line =~ /(\d+\.\d+)\(\s?(\-?\d+\.\d+)\)/) {
 		# 3prime_Ung         0.0269( 8.7752)
 		my $divergence_time = $1;
