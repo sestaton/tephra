@@ -1,6 +1,12 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.03.1	06/09/16	Vancouver, BC
+
+- Add --all option to 'ltrage' command for calculating age of all LTR-RTs in a GFF
+  instead of just the default exemplars. This makes getting the age a bit easier now
+  by just requiring one command as opposed to one for each superfamily.
+
 0.03.0	06/08/16	Vancouver, BC
 
 - Remove use of SAMtools for indexing/extracting subsequences.

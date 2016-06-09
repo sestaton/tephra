@@ -22,11 +22,11 @@ Tephra::Role::Run::PAML - Helper role for running PAML
 
 =head1 VERSION
 
-Version 0.03.0
+Version 0.03.1
 
 =cut
 
-our $VERSION = '0.03.0';
+our $VERSION = '0.03.1';
 $VERSION = eval $VERSION;
 
 has baseml_exec => (
@@ -152,7 +152,7 @@ sub parse_baseml {
 
     while (my $line = <$divin>) {
 	chomp $line;
-	if ($line =~ /^[35]prime?|unknown-[lr]?\s+/) {
+	if ($line =~ /^[35]prime?|unk-prime-[fr]?\s+/) {
 	    if ($line =~ /(\d+\.\d+)\(\s?(\-?\d+\.\d+)\)/) {
 		# 3prime_Ung         0.0269( 8.7752)
 		my $divergence_time = $1;
