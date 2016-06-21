@@ -20,7 +20,6 @@ use Parallel::ForkManager;
 use Cwd;
 use Carp 'croak';
 use Try::Tiny;
-use Tephra::Config::Exe;
 #use Data::Dump::Color;
 use namespace::autoclean;
 
@@ -96,7 +95,6 @@ has all => (
 #
 sub calculate_ltr_ages {
     my $self = shift;
-    #my $dir = $self->dir;
     my $threads = $self->threads;
     my $outfile = $self->outfile;
 
@@ -226,7 +224,8 @@ sub extract_ltr_features {
     my ($header, $features) = $self->collect_gff_features($gff);
 
     my $index = $self->index_ref($fasta);
-    
+
+    #dd $features;
     my ($family, %ltrs, %seen, %coord_map);
     for my $rep_region (keys %$features) {
         for my $ltr_feature (@{$features->{$rep_region}}) {
@@ -314,7 +313,7 @@ sub process_baseml_args {
     }
     else {
 	my $element = basename($phy);
-	$element =~ s/_ltrs_clustal-out.*//;
+	$element =~ s/_ltrs_muscle-out.*//;
 	open my $divout, '>', $divfile or die "\nERROR: Could not open divergence file: $divfile\n";
 	say $divout join "\t", $element, $divergence , '0', '0';
 	close $divout;
@@ -334,15 +333,16 @@ sub process_align_args {
 
     my $fas = File::Spec->catfile($pdir, $name.$suffix);
     copy($db, $fas) or die "\nERROR: Copy failed: $!";
-    my $tre = File::Spec->catfile($pdir, $name.'.dnd');
-    my $aln = File::Spec->catfile($pdir, $name.'_clustal-out.aln');
-    my $dnd = File::Spec->catfile($pdir, $name.'_clustal-out.dnd');
-    my $log = File::Spec->catfile($pdir, $name.'_clustal-out.log');
+    my $tre  = File::Spec->catfile($pdir, $name.'.dnd');
+    my $aln  = File::Spec->catfile($pdir, $name.'_muscle-out.aln');
+    my $dnd  = File::Spec->catfile($pdir, $name.'_muscle-out.dnd');
+    my $alog = File::Spec->catfile($pdir, $name.'_muscle-out.alnlog');
+    my $tlog = File::Spec->catfile($pdir, $name.'_muscle-out.trelog');
 
-    my $config = Tephra::Config::Exe->new->get_config_paths;
-    my ($clustalw2) = @{$config}{qw(clustalw)};
-    my $clwcmd = "$clustalw2 -infile=$fas -outfile=$aln 2>$log";
-    $self->capture_cmd($clwcmd);
+    my $muscmd = "muscle -clwstrict -in $fas -outfile $aln 2>$alog";
+    my $trecmd = "muscle -maketree -in $fas -outfile $tre -cluster neighborjoining 2>$tlog";
+    $self->capture_cmd($muscmd);
+    $self->capture_cmd($trecmd);
     my $phy = $self->parse_aln($aln, $tre, $dnd);
     $self->process_baseml_args($phy, $dnd, $resdir);
     
