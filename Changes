@@ -1,6 +1,14 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.03.2	06/21/16	Vancouver, BC
+
+- Bug fix in setting the wrong repeat_region ID for elements when evaluating overlaps (fixes #15 on github).
+- Bug fix for parsing Helitron IDs from final FASTA file. A minimal parser (no dependencies) was added to the class 
+  to account for Bio::DB::HTS::Kseq not parsing anything past the first whitespace. 
+- Remove use of clustalw2 everywhere in favor of muscle. This solves a couple of issues, as clustalw2 was quite noisy and
+  error-prone when compiling from source.
+
 0.03.1	06/09/16	Vancouver, BC
 
 - Add --all option to 'ltrage' command for calculating age of all LTR-RTs in a GFF
