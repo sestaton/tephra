@@ -88,11 +88,6 @@ sub configure_root {
 	print STDERR ".";
     }
     
-    unless (-e $config->{clustalw}) {
-	$config->{clustalw} = $self->fetch_clustalw2;
-	print STDERR ".";
-    }
-    
     unless (-e $config->{pamlbin}) {
 	$config->{pamlbin} = $self->fetch_paml;
 	print STDERR ".";
@@ -275,39 +270,6 @@ sub fetch_hmmer3 {
     chdir $wd;
     
     return $hmmer3bin;
-}
-
-sub fetch_clustalw2 {
-    my $self = shift;
-    my $root = $self->basedir;
-    my $wd   = $self->workingdir;
-    
-    my $urlbase = 'http://www.clustal.org';
-    my $dir     = 'download';
-    my $tool    = 'current';
-    my $file    = 'clustalw-2.1.tar.gz';
-    my $url     = join "/", $urlbase, $dir, $tool, $file;
-    my $outfile = File::Spec->catfile($root, $file);
-    $self->fetch_file($outfile, $url);
-
-    chdir $root;
-    my $dist = 'clustalw-2.1';
-    system("tar xzf $file") == 0 or die "tar failed: $!";
-    chdir $dist;
-    my $cwd = getcwd();
-    system("./configure --prefix=$cwd 2>&1 > /dev/null") == 0
-	or die "configure failed: $!";
-    system("make -j4 2>&1 > /dev/null") == 0 
-	or die "make failed: $!";
-    system("make install 2>&1 > /dev/null") == 0
-	or die "make failed: $!";
-    
-    my $clw = File::Spec->catdir($cwd, 'bin', 'clustalw2');
-    my $distfile = File::Spec->catfile($root, $file);
-    unlink $distfile;
-    chdir $wd;
-
-    return $clw;
 }
 
 sub fetch_paml {

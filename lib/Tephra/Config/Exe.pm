@@ -48,7 +48,6 @@ sub get_config_paths {
     my $chrdir   = File::Spec->catdir($root,    'hmm');
     my $mgescan  = File::Spec->catfile($chrdir, 'tephra-MGEScan');
     my $transla  = File::Spec->catfile($chrdir, 'tephra-translate');
-    my $clw      = File::Spec->catfile($root,   'clustalw-2.1', 'bin', 'clustalw2');
     my $pamlbin  = File::Spec->catdir($root,    'paml4.8', 'bin');
     my $transeq  = File::Spec->catdir($root,    'EMBOSS-6.5.7', 'bin', 'transeq');
     my $blastph  = File::Spec->catdir($root,    'ncbi-blast-2.3.0+', 'bin');
@@ -76,7 +75,6 @@ sub get_config_paths {
         hmmdir     => $chrdir,
         mgescan    => $mgescan,
         transcmd   => $transla,
-        clustalw   => $clw,
         pamlbin    => $pamlbin,
         transeq    => $transeq,
         blastpath  => $blastph,
