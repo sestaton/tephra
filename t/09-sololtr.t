@@ -28,9 +28,9 @@ my $modeldir  = File::Spec->catdir($resdir, 'Tephra_LTR_exemplar_models');
 my $allstfile = File::Spec->catfile($resdir, 'gypsy_sololtr_stats.tsv');
 my $outfile   = File::Spec->catfile($resdir, 'gypsy_sololtrs.gff3');
 my $seqfile   = File::Spec->catfile($modeldir, 
-				    'RLG_family0_exemplar_ltrs_clustal-out_ref_masked99_hmmer_parsed_seq.fasta');
+				    'RLG_family0_exemplar_ltrs_muscle-out_ref_masked99_hmmer_parsed_seq.fasta');
 my $parsfile  = File::Spec->catfile($modeldir,
-				    'RLG_family0_exemplar_ltrs_clustal-out_ref_masked99_hmmer_parsed.txt');
+				    'RLG_family0_exemplar_ltrs_muscle-out_ref_masked99_hmmer_parsed.txt');
 my $masked    = File::Spec->catfile($testdir, 'ref_masked99.fas');
 
 SKIP: {

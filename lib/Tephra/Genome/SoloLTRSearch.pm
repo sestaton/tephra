@@ -198,7 +198,7 @@ sub write_sololtr_gff {
 	my ($query, $query_length, $number_of_hits, $hit_name, $perc_coverage, $hsp_length, 
 	    $hsp_perc_ident, $hsp_query_start, $hsp_query_end, $hsp_hit_start, $hsp_hit_end,
 	    $search_type) = split /\t/, $line;
-	$query =~ s/_ltrs_clustal-out//;
+	$query =~ s/_ltrs_muscle-out//;
 
 	if (exists $seqlen->{$hit_name}) {
 	    $ct++;
@@ -242,18 +242,16 @@ sub _get_ltr_alns {
     my (@ltrseqs, @aligns);
 
     find( sub { push @ltrseqs, $File::Find::name if -f and /exemplar_ltrs.fasta$/ }, $dir);
-    my $config = Tephra::Config::Exe->new->get_config_paths;
-    my ($clustalw2) = @{$config}{qw(clustalw)};
 
     for my $ltrseq (@ltrseqs) {
 	my ($name, $path, $suffix) = fileparse($ltrseq, qr/\.[^.]*/);
 	my $tre = File::Spec->catfile($path, $name.'.dnd');
-	my $aln = File::Spec->catfile($path, $name.'_clustal-out.aln');
-	my $log = File::Spec->catfile($path, $name.'_clustal-out.log');
+	my $aln = File::Spec->catfile($path, $name.'_muscle-out.aln');
+	my $log = File::Spec->catfile($path, $name.'_muscle-out.log');
 	
-	my $clwcmd = "$clustalw2 -infile=$ltrseq -outfile=$aln 2>$log";
+	my $clwcmd = "muscle -clwstrict -in $ltrseq -out $aln 2>$log";
 	$self->capture_cmd($clwcmd);
-	unlink $tre, $log;
+	unlink $log;
 	push @aligns, $aln;
     }
 

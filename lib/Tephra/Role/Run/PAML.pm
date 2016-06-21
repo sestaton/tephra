@@ -141,7 +141,7 @@ sub parse_baseml {
     my $results_dir     = $args->{results_dir};
 
     my $element = basename($phylip);
-    $element =~ s/_ltrs_clustal-out.*//;
+    $element =~ s/_ltrs_muscle-out.*//;
     my $out = basename($outfile);
     my $wd  = getcwd();
     my $dirobj = Path::Class::Dir->new($wd);
