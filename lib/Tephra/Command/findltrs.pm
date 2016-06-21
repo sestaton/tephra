@@ -94,7 +94,7 @@ sub _refine_ltr_predictions {
 	my $combined_features = $refine_obj->reduce_features({ relaxed_features => $relaxed_features, 
 							       strict_features  => $strict_features,
 							       best_elements    => $best_elements });
-	
+
 	$refine_obj->sort_features({ gff               => $relaxed_gff, 
 				     combined_features => $combined_features });
     }

@@ -93,7 +93,7 @@ sub collect_features {
 	    $length = $end - $start + 1; 
 	    my $region_key = join "||", $region."_".$pid_thresh, $start, $end, $length;
 	    $features{$seq_id}{$region_key} = [];
-	    $coord_map{$region} = join "||", $seq_id, $start, $end;
+	    #$coord_map{$region."_".$pid_thresh} = join "||", $seq_id, $start, $end;
 	    $intervals{$region."_".$pid_thresh} = join "||", $start, $end, $length;
 	}
 	
@@ -106,7 +106,7 @@ sub collect_features {
 		if ($parent =~ /(repeat_region\d+)/) {
 		    my $old_parent = $1;
 		    my $new_parent = join "_", $old_parent, $pid_thresh;
-		    $parent =~ s/$old_parent/$new_parent/g;
+		    $parent =~ s/$old_parent/$new_parent/;
 		    $feature->{attributes}{Parent}[0] = $parent;
 		}
 		push @{$features{$seq_id}{$region_key}}, $feature;
@@ -115,7 +115,7 @@ sub collect_features {
     }
 
     my ($filtered, $stats) = $self->filter_compound_elements(\%features);
-    return ({ collected_features => $filtered, stats => $stats, intervals => \%intervals });
+    return ({ collected_features => $filtered, stats => $stats, intervals => \%intervals}); #, region_map => \%coord_map });
 }
 
 sub filter_compound_elements {
@@ -219,9 +219,8 @@ sub get_overlaps {
     my $allfeatures  = $relaxed_features->{collected_features};
     my $partfeatures = $strict_features->{collected_features}; 
     my $intervals    = $relaxed_features->{intervals};
-    
-    my (@best_elements, %chr_intervals);
-  
+
+    my (@best_elements, %chr_intervals);  
     for my $source (keys %$allfeatures) {
 	my $tree = Set::IntervalTree->new;
 	
@@ -241,15 +240,27 @@ sub get_overlaps {
 		my $res = $chr_intervals{$source}->fetch($start, $end);
 
 		next unless defined $partfeatures->{$source}{$rregion};
+		## This is the Tephra algorithm for scoring the quality of LTR-RT elements.
+		##
+		## The criteria are:
+		## 1) the number of protein domains, 
+		## 2) presence of TSDs,
+		## 3) equal length TSDs, 
+		## 4) polypurine (RR) tract,
+		## 5) inverted repeats,
+		## 6) primer binding site.
+		##
+		## If two elements are equal in these respects we take the element with the highest
+		## LTR similarity.
 		my ($score99, $sim99) = $self->summarize_features($partfeatures->{$source}{$rregion});
 		
 		$scores{$source}{$rregion} = $score99;
 		$sims{$source}{$rregion} = $sim99;
 		
-		## collect all features, then compare scores/sim...
-		for my $over (@$res) {
-		    my ($s, $e, $l) = split /\|\|/, $intervals->{$over};
-		    my $region_key = join "||", $over, $s, $e, $l;
+		## Collect all features and LTR similary for overlapping elements.
+		for my $overlap (@$res) {
+		    my ($s, $e, $l) = split /\|\|/, $intervals->{$overlap};
+		    my $region_key = join "||", $overlap, $s, $e, $l;
 		    next unless defined $allfeatures->{$source}{$region_key};
 		    my ($score85, $sim85) = $self->summarize_features($allfeatures->{$source}{$region_key});
 
@@ -257,6 +268,7 @@ sub get_overlaps {
 		    $sims{$source}{$region_key} = $sim85;
 		}
 
+		## Compute the best element based on the scores.
 		if (@$res > 0) {
 		    my $best_element 
 			= $self->get_ltr_score_dups(\%scores, \%sims, $allfeatures, $partfeatures);
@@ -309,10 +321,9 @@ sub get_ltr_score_dups {
     my %sicounts;
     my %best_element;
     my ($score_best, $sims_best) = (0, 0);
-    
-    my $max_score = max(values %$scores);
-    my $max_sims  = max(values %$sims);
 
+    ## These structures are to find out if we have multiple elements with
+    ## the same features.
     for my $source (sort keys %$scores) {
 	for my $score_key (sort keys %{$scores->{$source}}) {
 	    my $score_value = $scores->{$source}{$score_key};
@@ -327,22 +338,40 @@ sub get_ltr_score_dups {
 	}
     }
 
-    my ($best_score_key, $best_sim_key);
+    my $chr = (keys %$scores)[0];
+    my ($best_score_key, $best_sim_key, $best_sim, $best_score);
     for my $src (keys %$scores) {
-	$best_score_key = (reverse sort { $scores->{$src}{$a} <=> $scores->{$src}{$b} } keys %{$scores->{$src}})[0];
+	for my $rregion (keys %{$scores->{$src}}) {
+	    if (defined $best_score) {
+		$best_score_key = $rregion if $scores->{$src}{$rregion} >= $best_score;
+	    }
+	    else {
+		$best_score = $scores->{$src}{$rregion};
+		$best_score_key = $rregion;
+	    }
+	}
     }
 
     for my $src (keys %$sims) {
-	$best_sim_key = (reverse sort { $sims->{$src}{$a} <=> $sims->{$src}{$b} } keys %{$sims->{$src}})[0];
+	for my $rregion (keys %{$sims->{$src}}) {
+	    if (defined $best_sim) {
+		$best_sim_key = $rregion if $sims->{$src}{$rregion} >= $best_sim;
+	    }
+	    else {
+		$best_sim = $sims->{$src}{$rregion};
+		$best_sim_key = $rregion;
+	    }
+	}
     }
 
+    ## First, evaluate wheter there is only one best element by score and similarity.
+    ## Then, if there are multiple elements with the same best score/similarity, pick one
+    ## based on the similarity.
     for my $source (keys %$scores) {
 	if (@{$sccounts{ $scores->{$source}{$best_score_key} }} == 1 &&
 	    @{$sicounts{ $sims->{$source}{$best_sim_key} }} == 1  &&
 	    $best_score_key eq $best_sim_key) {
 	    $score_best = 1;
-	    my $bscore  = $scores->{$source}{$best_score_key};
-	    my $bsim    = $sims->{$source}{$best_score_key};
 	    if (exists $partfeatures->{$source}{$best_score_key}) {
 		$best_element{$source}{$best_score_key} = $partfeatures->{$source}{$best_score_key};
 	    }
@@ -354,16 +383,14 @@ sub get_ltr_score_dups {
 	    }
 	}
 	elsif (@{$sccounts{ $scores->{$source}{$best_score_key} }} >= 1 && 
-	       @{$sicounts{ $sims->{$source}{$best_sim_key} }} >=  1) {
+	       @{$sicounts{ $sims->{$source}{$best_sim_key} }} >= 1) {
 	    $sims_best = 1;
 	    my $best   = @{$sicounts{ $sims->{$source}{$best_sim_key} }}[0];
-	    my $bscore = $scores->{$source}{$best_score_key};
-	    my $bsim   = $sims->{$source}{$best_score_key};
 	    if (exists $partfeatures->{$source}{$best}) {
-		$best_element{$source}{$best_score_key} = $partfeatures->{$source}{$best};
+		$best_element{$source}{$best} = $partfeatures->{$source}{$best};
 	    }
 	    elsif (exists $allfeatures->{$source}{$best}) {
-		$best_element{$source}{$best_score_key} = $allfeatures->{$source}{$best};
+		$best_element{$source}{$best} = $allfeatures->{$source}{$best};
 	    }
 	    else {
 		croak "\nERROR: Something went wrong....'$best' not found in hash. This is a bug, please report it.";
@@ -470,7 +497,7 @@ sub reduce_features {
 	    
 	    my $n_perc = $self->_filterNpercent($source, $key, $index);
 	    if ($n_perc >= $n_thresh) {
-		#say STDERR "=====> Over thresh: $n_perc";
+		#say STDERR "=====> Over threshold: $n_perc";
 		delete $best_features{$source}{$element};
 		$n_perc_filtered++;
 		$comb--;
@@ -502,12 +529,12 @@ sub sort_features {
     if ($self->has_outfile) {
 	$outfile = $self->outfile;
 	my ($name, $path, $suffix) = fileparse($outfile, qr/\.[^.]*/);
-	$outfasta = File::Spec->catfile($path, $name.".fasta");
+	$outfasta = File::Spec->catfile($path, $name.'.fasta');
     }
     else {
 	my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-	$outfasta = File::Spec->catfile($path, $name."_combined_filtered.fasta");
-	$outfile  = File::Spec->catfile($path, $name."_combined_filtered.gff3");
+	$outfasta = File::Spec->catfile($path, $name.'_combined_filtered.fasta');
+	$outfile  = File::Spec->catfile($path, $name.'_combined_filtered.gff3');
     }
 
     open my $ofas, '>>', $outfasta or die "\nERROR: Could not open file: $outfasta\n";
@@ -517,7 +544,7 @@ sub sort_features {
 	open my $ogff, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
 	my ($header, %features);
-	open my $in, '<', $gff or die "\nERROR: Could not open file: $gff\n";;
+	open my $in, '<', $gff or die "\nERROR: Could not open file: $gff\n";
 	while (<$in>) {
 	    chomp;
 	    if (/^#/) {
@@ -532,7 +559,7 @@ sub sort_features {
 	say $ogff $header;
 	
 	for my $chromosome (nsort keys %$combined_features) {
-	    for my $ltr (nsort_by { m/repeat_region\d+\_\d+\|\|(\d+)\|\|\d+/ and $1 }
+	    for my $ltr (nsort_by { m/repeat_region\d+\_\d+\|\|(\d+)\|\|\d+\|\|\d+/ and $1 }
 			 keys %{$combined_features->{$chromosome}}) {
 		my ($rreg, $rreg_start, $rreg_end, $rreg_length) = split /\|\|/, $ltr;
 		my $new_rreg = $rreg;
@@ -551,8 +578,8 @@ sub sort_features {
 
 			my ($start, $end) = @{$entry}{qw(start end)};
 			my $elem = $entry->{attributes}{ID}[0];
-			$elem =~ s/\d+.*//;
-			$elem .= $count;
+			$elem =~ s/\d+.*/$count/;
+
 			my $id = join "_", $elem, $chromosome, $start, $end;
 			$self->_get_ltr_range($index, $id, $chromosome, $start, $end, $ofas);
 			$entry->{attributes}{ID}[0] = $elem;
