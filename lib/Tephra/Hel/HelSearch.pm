@@ -87,15 +87,8 @@ sub make_hscan_gff {
     my %refs;
     my $gkseq = Bio::DB::HTS::Kseq->new($genome);
     my $giter = $gkseq->iterator;
-    my $hkseq = Bio::DB::HTS::Kseq->new($helitrons);
-    my $hiter = $hkseq->iterator;
 
-    my %seqsin = (
-        'genome'    =>  $giter,
-        'helitrons' =>  $hiter,
-    );
-
-    while (my $gseqs = $seqsin{genome}->next_seq) {
+    while (my $gseqs = $giter->next_seq) {
 	my $name = $gseqs->name;
 	my $seq  = $gseqs->seq;
 	$refs{$name} = length($seq);
@@ -109,13 +102,13 @@ sub make_hscan_gff {
     
     my %strand = ( forward => '+', reverse => '-' );
     
-    my %hel;
+    my ($id, $seq, %hel);
     my $helct = 0;
-    while(my $hseqs = $seqsin{helitrons}->next_seq) {
+    open my $hin, '<', $helitrons or die "\nERROR: Could not open file: $helitrons\n";
+    while (($id, $seq) = $self->read_seq(\*$hin)) {
 	$helct++;
-	my $id = $hseqs->name;
 	my ($ref, $start, $stop) = ($id =~ /(^\S+)_\#SUB_(\d+)-(\d+)/);
-	my ($str) = ($id =~ /^\[(forward|reverse)\]/);
+	my ($str) = ($id =~ /\[(forward|reverse)\]/);
 	my $strand = $strand{$str};
 
 	# seqid source type start end score strand phase attribs
@@ -130,6 +123,7 @@ sub make_hscan_gff {
 	}
 	push @{$hel{$ref}}, $gff_str;
     }
+    close $hin;
 
     for my $ref (nsort keys %hel) {
 	for my $feature (@{$hel{$ref}}) {
@@ -138,6 +132,21 @@ sub make_hscan_gff {
 	}
     }
     close $out;
+}
+
+sub read_seq {
+    my $self = shift;
+    my ($fh) = @_;
+    
+    local $/ = "\n>";
+    return unless my $entry = $fh->getline;
+    chomp $entry;
+
+    my ($id, $seq) = split /\n/, $entry, 2;
+    defined $id && $id =~ s/>//g;
+    defined $seq && $seq =~ s/>//g;
+
+    return ($id, $seq);
 }
 
 =head1 AUTHOR
