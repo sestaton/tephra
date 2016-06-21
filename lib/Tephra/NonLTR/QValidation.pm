@@ -20,11 +20,11 @@ Tephra::NonLTR::QValidation - Valid non-LTR search (adapted from MGEScan-nonLTR)
 
 =head1 VERSION
 
-Version 0.03.1
+Version 0.03.2
 
 =cut
 
-our $VERSION = '0.03.1';
+our $VERSION = '0.03.2';
 $VERSION = eval $VERSION;
 
 has fasta   => ( is => 'ro', isa => 'Path::Class::File', required => 1, coerce => 1 );
