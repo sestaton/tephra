@@ -220,7 +220,7 @@ sub extract_features {
 		    my ($src, $pdomtag, $name, $s, $e, $str) = split /\|\|/, $ltr_repeat;
                     #"Ha10||protein_match||UBN2||132013916||132014240|+",
 		    next if $model_name =~ /transpos(?:ase)?|mule|(?:dbd|dde)?_tnp_(?:hat)?|duf4216/i; 
-		    # The above is so we do not classify elements based spurious matches 
+		    # The above is so we do not classify elements based domains derived from or belonging to DNA transposons
 		    push @{$pdoms{$src}{$element}{$model_name}}, join "||", $s, $e, $str;
 		}
 	    }
@@ -322,23 +322,23 @@ sub collect_feature_args {
     # ltr
     my $ltr5name = File::Spec->catfile($dir, 'dbcluster-5primeseqs');
     my $fiveargs = "-qspeedup 2 -dbcluster 80 20 $ltr5name -p -d -seedlength 30 ";
-    $fiveargs .= "-exdrop 7 -l 80 -showdesc 0 -sort ld -best 100 -identity 80";
+    $fiveargs .= "-exdrop 7 -l 80 -showdesc 0 -sort ld -best 10000 -identity 80";
     $vmatch_args{fiveltr} = { seqs => \@fiveltrs, args => $fiveargs };
 
     my $ltr3name  = File::Spec->catfile($dir, 'dbcluster-3primeseqs');
     my $threeargs = "-qspeedup 2 -dbcluster 80 20 $ltr3name -p -d -seedlength 30 ";
-    $threeargs .= "-exdrop 7 -l 80 -showdesc 0 -sort ld -best 100 -identity 80";
+    $threeargs .= "-exdrop 7 -l 80 -showdesc 0 -sort ld -best 10000 -identity 80";
     $vmatch_args{threeltr} = { seqs => \@threeltrs, args => $threeargs };
 
     # pbs/ppt
     my $pbsname = File::Spec->catfile($dir, 'dbcluster-pbs');
     my $pbsargs = "-dbcluster 90 90 $pbsname -p -d -seedlength 5 -exdrop 2 ";
-    $pbsargs .= "-l 3 -showdesc 0 -sort ld -best 100";
+    $pbsargs .= "-l 3 -showdesc 0 -sort ld -best 10000";
     $vmatch_args{pbs} = { seqs => \@pbs, args => $pbsargs, prefixlen => 1 };
 
     my $pptname = File::Spec->catfile($dir, 'dbcluster-ppt');
     my $pptargs = "-dbcluster 90 90 $pptname -p -d -seedlength 5 -exdrop 2 ";
-    $pptargs .= "-l 3 -showdesc 0 -sort ld -best 100";
+    $pptargs .= "-l 3 -showdesc 0 -sort ld -best 10000";
     $vmatch_args{ppt} = { seqs => \@ppt, args => $pptargs, prefixlen => 5 };
 
     # pdoms
