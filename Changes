@@ -8,6 +8,8 @@ Version	Date	Location
   to account for Bio::DB::HTS::Kseq not parsing anything past the first whitespace. 
 - Remove use of clustalw2 everywhere in favor of muscle. This solves a couple of issues, as clustalw2 was quite noisy and
   error-prone when compiling from source.
+- Increase default number of matches to consider in LTR family clustering/classification in an arbitrarily large number.
+  This will keep families from split based on the size in case there is an unusually large number of matches.
 
 0.03.1	06/09/16	Vancouver, BC
 
