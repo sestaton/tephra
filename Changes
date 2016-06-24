@@ -1,6 +1,11 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.03.3	06/24/16	Vancouver, BC
+
+- Bug fix for ltrage command. The wrong arguments to muscle were introduced in changes for v0.03.2, which
+  has been updated.
+
 0.03.2	06/21/16	Vancouver, BC
 
 - Bug fix in setting the wrong repeat_region ID for elements when evaluating overlaps (fixes #15 on github).
