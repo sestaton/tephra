@@ -339,8 +339,8 @@ sub process_align_args {
     my $alog = File::Spec->catfile($pdir, $name.'_muscle-out.alnlog');
     my $tlog = File::Spec->catfile($pdir, $name.'_muscle-out.trelog');
 
-    my $muscmd = "muscle -clwstrict -in $fas -outfile $aln 2>$alog";
-    my $trecmd = "muscle -maketree -in $fas -outfile $tre -cluster neighborjoining 2>$tlog";
+    my $muscmd = "muscle -clwstrict -in $fas -out $aln 2>$alog";
+    my $trecmd = "muscle -maketree -in $fas -out $tre -cluster neighborjoining 2>$tlog";
     $self->capture_cmd($muscmd);
     $self->capture_cmd($trecmd);
     my $phy = $self->parse_aln($aln, $tre, $dnd);
