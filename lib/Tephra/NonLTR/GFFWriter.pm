@@ -52,10 +52,11 @@ sub write_gff {
     say STDERR "Done with non-LTR search.";
 
     ## clean up
-    my $fdir = File::Spec->catdir($outdir, 'f');
-    my $rdir = File::Spec->catdir($outdir, 'b');
+    my $fdir  = File::Spec->catdir($outdir, 'f');
+    my $rdir  = File::Spec->catdir($outdir, 'b');
+    my $rgdir = $fastadir.'_b';
 
-    for my $dir ($fdir, $rdir) {
+    for my $dir ($fdir, $rdir, $rgdir, $fastadir) {
 	remove_tree( $dir, { safe => 1 } );
     }
 }
