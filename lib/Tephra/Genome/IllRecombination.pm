@@ -160,7 +160,7 @@ sub collect_align_args {
     my (@full, @aln, %aln_args);
     find( sub { push @full, $File::Find::name if -f and /family\d+.fasta$/ }, $dir);
     my $seqstore = $self->_filter_families_by_size(\@full);
-
+    
     for my $fam (keys %$seqstore) {
 	my ($name, $path, $suffix) = fileparse($seqstore->{$fam}, qr/\.[^.]*/);
 	my $aln = File::Spec->catfile($path, $name.'_muscle-out.fas');
@@ -180,12 +180,8 @@ sub find_align_gaps {
     my $outfile = $self->outfile;
     my $illrecstatsfile = $self->illrecstatsfile;
 
-    my $dr_pid = 10; ## make class attribute 
-    my $pos = 0;
-    my $gap = 0;
-    my $del = 0;
-    my @indels;
-    my @flanking_seqs;
+    my ($pos, $gap, $del) = (0, 0, 0);
+    my (@indels, @flanking_seqs);
 
     my $cwd = getcwd();
     open my $illrecstat_fh, '>>', $illrecstatsfile or die "\nERROR: Could not open file: $!";
