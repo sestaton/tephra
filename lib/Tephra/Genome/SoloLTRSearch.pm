@@ -187,7 +187,7 @@ sub write_sololtr_gff {
 
     say $out "##gff-version 3";
     for my $id (nsort keys %$seqlen) {
-	say $out join q{ }, "##sequence-region", $id, '1', $seqlen->{$id};
+	say $out join q{ }, '##sequence-region', $id, '1', $seqlen->{$id};
     }
 
     my $ct = 0;
@@ -249,7 +249,7 @@ sub _get_ltr_alns {
 	my $aln = File::Spec->catfile($path, $name.'_muscle-out.aln');
 	my $log = File::Spec->catfile($path, $name.'_muscle-out.log');
 	
-	my $clwcmd = "muscle -clwstrict -in $ltrseq -out $aln 2>$log";
+	my $clwcmd = "muscle -quiet -clwstrict -in $ltrseq -out $aln -log log";
 	$self->capture_cmd($clwcmd);
 	unlink $log;
 	push @aligns, $aln;
