@@ -87,6 +87,11 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Generate masked reference from custom repeat library 
  - [x] Add outfile option instead of creating filename
 
+
+## Command `tephra illrecomb`
+
+ - [x] Add correct sequence IDs to report
+
 *** 
 
 ## Meta
@@ -102,4 +107,4 @@ This file is for logging feature requests and bugs during development. Hopefully
        not to bake in too many subcommands for things that are easily done at the command line already,
        as this will make the package harder to use and maintain).
  - [ ] handle compressed input/output
- - [ ] add fasta-handling classes from Transposome, which are faster than BioPerl
+ - [X] add fasta-handling classes from Transposome, which are faster than BioPerl (Won't do: Added kseq.h methods from HTSlib)
