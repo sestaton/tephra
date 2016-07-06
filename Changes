@@ -1,6 +1,13 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.03.4	07/06/16	Vancouver, BC
+
+- Bug fix for formatting output of illrecomb command (fixes #16 on github).
+- Refactor illrecomb methods to not write intermediate files.
+- Add method to clean up intermediate results from findnonltrs command.
+- Adjust muscle command for sololtr and illrecomb commands to not throw away errors. 
+
 0.03.3	06/24/16	Vancouver, BC
 
 - Bug fix for ltrage command. The wrong arguments to muscle were introduced in changes for v0.03.2, which
