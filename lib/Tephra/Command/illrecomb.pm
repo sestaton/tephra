@@ -52,8 +52,8 @@ sub _calculate_ill_recomb {
     my $outfile      = $opt->{outfile};
     my $allstatsfile = $opt->{statsfile};
     my $illrecstats  = $opt->{recombstats};
-    my $threads      = defined $opt->{threads} ? $opt->{threads} : 1;
-    my $clean        = defined $opt->{clean} ? 1 : 0;
+    my $threads      = $opt->{threads} // 1;
+    my $clean        = $opt->{clean} // 0;
 
     my $ill_obj = Tephra::Genome::IllRecombination->new(
 	dir             => $dir,
@@ -85,7 +85,7 @@ Options:
     -p|repeat_pid    :    The percent identity threshold for retaining repeats that flank gaps. 
                           (Default: 10, which is a 2 bp match).
     -c|clean         :    Clean up the intermediate alignment files (Default: yes).
-			  
+
 END
 }
 
