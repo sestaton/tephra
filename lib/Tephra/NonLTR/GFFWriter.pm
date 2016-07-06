@@ -34,6 +34,7 @@ has n_threshold => ( is => 'ro', isa => 'Num', required => 0, default => 0.30 );
 sub write_gff {
     my $self = shift;
     my $outdir = $self->outdir;
+    my $fastadir = $self->fastadir;
 
     my @all_clade = ('CR1', 'I', 'Jockey', 'L1', 'L2', 'R1', 'RandI', 'Rex', 'RTE', 'Tad1', 'R2', 'CRE');
     my $seq_dir   = File::Spec->catdir($outdir, 'info', 'full');
