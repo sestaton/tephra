@@ -13,11 +13,13 @@ use Bio::SeqIO;
 use Bio::DB::HTS::Kseq;
 use Bio::AlignIO;
 use Bio::SearchIO;
+use Sort::Naturally;
 use Parallel::ForkManager;
 use Statistics::Descriptive;
 use Time::HiRes qw(gettimeofday);
 use Log::Any qw($log);
 use Tephra::Config::Exe;
+#use Data::Dump::Color;
 use namespace::autoclean;
 
 with 'Tephra::Role::Util';
@@ -71,6 +73,14 @@ has threads => (
     default   => 1,
 );
 
+has family_size => (
+    is        => 'ro',
+    isa       => 'Int',
+    predicate => 'has_family_size',
+    lazy      => 1,
+    default   => 100,
+);
+
 has clean => (
     is       => 'ro',
     isa      => 'Bool',
@@ -78,17 +88,30 @@ has clean => (
     default  => 1,
 );
 
+sub find_illegitimate_recombination {
+    my $self = shift;
+    my $statsfile = $self->allstatsfile;
+
+    my $alignments = $self->align_features;
+
+    my $all_gap_stats = {};
+     for my $aln_file (@$alignments) {
+	$self->find_align_gaps($all_gap_stats, $aln_file);
+    }
+
+    $self->collate_gap_stats($all_gap_stats, $statsfile);
+}
+
 sub align_features {
     my $self = shift;
     my $threads = $self->threads;
     my $dir = $self->dir;
 
     my $args = $self->collect_align_args($dir);
-    $self->_remove_singletons($args);
 
     my $t0 = gettimeofday();
     my $doms = 0;
-    my $logfile = File::Spec->catfile($dir, 'all_muscle_reports.log');
+    my $logfile = File::Spec->catfile($dir, 'all_illrecomb_muscle_reports.log');
     open my $log, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
 
     my $pm = Parallel::ForkManager->new($threads);
@@ -127,6 +150,7 @@ sub align_features {
     for my $k (keys %$args) {
 	push @aligns, $args->{$k}{aln};
     }
+
     return \@aligns;
 }
 
@@ -134,65 +158,47 @@ sub collect_align_args {
     my $self = shift;
     my ($dir) = @_;
     my (@full, @aln, %aln_args);
-    find( sub { push @full, $File::Find::name if -f and /(?:family\d+|singleton_families).fasta$/ }, $dir);
+    find( sub { push @full, $File::Find::name if -f and /family\d+.fasta$/ }, $dir);
+    my $seqstore = $self->_filter_families_by_size(\@full);
 
-    for my $fam (@full) {
-	my ($name, $path, $suffix) = fileparse($fam, qr/\.[^.]*/);
+    for my $fam (keys %$seqstore) {
+	my ($name, $path, $suffix) = fileparse($seqstore->{$fam}, qr/\.[^.]*/);
 	my $aln = File::Spec->catfile($path, $name.'_muscle-out.fas');
 	my $log = File::Spec->catfile($path, $name.'_muscle-out.log');
 	
-	my $clwcmd  = "muscle -in $fam -out $aln 2>$log";
-	$aln_args{$name} = { seqs => $fam, args => $clwcmd, aln => $aln };
+	my $muscmd  = "muscle -quiet -in $seqstore->{$fam} -out $aln -log $log";
+	$aln_args{$name} = { seqs => $fam, args => $muscmd, aln => $aln };
     }
 
     return \%aln_args;
 }
 
-sub find_illegitimate_recombination {
-    my $self = shift;
-
-    my $alignments = $self->align_features;
-
-    for my $aln_file (@$alignments) {
-	$self->find_align_gaps($aln_file);
-    }
-}
-
 sub find_align_gaps {
     my $self = shift;
-    my ($aln_file) = @_;
+    my ($gap_stats, $aln_file) = @_;
 
-    my $outfile   = $self->outfile;
-    my $statsfile = $self->allstatsfile;
+    my $outfile = $self->outfile;
     my $illrecstatsfile = $self->illrecstatsfile;
 
-    my $dr_pid;
-    my $gap_stats;
-    my $help;
-
+    my $dr_pid = 10; ## make class attribute 
     my $pos = 0;
     my $gap = 0;
     my $del = 0;
     my @indels;
     my @flanking_seqs;
-    
-    $dr_pid //= 10; ## make class attribute
+
     my $cwd = getcwd();
     open my $illrecstat_fh, '>>', $illrecstatsfile or die "\nERROR: Could not open file: $!";
     
-    my $statstmp = $statsfile.'.tmp';
     open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-    open my $stats_out_tmp, '>>', $statstmp or die "\nERROR: Could not open file: $statstmp\n";
-    say $stats_out_tmp join "\t", "LTR_retro_name", "Total_num_gap_sites", "Num_diff_gap_sizes", 
-        "Percent_gap_sites", "Mean_gap_size", "Min_gap_size", "Max_gap_size";
 
     my ($seqs_in_aln, $count) = $self->split_aln($aln_file);
-    
+
     for my $fas (@$seqs_in_aln) {
 	my $aln_in = Bio::AlignIO->new(-fh => \*$fas, -format => 'fasta');
 
 	my ($fname, $fpath, $fsuffix) = fileparse($fas, qr/\.[^.]*/);
-	my $seq_out = File::Spec->catfile($fpath, $fname."_gap_flanking_sequences.fasta");
+	my $seq_out = File::Spec->catfile($fpath, $fname.'_gap_flanking_sequences.fasta');
 	open my $each_out, '>>', $seq_out or die "\nERROR: Could not open file: $seq_out\n";
 
 	while ( my $aln = $aln_in->next_aln() ) {
@@ -208,9 +214,9 @@ sub find_align_gaps {
 	    }
 
 	    my ($indel_lengths, $indel_ranges) = $self->get_indel_range(@indels);
+	    next unless @$indel_lengths;
 	    @indels = ();
-
-	    $gap_stats = $self->get_stats($fas,$pos,$gap,$indel_lengths,$fname) if $statsfile;
+	    $self->get_stats($gap_stats, $fas, $pos, $gap, $indel_lengths, $fname);
 
 	    for my $line (@$indel_ranges) {
 		$del++;
@@ -228,11 +234,11 @@ sub find_align_gaps {
 		my $downstream_epos = $indel_epos + 20;
 
 		if ($upstream_spos < 1 || $upstream_epos > $aln_len) {
-		    warn "Deletion $del has a flanking repeat out of bounds.";
+		    #say STDERR "WARNING: Deletion $del has a flanking repeat out of bounds.";
 		    next;
 		}
 		if ($downstream_epos > $aln_len) {
-		    warn "Deletion $del has the downstream flanking repeat out of bounds.";
+		    #say STDERR "WARNING: Deletion $del has the downstream flanking repeat out of bounds.";
 		    last;
 		}
 
@@ -265,17 +271,11 @@ sub find_align_gaps {
 	$del = 0;
 	close $each_out;
 	$self->collate($seq_out, $out);
-	$self->collate($gap_stats, $stats_out_tmp);
 	unlink $fas;
 	unlink $seq_out;
-	unlink $gap_stats;
     }
     close $out;
-    close $stats_out_tmp;
     close $illrecstat_fh;
-    
-    $self->collate_gap_stats($statstmp, $statsfile);
-    unlink $statstmp;
 }
 
 sub split_aln {
@@ -349,40 +349,43 @@ sub bl2seq_compare {
     my ($indel_len, $upstr_seq, $downstr_seq, $upstr_id, $downstr_id, $fname, $fpath, $each_out, $illrecstat_fh)
 	= @{$args}{qw(indel_length upstream_seq downstream_seq upstream_id downstream_id fas_name fas_path seqs_fh stats_fh)};
 
-    my $qname = File::Temp->new( TEMPLATE => $fname."_XXXX",
+    my $qname = File::Temp->new( TEMPLATE => $fname.'_XXXX',
 				 DIR      => $fpath,
 				 UNLINK   => 0,
-				 SUFFIX   => ".fasta");
+				 SUFFIX   => '.fasta');
 
-    my $rname = File::Temp->new( TEMPLATE => $fname."_XXXX",
+    my $rname = File::Temp->new( TEMPLATE => $fname.'_XXXX',
 				 DIR      => $fpath,
 				 UNLINK   => 0,
-				 SUFFIX   => ".fasta");
+				 SUFFIX   => '.fasta');
 
-    my $out = File::Temp->new( TEMPLATE => $fname."_XXXX",
+    my $out = File::Temp->new( TEMPLATE => $fname.'_XXXX',
 			       DIR      => $fpath,
 			       UNLINK   => 0,
-			       SUFFIX   => ".blo");
+			       SUFFIX   => '.blo');
 
     my $outfile = $out->filename;
     my $qfile   = $qname->filename;
     my $rfile   = $rname->filename;
     my $config  = Tephra::Config::Exe->new->get_config_paths;
     my ($blastbin) = @{$config}{qw(blastpath)};
-    my $blastn = File::Spec->catfile($blastbin, 'blastn');
+    my $blastn  = File::Spec->catfile($blastbin, 'blastn');
 
     say $qname join "\n", ">".$upstr_id, $upstr_seq;
     say $rname join "\n", ">".$downstr_id, $downstr_seq;
-    my $blcmd = "$blastn -query $qname -subject $rname -word_size 4 -outfmt 5 -out $outfile 2>&1 | ";
-    $blcmd .= "grep -v \"CFastaReader: Hyphens are invalid and will be ignored\""; ## this is a hack for these stupid warnings
+
+    my $blcmd = "$blastn -query $qfile -subject $rfile -word_size 4 -outfmt 5 -out $outfile 2>&1 | ";
+    $blcmd .= "egrep -v \"CFastaReader|Error\" | ";
+    $blcmd .= "sed \'/^ *\$/d\'"; ## This is a hack for these warnings. I'm throwing away the errors which is why it's a hack but
+                                  ## they are not informative. Need to find a workaround for this.
     $self->run_cmd($blcmd);
-    unlink $qname, $rname;
+    unlink $qfile, $rfile;
 
     my $bl2seq_report = Bio::SearchIO->new(-file => $outfile, -format => 'blastxml');
     
     while ( my $result = $bl2seq_report->next_result ) {
 	if ($result->num_hits == 0) {
-	    #warn "No hits found.";
+	    #warn "WARNING: No hits found.";
 	    unlink $outfile;
 	    return;
 	}
@@ -417,26 +420,27 @@ sub bl2seq_compare {
 		    if ($hsplen > 2 && $hpid >= 10 && $qend <= 2 && $hstart <= 2) {    
 			my $qustr  = $upstr_seq;
 			my $hitstr = $downstr_seq;
-
+			
 			## just testing the indexing for the hit, which is off for some matches
-			my $que_start = index($qustr, $qstring);
-			my $hit_start = index($hitstr, $hstring);
+			#my $que_start = index($qustr, $qstring);
+			#my $hit_start = index($hitstr, $hstring);
 			
 			say $each_out join "\n", ">$upstr_id", $qstring;
 			say $each_out join "\n", ">$downstr_id", $hstring;
 			
 			say $illrecstat_fh join "\t", "Query_ID","Hit_ID","HSP_len","Hit_start",
 			    "Hit_stop","Query_start","Query_stop","HSP_PID";
-			say $illrecstat_fh join "\t", $query,$hitid,$hsplen,$hstart,$hstop,$qstart,$qstop,$hpid,"\n";
+			say $illrecstat_fh join "\t", $upstr_id, $downstr_id, $hsplen, $hstart, 
+			    $hstop, $qstart, $qstop, $hpid,"\n";
 
 			say $illrecstat_fh "Gap length        : $indel_len";
 			say $illrecstat_fh "Query len         : $qlen";
 			say $illrecstat_fh "Hit len           : $hlen";
-			say $illrecstat_fh "Query string      : $qustr\n";
+			say $illrecstat_fh "Query string      : $qustr";
+			say $illrecstat_fh "Hit string        : $hitstr\n";
 			say $illrecstat_fh "Query match string: ",uc($qstring);
 			say $illrecstat_fh "Homology string   : $homstring";
 			say $illrecstat_fh "Hit match string  : ",uc($hstring),"\n";
-			say $illrecstat_fh "Hit string        : $hitstr\n";
 		    }
 		}
 	    }
@@ -447,25 +451,23 @@ sub bl2seq_compare {
 
 sub get_stats {
     my $self = shift;
-    my ($fas, $pos, $gap, $indel_lengths, $fname) = @_;
+    my ($gap_stats, $fas, $pos, $gap, $indel_lengths, $fname) = @_;
 
-    my $gap_stats = $fname.'_gap_stats.txt';
-    open my $statsout, '>', $gap_stats or die "\nERROR: Could not open file: $gap_stats\n";
     my $stat = Statistics::Descriptive::Full->new;
-
     $stat->add_data(@$indel_lengths);
 
     my ($fasname, $faspath, $fassuffix) = fileparse($fas, qr/\.[^.]*/);
+    $fasname =~ s/_muscle-out.*//;
     my $count = $stat->count;
-    my $gap_percent = sprintf("%.2f",$gap/$pos);
-    my $mean = sprintf("%.2f",$stat->mean);
-    my $min = $stat->min;
-    my $max = $stat->max;
-
-    say $statsout join "\t", $fasname, $gap, $count, $gap_percent, $mean, $min, $max;
-
-    close $statsout;
-    return $gap_stats;
+    if ($count > 0) {
+	my $gap_percent = sprintf("%.2f",$gap/$pos);
+	my $ave = $stat->mean; # // 0;
+	my $mean = sprintf("%.2f",$ave);
+	my $min = $stat->min; # // 0;
+	my $max = $stat->max; # // 0;
+	
+	push @{$gap_stats->{$fasname}}, join "||", $gap, $count, $gap_percent, $mean, $min, $max;
+    }
 }
 
 sub collate {
@@ -476,111 +478,107 @@ sub collate {
 	open my $fh_in, '<', $file_in or die "\nERROR: Could not open file: $file_in\n";
 	<$fh_in>;
     };
-    print $fh_out $lines;
+    
+    chomp $lines;
+    say $fh_out $lines;
 }
 
 sub collate_gap_stats {
     my $self = shift;
-    my ($statstmp, $statsfile) = @_;
+    my ($gap_stats, $statsfile) = @_;
 
-    open my $gap_stats_fh_in, '<', $statstmp or die "\nERROR: Could not open file: $statstmp\n";
     open my $gap_stats_fh_out, '>', $statsfile or die "\nERROR: Could not open file: $statsfile\n";
+    
+    say $gap_stats_fh_out join "\t", "Family_name", "Total_fam_gap_count", "Mean_fam_gap_count (stddev)",
+        "Mean_fam_gap_size (stddev)", "Mean_fam_gap_perc (stdev)", "Mean_fam_gap_size (stddev)", 
+        "Mean_gap_min_size (stddev)", "Mean_gap_max_size (stddev)";
 
     my (@repeat_names, @total_gap_char, @diff_gap_sizes, @gap_char_perc, 
-	@mean_gap_size, @min_gap_size, @max_gap_size);
+	@mean_gap_size, @min_gap_size, @max_gap_size, %fam_gap_stats);
 
-    while (my $line = <$gap_stats_fh_in>) {
-	if ($line =~ /^\#/) {
-	    print $gap_stats_fh_out $line;
-	}
-	else {
-	    my @all_gap_stats = split /\t/, $line;
-	    push @repeat_names,   $all_gap_stats[0];
-	    push @total_gap_char, $all_gap_stats[1];
-	    push @diff_gap_sizes, $all_gap_stats[2];
-	    push @gap_char_perc,  $all_gap_stats[3];
-	    push @mean_gap_size,  $all_gap_stats[4];
-	    push @min_gap_size,   $all_gap_stats[5];
-	    push @max_gap_size,   $all_gap_stats[6];
+    for my $fasname (keys %$gap_stats) {
+	for my $gap (@{$gap_stats->{$fasname}}) {
+	    my @all_gap_stats = split /\|\|/, $gap;
 
-	    print $gap_stats_fh_out $line;
+	    push @{$fam_gap_stats{ $fasname }{ total_gap_char }}, $all_gap_stats[0];
+	    push @{$fam_gap_stats{ $fasname }{ diff_gap_sizes }}, $all_gap_stats[1];
+	    push @{$fam_gap_stats{ $fasname }{ gap_char_perc }},  $all_gap_stats[2];
+	    push @{$fam_gap_stats{ $fasname }{ mean_gap_size }},  $all_gap_stats[3];
+	    push @{$fam_gap_stats{ $fasname }{ min_gap_size }},   $all_gap_stats[4];
+	    push @{$fam_gap_stats{ $fasname }{ max_gap_size }},   $all_gap_stats[5];
 	}
     }
-    close $gap_stats_fh_in;
 
-    my $fam_name = pop @repeat_names;
-    $fam_name =~ s/\_\d+\_.*//;
-    $fam_name =~ s/^all\_//;
-
-    my $total_gap_char_stats = Statistics::Descriptive::Full->new;
-    my $gap_size_stats       = Statistics::Descriptive::Full->new;
-    my $gap_char_perc_stats  = Statistics::Descriptive::Full->new;
-    my $mean_gap_size_stats  = Statistics::Descriptive::Full->new;
-    my $min_gap_size_stats   = Statistics::Descriptive::Full->new;
-    my $max_gap_size_stats   = Statistics::Descriptive::Full->new;
-
-    $total_gap_char_stats->add_data(@total_gap_char);
-    $gap_size_stats->add_data(@diff_gap_sizes);
-    $gap_char_perc_stats->add_data(@gap_char_perc);
-    $mean_gap_size_stats->add_data(@mean_gap_size);
-    $min_gap_size_stats->add_data(@min_gap_size);
-    $max_gap_size_stats->add_data(@max_gap_size);
-
-    my $grand_mean_fam_count = $total_gap_char_stats->count;
-    my $grand_gap_char_mean  = sprintf("%.2f",$total_gap_char_stats->mean);
-    my $grand_gap_size_mean  = sprintf("%.2f",$gap_size_stats->mean);
-    my $grand_gap_char_perc  = sprintf("%.2f",$gap_char_perc_stats->mean);
-    my $grand_mean_gap_size  = sprintf("%.2f",$mean_gap_size_stats->mean);
-    my $grand_gap_size_min   = sprintf("%.2f",$min_gap_size_stats->mean);
-    my $grand_gap_size_max   = sprintf("%.2f",$max_gap_size_stats->mean);
-
-    my $grand_gap_char_sd      = sprintf("%.2f",$total_gap_char_stats->standard_deviation);
-    my $grand_gap_size_sd      = sprintf("%.2f",$gap_size_stats->standard_deviation);
-    my $grand_gap_char_perc_sd = sprintf("%.2f",$gap_char_perc_stats->standard_deviation);
-    my $grand_gap_size_mean_sd = sprintf("%.2f",$mean_gap_size_stats->standard_deviation);
-    my $grand_gap_size_min_sd  = sprintf("%.2f",$min_gap_size_stats->standard_deviation);
-    my $grand_gap_size_max_sd  = sprintf("%.2f",$max_gap_size_stats->standard_deviation);
-
-    say $gap_stats_fh_out "\nFamily_name\tTotal_fam_gap_count\tMean_fam_gap_count ".
-	"(stddev)\tMean_fam_gap_size (stddev)\tMean_fam_gap_perc ".
-	"(stdev)\tMean_fam_gap_size (stddev)\tMean_gap_min_size ".
-	"(stddev)\tMean_gap_max_size (stddev)";
-
-    say $gap_stats_fh_out join "\t", $fam_name, $grand_mean_fam_count, 
-	$grand_gap_char_mean.' ('.$grand_gap_char_sd.')',
-	$grand_gap_size_mean.' ('.$grand_gap_size_sd.')',
-	$grand_gap_char_perc.' ('.$grand_gap_char_perc_sd.')',
-	$grand_mean_gap_size.' ('.$grand_gap_size_mean_sd.')',
-	$grand_gap_size_min.' ('.$grand_gap_size_min_sd.')',
-	$grand_gap_size_max.' ('.$grand_gap_size_max_sd.')',"\n";
-
+    for my $family (nsort keys %fam_gap_stats) {
+	my $fam_name = $family;
+	$fam_name =~ s/\_\d+\_.*//;
+	$fam_name =~ s/^all\_//;
+	
+	my $total_gap_char_stats = Statistics::Descriptive::Full->new;
+	my $gap_size_stats       = Statistics::Descriptive::Full->new;
+	my $gap_char_perc_stats  = Statistics::Descriptive::Full->new;
+	my $mean_gap_size_stats  = Statistics::Descriptive::Full->new;
+	my $min_gap_size_stats   = Statistics::Descriptive::Full->new;
+	my $max_gap_size_stats   = Statistics::Descriptive::Full->new;
+	
+	$total_gap_char_stats->add_data(@{$fam_gap_stats{$family}{total_gap_char}});
+	$gap_size_stats->add_data(@{$fam_gap_stats{$family}{diff_gap_sizes}});
+	$gap_char_perc_stats->add_data(@{$fam_gap_stats{$family}{gap_char_perc}});
+	$mean_gap_size_stats->add_data(@{$fam_gap_stats{$family}{mean_gap_size}});
+	$min_gap_size_stats->add_data(@{$fam_gap_stats{$family}{min_gap_size}});
+	$max_gap_size_stats->add_data(@{$fam_gap_stats{$family}{max_gap_size}});
+	
+	my $grand_mean_fam_count = $total_gap_char_stats->count;
+	my $grand_gap_char_mean  = sprintf("%.2f",$total_gap_char_stats->mean);
+	my $grand_gap_size_mean  = sprintf("%.2f",$gap_size_stats->mean);
+	my $grand_gap_char_perc  = sprintf("%.2f",$gap_char_perc_stats->mean);
+	my $grand_mean_gap_size  = sprintf("%.2f",$mean_gap_size_stats->mean);
+	my $grand_gap_size_min   = sprintf("%.2f",$min_gap_size_stats->mean);
+	my $grand_gap_size_max   = sprintf("%.2f",$max_gap_size_stats->mean);
+	
+	my $grand_gap_char_sd      = sprintf("%.2f",$total_gap_char_stats->standard_deviation);
+	my $grand_gap_size_sd      = sprintf("%.2f",$gap_size_stats->standard_deviation);
+	my $grand_gap_char_perc_sd = sprintf("%.2f",$gap_char_perc_stats->standard_deviation);
+	my $grand_gap_size_mean_sd = sprintf("%.2f",$mean_gap_size_stats->standard_deviation);
+	my $grand_gap_size_min_sd  = sprintf("%.2f",$min_gap_size_stats->standard_deviation);
+	my $grand_gap_size_max_sd  = sprintf("%.2f",$max_gap_size_stats->standard_deviation);
+	
+	say $gap_stats_fh_out join "\t", $fam_name, $grand_mean_fam_count, 
+	    $grand_gap_char_mean.' ('.$grand_gap_char_sd.')',
+	    $grand_gap_size_mean.' ('.$grand_gap_size_sd.')',
+	    $grand_gap_char_perc.' ('.$grand_gap_char_perc_sd.')',
+	    $grand_mean_gap_size.' ('.$grand_gap_size_mean_sd.')',
+	    $grand_gap_size_min.' ('.$grand_gap_size_min_sd.')',
+	    $grand_gap_size_max.' ('.$grand_gap_size_max_sd.')';
+    }
     close $gap_stats_fh_out;
 }
 
-sub _cnv_align_fmt {
+sub _filter_families_by_size {
     my $self = shift;
-    my ($aln) = @_;
+    my ($seqs) = @_;
+    my $sthresh = $self->family_size;
+    my $lthresh = 1.5e4; # elements over 15kb cannot be aligned
 
-    my ($name, $path, $suffix) = fileparse($aln, qr/\.[^.]*/);
-    my $fas = File::Spec->catfile($path, $name.".fas");
-
-    my $seqin  = Bio::AlignIO->new(-file => $aln, -format => 'clustalw');
-    my $seqout = Bio::AlignIO->new(-file => ">$fas", -format => 'fasta');
-    
-    my $seqct = 0;
-    my $index = 0;
-
-    while (my $seqobj = $seqin->next_aln) {
-	for my $seq ($seqobj->each_seq) {
-	    my $id = $seq->id;
-	    $id .= "_$index";
-	    $seq->id($id);
-	    $index++;
+    my ($largest, $seqct) = (0, 0);
+    my %seqstore;
+    for my $seqfile (@$seqs) {
+	my ($family) = ($seqfile =~ /\/(\w+_family\d+)/);
+	my $kseq = Bio::DB::HTS::Kseq->new($seqfile);
+	my $iter = $kseq->iterator();
+	while (my $seqobj = $iter->next_seq) {
+	    $seqct++;
+	    my $seq = $seqobj->seq;
+	    my $len = length($seq);
+	    $largest = $len if $len > $largest;
 	}
-	$seqout->write_aln($seqobj);
+	if ($seqct <= $sthresh && $largest <= $lthresh) {
+	    $seqstore{ $family } = $seqfile;
+	}
+	($seqct, $largest) = (0, 0);
     }
-    
-    return $fas;
+
+    return \%seqstore;
 }
 
 sub _remove_singletons {
@@ -591,6 +589,7 @@ sub _remove_singletons {
     my $seqct = 0;
     for my $name (keys %$args) {
 	my $db = $args->{$name}{seqs};
+	next unless defined $db && -e $db;
 	my $kseq = Bio::DB::HTS::Kseq->new($db);
 	my $iter = $kseq->iterator();
 	while (my $seqobj = $iter->next_seq) { $seqct++ if defined $seqobj->seq; }
