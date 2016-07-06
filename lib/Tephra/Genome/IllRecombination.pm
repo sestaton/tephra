@@ -473,14 +473,13 @@ sub get_stats {
 sub collate {
     my $self = shift;
     my ($file_in, $fh_out) = @_;
-    my $lines = do { 
-	local $/ = undef; 
-	open my $fh_in, '<', $file_in or die "\nERROR: Could not open file: $file_in\n";
-	<$fh_in>;
-    };
     
-    chomp $lines;
-    say $fh_out $lines;
+    open my $fh_in, '<', $file_in or die "\nERROR: Could not open file: $file_in\n";
+
+    while (my $line = <$fh_in>) {
+	chomp $line;
+	say $fh_out $line;
+    }
 }
 
 sub collate_gap_stats {
