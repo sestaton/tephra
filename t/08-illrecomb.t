@@ -9,7 +9,8 @@ use Capture::Tiny       qw(capture);
 use File::Path          qw(remove_tree);
 use File::Find;
 use File::Spec;
-#use Data::Dump;
+use File::Copy;
+#use Data::Dump::Color;
 
 use Test::More tests => 8;
 
@@ -26,15 +27,17 @@ my $allstfile = File::Spec->catfile($resdir, 'gypsy_illrecomb_stats.tsv');
 my $illstfile = File::Spec->catfile($resdir, 'gypsy_illrecomb_illrecstats.tsv');
 my $seqfile   = File::Spec->catfile($resdir, 'gypsy_illrecomb_seqs.fasta');
 my $genome    = File::Spec->catfile($testdir, 'ref.fas');
+my $testfile  = File::Spec->catfile($testdir, 'tephra_ltrs_gypsy_family9.fasta');
 
 SKIP: {
     skip 'skip development tests', 8 unless $devtests;
-    my @results   = capture { system([0..5], "$cmd illrecomb -h") };
-    
+    copy $testfile, $resdir or die "\nERROR: copy failed $!";
+
+    my @results   = capture { system([0..5], "$cmd illrecomb -h") };    
     ok(@results, 'Can execute illrecomb subcommand');
 
     my $find_cmd = "$cmd illrecomb -i $resdir -s $allstfile -r $illstfile -o $seqfile";
-    #say STDERR $find_cmd;
+    say STDERR $find_cmd;
 
     my @ret = capture { system([0..5], $find_cmd) };
     #system([0..5], $find_cmd);
@@ -46,8 +49,8 @@ SKIP: {
     my $seqct = 0;
     open my $in, '<', $seqfile;
     while (<$in>) { $seqct++ if /^>/; }
-    #say STDERR "seqct: $seqct";
-    ok( $seqct/2 == 34, 'Correct number of illigetimate recombination events detected' );
+    say STDERR "seqct: $seqct";
+    ok( $seqct == 36, 'Correct number of illigetimate recombination events detected' );
     close $in;
     
     my ($qmatch, $hmatch) = (0, 0);
@@ -58,9 +61,9 @@ SKIP: {
 	$hmatch++ if /^Hit match string/;
     }
 
-    #say STDERR join q{ }, $qmatch, $hmatch;
-    ok( $qmatch == 34, 'Correct number of illigetimate recombination events detected upstream of gap' );
-    ok( $hmatch == 34, 'Correct number of illigetimate recombination events detected downstream of gap' );
+    say STDERR join q{ }, $qmatch, $hmatch;
+    ok( $qmatch == 18, 'Correct number of illigetimate recombination events detected upstream of gap' );
+    ok( $hmatch == 18, 'Correct number of illigetimate recombination events detected downstream of gap' );
     ok( $seqct == $qmatch+$hmatch, 'Correct number of illigetimate recombination events detected' );
     
     unlink $allstfile, $illstfile, $seqfile;
