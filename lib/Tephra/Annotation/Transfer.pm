@@ -6,7 +6,7 @@ use MooseX::Types::Path::Class;
 use File::Find;
 use File::Basename;
 use Bio::GFF3::LowLevel qw(gff3_parse_feature);
-use List::Util          qw(sum)
+use List::Util          qw(sum);
 use Carp                qw(croak);
 #use Data::Dump::Color;
 use namespace::autoclean;
