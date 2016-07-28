@@ -14,11 +14,11 @@ Tephra::NonLTR::Role::PathUtils - Helper role for setting proper paths to progra
 
 =head1 VERSION
 
-Version 0.03.4
+Version 0.03.5
 
 =cut
 
-our $VERSION = '0.03.4';
+our $VERSION = '0.03.5';
 $VERSION = eval $VERSION;
 
 sub find_hmmsearch {

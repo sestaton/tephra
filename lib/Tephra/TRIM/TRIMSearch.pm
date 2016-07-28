@@ -20,11 +20,11 @@ Tephra::TRIM::TRIMSearch - Find TRIM retrotransposons in a reference genome
 
 =head1 VERSION
 
-Version 0.03.4
+Version 0.03.5
 
 =cut
 
-our $VERSION = '0.03.4';
+our $VERSION = '0.03.5';
 $VERSION = eval $VERSION;
 
 sub trim_search_strict {
