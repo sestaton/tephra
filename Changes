@@ -1,6 +1,11 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.03.5	07/28/16	Vancouver, BC
+
+- Add reannotate command for transferring annotations from a reference set to Tephra annotations.
+- Fix minor issue with help command not being recognized with main tephra command. 
+
 0.03.4	07/06/16	Vancouver, BC
 
 - Bug fix for formatting output of illrecomb command (fixes #16 on github).
