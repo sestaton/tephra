@@ -13,6 +13,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] incorporate legacy annotations from input GFF/reference to family classification
  - [x] merge overlapping hits in chain of protein matches, and contatenate the rest for each element
  - [ ] mark unclassified elements with no protein domains as LARDs
+ - [ ] combine exemplars for efficiently comparing to a reference set
  
 ## Command `tephra findtirs`
  - [x] Find all non-overlapping TIR elements passing thresholds
