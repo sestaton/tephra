@@ -53,7 +53,7 @@ sub make_blastdb {
     my $dir = getcwd();
     my $db_path = Path::Class::File->new($dir, $db);
     unlink $db_path if -e $db_path;
-    say STDERR "DB: $db_path";
+    #say STDERR "DB: $db_path";
 
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($blastbin) = @{$config}{qw(blastpath)};
