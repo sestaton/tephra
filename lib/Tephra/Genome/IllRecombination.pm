@@ -17,7 +17,7 @@ use Sort::Naturally;
 use Parallel::ForkManager;
 use Statistics::Descriptive;
 use Time::HiRes qw(gettimeofday);
-use Log::Any qw($log);
+use Log::Any    qw($log);
 use Tephra::Config::Exe;
 #use Data::Dump::Color;
 use namespace::autoclean;
@@ -553,7 +553,7 @@ sub _filter_families_by_size {
     my $self = shift;
     my ($seqs) = @_;
     my $sthresh = $self->family_size;
-    my $lthresh = 1.5e4; # elements over 15kb cannot be aligned
+    my $lthresh = 1.2e4; # elements over 15kb cannot be aligned
 
     my ($largest, $seqct) = (0, 0);
     my %seqstore;
