@@ -25,7 +25,7 @@ The following commands will install the core dependencies for Debian-based syste
 For RHEL-based systems (e.g., CentOS/Fedora):
 
     sudo yum groupinstall -y "Development Tools"
-    sudo yum install -y perl-App-cpanminus ncurses ncurses-devel libdb-devel expat expat-devel zlib-devel
+    sudo yum install -y perl-App-cpanminus ncurses ncurses-devel libdb-devel expat expat-devel zlib-devel java-1.7.0-openjdk
 
 The next two commands install BioPerl, and these can be skipped if BioPerl is installed:
     
