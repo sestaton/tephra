@@ -27,14 +27,15 @@ For RHEL-based systems (e.g., CentOS/Fedora):
     sudo yum groupinstall -y "Development Tools"
     sudo yum install -y perl-App-cpanminus ncurses ncurses-devel libdb-devel expat expat-devel zlib-devel
 
-Now you can build and install the package with the following commands (note that the first two commands are for BioPerl, and these can be skipped if BioPerl is installed):
+The next two commands install BioPerl, and these can be skipped if BioPerl is installed:
     
     cpanm Data::Stag DB_File
     echo "n" | cpanm -n BioPerl
-    cpanm git://github.com/sestaton/tephra.git
 
-Alternatively, download the latest release and run the following commands:
+Finally, download the [latest release](https://github.com/sestaton/tephra/releases/latest) and run the following commands (the version of the package will change of course):
 
+    wget https://github.com/sestaton/tephra/archive/v0.03.6.tar.gz
+    tar xzf v0.03.6.tar.gz && cd tephra
     cpanm --installdeps .
     perl Makefile.PL
     make test
@@ -59,7 +60,7 @@ For developers, please run the tests with:
 
     export TEPHRA_ENV='development' && make test
 
-As this project is still early in the development process, the installation may seem a bit tedious. I will soon expand the instructions to other systems and add a more automated install process (such as a single script), as well as make a container-based file available. Please report any test failures or installation issues with the [issue tracker](https://github.com/sestaton/tephra/issues).
+Please report any test failures or installation issues with the [issue tracker](https://github.com/sestaton/tephra/issues).
 
 **SUPPORT AND DOCUMENTATION**
 
