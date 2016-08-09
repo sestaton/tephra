@@ -1,6 +1,10 @@
 Revision history for Tephra
 
 Version	Date	Location
+
+- Increase BLAST+ package version.
+- Simplify install instructions to use latest release only.
+
 0.03.5	07/28/16	Vancouver, BC
 
 - Add reannotate command for transferring annotations from a reference set to Tephra annotations.
