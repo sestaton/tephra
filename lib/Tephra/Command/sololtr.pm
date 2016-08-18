@@ -21,6 +21,7 @@ sub opt_spec {
 	[ "report|r=s",       "Parse hmmsearch of each sequence and produce a summary of align statistics." ],
 	[ "seq|s",            "Extract query sequence from domain alignment."                               ],
 	[ "clean",            "Clean up the intermediate alignment files (Default: yes) "                   ],
+	[ "threads|t=i",      "The number of threads to use for clustering coding domains "                 ],
 	[ "help|h",           "Display the usage menu and exit. "                                           ],
 	[ "man|m",            "Display the full manual. "                                                   ],
 	);
@@ -69,6 +70,7 @@ sub _calculate_soloLTR_abund {
     my $pcov    = $opt->{percentcov} // 0.80;
     my $len     = $opt->{matchlen} // 80;
     my $seq     = $opt->{seq} // 0;
+    my $threads = $opt->{threads} // 1;
     my $clean   = $opt->{clean} // 0;
 
     my $ill_obj = Tephra::Genome::SoloLTRSearch->new(
@@ -80,6 +82,7 @@ sub _calculate_soloLTR_abund {
 	percentcov   => $pcov,
 	matchlen     => $len,
 	seq          => $seq,
+	threads      => $threads,
 	clean        => $clean,
     );
     
@@ -107,8 +110,13 @@ sub help {
  Options:
      -p|percentident  :    Percent identity threshold for matches. (default 0.39).
                            NB: For a threshold of 80 percent say 0.80.
+     -f|percentcov    :    Percent coverage threshold for matches. (default 0.80).
+                           NB: For a threshold of 80 percent say 0.80.
+     -l|matchlen      :    Length threshold for matches. (default 80).
+                           NB: For a threshold of 80 percent say 0.80.
      -r|report        :    Parse hmmsearch of each sequence and produce a summary of align statistics.
      -s|seq           :    Extract query sequence from domain alignment.
+     -t|threads       :    The number of threads to use for clustering coding domains.
 
 END
 }
@@ -161,7 +169,17 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
  Percent identity threshold for matches. (default 0.39).
  NB: For a threshold of 80 percent say 0.80.
- 
+
+=item -f, --percentcov
+
+ Percent coverage threshold for matches. (default 0.80).
+ NB: For a threshold of 80 percent say 0.80.
+
+=item -l, --matchlen
+
+ Length threshold for matches. (default 80).
+ NB: For a threshold of 80 percent say 0.80.
+
 =item -r, --report
 
  Parse hmmsearch of each sequence and produce a summary of align statistics.
@@ -169,6 +187,10 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =item -s, --seq
 
  Extract query sequence from domain alignment.
+
+=item -t, --threads
+
+ The number of threads to use for clustering coding domains.
 
 =item -h, --help
 
