@@ -9,6 +9,7 @@ use File::Basename;
 use File::Copy;
 use File::Path          qw(make_path remove_tree);
 use IPC::System::Simple qw(capture system);
+use Time::HiRes         qw(gettimeofday);
 use Path::Class::File;
 use Bio::DB::HTS::Kseq;
 use Bio::AlignIO;
@@ -101,6 +102,14 @@ has clean => (
     default  => 1,
 );
 
+has threads => (
+    is        => 'ro',
+    isa       => 'Int',
+    predicate => 'has_threads',
+    lazy      => 1,
+    default   => 1,
+);
+
 sub find_soloLTRs {
     my $self = shift;
     my $dir = $self->dir;
@@ -137,29 +146,16 @@ sub find_soloLTRs {
     
     my @ltr_hmm_files;
     find( sub { push @ltr_hmm_files, $File::Find::name if -f and /\.hmm$/ }, $model_dir);
-    my ($gname, $gpath, $gsuffix) = fileparse($genome, qr/\.[^.]*/);
 
     print STDERR "Search genome with models...";
-    for my $hmm (@ltr_hmm_files) {
-	my $indiv_results_dir = $hmm;
-	$indiv_results_dir =~ s/\.hmm.*$/\_search_out/;
-	
-	my $hmmsearch_out = $hmm;
-	$hmmsearch_out =~ s/\.hmm.*$//;
-	$hmmsearch_out .= '_'.$gname.'.hmmer';
-	
-	$self->search_with_models($hmmsearch_out, $hmm, $hmmsearch, $genome);
-	    
-	if (-e $hmmsearch_out) {   
-	    $self->write_hmmsearch_report($aln_stats, $hmmsearch_out);
-	} 
-    }
+    $self->do_parallel_search($hmmsearch, $genome, \@ltr_hmm_files, $model_dir, $aln_stats);
     say STDERR "done searching with LTR models.";
-    print STDERR "Collating results and writing GFF...";
+
     #my @zeroes;
     #find( sub { push @zeroes, $File::Find::name if -f and ! -s }, $model_dir );
     #unlink @zeroes;
     
+    print STDERR "Collating results and writing GFF...";
     my @reports;
     find( sub { push @reports, $File::Find::name if -f and /\.txt$/ }, $model_dir );
     if (@reports) {
@@ -173,6 +169,61 @@ sub find_soloLTRs {
 
     $self->write_sololtr_gff($hmmsearch_summary);
     say STDERR "all done with solo-LTRs.";
+
+    if ($self->clean) {
+	remove_tree( $model_dir, { safe => 1} );
+    }
+}
+
+sub do_parallel_search {
+    my $self = shift;
+    my ($hmmsearch, $genome, $ltr_hmm_files, $model_dir, $aln_stats) = @_;
+    my $threads = $self->threads;
+
+    my %reports;
+    my $t0 = gettimeofday();
+    my $model_num = @$ltr_hmm_files;
+
+    my ($gname, $gpath, $gsuffix) = fileparse($genome, qr/\.[^.]*/);
+    my $logfile = File::Spec->catfile($model_dir, 'all_solo-ltr_searches.log');
+    open my $log, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
+
+    my $pm = Parallel::ForkManager->new($threads);
+    local $SIG{INT} = sub {
+        $log->warn("Caught SIGINT; Waiting for child processes to finish.");
+        $pm->wait_all_children;
+        exit 1;
+    };
+
+    $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
+			      for my $hmmrep (sort keys %$data_ref) {
+				  unlink $hmmrep;
+			      }
+			      my $t1 = gettimeofday();
+			      my $elapsed = $t1 - $t0;
+			      my $time = sprintf("%.2f",$elapsed/60);
+			            say $log basename($ident),
+			      " just finished with PID $pid and exit code: $exit_code in $time minutes";
+			} );
+
+    for my $hmm (nsort @$ltr_hmm_files) {
+	$pm->start($hmm) and next;
+	$SIG{INT} = sub { $pm->finish };
+	
+	my $hmmsearch_out = $self->search_with_models($gname, $hmm, $hmmsearch, $genome, $aln_stats);
+	$reports{$hmmsearch_out} = 1;
+
+	$pm->finish(0, \%reports);
+    }
+
+    $pm->wait_all_children;
+
+    my $t2 = gettimeofday();
+    my $total_elapsed = $t2 - $t0;
+    my $final_time = sprintf("%.2f",$total_elapsed/60);
+
+    say $log "\n========> Finished hmmsearch on $model_num solo-LTR models in $final_time minutes";
+    close $log;
 }
 
 sub write_sololtr_gff {
@@ -185,7 +236,7 @@ sub write_sololtr_gff {
     open my $in, '<', $hmmsearch_summary or die "\nERROR: Could not open file: $hmmsearch_summary\n";
     open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
-    say $out "##gff-version 3";
+    say $out '##gff-version 3';
     for my $id (nsort keys %$seqlen) {
 	say $out join q{ }, '##sequence-region', $id, '1', $seqlen->{$id};
     }
@@ -228,12 +279,22 @@ sub build_model {
 
 sub search_with_models {
     my $self = shift;
-    my ($search_out, $hmm_model, $hmmsearch, $fasta) = @_;
+    my ($gname, $hmm, $hmmsearch, $fasta, $aln_stats) = @_;
+
+    my $hmmsearch_out = $hmm;
+    $hmmsearch_out =~ s/\.hmm.*$//;
+    $hmmsearch_out .= '_'.$gname.'.hmmer';
 
     ## no -o option in hmmer2
-    my $hmmsearch_cmd = "$hmmsearch --cpu 12 $hmm_model $fasta > $search_out";
+    my $hmmsearch_cmd = "$hmmsearch --cpu 1 $hmm $fasta > $hmmsearch_out";
     $self->run_cmd($hmmsearch_cmd);
-    unlink $hmm_model; # if $self->clean;
+
+    if (-e $hmmsearch_out) {   
+	$self->write_hmmsearch_report($aln_stats, $hmmsearch_out);
+    }
+
+    unlink $hmm;
+    return $hmmsearch_out;
 }
 
 sub _get_ltr_alns {
@@ -249,7 +310,7 @@ sub _get_ltr_alns {
 	my $aln = File::Spec->catfile($path, $name.'_muscle-out.aln');
 	my $log = File::Spec->catfile($path, $name.'_muscle-out.log');
 	
-	my $clwcmd = "muscle -quiet -clwstrict -in $ltrseq -out $aln -log log";
+	my $clwcmd = "muscle -quiet -clwstrict -in $ltrseq -out $aln -log $log";
 	$self->capture_cmd($clwcmd);
 	unlink $log;
 	push @aligns, $aln;
