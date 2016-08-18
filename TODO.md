@@ -10,10 +10,10 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] clean up logs and intermediate files from vmatch (dbluster-*)
  - [x] combine domain organization from both strands (if the same)?
  - [x] add family classifications to GFF Name attribute
- - [ ] incorporate legacy annotations from input GFF/reference to family classification
+ - [x] incorporate legacy annotations from input GFF/reference to family classification
  - [x] merge overlapping hits in chain of protein matches, and contatenate the rest for each element
  - [ ] mark unclassified elements with no protein domains as LARDs
- - [ ] combine exemplars for efficiently comparing to a reference set
+ - [x] combine exemplars for efficiently comparing to a reference set
  
 ## Command `tephra findtirs`
  - [x] Find all non-overlapping TIR elements passing thresholds
@@ -24,10 +24,10 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Create HMM of LTRs for each LTR-RT
  - [x] Search masked ref with LTR HMM
  - [x] Create GFF with SO terms of solo-LTRs
- - [ ] parallelize hmmsearch to speed things up. likely this is faster than multiple cpus for one model at time
+ - [x] parallelize hmmsearch to speed things up. likely this is faster than multiple cpus for one model at time
  - [x] check if input directory exists
  - [x] make sure to set path to correct version of hmmer
- - [ ] add family name to GFF output
+ - [x] add family name to GFF output (the family name is now in the Parent tag)
 
 ## Command `tephra classifytirs`
  - [x] Classify 'best' TIR elements into superfamilies based on domain content, TSD, and/or motif
