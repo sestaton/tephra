@@ -1,6 +1,11 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.03.7	08/18/16	Vancouver, BC
+
+- Parallelize sololtr command to speed up the solo-LTR search.
+- Update the sololtr command usage menu which did not reflect all of the available options.
+
 0.03.6	08/09/16	Vancouver, BC
 
 - Increase BLAST+ package version.
