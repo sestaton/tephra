@@ -71,7 +71,7 @@ sub _calculate_soloLTR_abund {
     my $len     = $opt->{matchlen} // 80;
     my $seq     = $opt->{seq} // 0;
     my $threads = $opt->{threads} // 1;
-    my $clean   = $opt->{clean} // 0;
+    my $clean   = $opt->{clean} // 1;
 
     my $ill_obj = Tephra::Genome::SoloLTRSearch->new(
 	dir          => $dir,
@@ -117,6 +117,7 @@ sub help {
      -r|report        :    Parse hmmsearch of each sequence and produce a summary of align statistics.
      -s|seq           :    Extract query sequence from domain alignment.
      -t|threads       :    The number of threads to use for clustering coding domains.
+     --clean          :    Clean up the intermediate alignment and HMMER files (Default: yes).
 
 END
 }
@@ -191,6 +192,10 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =item -t, --threads
 
  The number of threads to use for clustering coding domains.
+
+=item --clean
+
+ Clean up the intermediate alignment and HMMER files (Default: yes).
 
 =item -h, --help
 
