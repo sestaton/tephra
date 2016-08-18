@@ -19,11 +19,11 @@ Tephra::LTR::MakeExemplars - Make exemplars from a LTR retrotransposon family
 
 =head1 VERSION
 
-Version 0.03.6
+Version 0.03.7
 
 =cut
 
-our $VERSION = '0.03.6';
+our $VERSION = '0.03.7';
 $VERSION = eval $VERSION;
 
 has dir => (
