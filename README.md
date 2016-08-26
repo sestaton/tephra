@@ -1,7 +1,7 @@
 # Tephra
 Transposable Element Paleontology by Historical Reconstruction from Annotations
 
-[![Build Status](https://travis-ci.org/sestaton/tephra.svg?branch=master)](https://travis-ci.org/sestaton/tephra)
+[![Build Status](https://travis-ci.org/sestaton/tephra.svg?branch=master)](https://travis-ci.org/sestaton/tephra) [![Coverage Status](https://coveralls.io/repos/github/sestaton/tephra/badge.svg?branch=master)](https://coveralls.io/github/sestaton/tephra?branch=master)
 
 ### What is Tephra?
 
