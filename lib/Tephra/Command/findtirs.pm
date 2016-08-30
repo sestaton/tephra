@@ -7,6 +7,7 @@ use warnings;
 use File::Find;
 use File::Basename;
 use Tephra -command;
+use Tephra::Config::Exe;
 use Tephra::TIR::TIRSearch;
 
 sub opt_spec {
@@ -34,7 +35,7 @@ sub validate_args {
         $self->help;
         exit(0);
     }
-    elsif (!$opt->{genome} || !$opt->{hmmdb}) {
+    elsif (!$opt->{genome}) {
 	say "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
@@ -48,9 +49,12 @@ sub execute {
 
 sub _run_tir_search {
     my ($opt) = @_;
-    
+
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($tephra_hmmdb) = @{$config}{qw(hmmdb)};
+    my $hmmdb = $opt->{hmmdb} // $tephra_hmmdb;
+
     my $genome  = $opt->{genome};
-    my $hmmdb   = $opt->{hmmdb};
     my $index   = $opt->{index};
     my $outfile = $opt->{outfile};
     my $clean   = $opt->{clean} // 0;
@@ -98,11 +102,11 @@ USAGE: tephra findtirs [-h] [-m]
 
 Required:
     -g|genome     :   The genome sequences in FASTA format to search for TIR TEs. 
-    -d|hmmdb      :   The HMM db in HMMERv3 format to search for coding domains.
 
 Options:
     -o|outfile    :   The final combined GFF3 file of TIRs.
     -i|index      :   The suffixerator index to use for the TIR search.
+    -d|hmmdb      :   The HMM db in HMMERv3 format to search for coding domains.    
     --clean       :   Clean up the index files (Default: yes).
     --debug       :   Show external commands for debugging (Default: no).
 
@@ -139,10 +143,6 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
  The genome sequences in FASTA format to search for TIR TEs.
 
-=item -d, --hmmdb
-
- The HMM db in HMMERv3 format to search for coding domains.
-
 =back
 
 =head1 OPTIONS
@@ -156,6 +156,10 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =item -i, --index
 
  The suffixerator index to use for the LTR search.
+
+=item -d, --hmmdb
+
+ The HMM db in HMMERv3 format to search for coding domains.
 
 =item --clean
 

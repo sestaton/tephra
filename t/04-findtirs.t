@@ -14,13 +14,15 @@ use Test::More tests => 2;
 my $cmd     = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir = File::Spec->catdir('t', 'test_data');
 my $genome  = File::Spec->catfile($testdir, 'ref.fas');
-my $model   = File::Spec->catfile($testdir, 'te.hmm');
+## these are subsets for testing
+#my $model   = File::Spec->catfile($testdir, 'te.hmm');
 
 my @results = capture { system([0..5], "$cmd findtirs -h") };
 
 ok(@results, 'Can execute findtirs subcommand');
 
-my $find_cmd = "$cmd findtirs -g $genome -d $model --clean";
+#my $find_cmd = "$cmd findtirs -g $genome -d $model --clean";
+my $find_cmd = "$cmd findtirs -g $genome --clean";
 #say STDERR $find_cmd;
 
 my @ret = capture { system([0..5], $find_cmd) };

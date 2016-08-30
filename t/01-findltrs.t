@@ -15,8 +15,9 @@ use Test::More tests => 9;
 my $cmd     = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir = File::Spec->catdir('t', 'test_data');
 my $genome  = File::Spec->catfile($testdir, 'ref.fas');
-my $model   = File::Spec->catfile($testdir, 'te.hmm');
-my $trnas   = File::Spec->catfile($testdir, 'trnas.fas');
+## these are subsets for testing
+#my $model   = File::Spec->catfile($testdir, 'te.hmm');
+#my $trnas   = File::Spec->catfile($testdir, 'trnas.fas');
 
 my $config  = write_config($testdir);
 ok( -e $config, 'Can create config file for testing' );
@@ -24,7 +25,8 @@ ok( -e $config, 'Can create config file for testing' );
 my @results = capture { system([0..5], "$cmd findltrs -h") };
 ok(@results, 'Can execute findltrs subcommand');
 
-my $find_cmd = "$cmd findltrs -c $config -g $genome -t $trnas -d $model --clean";
+#my $find_cmd = "$cmd findltrs -c $config -g $genome -t $trnas -d $model --clean";
+my $find_cmd = "$cmd findltrs -c $config -g $genome --clean";
 #say STDERR $find_cmd;
 
 my ($stdout, $stderr, @ret) = capture { system([0..5], $find_cmd) };

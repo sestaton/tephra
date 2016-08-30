@@ -7,6 +7,7 @@ use warnings;
 use File::Find;
 use File::Basename;
 use Tephra -command;
+use Tephra::Config::Exe;
 use Tephra::LTR::LTRSearch;
 use Tephra::LTR::LTRRefine;
 #use Data::Dump::Color;
@@ -40,7 +41,7 @@ sub validate_args {
         $self->help;
         exit(0);
     }
-    elsif (!$opt->{config} || !$opt->{genome} || !$opt->{hmmdb} || !$opt->{trnadb}) {
+    elsif (!$opt->{config} || !$opt->{genome}) {
 	say "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
@@ -50,14 +51,6 @@ sub validate_args {
     }
     elsif (! -e $opt->{genome}) { 
 	say "\nERROR: '--genome' file given but does not appear to exist. Check input.";
-	$self->help and exit(0);
-    }
-    elsif (! -e $opt->{hmmdb}) { 
-	say "\nERROR: '--hmmdb' file given but does not appear to exist. Check input.";
-	$self->help and exit(0);
-    }
-    elsif (! -e $opt->{trnadb}) { 
-	say "\nERROR: '--trnadb' file given but does not appear to exist. Check input.";
 	$self->help and exit(0);
     }
 } 
@@ -123,19 +116,27 @@ sub _run_ltr_search {
 	my $matchstr = join "|", @files;
 	find( sub { push @indexfiles, $File::Find::name if -f and /$matchstr/ }, $path );
     }
+    
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($tephra_hmmdb, $tephra_trnadb) = @{$config}{qw(hmmdb trnadb)};
+    
+    my $genome  = $opt->{genome};
+    my $ltrconf = $opt->{config};
+    my $hmmdb   = $opt->{hmmdb} // $tephra_hmmdb;
+    my $trnadb  = $opt->{trnadb} // $tephra_trnadb;
 
     my %search_opts = ( 
-	genome   => $opt->{genome}, 
-	hmmdb    => $opt->{hmmdb},
-	trnadb   => $opt->{trnadb},
-	config   => $opt->{config},
+	genome   => $genome, 
+	hmmdb    => $hmmdb,
+	trnadb   => $trnadb,
+	config   => $ltrconf,
     );
 
     $search_opts{clean} = $opt->{clean} // 0;
     $search_opts{debug} = $opt->{debug} // 0;
 
-    my $ltr_search = Tephra::LTR::LTRSearch->new(%search_opts);
-    my $config     = $ltr_search->get_configuration;
+    my $ltr_search    = Tephra::LTR::LTRSearch->new(%search_opts);
+    my $search_config = $ltr_search->get_configuration;
 
     unless (defined $opt->{index} && @indexfiles == 7) {
 	my ($name, $path, $suffix) = fileparse($opt->{genome}, qr/\.[^.]*/);
@@ -145,8 +146,8 @@ sub _run_ltr_search {
 	$ltr_search->create_index(\@suff_args);
     }
     
-    my $strict_gff  = $ltr_search->ltr_search_strict($config,  $opt->{index});
-    my $relaxed_gff = $ltr_search->ltr_search_relaxed($config, $opt->{index});
+    my $strict_gff  = $ltr_search->ltr_search_strict($search_config,  $opt->{index});
+    my $relaxed_gff = $ltr_search->ltr_search_relaxed($search_config, $opt->{index});
 
     return ($relaxed_gff, $strict_gff);
 }
@@ -161,12 +162,12 @@ USAGE: tephra findltrs [-h] [-m]
 Required:
     -c|config     :   The Tephra LTR option configuration file.
     -g|genome     :   The genome sequences in FASTA format to search for LTR-RTs.
-    -t|trnadb     :   The file of tRNA sequences in FASTA format to search for PBS.
-    -d|hmmdb      :   The HMM db in HMMERv3 format to search for coding domains.
 
 Options:
     -o|outfile    :   The final combined and filtered GFF3 file of LTR-RTs.
     -i|index      :   The suffixerator index to use for the LTR search.
+    -t|trnadb     :   The file of tRNA sequences in FASTA format to search for PBS.
+    -d|hmmdb      :   The HMM db in HMMERv3 format to search for coding domains.
     -r|dedup      :   Discard elements with duplicate coding domains (Default: no).
     --tnpfilter   :   Discard elements containing transposase domains (Default: no).
     --clean       :   Clean up the index files (Default: yes).
@@ -206,14 +207,6 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
  The genome sequences in FASTA format used to search for LTR-RTs.
 
-=item -t, --trnadb
-
- The file of tRNA sequences in FASTA format to search for PBS.
-
-=item -d, --hmmdb
-
- The HMM db in HMMERv3 format to search for coding domains.
-
 =item -c, --config
 
  The Tephra LTR option configuration file.
@@ -231,6 +224,14 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =item -i, --index
 
  The suffixerator index to use for the LTR search.
+
+=item -t, --trnadb
+
+ The file of tRNA sequences in FASTA format to search for PBS.
+
+=item -d, --hmmdb
+
+ The HMM db in HMMERv3 format to search for coding domains.
 
 =item --mintsd
 

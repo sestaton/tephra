@@ -40,18 +40,20 @@ sub get_config_paths {
     }
 
     # we don't want to reconfigure every time the tests run 
-    my $gt       = File::Spec->catfile($root,   'gt', 'bin', 'gt');
-    my $hscan    = File::Spec->catfile($root,   'helitronscanner', 'HelitronScanner', 'HelitronScanner.jar');
-    my $hmm2bin  = File::Spec->catdir($root,    'hmmer-2.3.2', 'bin');
-    my $hmm3bin  = File::Spec->catdir($root,    'hmmer-3.1b2-linux-intel-x86_64', 'binaries');
-    my $moddir   = File::Spec->catdir($root,    'pHMM');
-    my $chrdir   = File::Spec->catdir($root,    'hmm');
-    my $mgescan  = File::Spec->catfile($chrdir, 'tephra-MGEScan');
-    my $transla  = File::Spec->catfile($chrdir, 'tephra-translate');
-    my $pamlbin  = File::Spec->catdir($root,    'paml4.8', 'bin');
-    my $transeq  = File::Spec->catdir($root,    'EMBOSS-6.5.7', 'bin', 'transeq');
-    my $blastph  = File::Spec->catdir($root,    'ncbi-blast-2.4.0+', 'bin');
-    my $htsdir   = File::Spec->catdir($root,    'htslib-1.3.1', 'htslib');
+    my $gt      = File::Spec->catfile($root,   'gt', 'bin', 'gt');
+    my $hscan   = File::Spec->catfile($root,   'helitronscanner', 'HelitronScanner', 'HelitronScanner.jar');
+    my $hmm2bin = File::Spec->catdir($root,    'hmmer-2.3.2', 'bin');
+    my $hmm3bin = File::Spec->catdir($root,    'hmmer-3.1b2-linux-intel-x86_64', 'binaries');
+    my $trnadb  = File::Spec->catfile($root,   'TephraDB', 'eukaryotic-tRNAs.fa');
+    my $hmmdb   = File::Spec->catfile($root,   'TephraDB', 'transposable+element.hmm');
+    my $moddir  = File::Spec->catdir($root,    'pHMM');
+    my $chrdir  = File::Spec->catdir($root,    'hmm');
+    my $mgescan = File::Spec->catfile($chrdir, 'tephra-MGEScan');
+    my $transla = File::Spec->catfile($chrdir, 'tephra-translate');
+    my $pamlbin = File::Spec->catdir($root,    'paml4.8', 'bin');
+    my $transeq = File::Spec->catdir($root,    'EMBOSS-6.5.7', 'bin', 'transeq');
+    my $blastph = File::Spec->catdir($root,    'ncbi-blast-2.4.0+', 'bin');
+    my $htsdir  = File::Spec->catdir($root,    'htslib-1.3.1', 'htslib');
 
     # this is to avoid building each time
     my @path = split /:|;/, $ENV{PATH};    
@@ -72,6 +74,8 @@ sub get_config_paths {
         hmmer2bin  => $hmm2bin,
 	hmmer3bin  => $hmm3bin,
         modeldir   => $moddir,
+	trnadb     => $trnadb,
+	hmmdb      => $hmmdb,
         hmmdir     => $chrdir,
         mgescan    => $mgescan,
         transcmd   => $transla,

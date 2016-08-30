@@ -73,6 +73,16 @@ sub configure_root {
         print STDERR ".";
     }
     
+    unless (-e $config->{trnadb}) {
+	$config->{trnadb} = $self->fetch_trnadb;
+	print STDERR ".";
+    }
+
+    unless (-e $config->{hmmdb}) {
+	$config->{hmmdb} = $self->fetch_hmmdb;
+	print STDERR ".";
+    }
+
     unless (-e $config->{modeldir}) {
 	$config->{modeldir} = $self->fetch_hmm_models;
 	print STDERR ".";
@@ -404,6 +414,62 @@ sub fetch_htslib {
     return $libdir;
 }
 
+sub fetch_trnadb {
+    my $self = shift;
+    my $root = $self->basedir;
+
+    # make db directory
+    my $db_dir = File::Spec->catdir($root, 'TephraDB');
+    unless ( -e $db_dir ) {
+	make_path( $db_dir, {verbose => 0, mode => 0771,} );
+    }
+
+    my $urlbase = 'http://lowelab.ucsc.edu';
+    my $dir     = 'download';
+    my $release = 'tRNAs';
+    my $file    = 'eukaryotic-tRNAs.fa.gz';
+    my $url     = join "/", $urlbase, $dir, $release, $file;
+    my $outfile = File::Spec->catfile($db_dir, $file);
+
+    system("wget -q -O $outfile $url 2>&1 > /dev/null") == 0
+	or die $!;
+    chdir $db_dir;
+
+    system("gunzip $file") == 0 or die "tar failed: $!";
+    $file =~ s/\.gz//;
+    my $trnadb = File::Spec->catfile($db_dir, $file); 
+
+    return $trnadb;
+}
+
+sub fetch_hmmdb {
+    my $self = shift;
+    my $root = $self->basedir;
+    my $wd   = $self->workingdir;
+   
+    chdir $wd;
+    # make db directory
+    my $db_dir = File::Spec->catdir($root, 'TephraDB');
+    unless ( -e $db_dir ) {
+	make_path( $db_dir, {verbose => 0, mode => 0771,} );
+    }
+
+    ## The HMM library was generated with HMMER2GO (https://github.com/sestaton/HMMER2GO) with the following command:
+    ##     hmmer2go pfamsearch -s 'transposable element' -d -o transposable+element.hmm
+    ##
+    ## This file is distributed with Tephra as of v0.03.8
+    my $hmms = 'transposable+element.hmm.gz';
+    my $hlib = File::Spec->catfile('build', $hmms); # for LTR-RT search with LTRdigest
+    copy $hlib, $db_dir or die "Copy failed: $!";
+    chdir $db_dir;
+    system("gunzip $hmms") == 0 or die $!;
+
+    $hmms =~ s/\.gz//;
+    my $hmmdb = File::Spec->catfile($db_dir, $hmms);
+
+    return $hmmdb;
+}
+
 sub fetch_hmm_models {
     my $self = shift;
     my $root = $self->basedir;
@@ -411,7 +477,8 @@ sub fetch_hmm_models {
    
     chdir $wd;
     my $file = 'pHMM.tar.gz';
-    my $dist = File::Spec->catfile('build', $file);
+    my $dist = File::Spec->catfile('build', $file); # for non-LTR-RT search
+
     copy $dist, $root or die "Copy failed: $!";
     chdir $root;
     system("tar xzf $file") == 0 or die $!;

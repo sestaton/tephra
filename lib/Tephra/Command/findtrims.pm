@@ -6,6 +6,7 @@ use strict;
 use warnings;
 use File::Basename;
 use Tephra -command;
+use Tephra::Config::Exe;
 use Tephra::TRIM::TRIMSearch;
 use Tephra::LTR::LTRRefine;
 
@@ -70,10 +71,13 @@ sub _refine_trim_predictions {
 
 sub _run_trim_search {
     my ($opt) = @_;
-    
+
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($tephra_hmmdb, $tephra_trnadb) = @{$config}{qw(hmmdb trnadb)};
+
     my $genome = $opt->{genome};
-    my $hmmdb  = $opt->{hmmdb};
-    my $trnadb = $opt->{trnadb};
+    my $hmmdb  = $opt->{hmmdb} // $tephra_hmmdb;
+    my $trnadb = $opt->{trnadb} // $tephra_trnadb;
     my $clean  = $opt->{clean} // 0;
     
     my $trim_search = Tephra::TRIM::TRIMSearch->new( 
@@ -104,10 +108,10 @@ USAGE: tephra findltrs [-h] [-m]
 
 Required:
     -g|genome     :   The genome sequences in FASTA format to search for LTR-RTs. 
-    -t|trnadb     :   The file of tRNA sequences in FASTA format to search for PBS. 
-    -d|hmmdb      :   The HMM db in HMMERv3 format to search for coding domains.
 
 Options:
+    -t|trnadb     :   The file of tRNA sequences in FASTA format to search for PBS. 
+    -d|hmmdb      :   The HMM db in HMMERv3 format to search for coding domains.
     -c|clean      :   Clean up the index files (Default: yes).
 
 END
@@ -145,6 +149,12 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
  The genome sequences in FASTA format to search for LTR-RTs.
 
+=back
+
+=head1 OPTIONS
+
+=over 2
+
 =item -t, --trnadb
 
  The file of tRNA sequences in FASTA format to search for PBS.
@@ -152,12 +162,6 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =item -d, --hmmdb
 
  The HMM db in HMMERv3 format to search for coding domains.
-
-=back
-
-=head1 OPTIONS
-
-=over 2
 
 =item -c, --clean
 
