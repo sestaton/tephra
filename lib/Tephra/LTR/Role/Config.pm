@@ -9,11 +9,11 @@ Tephra::LTR::Role::Config - Attributes and routines for parsing Tephra LTR confi
 
 =head1 VERSION
 
-Version 0.03.7
+Version 0.03.8
 
 =cut
 
-our $VERSION = '0.03.7';
+our $VERSION = '0.03.8';
 $VERSION = eval $VERSION;
 
 =head1 SYNOPSIS

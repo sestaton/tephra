@@ -8,11 +8,11 @@ Tephra::Command - Control class for setting global options with Tephra
 
 =head1 VERSION
 
-Version 0.3.7
+Version 0.3.8
 
 =cut
 
-our $VERSION = '0.3.7';
+our $VERSION = '0.3.8';
 
 sub opt_spec {
     my ( $class, $app ) = @_;

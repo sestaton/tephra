@@ -23,11 +23,11 @@ Tephra::LTR::LTRSearch - Find LTR retrotransposons in a reference genome
 
 =head1 VERSION
 
-Version 0.03.7
+Version 0.03.8
 
 =cut
 
-our $VERSION = '0.03.7';
+our $VERSION = '0.03.8';
 $VERSION = eval $VERSION;
 
 has config => (
