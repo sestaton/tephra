@@ -14,6 +14,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] merge overlapping hits in chain of protein matches, and contatenate the rest for each element
  - [ ] mark unclassified elements with no protein domains as LARDs
  - [x] combine exemplars for efficiently comparing to a reference set
+ - [ ] identify fragmented elements with refined full-length elements
  
 ## Command `tephra findtirs`
  - [x] Find all non-overlapping TIR elements passing thresholds
@@ -34,6 +35,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] Group TIR elements into families based on TIR similarity and/or cluster-based method used for LTR-RT classification 
  - [x] in tests, skip if empty output (none found). This is not a good test honestly, need a new reference
  - [ ] write fasta of each superfamily, and combined library
+ - [ ] identify	fragmented elements with refined full-length elements
 
 ## Command `tephra findltrs` 
  - [x] Find all non-overlapping LTR-RTs under strict and relaxed conditions
@@ -77,6 +79,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] write combined file of all elements
  - [x] take a multifasta as input and create directories for input/output to methods
  - [ ] use complete elements to find truncated nonLTRs after masking
+ - [ ] identify	fragmented elements with refined full-length elements
 
 ## Command `tephra ltrage`
  - [x] Calculate age for each LTR-RT
