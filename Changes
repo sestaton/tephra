@@ -1,8 +1,13 @@
 Revision history for Tephra
 
 Version	Date	Location
-0.03.8	08/30/16	Vancouver, BC
+0.03.9	09/08/16	Vancouver, BC
 
+- Adjust FASTA header in findhelitrons output to match the ID in the GFF output. Fix
+  variable naming issue in Helsearch class with sequence IDs (though it did not appear to
+  cause issues it could have because the ID variable was being reused/renamed).
+
+0.03.8	08/30/16	Vancouver, BC
 - Configure Tephra to install an HMM library of TE models and a database of tRNA sequences.
   This change reduces the dependencies to only a genome as the input to the search programs.
 
