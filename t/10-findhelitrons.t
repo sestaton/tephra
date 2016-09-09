@@ -51,6 +51,6 @@ close $in;
 my @files;
 find( sub { push @files, $File::Find::name if -f and /hscan/ }, $testdir );
 unlink @files;
-unlink $hsgff;
+unlink $hsgff, $hsfas;
 
 done_testing();
