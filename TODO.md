@@ -90,7 +90,8 @@ This file is for logging feature requests and bugs during development. Hopefully
 ## Command `tephra maskref`
  - [x] Generate masked reference from custom repeat library 
  - [x] Add outfile option instead of creating filename
-
+ - [ ] Make some kind of statistical report about masking percentage. It would be helpful to format
+       the output like RepeatMasker to give a global view of what was masked.
 
 ## Command `tephra illrecomb`
 
