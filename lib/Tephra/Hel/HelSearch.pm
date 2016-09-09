@@ -34,7 +34,6 @@ sub find_helitrons {
     
     my $genome = $self->genome->absolute;
     my $jar    = $self->helitronscanner;
-    my $gff    = $self->outfile;
 
     my (%scanh_cmd, %scant_cmd, %pair_cmd, %draw_cmd);
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
@@ -77,13 +76,16 @@ sub find_helitrons {
     return $full_hels;
 }
 
-sub make_hscan_gff {
+sub make_hscan_outfiles {
     my $self = shift;
     my ($helitrons) = @_;
-    my $gff = $self->outfile;
+    my $gff    = $self->gff;
+    my $fasta  = $self->fasta;
     my $genome = $self->genome;
-    open my $out, '>', $gff or die "\nERROR: Could not open file: $gff\n";
-    
+
+    open my $outg, '>', $gff or die "\nERROR: Could not open file: $gff\n";
+    open my $outf, '>', $fasta or die "\nERROR: Could not open file: $fasta\n";
+
     my %refs;
     my $gkseq = Bio::DB::HTS::Kseq->new($genome);
     my $giter = $gkseq->iterator;
@@ -95,43 +97,49 @@ sub make_hscan_gff {
     }
 
     my $header = "##gff-version 3";
-    say $out $header;
+    say $outg $header;
     for my $ref (nsort keys %refs) {
-	say $out join q{ }, "##sequence-region", $ref, '1', $refs{$ref};
+	say $outg join q{ }, "##sequence-region", $ref, '1', $refs{$ref};
     }
     
     my %strand = ( forward => '+', reverse => '-' );
     
-    my ($id, $seq, %hel);
+    my ($name, $seq, %hel);
     my $helct = 0;
     open my $hin, '<', $helitrons or die "\nERROR: Could not open file: $helitrons\n";
-    while (($id, $seq) = $self->read_seq(\*$hin)) {
+    while (($name, $seq) = $self->read_seq(\*$hin)) {
 	$helct++;
-	my ($ref, $start, $stop) = ($id =~ /(^\S+)_\#SUB_(\d+)-(\d+)/);
-	my ($str) = ($id =~ /\[(forward|reverse)\]/);
+	my ($ref, $start, $stop) = ($name =~ /(^\S+)_\#SUB_(\d+)-(\d+)/);
+	my ($str) = ($name =~ /\[(forward|reverse)\]/);
 	my $strand = $strand{$str};
+	my $id = "DHH_helitron$helct";
 
 	# seqid source type start end score strand phase attribs
 	my $gff_str;
 	if ($start > $stop && $strand eq '-') {
 	    $gff_str = join "||", $ref, 'HelitronScanner', 'helitron', $stop, $start, '.', 
-	        $strand, '.', "ID=helitron$helct;Ontology_term=SO:0000544";
+	        $strand, '.', "ID=$id;Ontology_term=SO:0000544";
+	    $id .= "_$ref"."_$start"."_$stop"."_$strand";
+	    say $outf join "\n", ">".$id, $seq;
 	}
 	else {
 	    $gff_str = join "||", $ref, 'HelitronScanner', 'helitron', $start, $stop, '.',
-                $strand, '.', "ID=helitron$helct;Ontology_term=SO:0000544";
+                $strand, '.', "ID=$id;Ontology_term=SO:0000544";
+	    $id .= "_$ref"."_$start"."_$stop"."_$strand";
+	    say $outf join "\n", ">".$id, $seq;
 	}
 	push @{$hel{$ref}}, $gff_str;
     }
     close $hin;
+    close $outf;
 
     for my $ref (nsort keys %hel) {
 	for my $feature (@{$hel{$ref}}) {
 	    my @feats = split /\|\|/, $feature;
-	    say $out join "\t", @feats;
+	    say $outg join "\t", @feats;
 	}
     }
-    close $out;
+    close $outg;
 }
 
 sub read_seq {
@@ -145,6 +153,8 @@ sub read_seq {
     my ($id, $seq) = split /\n/, $entry, 2;
     defined $id && $id =~ s/>//g;
     defined $seq && $seq =~ s/>//g;
+    $seq =~ s/\s+|\n//g;
+    $seq =~ s/.{60}\K/\n/g;
 
     return ($id, $seq);
 }
