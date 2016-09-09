@@ -41,7 +41,14 @@ has helitronscanner => (
     coerce   => 1,
 );
 
-has outfile => (
+has gff => (
+    is       => 'ro',
+    isa      => 'Path::Class::File',
+    required => 1,
+    coerce   => 1,
+);
+
+has fasta => (
     is       => 'ro',
     isa      => 'Path::Class::File',
     required => 1,
