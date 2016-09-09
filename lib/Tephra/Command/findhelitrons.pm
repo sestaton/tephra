@@ -13,7 +13,8 @@ sub opt_spec {
     return (    
 	[ "genome|g=s",           "The genome sequences in FASTA format to search for Helitrons "   ],
 	[ "helitronscanner|j=s",  "The HelitronScanner .jar file (configured automatically) "       ],
-	[ "outfile|o=s",          "The final combined and filtered GFF3 file of Helitrons "         ],
+	[ "outgff|o=s",           "The final combined and filtered GFF3 file of Helitrons "         ],
+	[ "outfasta|f=s",         "The final combined and filtered FASTA file of Helitrons "        ],
 	[ "debug",                "Show external command for debugging (Default: no) "              ],
 	[ "help|h",               "Display the usage menu and exit. "                               ],
         [ "man|m",                "Display the full manual. "                                       ],
@@ -32,7 +33,7 @@ sub validate_args {
         $self->help;
         exit(0);
     }
-    elsif (!$opt->{genome} || !$opt->{outfile}) {
+    elsif (!$opt->{genome} || !$opt->{outgff} || !$opt->{outfasta}) {
 	say "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
@@ -52,7 +53,8 @@ sub _run_helitron_search {
     
     my $genome   = $opt->{genome};
     my $hscan    = $opt->{helitronscanner};
-    my $gff      = $opt->{outfile};
+    my $gff      = $opt->{outgff};
+    my $fasta    = $opt->{outfasta};
     my $debug    = $opt->{debug} // 0;
     my $config   = Tephra::Config::Exe->new->get_config_paths;
     my ($hscanj) = @{$config}{qw(hscanjar)};
@@ -63,12 +65,13 @@ sub _run_helitron_search {
     my $hel_search = Tephra::Hel::HelSearch->new( 
 	genome          => $genome, 
 	helitronscanner => $hscan,
-	outfile         => $gff,
+	gff             => $gff,
+	fasta           => $fasta,
 	debug           => $debug,
     );
 
     my $hel_seqs = $hel_search->find_helitrons;
-    $hel_search->make_hscan_gff($hel_seqs);
+    $hel_search->make_hscan_outfiles($hel_seqs);
     
     return $gff;
 }
@@ -82,7 +85,8 @@ USAGE: tephra findhelitrons [-h] [-m]
 
 Required:
     -g|genome               :   The genome sequences in FASTA format to search for Helitrons.. 
-    -o|outfile              :   The final combined and filtered GFF3 file of Helitrons.
+    -o|outgff               :   The final combined and filtered GFF3 file of Helitrons.
+    -f|outfasta             :   The final combined and filtered FASTA file of Helitrons.
 
 Options:
     -d|helitronscanner_dir  :   The HelitronScanner directory containing the ".jar" files and Training Set.
@@ -103,7 +107,7 @@ __END__
 
 =head1 SYNOPSIS    
 
- tephra findhelitrons -g ref.fas -o ref_helitrons.gff3
+ tephra findhelitrons -g ref.fas -o ref_helitrons.gff3 -f ref_helitrons.fasta
 
 =head1 DESCRIPTION
 
@@ -121,9 +125,13 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
  The genome sequences in FASTA format to search for TIR TEs.
 
-=item -o, --outfile
+=item -o, --outgff
 
  The final combined and filtered GFF3 file of Helitrons.
+
+=item -f, --outfasta
+
+ The final combined and filtered FASTA file of Helitrons.
 
 =back
 
