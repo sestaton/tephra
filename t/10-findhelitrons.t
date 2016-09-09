@@ -22,15 +22,16 @@ my $ext       = File::Spec->catfile($testdir, 'ref_tephra_hscan_helitrons.ext.he
 my $flank     = File::Spec->catfile($testdir, 'ref_tephra_hscan_helitrons.flanking.fa');
 my $full      = File::Spec->catfile($testdir, 'ref_tephra_hscan_helitrons.hel.fa');
 my $hsgff     = File::Spec->catfile($testdir, 'ref_tephra_helitrons.gff3');
+my $hsfas     = File::Spec->catfile($testdir, 'ref_tephra_helitrons.fasta');
 
 my @results   = capture { system([0..5], "$cmd findhelitrons -h") };
 ok(@results, 'Can execute findhelitrons subcommand');
 
-my $find_cmd = "$cmd findhelitrons -g $genome -o $hsgff";
+my $find_cmd = "$cmd findhelitrons -g $genome -o $hsgff -f $hsfas";
 #say STDERR $find_cmd;
 
 my @ret = capture { system([0..5], $find_cmd) };
-#system([0..5], $find_cmd);
+system([0..5], $find_cmd);
 
 my @lcvs;
 find( sub { push @lcvs, $File::Find::name if -f and /.lcvs$/ }, $testdir );
@@ -41,7 +42,7 @@ ok( -s $flank,  'Generated flanking sequences' );
 ok( -s $full,   'Generated full length helitron' );
 
 my $seqct = 0;
-open my $in, '<', $full;
+open my $in, '<', $hsfas;
 while (<$in>) { $seqct++ if /^>/; }
 ok( $seqct == 1, 'Correct number of Helitrons found' );
 close $in;
