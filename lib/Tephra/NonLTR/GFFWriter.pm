@@ -69,6 +69,7 @@ sub _fasta_to_gff {
     my ($seqs) = @_;
 
     my $index = $self->index_ref($genome);
+    my $clade_map = $self->_build_clade_map;
 
     my $name = basename($outdir);
     my $outfile = File::Spec->catfile($outdir, $name.'_tephra_nonltr.gff3');
@@ -114,13 +115,14 @@ sub _fasta_to_gff {
     ##TODO: How to get the strand correct? Added in v0.03.0.
     my $ct = 0;
     for my $clade (keys %regions) {
+	my $code = $clade_map->{$clade} // $clade;
 	for my $seqid (nsort keys %{$regions{$clade}}) {
 	    my ($name, $path, $suffix) = fileparse($seqid, qr/\.[^.]*/);
 	    for my $start (sort { $a <=> $b } keys %{$regions{$clade}{$seqid}}) {
 	        my ($start, $end, $strand) = split /\|\|/, $regions{$clade}{$seqid}{$start};
 		my $seqname = $seqid;
 		$seqname =~ s/\.fa.*//;
-		my $elem = "non_LTR_retrotransposon$ct";
+		my $elem = $code."_non_LTR_retrotransposon$ct";
                 my $tmp = $elem.'.fasta';
 		
 		my $seq = $self->_get_full_seq($index, $seqname, $start, $end);
@@ -130,7 +132,7 @@ sub _fasta_to_gff {
 		    my $id = join "_", $elem, $seqname, $adj_start, $adj_end;
 		    say $faout join "\n", ">$id", $filtered_seq;
 		    say $out join "\t", $name, 'Tephra', 'non_LTR_retrotransposon', $adj_start, $adj_end, '.', $strand, '.', 
-		        "ID=non_LTR_retrotransposon$ct;Name=$clade;Ontology_term=SO:0000189"; 
+		        "ID=$elem;Name=$clade;Ontology_term=SO:0000189"; 
 		    $ct++;
 		}
 	    }
@@ -227,6 +229,27 @@ sub _collate {
         <$fh_in>;
     };
     print $fh_out $lines;
+}
+
+sub _build_clade_map {
+    my $self = shift;
+
+    my %clade_map = (
+	'CR1'    => 'RIC', # CR1 clade
+	'I'      => 'RII', 
+	'Jockey' => 'RIJ', 
+	'L1'     => 'RIL', 
+	'L2'     => 'RIL', 
+	'R1'     => 'RIR', 
+	'RandI'  => 'RIX', 
+	'Rex'    => 'RIC', # CR1 clade, http://link.springer.com/article/10.1186/1471-2148-13-152/fulltext.html?view=classic 
+	'RTE'    => 'RIT',
+	'Tad1'   => 'RIX', 
+	'R2'     => 'RIR', 
+	'CRE'    => 'RIR', # http://www.ncbi.nlm.nih.gov/pubmed/15939396
+	);
+
+    return \%clade_map;
 }
 
 =head1 AUTHOR
