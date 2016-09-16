@@ -135,6 +135,18 @@ I welcome any comments, bug reports, feature requests, or contributions to the d
 
 **LICENSE AND COPYRIGHT**
 
+Part of this project uses code from [MGEScan-nonLTR](http://darwin.informatics.indiana.edu/cgi-bin/evolution/nonltr/nonltr.pl), which is released under the GPL license. Below is the copyright for MGEScan-nonLTR:
+
+    Copyright (C) 2015. See the LICENSE file for license rights and limitations (GPL v3).
+
+    This program is part of MGEScan.
+
+    MGEScan is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+
 Copyright (C) 2015-2016 S. Evan Staton
 
 This program is distributed under the MIT (X11) License, which should be distributed with the package.
