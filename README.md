@@ -135,7 +135,7 @@ I welcome any comments, bug reports, feature requests, or contributions to the d
 
 **LICENSE AND COPYRIGHT**
 
-Part of this project uses code from [MGEScan-nonLTR](http://darwin.informatics.indiana.edu/cgi-bin/evolution/nonltr/nonltr.pl), which is released under the GPL license. Below is the copyright for MGEScan-nonLTR:
+Part of this project uses code from [MGEScan-nonLTR](http://darwin.informatics.indiana.edu/cgi-bin/evolution/nonltr/nonltr.pl), which is released under the GPL license. With permission of the authors, this code is packaged with Tephra. Below is the copyright for MGEScan-nonLTR:
 
     Copyright (C) 2015. See the LICENSE file for license rights and limitations (GPL v3).
 
@@ -146,6 +146,8 @@ Part of this project uses code from [MGEScan-nonLTR](http://darwin.informatics.i
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+
+The license for Tephra is below:
 
 Copyright (C) 2015-2016 S. Evan Staton
 
