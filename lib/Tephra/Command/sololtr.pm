@@ -14,14 +14,16 @@ sub opt_spec {
     return (
 	[ "indir|i=s",        "The directory of LTR families in FASTA format. "                             ],
 	[ "genome|g=s",       "The genome sequences in FASTA format to search for solo-LTRs "               ],
-	[ "percentident|p=f", "Percent identity threshold for matches. (default 0.39)."                     ], 
-	[ "percentcov|c=f",   "Percent coverage threshold for matches. (default 0.80)."                     ],
-	[ "matchlen|l=f",     "Length threshold for matches. (default 80)."                                 ],
+	[ "percentident|p=f", "Percent identity threshold for matches. (Default 0.39)."                     ], 
+	[ "percentcov|c=f",   "Percent coverage threshold for matches. (Default 0.80)."                     ],
+	[ "matchlen|l=f",     "Length threshold for matches. (Default 80)."                                 ],
 	[ "outfile|o=s",      "The GFF file to save results to. "                                           ],
 	[ "report|r=s",       "Parse hmmsearch of each sequence and produce a summary of align statistics." ],
+	[ "numfamilies|n=i",  "The number of families to analyze (Default: the top 20)."                    ],
+	[ "allfamilies|a",    "Analyze all LTR-RT families for solo-LTRs (Default: no)."                    ],
 	[ "seq|s",            "Extract query sequence from domain alignment."                               ],
-	[ "clean",            "Clean up the intermediate alignment files (Default: yes) "                   ],
 	[ "threads|t=i",      "The number of threads to use for clustering coding domains "                 ],
+	[ "clean",            "Clean up the intermediate alignment files (Default: yes) "                   ],
 	[ "help|h",           "Display the usage menu and exit. "                                           ],
 	[ "man|m",            "Display the full manual. "                                                   ],
 	);
@@ -70,8 +72,10 @@ sub _calculate_soloLTR_abund {
     my $pcov    = $opt->{percentcov} // 0.80;
     my $len     = $opt->{matchlen} // 80;
     my $seq     = $opt->{seq} // 0;
+    my $famnum  = $opt->{numfamilies} // 20;
     my $threads = $opt->{threads} // 1;
     my $clean   = $opt->{clean} // 1;
+    my $all     = $opt->{allfamilies} // 0;
 
     my $ill_obj = Tephra::Genome::SoloLTRSearch->new(
 	dir          => $dir,
@@ -81,9 +85,11 @@ sub _calculate_soloLTR_abund {
 	percentident => $pid,
 	percentcov   => $pcov,
 	matchlen     => $len,
+	numfamilies  => $famnum,
 	seq          => $seq,
 	threads      => $threads,
 	clean        => $clean,
+	fullanalysis => $all,
     );
     
     $ill_obj->find_soloLTRs;
@@ -116,6 +122,8 @@ sub help {
                            NB: For a threshold of 80 percent say 0.80.
      -r|report        :    Parse hmmsearch of each sequence and produce a summary of align statistics.
      -s|seq           :    Extract query sequence from domain alignment.
+     -n|numfamilies   :    The number of families to analyze (Default: the top 20).
+     -a|allfamilies   :    Analyze all LTR-RT families for solo-LTRs (Default: no).      
      -t|threads       :    The number of threads to use for clustering coding domains.
      --clean          :    Clean up the intermediate alignment and HMMER files (Default: yes).
 
@@ -188,6 +196,20 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =item -s, --seq
 
  Extract query sequence from domain alignment.
+
+=item -n, --numfamilies
+
+ The number of families to analyze (Default: the top 20). For smaller genomes like Arabidopsis, it
+ is fine to use the --allfamilies option because the analysis will complete in less than a day. For large
+ genomes like sunflower this would take months, so the best approach, for now, is to restrict the
+ analysis to the 20 largest families, which is the default. This option allows you to expand or reduce the 
+ number of families to analyze.
+ 
+=item -a, --allfamilies
+
+ Analyze all LTR-RT families for solo-LTRs (Default: no). As mentioned above, this is fine for small genomes,
+ but can lead to very long run times for plant genomes. My advice is to run the analysis under default conditions
+ first, then expand the scope of the analysis if it seems feasible.
 
 =item -t, --threads
 
