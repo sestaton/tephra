@@ -10,6 +10,7 @@ use File::Copy;
 use File::Path          qw(make_path remove_tree);
 use IPC::System::Simple qw(capture system);
 use Time::HiRes         qw(gettimeofday);
+use List::UtilsBy       qw(nsort_by);
 use Path::Class::File;
 use Bio::DB::HTS::Kseq;
 use Bio::AlignIO;
@@ -102,6 +103,21 @@ has clean => (
     default  => 1,
 );
 
+has fullanalysis => (
+    is       => 'ro',
+    isa      => 'Bool',
+    required => 0,
+    default  => 0,
+);
+
+has numfamilies => (
+    is        => 'ro',
+    isa       => 'Int',
+    predicate => 'has_numfamilies',
+    lazy      => 1,
+    default   => 20,
+);
+
 has threads => (
     is        => 'ro',
     isa       => 'Int',
@@ -136,9 +152,11 @@ sub find_soloLTRs {
     unless ( -e $model_dir ) {
 	make_path( $model_dir, {verbose => 0, mode => 0771,} );
     }
-    
+
     print STDERR "Building LTR exemplar models...";
-    for my $ltr_aln (@$ltr_aln_files) {
+    #dd $ltr_aln_files;
+    for my $ltr_aln (nsort_by { m/family(\d+)/ and $1 } @$ltr_aln_files) {
+	#say basename($ltr_aln); ## debug
 	$self->build_model($ltr_aln, $model_dir, $hmmbuild);	
 	unlink $ltr_aln;	
     }
@@ -202,8 +220,8 @@ sub do_parallel_search {
 			      my $t1 = gettimeofday();
 			      my $elapsed = $t1 - $t0;
 			      my $time = sprintf("%.2f",$elapsed/60);
-			            say $log basename($ident),
-			      " just finished with PID $pid and exit code: $exit_code in $time minutes";
+			      say $log basename($ident),
+			        " just finished with PID $pid and exit code: $exit_code in $time minutes";
 			} );
 
     for my $hmm (nsort @$ltr_hmm_files) {
@@ -300,20 +318,36 @@ sub search_with_models {
 sub _get_ltr_alns {
     my $self = shift;
     my ($dir) = @_;
+    my $numfams = $self->numfamilies;
+    my $allfams = $self->fullanalysis;
+
     my (@ltrseqs, @aligns);
 
     find( sub { push @ltrseqs, $File::Find::name if -f and /exemplar_ltrs.fasta$/ }, $dir);
 
-    for my $ltrseq (@ltrseqs) {
+    # This is where families are filtered by size. Since largest families come first,
+    # a simple sort will filter the list.
+    my $aln_ct = 0;
+    for my $ltrseq (nsort_by { m/family(\d+)/ and $1 } @ltrseqs) {
+	$aln_ct++;
 	my ($name, $path, $suffix) = fileparse($ltrseq, qr/\.[^.]*/);
 	my $tre = File::Spec->catfile($path, $name.'.dnd');
 	my $aln = File::Spec->catfile($path, $name.'_muscle-out.aln');
 	my $log = File::Spec->catfile($path, $name.'_muscle-out.log');
-	
-	my $clwcmd = "muscle -quiet -clwstrict -in $ltrseq -out $aln -log $log";
-	$self->capture_cmd($clwcmd);
-	unlink $log;
-	push @aligns, $aln;
+     
+	my $muscmd = "muscle -quiet -clwstrict -in $ltrseq -out $aln -log $log";
+        if ($allfams) {
+	    $self->capture_cmd($muscmd);
+	    unlink $log;
+	    push @aligns, $aln;
+	}
+	else {
+            if ($numfams >= $aln_ct) {
+		$self->capture_cmd($muscmd);
+		unlink $log;
+		push @aligns, $aln;
+            }
+        }
     }
 
     return \@aligns;
