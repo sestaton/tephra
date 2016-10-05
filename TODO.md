@@ -29,6 +29,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] check if input directory exists
  - [x] make sure to set path to correct version of hmmer
  - [x] add family name to GFF output (the family name is now in the Parent tag)
+ - [ ] add option to pick on the top 20 families to speed up execution
 
 ## Command `tephra classifytirs`
  - [x] Classify 'best' TIR elements into superfamilies based on domain content, TSD, and/or motif
