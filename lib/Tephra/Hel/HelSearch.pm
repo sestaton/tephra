@@ -6,10 +6,10 @@ use Cwd;
 use File::Spec;
 use File::Find;
 use File::Basename;
+use Path::Class::File;
 use Bio::DB::HTS::Kseq;
 use Sort::Naturally;
 use IPC::System::Simple qw(system EXIT_ANY);
-use Path::Class::File;
 use Log::Any            qw($log);
 use Try::Tiny;
 use namespace::autoclean;
@@ -119,7 +119,7 @@ sub make_hscan_outfiles {
 	if ($start > $stop && $strand eq '-') {
 	    $gff_str = join "||", $ref, 'HelitronScanner', 'helitron', $stop, $start, '.', 
 	        $strand, '.', "ID=$id;Ontology_term=SO:0000544";
-	    $id .= "_$ref"."_$start"."_$stop"."_$strand";
+	    $id .= "_$ref"."_$stop"."_$start"."_$strand";
 	    say $outf join "\n", ">".$id, $seq;
 	}
 	else {
