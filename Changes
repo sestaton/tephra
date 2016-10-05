@@ -1,6 +1,18 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.04.0	10/04/16	Vancouver, BC
+
+- Add options for controlling how the solo-LTR finding works. There is a reasonable default now,
+  20 families, so that the command will not attempt to do hundreds of alignments and run for
+  days or weeks.
+- Modify the masking algorithm to give finer control over how stringent the masking should
+  be. 
+- Parallelize the masking procedure to process chunks of chromosomes (default is 50kb) at a time. 
+  This greatly reduces the memory usage and speeds up the process.
+- Add method to write a table  of masking results to show what percentage of each repeat type was masked
+  in the reference.
+
 0.03.9	09/08/16	Vancouver, BC
 
 - Adjust FASTA header in findhelitrons output to match the ID in the GFF output. Fix
