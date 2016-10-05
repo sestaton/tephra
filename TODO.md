@@ -114,3 +114,4 @@ This file is for logging feature requests and bugs during development. Hopefully
        as this will make the package harder to use and maintain).
  - [ ] handle compressed input/output
  - [X] add fasta-handling classes from Transposome, which are faster than BioPerl (Won't do: Added kseq.h methods from HTSlib)
+ - [ ] add verbose option for quickly debugging the installation of dependencies
