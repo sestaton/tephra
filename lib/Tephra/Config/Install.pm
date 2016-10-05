@@ -54,66 +54,79 @@ sub configure_root {
     my $config = Tephra::Config::Exe->new( basedir => $basedir )->get_config_paths;
 
     unless (-e $config->{gt} && -x $config->{gt}) {
+	#say STDERR "getting gt";
 	$config->{gt} = $self->fetch_gt_exes;
 	print STDERR ".";
     }
     
     unless (-e $config->{hscanjar}) {
+	#say STDERR "getting hscan";
 	$config->{hscanjar} = $self->fetch_hscan;
 	print STDERR ".";
     }
     
     unless (-e $config->{hmmer2bin}) {
+	#say STDERR "getting hmmer2";
 	$config->{hmmer2bin} = $self->fetch_hmmer2;
 	print STDERR ".";
     }
     
     unless (-e $config->{hmmer3bin}) {
+	#say STDERR "getting hmmer3";
         $config->{hmmer3bin} = $self->fetch_hmmer3;
         print STDERR ".";
     }
     
     unless (-e $config->{trnadb}) {
+	#say STDERR "getting trnadb";
 	$config->{trnadb} = $self->fetch_trnadb;
 	print STDERR ".";
     }
 
     unless (-e $config->{hmmdb}) {
+	#say STDERR "getting hmmdb";
 	$config->{hmmdb} = $self->fetch_hmmdb;
 	print STDERR ".";
     }
 
     unless (-e $config->{modeldir}) {
+	#say STDERR "getting modeldb";
 	$config->{modeldir} = $self->fetch_hmm_models;
 	print STDERR ".";
     }
     
     unless (-e $config->{hmmdir}) {
+	#say STDERR "getting hmmdir";
 	$config->{hmmdir} = $self->make_chrom_dir;
 	print STDERR ".";
     }
     
     unless (-e $config->{mgescan} && -e $config->{transcmd}) {
+	#say STDERR "getting mgescan and trans";
 	($config->{mgescan}, $config->{transcmd}) = $self->build_mgescan;
 	print STDERR ".";
     }
     
     unless (-e $config->{pamlbin}) {
+	#say STDERR "getting paml";
 	$config->{pamlbin} = $self->fetch_paml;
 	print STDERR ".";
     }
     
     unless (-e $config->{transeq}) {
+	#say STDERR "getting emboss";
 	$config->{transeq} = $self->fetch_emboss;
 	print STDERR ".";
     }
 
     unless (-e $config->{blastpath}) {
+	#say STDERR "getting blast";
         $config->{blastpath} = $self->fetch_blast;
 	print STDERR ".";
     }
 
     unless (-e $config->{htslibdir}) {
+	#say STDERR "getting htslib";
         $config->{htslibdir} = $self->fetch_htslib;
 	print STDERR ".";
     }
@@ -424,15 +437,20 @@ sub fetch_trnadb {
 	make_path( $db_dir, {verbose => 0, mode => 0771,} );
     }
 
-    my $urlbase = 'http://lowelab.ucsc.edu';
-    my $dir     = 'download';
-    my $release = 'tRNAs';
-    my $file    = 'eukaryotic-tRNAs.fa.gz';
-    my $url     = join "/", $urlbase, $dir, $release, $file;
-    my $outfile = File::Spec->catfile($db_dir, $file);
+    my $file = 'eukaryotic-tRNAs.fa.gz';
+    my $trdb = File::Spec->catdir('build', $file);
+    copy $trdb, $db_dir or die "Copy failed: $!";
 
-    system("wget -q -O $outfile $url 2>&1 > /dev/null") == 0
-	or die $!;
+    ## website down as of 10/5/16
+    #my $urlbase = 'http://lowelab.ucsc.edu';
+    #my $dir     = 'download';
+    #my $release = 'tRNAs';
+    #my $file    = 'eukaryotic-tRNAs.fa.gz';
+    #my $url     = join "/", $urlbase, $dir, $release, $file;
+    #my $outfile = File::Spec->catfile($db_dir, $file);
+
+    #system("wget -q -O $outfile $url 2>&1 > /dev/null") == 0
+	#or die $!;
     chdir $db_dir;
 
     system("gunzip $file") == 0 or die "tar failed: $!";
