@@ -19,7 +19,7 @@ Part of the utility of Tephra is to provide family-level TE classifications and 
 
 The following commands will install the core dependencies for Debian-based systems (e.g., Ubuntu):
 
-    sudo apt-get install -y -qq build-essential zlib1g-dev 
+    sudo apt-get install -y -qq build-essential zlib1g-dev unzip
     sudo apt-get install -y -qq libncurses5 libncurses5-dev libdb-dev git cpanminus libexpat1 libexpat1-dev
 
 For RHEL-based systems (e.g., CentOS/Fedora):
