@@ -9,12 +9,15 @@ use Tephra::Genome::MaskRef;
 
 sub opt_spec {
     return (    
-	[ "genome|g=s",   "The genome sequences in FASTA format to search for LTR-RTs " ],
-	[ "outfile|o=s",  "The output filename to use for the masked genome "           ],
-	[ "repeatdb|d=s", "The database of repeat sequences to use for masking "        ],
-	[ "clean",        "Clean up the index files (Default: yes) "                    ],
-	[ "help|h",       "Display the usage menu and exit. "                           ],
-        [ "man|m",        "Display the full manual. "                                   ],
+	[ "genome|g=s",    "The genome sequences in FASTA format to search for LTR-RTs "                ],
+	[ "outfile|o=s",   "The output filename to use for the masked genome "                          ],
+	[ "repeatdb|d=s",  "The database of repeat sequences to use for masking "                       ],
+	[ "hitlength|l=i", "The alignment length cutoff for hits to the repeat database (Default: 70) " ],
+	[ "threads|t=i",   "The number of threads to use for masking "                                  ],
+	[ "splitsize|s=i", "The chunk size to process at a time (Default: 50kb) "                       ],
+	[ "clean",         "Clean up the index files (Default: yes) "                                   ],
+	[ "help|h",        "Display the usage menu and exit. "                                          ],
+        [ "man|m",         "Display the full manual. "                                                  ],
     );
 }
 
@@ -45,19 +48,28 @@ sub execute {
 sub _run_masking {
     my ($opt) = @_;
     
-    my $genome   = $opt->{genome};
-    my $repeatdb = $opt->{repeatdb};
-    my $outfile  = $opt->{outfile};
-    my $clean    = $opt->{clean} // 0;
+    my $genome    = $opt->{genome};
+    my $repeatdb  = $opt->{repeatdb};
+    my $outfile   = $opt->{outfile};
+    my $hitlength = $opt->{hitlength} // 70;
+    my $clean     = $opt->{clean} // 1;
+    my $threads   = $opt->{threads} // 1;
+    my $splitsize = $opt->{splitsize} // 5e4;
 
     my $mask_obj = Tephra::Genome::MaskRef->new( 
-	genome   => $genome, 
-	repeatdb => $repeatdb,
-	outfile  => $outfile,
-	clean    => $clean 
+	genome    => $genome, 
+	repeatdb  => $repeatdb,
+	hitlength => $hitlength,
+	outfile   => $outfile,
+	clean     => $clean,
+	threads   => $threads,
+	splitsize => $splitsize,
     );
     
-    my $masked_ref = $mask_obj->mask_reference;
+    $mask_obj->mask_reference;
+    #my ($masked_ref, $report, $genome_length) = $mask_obj->mask_reference;
+    #$mask_obj->get_masking_results($report, $genome_length);
+
 }
 
 sub help {
@@ -72,8 +84,11 @@ Required:
     -d|repeatdb   :   The database of repeat sequences to use for masking.
 
 Options:
+    -l|hitlength  :   The alignment length cutoff for hits to the repeat database (Default: 70).
     -o|outfile    :   The output filename to use for the masked genome.
     -c|clean      :   Clean up the index files (Default: yes).
+    -t|threads    :   The number of threads to use for masking (Default: 1).
+    -s|splitsize  :   The chunk size to process at a time (Default: 50kb).
 
 END
 }
@@ -90,7 +105,7 @@ __END__
 
 =head1 SYNOPSIS    
 
- tephra maskref -g ref.fas -d repeatdb.fas
+ tephra maskref -g ref.fas -d repeatdb.fas -t 12
 
 =head1 DESCRIPTION
 
@@ -127,6 +142,20 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =item -c, --clean
 
  Clean up the index files (Default: yes).
+
+=item -t, --threads
+
+ The number of threads to use for masking (Default: 1). 
+
+=item -l, --hitlength
+
+ The alignment length cutoff for hits to the repeat database (Default: 70). Lower this value to increase the
+ percent of the reference that is masked, or alternatively, increase to be more conservative with masking.
+
+=item -s, --splitsize
+
+ The chunk size to process at a time (Default: 50kb). Increasing the size to processes will speed up the
+ execution time but will increase memory usage. 
 
 =item -h, --help
 
