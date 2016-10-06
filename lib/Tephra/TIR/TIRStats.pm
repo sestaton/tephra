@@ -390,6 +390,9 @@ sub subseq {
     croak "\nERROR: Something went wrong, this is a bug. Please report it.\n"
         unless $length;
 
+    # need to reverse the inverted seq?
+    $seq = $self->_revcom($seq) if $orient '3prime';
+
     my $id;
     $id = join "_", $family, $elem, $loc, $start, $end if !$orient;
     $id = join "_", $orient, $family, $elem, $loc, $start, $end if $orient; # for unique IDs with clustalw
@@ -407,6 +410,21 @@ sub collate {
 	<$fh_in>;
     };
     print $fh_out $lines;
+}
+
+sub _revcom {
+    my $self = shift;
+    my ($seq) = @_;
+
+    if ($seq =~ /[atcg]/i) {
+	my $revcom = reverse $seq;
+	$revcom =~ tr/ACGTacgt/TGCAtgca/;
+	return $revcom;
+    }
+    else {
+	say STDERR "\nWARNING: Not going to reverse protein sequence.";
+	return $seq;
+    }
 }
 
 sub _check_divergence {
