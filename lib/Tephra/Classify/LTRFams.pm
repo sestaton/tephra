@@ -471,6 +471,7 @@ sub parse_clusters {
     my @compfiles;
     find( sub { push @compfiles, $File::Find::name if /complete.fasta$/ }, $cpath );
     my $ltrfas = shift @compfiles;
+    say "DEBUG: seqstore -> $ltrfas";
     my $seqstore = $self->_store_seq($ltrfas);
 
     my (%cls, %all_seqs, %all_pdoms, $clusnum, $dom);
@@ -523,13 +524,91 @@ sub parse_clusters {
 	undef $string;
     }
 
+    my (%removed, %dist);
+    my @keys = keys %dom_orgs;
+    my $cls_num = 0;
+    my (@offsets, @acls, @bcls, @apos, @bpos);
+
+    for my $key (nsort @keys) { 
+	@bpos = ();
+	push @bpos, $-[0] while $key =~ /(\d+)/g;
+	for my $org (reverse sort { @{$dom_orgs{$a}} <=> @{$dom_orgs{$b}} } keys %dom_orgs) {
+	    next if $org eq $key;
+	    @apos = ();
+	    push @apos, $-[0] while $org =~ /(\d+)/g;
+	    if (@apos > 1 && @bpos > 1) {
+		my @ar = split /\|/, $key;
+		my @br = split /\|/, $org;
+		my $doms = 0;
+		for my $idx (0..@ar-1) {
+		    for my $bdx (0..@br-1) {
+			next unless $br[$bdx] =~ /\d+/ && $ar[$idx] =~ /\d+/;
+			if ($idx == $bdx && $ar[$idx] == $br[$bdx]) {
+			    $doms++;
+			    push @offsets, $idx;
+			    push @acls, $ar[$idx];
+			    push @bcls, $br[$bdx];
+			}
+		    }
+		}
+		if ($doms > 1) {
+		    my $acl = join ",", @acls;
+		    my $bcl = join ",", @bcls;
+                
+		    my $cls_offsets = join ",", @offsets;
+		    unless (exists $removed{$org} || exists $removed{$key}) { 
+			push @{$dist{$acl}}, { clusters => $acl, string => $org, offsets => $cls_offsets, ids => \@{$dom_orgs{$org}} };
+			push @{$dist{$bcl}}, { clusters => $bcl, string => $key, offsets => $cls_offsets, ids => \@{$dom_orgs{$key}} };
+			$removed{$key} = 1;
+			$removed{$org} = 1;
+		    }
+		    $cls_num++;
+		}
+		$doms = 0;
+		@offsets = ();
+		@acls = ();
+		@bcls = ();
+	    }
+	    elsif (@bpos == 1) {
+		@acls = ();
+		@bcls = ();
+		push @acls, $1 while $org =~ /(\d+)/g;
+		push @bcls, $1 while $key =~ /(\d+)/g;
+		if (grep { $bpos[0] == $_ } @apos) {
+		    if (defined $acls[ $bpos[0] ] &&
+			$bcls[0] == $acls[ $bpos[0] ] ) {
+			my $acl = join ",", @acls;
+			unless (exists $removed{$key}) {
+			    push @{$dist{$acl}}, { clusters => $acl, string => $key, offsets => $bpos[0], ids => \@{$dom_orgs{$key}} };
+			    $removed{$key} = 1;
+			}
+		    }
+		}
+	    }
+	}
+    }
+
+    my %groups;
+    my $group = 0;
+    delete $dom_orgs{$_} for keys %removed;
+    @groups{keys %dom_orgs} = values %dom_orgs;
+
+    for my $joined_cls (keys %dist) {
+	for my $h (@{$dist{$joined_cls}}) {
+	    push @{$groups{$joined_cls}}, @{$h->{ids}};
+	}
+    }
+
+    #dd \%groups;
+
     my $idx = 0;
     my (%fastas, %annot_ids);
-    for my $str (reverse sort { @{$dom_orgs{$a}} <=> @{$dom_orgs{$b}} } keys %dom_orgs) {
+    #for my $str (reverse sort { @{$dom_orgs{$a}} <=> @{$dom_orgs{$b}} } keys %dom_orgs) {
+    for my $str (reverse sort { @{$groups{$a}} <=> @{$groups{$b}} } keys %groups) {  
 	my $famfile = $sf."_family$idx".".fasta";
 	my $outfile = File::Spec->catfile($cpath, $famfile);
 	open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-	for my $elem (@{$dom_orgs{$str}}) {
+	for my $elem (@{$groups{$str}}) {
 	    if (exists $seqstore->{$elem}) {
 		my $coordsh = $seqstore->{$elem};
 		my $coords  = (keys %$coordsh)[0];
@@ -546,6 +625,7 @@ sub parse_clusters {
 	$idx++;
 	$fastas{$outfile} = 1;
     }
+    my $famct = $idx;
     $idx = 0;
 
     if (%$seqstore) {
@@ -563,8 +643,9 @@ sub parse_clusters {
 	close $outx;
 	$fastas{$xoutfile} = 1;
     }
+    my $singct = $idx;
 
-    return (\%fastas, \%annot_ids);
+    return (\%fastas, \%annot_ids, { family_count => $famct, singleton_count => $singct });
 }
 
 sub combine_families {
