@@ -85,15 +85,15 @@ sub _classify_ltr_predictions {
 
     my $gyp_dir = $classify_fams_obj->extract_features($gyp_gff);
     my $gyp_clusters = $classify_fams_obj->cluster_features($gyp_dir);
-    my ($gyp_fams, $gyp_ids) = $classify_fams_obj->parse_clusters($gyp_clusters);
+    my ($gyp_fams, $gyp_ids, $gyp_ct) = $classify_fams_obj->parse_clusters($gyp_clusters);
     
     my $cop_dir = $classify_fams_obj->extract_features($cop_gff);
     my $cop_clusters = $classify_fams_obj->cluster_features($cop_dir);
-    my ($cop_fams, $cop_ids) = $classify_fams_obj->parse_clusters($cop_clusters);
+    my ($cop_fams, $cop_ids, $cop_ct) = $classify_fams_obj->parse_clusters($cop_clusters);
     
     my $unc_dir = $classify_fams_obj->extract_features($unc_gff);
     my $unc_clusters = $classify_fams_obj->cluster_features($unc_dir);
-    my ($unc_fams, $unc_ids) = $classify_fams_obj->parse_clusters($unc_clusters);
+    my ($unc_fams, $unc_ids, $unc_ct) = $classify_fams_obj->parse_clusters($unc_clusters);
 
     my (%outfiles, %annot_ids);
     @outfiles{keys %$_}  = values %$_ for ($gyp_fams, $cop_fams, $unc_fams);
@@ -117,6 +117,13 @@ sub _classify_ltr_predictions {
 
     $cop_exm_obj->make_exemplars;
     unlink $gyp_gff, $cop_gff, $unc_gff;
+
+    say STDERR '=' x 50;
+    say STDERR join "\t", 'Gypsy_families', 'Gypsy_singletons', 'Copia_families', 'Copia_singletons', 
+        'Unclassified_families', 'Unclassified_singletons';
+    say STDERR join "\t", @{$gyp_ct}{qw(family_count singleton_count)}, @{$cop_ct}{qw(family_count singleton_count)},
+        @{$unc_ct}{qw(family_count singleton_count)};
+    say STDERR '=' x 50;
 }
 
 sub help {
@@ -136,7 +143,6 @@ Options:
     -t|threads    :   The number of threads to use for clustering coding domains (Default: 1).    
     -l|hitlength  :   The alignment length cutoff for BLAST hits to the repeat database (Default: 80).
     -p|percentid  :   The percent identity cutoff for BLAST hits to the repeat database (Default: 80).
-
 
 END
 }
