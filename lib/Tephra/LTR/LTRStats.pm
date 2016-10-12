@@ -33,11 +33,11 @@ Tephra::LTR::LTRStats - Calculate the age distribution of LTR retrotransposons
 
 =head1 VERSION
 
-Version 0.04.0
+Version 0.04.1
 
 =cut
 
-our $VERSION = '0.04.0';
+our $VERSION = '0.04.1';
 $VERSION = eval $VERSION;
 
 has genome => (
