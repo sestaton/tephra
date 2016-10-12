@@ -524,6 +524,9 @@ sub parse_clusters {
 	undef $string;
     }
 
+    # The code below was added in v0.4.1 to join families based on shared clustering patterns
+    # as opposed to the requirement of elements having to display the same clustering pattern
+    # for all features.
     my (%removed, %dist);
     my @keys = keys %dom_orgs;
     my $cls_num = 0;
@@ -599,11 +602,9 @@ sub parse_clusters {
 	}
     }
 
-    #dd \%groups;
-
+    # write out families
     my $idx = 0;
     my (%fastas, %annot_ids);
-    #for my $str (reverse sort { @{$dom_orgs{$a}} <=> @{$dom_orgs{$b}} } keys %dom_orgs) {
     for my $str (reverse sort { @{$groups{$a}} <=> @{$groups{$b}} } keys %groups) {  
 	my $famfile = $sf."_family$idx".".fasta";
 	my $outfile = File::Spec->catfile($cpath, $famfile);
@@ -628,6 +629,7 @@ sub parse_clusters {
     my $famct = $idx;
     $idx = 0;
 
+    # write out singletons
     if (%$seqstore) {
 	my $famxfile = $sf.'_singleton_families.fasta';
 	my $xoutfile = File::Spec->catfile($cpath, $famxfile);
