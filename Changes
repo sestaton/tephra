@@ -1,6 +1,10 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.04.1	10/14/16	Vancouver, BC
+
+- Update BLAST+ version to latest release.
+
 0.04.0	10/04/16	Vancouver, BC
 
 - Add options for controlling how the solo-LTR finding works. There is a reasonable default now,
