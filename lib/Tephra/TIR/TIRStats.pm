@@ -238,7 +238,7 @@ sub extract_tir_features {
 		$coord_map{$elem_id} = join "||", @{$tir_feature}{qw(seq_id start end)};
 	    }
 	    if ($tir_feature->{type} eq 'terminal_inverted_repeat') {
-		my $parent = @{tir_feature->{attributes}{Parent}}[0];
+		my $parent = @{$tir_feature->{attributes}{Parent}}[0];
 		my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
 		if ($seq_id eq $tir_feature->{seq_id}) {
 		    my ($type, $start, $end, $strand) = 
