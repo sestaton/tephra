@@ -391,7 +391,7 @@ sub subseq {
         unless $length;
 
     # need to reverse the inverted seq?
-    $seq = $self->_revcom($seq) if $orient '3prime';
+    $seq = $self->_revcom($seq) if $orient eq '3prime';
 
     my $id;
     $id = join "_", $family, $elem, $loc, $start, $end if !$orient;
