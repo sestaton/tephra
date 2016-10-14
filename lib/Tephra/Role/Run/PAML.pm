@@ -22,11 +22,11 @@ Tephra::Role::Run::PAML - Helper role for running PAML
 
 =head1 VERSION
 
-Version 0.04.0
+Version 0.04.1
 
 =cut
 
-our $VERSION = '0.04.0';
+our $VERSION = '0.04.1';
 $VERSION = eval $VERSION;
 
 has baseml_exec => (
