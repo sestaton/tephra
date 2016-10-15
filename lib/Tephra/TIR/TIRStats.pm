@@ -128,7 +128,7 @@ sub calculate_tir_ages {
 			} );
 
     for my $type (keys %$args) {
-	if ($type eq 'ltrs') {
+	if ($type eq 'tirs') {
 	    for my $db (@{$args->{$type}{seqs}}) {
 		$tirts++;
 		$pm->start($db) and next;
@@ -177,19 +177,19 @@ sub collect_feature_args {
     my $self = shift;
     my $dir = $self->dir;
 
-    my (@ltrs, %aln_args);
+    my (@tirs, %aln_args);
     if ($self->all) {
 	my ($files, $wdir) = $self->extract_tir_features;
         $aln_args{tirs} = { seqs => $files };
         $aln_args{resdir} = $wdir;
     }
     else {
-	my $wanted  = sub { push @ltrs, $File::Find::name if -f && /exemplar_tirs.fasta$/ };
+	my $wanted  = sub { push @tirs, $File::Find::name if -f && /exemplar_tirs.fasta$/ };
 	my $process = sub { grep ! -d, @_ };
 	find({ wanted => $wanted, preprocess => $process }, $dir);
 
-	if (@ltrs > 0) {
-	    $aln_args{tirs} = { seqs => \@ltrs };
+	if (@tirs > 0) {
+	    $aln_args{tirs} = { seqs => \@tirs };
 	    $aln_args{resdir} = $dir;
 	}
 	else {
@@ -229,11 +229,11 @@ sub extract_tir_features {
     my ($family, %tirs, %seen, %coord_map);
     for my $rep_region (keys %$features) {
         for my $tir_feature (@{$features->{$rep_region}}) {
-	    if ($tir_feature->{type} eq 'terminal_inverted_repeat_transposon') {
+	    if ($tir_feature->{type} eq 'terminal_inverted_repeat_element') {
 		my $elem_id = @{$tir_feature->{attributes}{ID}}[0];
 		$family  = @{$tir_feature->{attributes}{family}}[0];
 		my ($start, $end) = @{$tir_feature}{qw(start end)};
-		my $key = join "||", $family, $elem_id, $start, $end;
+		my $key = defined $family ? join "||", $family, $elem_id, $start, $end : join "||", $elem_id, $start, $end;
 		$tirs{$key}{'full'} = join "||", @{$tir_feature}{qw(seq_id type start end)};
 		$coord_map{$elem_id} = join "||", @{$tir_feature}{qw(seq_id start end)};
 	    }
@@ -245,7 +245,7 @@ sub extract_tir_features {
 			@{$tir_feature}{qw(type start end strand)};
 		    $strand //= '?';
 		    my $tirkey = join "||", $seq_id, $type, $start, $end, $strand;
-		    $pkey = join "||", $family, $pkey;
+		    $pkey = defined $family ? join "||", $family, $pkey : $pkey;
 		    push @{$tirs{$pkey}{'tirs'}}, $tirkey unless exists $seen{$tirkey};
 		    $seen{$tirkey} = 1;
 		}
@@ -257,9 +257,9 @@ sub extract_tir_features {
     my $tirct = 0;
     my $orientation;
     for my $tir (sort keys %tirs) {
-	my ($family, $element, $rstart, $rend) = split /\|\|/, $tir;
+	my ($element, $rstart, $rend) = split /\|\|/, $tir;
 	my ($seq_id, $type, $start, $end) = split /\|\|/, $tirs{$tir}{'full'};
-	my $tir_file = join "_", $family, $element, $seq_id, $start, $end, 'tirs.fasta';
+	my $tir_file = join "_", $element, $seq_id, $start, $end, 'tirs.fasta';
 	my $tirs_out = File::Spec->catfile($dir, $tir_file);
 	die "\nERROR: $tirs_out exists. This will cause problems downstream. Please remove the previous ".
 	    "results and try again. Exiting.\n" if -e $tirs_out;
@@ -274,14 +274,14 @@ sub extract_tir_features {
 		$orientation = '5prime' if $strand eq '-';
                 $orientation = '3prime'  if $strand eq '+';
                 $orientation = 'unk-prime-r' if $strand eq '?';
-		$self->subseq($index, $src, $element, $s, $e, $tirs_outfh, $orientation, $family);
+		$self->subseq($index, $src, $element, $s, $e, $tirs_outfh, $orientation); #, $family);
                 $tirct = 0;
             }
             else {
 		$orientation = '5prime' if $strand eq '+';
                 $orientation = '3prime' if $strand eq '-';
                 $orientation = 'unk-prime-f' if $strand eq '?';
-		$self->subseq($index, $src, $element, $s, $e, $tirs_outfh, $orientation, $family);
+		$self->subseq($index, $src, $element, $s, $e, $tirs_outfh, $orientation); #, $family);
                 $tirct++;
             }
         }
@@ -382,7 +382,7 @@ sub parse_aln {
 
 sub subseq {
     my $self = shift;
-    my ($index, $loc, $elem, $start, $end, $out, $orient, $family) = @_;
+    my ($index, $loc, $elem, $start, $end, $out, $orient) = @_;
 
     my $location = "$loc:$start-$end";
     my ($seq, $length) = $index->get_sequence($location);
@@ -390,12 +390,12 @@ sub subseq {
     croak "\nERROR: Something went wrong, this is a bug. Please report it.\n"
         unless $length;
 
-    # need to reverse the inverted seq?
-    $seq = $self->_revcom($seq) if $orient eq '3prime';
+    # need to reverse-complement the inverted seq
+    $seq = $self->_revcom($seq) if $orient =~ /3prime|prime-r/;
 
     my $id;
-    $id = join "_", $family, $elem, $loc, $start, $end if !$orient;
-    $id = join "_", $orient, $family, $elem, $loc, $start, $end if $orient; # for unique IDs with clustalw
+    $id = join "_", $elem, $loc, $start, $end if !$orient;
+    $id = join "_", $orient, $elem, $loc, $start, $end if $orient; # for unique IDs with clustalw
 
     $seq =~ s/.{60}\K/\n/g;
     say $out join "\n", ">$id", $seq;

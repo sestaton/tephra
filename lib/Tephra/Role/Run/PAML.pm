@@ -142,17 +142,18 @@ sub parse_baseml {
 
     my $element = basename($phylip);
     $element =~ s/_ltrs_muscle-out.*//;
-    my $out = basename($outfile);
+    #my $out = basename($outfile);
     my $wd  = getcwd();
     my $dirobj = Path::Class::Dir->new($wd);
     my $parent = $dirobj->parent;
 
-    open my $divin, '<', $out or die "ERROR: Could not open outfile: $out\n";
+    #say "out div wd: $outfile $divergence_file $wd";
+    open my $divin, '<', $outfile or die "ERROR: Could not open outfile: $outfile\n";
     open my $divout, '>', $divergence_file or die "ERROR: Could not open divergence file: $divergence_file\n";
 
     while (my $line = <$divin>) {
 	chomp $line;
-	if ($line =~ /^[35]prime?|unk-prime-[fr]?\s+/) {
+	if ($line =~ /^[35]prime?|unk-prime-[fr]?.*\s+/) {
 	    if ($line =~ /(\d+\.\d+)\(\s?(\-?\d+\.\d+)\)/) {
 		# 3prime_Ung         0.0269( 8.7752)
 		my $divergence_time = $1;
@@ -161,6 +162,7 @@ sub parse_baseml {
 		
 		# alignID divergence age Ts:Tv
 		say $divout join "\t", $element, $divergence_time, $time, $kappa;
+		#say STDERR join "\t", $element, $divergence_time, $time, $kappa;
 	    }
 	}
     }
@@ -169,7 +171,7 @@ sub parse_baseml {
 
     my $resdir = basename($results_dir);
     my $dest_file = File::Spec->catfile($parent, $resdir, $divergence_file);
-    #say STDERR join q{ }, $divergence_file, $dest_file;
+    #say STDERR join q{ }, "divergence_file dest_file resdir:", $divergence_file, $dest_file, $resdir;
     copy($divergence_file, $dest_file) or die "\nERROR: Move failed: $!";
     chdir $parent or die $!;
     remove_tree($wd, { safe => 1 });
