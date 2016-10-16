@@ -147,7 +147,6 @@ sub parse_baseml {
     my $dirobj = Path::Class::Dir->new($wd);
     my $parent = $dirobj->parent;
 
-    #say "out div wd: $outfile $divergence_file $wd";
     open my $divin, '<', $outfile or die "ERROR: Could not open outfile: $outfile\n";
     open my $divout, '>', $divergence_file or die "ERROR: Could not open divergence file: $divergence_file\n";
 
@@ -162,7 +161,6 @@ sub parse_baseml {
 		
 		# alignID divergence age Ts:Tv
 		say $divout join "\t", $element, $divergence_time, $time, $kappa;
-		#say STDERR join "\t", $element, $divergence_time, $time, $kappa;
 	    }
 	}
     }
@@ -171,7 +169,6 @@ sub parse_baseml {
 
     my $resdir = basename($results_dir);
     my $dest_file = File::Spec->catfile($parent, $resdir, $divergence_file);
-    #say STDERR join q{ }, "divergence_file dest_file resdir:", $divergence_file, $dest_file, $resdir;
     copy($divergence_file, $dest_file) or die "\nERROR: Move failed: $!";
     chdir $parent or die $!;
     remove_tree($wd, { safe => 1 });
