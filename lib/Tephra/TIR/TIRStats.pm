@@ -267,7 +267,7 @@ sub extract_tir_features {
 	open my $tirs_outfh, '>>', $tirs_out or die "\nERROR: Could not open file: $tirs_out\n";
 
 	for my $tir_repeat (@{$tirs{$tir}{'tirs'}}) {
-	    #ltr: Contig57_HLAC-254L24||terminal_inverted_repeat||60101||61950||+
+	    #Contig57_HLAC-254L24||terminal_inverted_repeat||60101||61950||+
             my ($src, $tirtag, $s, $e, $strand) = split /\|\|/, $tir_repeat;
 
             if ($tirct) {
@@ -327,18 +327,21 @@ sub process_align_args {
     my $self = shift;
     my ($db, $resdir) = @_;
 
+    my $seqct = $self->_check_tirct($db);
+    unlink $db && return unless $seqct == 2;
+
     my ($name, $path, $suffix) = fileparse($db, qr/\.[^.]*/);
     my $pdir = File::Spec->catdir($path, $name.'_pamltmp');
     make_path( $pdir, {verbose => 0, mode => 0771,} );
-
+	
     my $fas = File::Spec->catfile($pdir, $name.$suffix);
     copy($db, $fas) or die "\nERROR: Copy failed: $!";
     my $tre  = File::Spec->catfile($pdir, $name.'.dnd');
     my $aln  = File::Spec->catfile($pdir, $name.'_muscle-out.aln');
     my $dnd  = File::Spec->catfile($pdir, $name.'_muscle-out.dnd');
-    my $alog = File::Spec->catfile($pdir, $name.'_muscle-out.alnlog');
+	my $alog = File::Spec->catfile($pdir, $name.'_muscle-out.alnlog');
     my $tlog = File::Spec->catfile($pdir, $name.'_muscle-out.trelog');
-
+    
     my $muscmd = "muscle -clwstrict -in $fas -out $aln 2>$alog";
     my $trecmd = "muscle -maketree -in $fas -out $tre -cluster neighborjoining 2>$tlog";
     $self->capture_cmd($muscmd);
@@ -410,6 +413,21 @@ sub collate {
 	<$fh_in>;
     };
     print $fh_out $lines;
+}
+
+sub _check_tirct {
+    my $self = shift;
+    my ($db) = @_;
+    
+    my $kseq = Bio::DB::HTS::Kseq->new($db);
+    my $iter = $kseq->iterator;
+
+    my $ct = 0;
+    while (my $seq = $iter->next_seq) {
+	$ct++ if defined $seq->seq;
+    }
+
+    return $ct;
 }
 
 sub _revcom {
