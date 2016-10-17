@@ -122,11 +122,12 @@ sub mask_reference {
         exit 1;
     };
 
-    my (@reports, $genome_length);
+    my (@reports, $genome_length, %seqs);
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
-			      my ($report, $chr_length) = @{$data_ref}{qw(masked chrlen)};
+			      my ($report, $chr_length, $ref, $id, $seq) = @{$data_ref}{qw(masked chrlen ref id seq)};
 			      $genome_length += $chr_length;
 			      push @reports, $report;
+			      $seqs{$ref}{$id} = $seq;
 			      my $t1 = gettimeofday();
                               my $elapsed = $t1 - $t0;
                               my $time = sprintf("%.2f",$elapsed/60);
@@ -139,7 +140,7 @@ sub mask_reference {
 	for my $wchr (@$chr_windows) {
 	    $pm->start($wchr) and next;
 	    $SIG{INT} = sub { $pm->finish };
-	    my $mask_struct = $self->run_masking($wchr, $out);
+	    my $mask_struct = $self->run_masking($wchr);
 	    
 	    $pm->finish(0, $mask_struct);
 	    unlink $wchr;
@@ -149,7 +150,7 @@ sub mask_reference {
 
     $pm->wait_all_children;
 
-    $self->write_masking_results(\@reports, $genome_length, $t0);
+    $self->write_masking_results(\@reports, \%seqs, $out, $genome_length, $t0);
     remove_tree( $genome_dir, { safe => 1 } );
     close $log;
 
@@ -158,7 +159,7 @@ sub mask_reference {
 
 sub run_masking {
     my $self = shift;
-    my ($wchr, $out) = @_;
+    my ($wchr) = @_;
     my $repeatdb = $self->repeatdb;
     my $length   = $self->hitlength;
 
@@ -188,10 +189,13 @@ sub run_masking {
     my $mask_struct = $self->get_masking_results($wchr, $report, $chr_length);
 
     $self->clean_index($index);
-    $self->collate($outpart, $out);
-    unlink $outpart, $mkvtree_log, $vmatch_mlog; #, $vmatch_rlog;
+    my ($id, $seq) = $self->_get_seq($outpart);
+    my $ref = $id;
+    $ref =~ s/_\d+$//;
 
-    return { masked => $mask_struct, chrlen => $chr_length };
+    unlink $mkvtree_log, $vmatch_mlog, $vmatch_rlog, $outpart;
+
+    return { masked => $mask_struct, chrlen => $chr_length, ref => $ref, id => $id, seq => $seq };
 }
 
 sub get_masking_results {
@@ -285,15 +289,26 @@ sub get_masking_results {
 	}
     }
 
-    #unlink $voutfile;
+    unlink $voutfile;
     return \%report;
 }
 
 sub write_masking_results {
     my $self = shift;
-    my ($reports, $genome_length, $t0) = @_;
+    my ($reports, $seqs, $out, $genome_length, $t0) = @_;
     my $genome  = $self->genome;
     my $outfile = $self->outfile;
+
+    # first write out the masked reference
+    for my $id (nsort keys %$seqs) {
+	my $seq;
+	for my $subs (nsort keys %{$seqs->{$id}}) {
+	    $seq .= $seqs->{$id}{$subs};
+	}
+	$seq =~ s/.{60}\K/\n/g;
+	say $out join "\n", ">$id", $seq;
+	undef $seq;
+    }
 
     my %final_rep;
     my $repeat_map = $self->_build_repeat_map;
@@ -340,18 +355,6 @@ sub write_masking_results {
     return;
 }
 
-sub collate {
-    my $self = shift;
-    my ($file_in, $fh_out) = @_;
-    
-    open my $fh_in, '<', $file_in or die "\nERROR: Could not open file: $file_in\n";
-
-    while (my $line = <$fh_in>) {
-	chomp $line;
-	say $fh_out $line;
-    }
-}
-
 sub clean_index {
     my $self = shift;
     my ($index) = @_;
@@ -389,6 +392,22 @@ sub get_mask_stats {
     }
 
     return $total;
+}
+
+sub _get_seq {
+    my $self = shift;
+    my ($fasta) = @_;
+
+    my $kseq = Bio::DB::HTS::Kseq->new($fasta);
+    my $iter = $kseq->iterator;
+
+    my ($id, $seq);
+    while (my $seqobj = $iter->next_seq) {
+        $id = $seqobj->name;
+	$seq = $seqobj->seq;
+    }
+
+    return ($id, $seq);
 }
 
 sub _split_genome {
