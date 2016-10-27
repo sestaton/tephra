@@ -150,8 +150,8 @@ sub mask_reference {
 
     $pm->wait_all_children;
 
-    $self->write_masking_results(\@reports, \%seqs, $out, $genome_length, $t0);
-    remove_tree( $genome_dir, { safe => 1 } );
+    $self->write_masking_results(\@reports, \%seqs, $out, $outfile, $genome_length, $t0);
+    remove_tree( $genome_dir, { safe => 1 } ) if $self->clean;
     close $log;
 
     return;
@@ -193,7 +193,7 @@ sub run_masking {
     my $ref = $id;
     $ref =~ s/_\d+$//;
 
-    unlink $mkvtree_log, $vmatch_mlog, $vmatch_rlog, $outpart;
+    unlink $mkvtree_log, $vmatch_mlog, $vmatch_rlog, $outpart if $self->clean;
 
     return { masked => $mask_struct, chrlen => $chr_length, ref => $ref, id => $id, seq => $seq };
 }
@@ -289,15 +289,14 @@ sub get_masking_results {
 	}
     }
 
-    unlink $voutfile;
+    unlink $voutfile if $self->clean;
     return \%report;
 }
 
 sub write_masking_results {
     my $self = shift;
-    my ($reports, $seqs, $out, $genome_length, $t0) = @_;
+    my ($reports, $seqs, $out, $outfile, $genome_length, $t0) = @_;
     my $genome  = $self->genome;
-    my $outfile = $self->outfile;
 
     # first write out the masked reference
     for my $id (nsort keys %$seqs) {
