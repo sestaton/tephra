@@ -449,8 +449,12 @@ sub _split_chr_windows {
 	$remainder = $length;
 	my ($total, $start) = (0, 0);
 	my $steps = sprintf("%.0f", $length/$split_size);
+	# since we start counting at 0, the next line ensures we don't make an extra (and empty) file 
+	# when the desired split size is >= the sequence length
+	$steps = 0 if $length <= $split_size;
 
 	for my $i (0..$steps) {
+	    last if $remainder == 0;
 	    if ($remainder < $split_size) {
 		$split_size = $remainder; # if $remainder < $split_size;
 		my $seq_part = substr $seq, $start, $split_size;
@@ -471,7 +475,6 @@ sub _split_chr_windows {
                 close $out;
 		push @split_files, $outfile;
 	    }
-
 	    $start += $split_size;
 	    $remainder -= $split_size;
 	    $i++;
