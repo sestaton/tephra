@@ -15,7 +15,7 @@ sub opt_spec {
 	[ "hitlength|l=i", "The alignment length cutoff for hits to the repeat database (Default: 70) " ],
 	[ "threads|t=i",   "The number of threads to use for masking "                                  ],
 	[ "splitsize|s=i", "The chunk size to process at a time (Default: 50kb) "                       ],
-	[ "clean",         "Clean up the index files (Default: yes) "                                   ],
+	[ "clean|c=i",     "Clean up the index files (Default: yes) "                                   ],
 	[ "help|h",        "Display the usage menu and exit. "                                          ],
         [ "man|m",         "Display the full manual. "                                                  ],
     );
