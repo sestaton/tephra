@@ -3,7 +3,6 @@ package Tephra::Classify::LTRFams::Cluster;
 use 5.010;
 use Moose::Role;
 use MooseX::Types::Path::Class;
-use Statistics::Descriptive;
 use Sort::Naturally;
 use Number::Range;
 use File::Spec;
@@ -12,16 +11,13 @@ use File::Basename;
 use Bio::DB::HTS::Kseq;
 use Bio::DB::HTS::Faidx;
 use Bio::GFF3::LowLevel qw(gff3_parse_feature);
-use List::MoreUtils     qw(indexes any);
 use List::Util          qw(min max);
 use Time::HiRes         qw(gettimeofday);
 use File::Path          qw(make_path);
 use Parallel::ForkManager;
-use Cwd;
 use Carp 'croak';
 use Try::Tiny;
-use Tephra::Config::Exe;
-use Data::Dump::Color;
+#use Data::Dump::Color;
 use namespace::autoclean;
 
 with 'Tephra::Role::GFF',
