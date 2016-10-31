@@ -3,29 +3,25 @@ package Tephra::Classify::LTRFams;
 use 5.010;
 use Moose;
 use MooseX::Types::Path::Class;
-use Statistics::Descriptive;
 use Sort::Naturally;
-use Number::Range;
 use File::Spec;
 use File::Find;
 use File::Basename;
 use Bio::DB::HTS::Kseq;
 use Bio::DB::HTS::Faidx;
-use Bio::GFF3::LowLevel qw(gff3_parse_feature);
-use List::MoreUtils     qw(indexes any);
 use List::Util          qw(min max);
 use Time::HiRes         qw(gettimeofday);
 use File::Path          qw(make_path);
 use Parallel::ForkManager;
-use Cwd;
 use Carp 'croak';
 use Try::Tiny;
-use Tephra::Config::Exe;
+use Tephra::LTR::MakeExemplars;
 #use Data::Dump::Color;
 use namespace::autoclean;
 
-with 'Tephra::Role::GFF',
-     'Tephra::Role::Util';
+with 'Tephra::Role::Util',
+     'Tephra::Classify::LTRFams::Cluster',
+     'Tephra::Role::Run::Blast';
 
 =head1 NAME
 
@@ -56,18 +52,6 @@ $VERSION = eval $VERSION;
         threads  => $threads,
     );
 
-    my $gyp_dir = $classify_fams_obj->extract_features($gyp_gff);
-    my $gyp_clusters = $classify_fams_obj->cluster_features($gyp_dir);
-    my $gyp_fams = $classify_fams_obj->parse_clusters($gyp_clusters);
-    
-    my $cop_dir = $classify_fams_obj->extract_features($cop_gff);
-    my $cop_clusters = $classify_fams_obj->cluster_features($cop_dir);
-    my $cop_fams = $classify_fams_obj->parse_clusters($cop_clusters);
-
-    my %outfiles;
-    @outfiles{keys %$_} = values %$_ for ($gyp_fams, $cop_fams);
-    $classify_fams_obj->combine_families(\%outfiles);
-
 =cut
 
 has genome => (
@@ -95,370 +79,90 @@ has threads => (
 #
 # methods
 #
-sub extract_features {
+sub make_ltr_families {
     my $self = shift;
-    my $fasta  = $self->genome;
-    my $dir    = $self->outdir;
-    my ($infile) = @_;
-    
-    my $index = $self->index_ref($fasta);
+    my ($gff_obj) = @_;
 
-    my ($name, $path, $suffix) = fileparse($infile, qr/\.[^.]*/);
-    my $type = ($name =~ /(?:gypsy|copia|unclassified)$/i);
-    die "\nERROR: Unexpected input. Should match /gypsy|copia|unclassified$/i. Exiting."
-	unless defined $type;
-
-    my $resdir = File::Spec->catdir($dir, $name);
-    unless ( -d $resdir ) {
-	make_path( $resdir, {verbose => 0, mode => 0771,} );
-    }
-    
-    my $comp = File::Spec->catfile($resdir, $name.'_complete.fasta');
-    my $ppts = File::Spec->catfile($resdir, $name.'_ppt.fasta');
-    my $pbs  = File::Spec->catfile($resdir, $name.'_pbs.fasta');
-    my $five_pr_ltrs  = File::Spec->catfile($resdir, $name.'_5prime-ltrs.fasta');
-    my $three_pr_ltrs = File::Spec->catfile($resdir, $name.'_3prime-ltrs.fasta');
-
-    open my $allfh, '>>', $comp or die "\nERROR: Could not open file: $comp\n";
-    open my $pptfh, '>>', $ppts or die "\nERROR: Could not open file: $ppts\n";
-    open my $pbsfh, '>>', $pbs or die "\nERROR: Could not open file: $pbs\n";
-    open my $fivefh, '>>', $five_pr_ltrs or die "\nERROR: Could not open file: $five_pr_ltrs\n";
-    open my $threfh, '>>', $three_pr_ltrs or die "\nERROR: Could not open file: $three_pr_ltrs\n";
-
-    open my $gffio, '<', $infile or die "\nERROR: Could not open file: $infile\n";
-
-    my (%feature, %ltrs, %coord_map, %seen);
-    while (my $line = <$gffio>) {
-	chomp $line;
-	next if $line =~ /^#/;
-	my $feature = gff3_parse_feature($line);
-
-	if ($feature->{type} eq 'LTR_retrotransposon') {
-	    my $elem_id = @{$feature->{attributes}{ID}}[0];
-	    my ($start, $end) = @{$feature}{qw(start end)};
-	    my $key = join "||", $elem_id, $start, $end;
-	    $ltrs{$key}{'full'} = join "||", @{$feature}{qw(seq_id type start end)};
-	    $coord_map{$elem_id} = join "||", @{$feature}{qw(seq_id start end)};
-	}
-	if ($feature->{type} eq 'long_terminal_repeat') {
-	    my $parent = @{$feature->{attributes}{Parent}}[0];
-	    my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
-	    if ($seq_id eq $feature->{seq_id}) {
-		my ($seq_id, $type, $start, $end, $strand) = 
-		    @{$feature}{qw(seq_id type start end strand)};
-		$strand //= '?';
-		my $ltrkey = join "||", $seq_id, $type, $start, $end, $strand;
-		push @{$ltrs{$pkey}{'ltrs'}}, $ltrkey unless exists $seen{$ltrkey};
-		$seen{$ltrkey} = 1;
-	    }
-	}
-	elsif ($feature->{type} eq 'primer_binding_site') {
-	    my $name = $feature->{attributes}{trna};
-	    my $parent = @{$feature->{attributes}{Parent}}[0];
-	    my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
-            if ($seq_id eq $feature->{seq_id}) {
-		$ltrs{$pkey}{'pbs'} =
-		    join "||", @{$feature}{qw(seq_id type)}, $name, @{$feature}{qw(start end)};
-	    }
-	}
-	elsif ($feature->{type} eq 'protein_match') {
-	    my $name = @{$feature->{attributes}{name}}[0];
-	    my $parent = @{$feature->{attributes}{Parent}}[0];
-	    my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
-            if ($seq_id eq $feature->{seq_id}) {
-		my $pdomkey = join "||", @{$feature}{qw(seq_id type)}, $name, @{$feature}{qw(start end strand)};
-		push @{$ltrs{$pkey}{'pdoms'}{$name}}, $pdomkey unless exists $seen{$pdomkey};
-		$seen{$pdomkey} = 1;
-	    }
-	}
-	elsif ($feature->{type} eq 'RR_tract') {
-	    my $parent = @{$feature->{attributes}{Parent}}[0];
-	    my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
-            if ($seq_id eq $feature->{seq_id}) {
-		$ltrs{$pkey}{'ppt'} =
-		    join "||", @{$feature}{qw(seq_id type start end)};
-	    }
-	}
-    }
-    close $gffio;
-
-    my (%pdoms, %seen_pdoms);
-    my $ltrct = 0;
-    for my $ltr (sort keys %ltrs) {
-	my ($element, $rstart, $rend) = split /\|\|/, $ltr;
-	# full element
-	my ($source, $prim_tag, $fstart, $fend) = split /\|\|/, $ltrs{$ltr}{'full'};
-	$self->subseq($index, $source, $element, $fstart, $fend, $allfh);
-
-	# pbs
-	if ($ltrs{$ltr}{'pbs'}) {
-	    my ($pbssource, $pbstag, $trna, $pbsstart, $pbsend) = split /\|\|/, $ltrs{$ltr}{'pbs'};
-	    $self->subseq($index, $pbssource, $element, $pbsstart, $pbsend, $pbsfh);
-	}
-
-	# ppt
-	if ($ltrs{$ltr}{'ppt'}) {
-	    my ($pptsource, $ppttag, $pptstart, $pptend) = split /\|\|/, $ltrs{$ltr}{'ppt'};
-	    $self->subseq($index, $source, $element, $pptstart, $pptend, $pptfh);
-	}
-
-	for my $ltr_repeat (@{$ltrs{$ltr}{'ltrs'}}) {
-	    my ($src, $ltrtag, $s, $e, $strand) = split /\|\|/, $ltr_repeat;
-	    if ($ltrct) {
-		$self->subseq($index, $src, $element, $s, $e, $fivefh);
-		$ltrct = 0;
-	    }
-	    else {
-		$self->subseq($index, $src, $element, $s, $e, $threfh);
-		$ltrct++;
-	    }
-	}
-
-	if ($ltrs{$ltr}{'pdoms'}) {
-	    for my $model_name (keys %{$ltrs{$ltr}{'pdoms'}}) {
-		for my $ltr_repeat (@{$ltrs{$ltr}{'pdoms'}{$model_name}}) {
-		    my ($src, $pdomtag, $name, $s, $e, $str) = split /\|\|/, $ltr_repeat;
-                    #"Ha10||protein_match||UBN2||132013916||132014240|+",
-		    next if $model_name =~ /transpos(?:ase)?|mule|(?:dbd|dde)?_tnp_(?:hat)?|duf4216/i; 
-		    # The above is so we do not classify elements based domains derived from or belonging to DNA transposons
-		    push @{$pdoms{$src}{$element}{$model_name}}, join "||", $s, $e, $str;
-		}
-	    }
-	}
-    }
-    close $allfh;
-    close $pptfh;
-    close $pbsfh;
-    close $fivefh;
-    close $threfh;
-
-    ## This is where we merge overlapping hits in a chain and concatenate non-overlapping hits
-    ## to create a single domain sequence for each element
-    for my $src (keys %pdoms) {
-	for my $element (keys %{$pdoms{$src}}) {
-	    my ($pdom_s, $pdom_e, $str);
-	    for my $pdom_type (keys %{$pdoms{$src}{$element}}) {
-		my (%lrange, %seqs, $union);
-		my $pdom_file = File::Spec->catfile($resdir, $pdom_type.'_pdom.fasta');
-		open my $fh, '>>', $pdom_file or die "\nERROR: Could not open file: $pdom_file\n";
-		for my $split_dom (@{$pdoms{$src}{$element}{$pdom_type}}) {
-		    ($pdom_s, $pdom_e, $str) = split /\|\|/, $split_dom;
-		    push @{$lrange{$src}{$element}{$pdom_type}}, "$pdom_s..$pdom_e";
-		}
-		
-		if (@{$lrange{$src}{$element}{$pdom_type}} > 1) {
-		    {
-			no warnings; # Number::Range warns on EVERY single interger that overlaps
-			my $range = Number::Range->new(@{$lrange{$src}{$element}{$pdom_type}});
-			$union = $range->range;
-		    }
-		            
-		    for my $r (split /\,/, $union) {
-			my ($ustart, $uend) = split /\.\./, $r;
-			my $seq = $self->subseq_pdoms($index, $src, $ustart, $uend);
-			my $k = join "_", $ustart, $uend;
-			$seqs{$k} = $seq;
-		    }
-		            
-		    $self->concat_pdoms($src, $element, \%seqs, $fh);
-		}
-		else {
-		    my ($nustart, $nuend, $str) = split /\|\|/, @{$pdoms{$src}{$element}{$pdom_type}}[0];
-		    $self->subseq($index, $src, $element, $nustart, $nuend, $fh);
-		}
-		close $fh;
-		%seqs   = ();
-		%lrange = ();
-		unlink $pdom_file if ! -s $pdom_file;
-	    }
-	}
-    }
-
-    for my $file ($comp, $ppts, $pbs, $five_pr_ltrs, $three_pr_ltrs) {
-	unlink $file if ! -s $file;
-    }
-
-    return $resdir
-}
-
-sub subseq_pdoms {
-    my $self = shift;
-    my ($index, $loc, $start, $end) = @_;
-
-    my $location = "$loc:$start-$end";
-    my ($seq, $length) = $index->get_sequence($location);
-    croak "\nERROR: Something went wrong. This is a bug, please report it.\n"
-	unless $length;
-    return $seq;
-}
-
-sub concat_pdoms {
-    my $self = shift;
-    my ($src, $elem, $seqs, $fh_out) = @_;
-    my @ranges = map { split /\_/, $_ } keys %$seqs;
-    my $start  = min(@ranges);
-    my $end    = max(@ranges);
-    my $id     = join "_", $elem, $src, $start, $end;
-
-    my $concat_seq;
-    for my $seq (values %$seqs) {
-	$concat_seq .= $seq;
-    }
-
-    $concat_seq =~ s/.{60}\K/\n/g;
-    say $fh_out join "\n", ">$id", $concat_seq;
-}
-
-sub collect_feature_args {
-    my $self = shift;
-    my ($dir) = @_;
-    my (@fiveltrs, @threeltrs, @ppt, @pbs, @pdoms, %vmatch_args);
-    find( sub { push @fiveltrs, $File::Find::name if -f and /5prime-ltrs.fasta$/ }, $dir);
-    find( sub { push @threeltrs, $File::Find::name if -f and /3prime-ltrs.fasta$/ }, $dir);
-    find( sub { push @ppt, $File::Find::name if -f and /ppts.fasta$/ }, $dir);
-    find( sub { push @pbs, $File::Find::name if -f and /pbs.fasta$/ }, $dir);
-    find( sub { push @pdoms, $File::Find::name if -f and /pdom.fasta$/ }, $dir);
-
-    # ltr
-    my $ltr5name = File::Spec->catfile($dir, 'dbcluster-5primeseqs');
-    my $fiveargs = "-qspeedup 2 -dbcluster 80 20 $ltr5name -p -d -seedlength 30 ";
-    $fiveargs .= "-exdrop 7 -l 80 -showdesc 0 -sort ld -best 10000 -identity 80";
-    $vmatch_args{fiveltr} = { seqs => \@fiveltrs, args => $fiveargs };
-
-    my $ltr3name  = File::Spec->catfile($dir, 'dbcluster-3primeseqs');
-    my $threeargs = "-qspeedup 2 -dbcluster 80 20 $ltr3name -p -d -seedlength 30 ";
-    $threeargs .= "-exdrop 7 -l 80 -showdesc 0 -sort ld -best 10000 -identity 80";
-    $vmatch_args{threeltr} = { seqs => \@threeltrs, args => $threeargs };
-
-    # pbs/ppt
-    my $pbsname = File::Spec->catfile($dir, 'dbcluster-pbs');
-    my $pbsargs = "-dbcluster 90 90 $pbsname -p -d -seedlength 5 -exdrop 2 ";
-    $pbsargs .= "-l 3 -showdesc 0 -sort ld -best 10000";
-    $vmatch_args{pbs} = { seqs => \@pbs, args => $pbsargs, prefixlen => 1 };
-
-    my $pptname = File::Spec->catfile($dir, 'dbcluster-ppt');
-    my $pptargs = "-dbcluster 90 90 $pptname -p -d -seedlength 5 -exdrop 2 ";
-    $pptargs .= "-l 3 -showdesc 0 -sort ld -best 10000";
-    $vmatch_args{ppt} = { seqs => \@ppt, args => $pptargs, prefixlen => 5 };
-
-    # pdoms
-    my $pdomname = File::Spec->catfile($dir, 'dbcluster-pdoms');
-    my $pdomargs = "-qspeedup 2 -dbcluster 80 80 $pdomname -p -d -seedlength 30 -exdrop 3 ";
-    $pdomargs .= "-l 40 -showdesc 0 -sort ld -best 100";
-    $vmatch_args{pdoms} = { seqs => \@pdoms, args => $pdomargs };
-
-    return \%vmatch_args;
-}
-
-sub cluster_features {
-    my $self = shift;
-    my $threads = $self->threads;
-    my ($dir) = @_;
-
-    my $args = $self->collect_feature_args($dir);
-    $self->_remove_singletons($args);
-
+    my $threads = $self->threads;    
     my $t0 = gettimeofday();
-    my $doms = 0;
-    my %reports;
-    my $outfile = File::Spec->catfile($dir, 'all_vmatch_reports.txt');
-    my $logfile = File::Spec->catfile($dir, 'all_vmatch_reports.log');
-    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    my $logfile = File::Spec->catfile($self->outdir, 'ltr_superfamilies_thread_report.log');
     open my $log, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
-    
-    my $pm = Parallel::ForkManager->new($threads);
+
+
+    my $pm = Parallel::ForkManager->new(3);
     local $SIG{INT} = sub {
         $log->warn("Caught SIGINT; Waiting for child processes to finish.");
         $pm->wait_all_children;
         exit 1;
     };
 
+    my (%reports, @family_fastas, @annotated_ids);
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
-			      for my $bl (sort keys %$data_ref) {
-				  open my $report, '<', $bl or die "\nERROR: Could not open file: $bl\n";
-				  print $out $_ while <$report>;
-				  close $report;
-				  unlink $bl;
+			      for my $type (keys %$data_ref) {
+				  push @family_fastas, $data_ref->{$type}{family_fasta};
+				  push @annotated_ids, $data_ref->{$type}{annotated_ids};
 			      }
 			      my $t1 = gettimeofday();
 			      my $elapsed = $t1 - $t0;
 			      my $time = sprintf("%.2f",$elapsed/60);
-			      say $log basename($ident),
-			      " just finished with PID $pid and exit code: $exit_code in $time minutes";
+			      say $log "$ident just finished with PID $pid and exit code: $exit_code in $time minutes";
 			} );
 
-    for my $type (keys %$args) {
-	for my $db (@{$args->{$type}{seqs}}) {
-	    $doms++;
-	    $pm->start($db) and next;
-	    $SIG{INT} = sub { $pm->finish };
-	    my $vmrep = $self->process_cluster_args($args, $type, $db);
-	    $reports{$vmrep} = 1;
 
-	    $pm->finish(0, \%reports);
-	}
+    for my $type (keys %$gff_obj) {
+	$pm->start($type) and next;
+	$SIG{INT} = sub { $pm->finish };
+	my ($fams, $ids) = $self->run_ltr_classification($gff_obj->{$type});
+
+	$reports{$type} = { family_fasta => $fams, annotated_ids => $ids };
+
+	$pm->finish(0, \%reports);
     }
 
     $pm->wait_all_children;
-    close $out;
+
+    my (%outfiles, %annot_ids);
+    @outfiles{keys %$_}  = values %$_ for @family_fastas;
+    @annot_ids{keys %$_} = values %$_ for @annotated_ids;
 
     my $t2 = gettimeofday();
     my $total_elapsed = $t2 - $t0;
     my $final_time = sprintf("%.2f",$total_elapsed/60);
 
-    say $log "\n========> Finished running vmatch on $doms domains in $final_time minutes";
+    say $log "\n========> Finished classifying LTR families in $final_time minutes";
     close $log;
 
-    return $outfile;
+    return (\%outfiles, \%annot_ids);
 }
 
-sub process_cluster_args {
+sub run_ltr_classification {
     my $self = shift;
-    my ($args, $type, $db) = @_;
-
-    my ($name, $path, $suffix) = fileparse($db, qr/\.[^.]*/);
-    my $index = File::Spec->catfile($path, $name.'.index');
-    my $vmrep = File::Spec->catfile($path, $name.'_vmatch-out.txt');
-    my $log   = File::Spec->catfile($path, $name.'_vmatch-out.log');;
-
-    my $mkvtreecmd = "mkvtree -db $db -dna -indexname $index -allout -v -pl ";
-    if (defined $args->{$type}{prefixlen}) {
-	$mkvtreecmd .= "$args->{$type}{prefixlen} ";
-    }
-    $mkvtreecmd .= "2>&1 > $log";
-    my $vmatchcmd  = "vmatch $args->{$type}{args} $index > $vmrep";
-    $self->run_cmd($mkvtreecmd);
-    $self->run_cmd($vmatchcmd);
-    unlink glob "$index*";
-    unlink glob "$path/*.match";
-
-    return $vmrep;
-}
-
-sub subseq {
-    my $self = shift;
-    my ($index, $loc, $elem, $start, $end, $out) = @_;
-
-    my $location = "$loc:$start-$end";
-    my ($seq, $length) = $index->get_sequence($location);
-    croak "\nERROR: Something went wrong. This is a bug, please report it.\n"
-	unless $length;
-
-    my $id = join "_", $elem, $loc, $start, $end;
-
-    $seq =~ s/.{60}\K/\n/g;
-    say $out join "\n", ">$id", $seq;
-}
-
-sub parse_clusters {
-    my $self = shift;
-    my ($clsfile) = @_;
+    my ($gff) = @_;
     my $genome = $self->genome;
-    
-    my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
-    if ($name =~ /(\.fa.*)/) {
-	$name =~ s/$1//;
-    }
+
+    my $dir      = $self->extract_features($gff);
+    my $clusters = $self->cluster_features($dir);
+    my $dom_orgs = $self->parse_clusters($clusters);
+    my $dom_obj  = $self->make_fasta_from_dom_orgs($dom_orgs, $clusters);
+    my $blastout = $self->process_blast_args($dom_obj);
+    my $matches  = $self->parse_blast($blastout);
+
+    my ($fams, $ids) = $self->write_families($matches, $clusters);
+
+    my $exm_obj = Tephra::LTR::MakeExemplars->new(
+        genome => $genome,
+        dir    => $dir,
+        gff    => $gff
+    );
+
+    $exm_obj->make_exemplars;
+
+    return ($fams, $ids);
+}
+
+sub make_fasta_from_dom_orgs {
+    my $self = shift;
+    my ($dom_orgs, $clsfile) = @_;
 
     my ($cname, $cpath, $csuffix) = fileparse($clsfile, qr/\.[^.]*/);
     my $dir  = basename($cpath);
@@ -471,155 +175,156 @@ sub parse_clusters {
     my @compfiles;
     find( sub { push @compfiles, $File::Find::name if /complete.fasta$/ }, $cpath );
     my $ltrfas = shift @compfiles;
-    say "DEBUG: seqstore -> $ltrfas";
     my $seqstore = $self->_store_seq($ltrfas);
+    my $elemct = (keys %$seqstore);
 
-    my (%cls, %all_seqs, %all_pdoms, $clusnum, $dom);
-    open my $in, '<', $clsfile or die "\nERROR: Could not open file: $clsfile\n";
+    my $famfile = $sfname.'_families.fasta';
+    my $foutfile = File::Spec->catfile($cpath, $famfile);
+    open my $out, '>>', $foutfile or die "\nERROR: Could not open file: $foutfile\n";
 
+    my ($idx, $famtot) = (0, 0);
+    for my $str (reverse sort { @{$dom_orgs->{$a}} <=> @{$dom_orgs->{$b}} } keys %$dom_orgs) {  
+        for my $elem (@{$dom_orgs->{$str}}) {
+            if (exists $seqstore->{$elem}) {
+                $famtot++;
+                my $coordsh = $seqstore->{$elem};
+                my $coords  = (keys %$coordsh)[0];
+                $seqstore->{$elem}{$coords} =~ s/.{60}\K/\n/g;
+                say $out join "\n", ">$sfname"."_family$idx"."_$elem"."_$coords", $seqstore->{$elem}{$coords};
+                delete $seqstore->{$elem};
+            }
+            else {
+                die "\nERROR: $elem not found in store. Exiting.";
+            }
+        }
+        $idx++;
+    }
+    close $out;
+    my $famct = $idx;
+    $idx = 0;
+
+    my $reduc = (keys %$seqstore);
+    my $singfile = $sfname.'_singletons.fasta';
+    my $soutfile = File::Spec->catfile($cpath, $singfile);
+    open my $outx, '>>', $soutfile or die "\nERROR: Could not open file: $soutfile\n";
+
+    if (%$seqstore) {
+        for my $k (nsort keys %$seqstore) {
+            my $coordsh = $seqstore->{$k};
+            my $coords  = (keys %$coordsh)[0];
+            $seqstore->{$k}{$coords} =~ s/.{60}\K/\n/g;
+            say $outx join "\n", ">$sfname"."_singleton_family$idx"."_$k"."_$coords", $seqstore->{$k}{$coords};
+            $idx++;
+        }
+    }
+    close $outx;
+    my $singct = $idx;
+    undef $seqstore;
+
+    # need to store this
+    say "Before BLAST merging...";
+    say join "\t", $sf."_total_elements", $sf."_families", $sf."_total_in_families", $sf."_singletons";
+    say join "\t", $elemct, $famct, $famtot, $singct;
+
+    return ({ family_fasta      => $foutfile, 
+	      singleton_fasta   => $soutfile, 
+	      family_count      => $famct, 
+	      total_in_families => $famtot, 
+	      singleton_count   => $singct });
+}
+
+sub process_blast_args {
+    my $self = shift;
+    my ($obj) = @_;
+    my $threads = $self->threads;
+    my ($query, $db) = @{$obj}{qw(singleton_fasta family_fasta)};
+    my (@fams, %exemplars);
+
+    my $thr = $threads % 3 == 0 ? sprintf("%.0f", $threads/3) : 1;
+    my $blastdb = $self->make_blastdb($db);
+    my $blast_report = $self->run_blast({ query => $query, db => $blastdb, threads => $thr, sort => 1 });
+    my @dbfiles = glob "$blastdb*";
+    unlink @dbfiles;
+    unlink $query, $db;
+
+    return $blast_report;
+}
+
+sub parse_blast {
+    my $self = shift;
+    my ($blast_report) = @_;
+
+    my $blast_hpid = $self->blast_hit_pid;
+    my $blast_hcov = $self->blast_hit_cov;
+    my $blast_hlen = $self->blast_hit_len;
+    my $perc_cov   = sprintf("%.2f", $blast_hcov/100);
+
+    my (%matches, %seen);
+    open my $in, '<', $blast_report or die "\nERROR: Could not open file: $blast_report\n";
     while (my $line = <$in>) {
 	chomp $line;
-	if ($line =~ /^# args=/) {
-	    my ($type) = ($line =~ /\/(\S+).index\z/);
-	    $dom = basename($type);
-	    $dom =~ s/${name}_//;
-	    $dom =~ s/_pdom//;
-	    $all_pdoms{$dom} = 1;
-	}
-	next if $line =~ /^# \d+/;
-	if ($line =~ /^(\d+):/) {
-	    $clusnum = $1;
-	}
-	elsif ($line =~ /^\s+(\S+)/) {
-	    my $element = $1;
-	    $element =~ s/_\d+-?_?\d+$//;
-	    push @{$cls{$dom}{$clusnum}}, $element;
+	my ($queryid, $hitid, $pid, $hitlen, $mmatchct, $gapct, 
+	    $qhit_start, $qhit_end, $hhit_start, $hhit_end, $evalue, $score) = split /\t/, $line;
+	my ($qstart, $qend) = ($queryid =~ /(\d+)-?_?(\d+)$/);
+	my ($hstart, $hend) = ($hitid =~ /(\d+)-?_?(\d+)$/);
+	my $qlen = $qend - $qstart + 1;
+	my $hlen = $hend - $hstart + 1;
+	my $minlen = min($qlen, $hlen); # we want to measure the coverage of the smaller element
+	my ($coords) = ($queryid =~ /_(\d+_\d+)$/);
+        $queryid =~ s/_$coords//;
+	my ($family) = ($hitid =~ /(RL[CGX]_family\d+)_/);
+	if ($hitlen >= $blast_hlen && $hitlen >= ($minlen * $perc_cov) && $pid >= $blast_hpid) {
+	    unless (exists $seen{$queryid}) {
+		push @{$matches{$family}}, $queryid;
+		$seen{$queryid} = 1;
+	    }
 	}
     }
     close $in;
+    #unlink $blast_report;
 
-    my (%elem_sorted, %multi_cluster_elem);
-    for my $pdom (keys %cls) {
-	for my $clsnum (keys %{$cls{$pdom}}) {
-	    for my $elem (@{$cls{$pdom}{$clsnum}}) {
-		push @{$elem_sorted{$elem}}, { $pdom => $clsnum };
-	    }
-	}
-    }
+    return \%matches;
+}
 
-    my %dom_orgs;
-    for my $element (keys %elem_sorted) {
-	my $string;
-	my %pdomh;
-	@pdomh{keys %$_} = values %$_ for @{$elem_sorted{$element}};
-	for my $pdom (nsort keys %cls) {
-	    if (exists $pdomh{$pdom}) {
-		$string .= length($string) ? "|$pdomh{$pdom}" : $pdomh{$pdom};
-	    }
-	    else {
-		$string .= length($string) ? "|N" : "N";
-	    }
-	}
-	push @{$dom_orgs{$string}}, $element;
-	undef $string;
-    }
+sub write_families {
+    my $self = shift;
+    my ($matches, $clsfile) = @_;
 
-    # The code below was added in v0.4.1 to join families based on shared clustering patterns
-    # as opposed to the requirement of elements having to display the same clustering pattern
-    # for all features.
-    my (%removed, %dist);
-    my @keys = keys %dom_orgs;
-    my $cls_num = 0;
-    my (@offsets, @acls, @bcls, @apos, @bpos);
+    my ($cname, $cpath, $csuffix) = fileparse($clsfile, qr/\.[^.]*/);
+    my $dir  = basename($cpath);
+    my ($sf) = ($dir =~ /_(\w+)$/);
+    my $sfname;
+    $sfname = 'RLG' if $sf =~ /gypsy/i;
+    $sfname = 'RLC' if $sf =~ /copia/i;
+    $sfname = 'RLX' if $sf =~ /unclassified/i;
 
-    for my $key (nsort @keys) { 
-	@bpos = ();
-	push @bpos, $-[0] while $key =~ /(\d+)/g;
-	for my $org (reverse sort { @{$dom_orgs{$a}} <=> @{$dom_orgs{$b}} } keys %dom_orgs) {
-	    next if $org eq $key;
-	    @apos = ();
-	    push @apos, $-[0] while $org =~ /(\d+)/g;
-	    if (@apos > 1 && @bpos > 1) {
-		my @ar = split /\|/, $key;
-		my @br = split /\|/, $org;
-		my $doms = 0;
-		for my $idx (0..@ar-1) {
-		    for my $bdx (0..@br-1) {
-			next unless $br[$bdx] =~ /\d+/ && $ar[$idx] =~ /\d+/;
-			if ($idx == $bdx && $ar[$idx] == $br[$bdx]) {
-			    $doms++;
-			    push @offsets, $idx;
-			    push @acls, $ar[$idx];
-			    push @bcls, $br[$bdx];
-			}
-		    }
-		}
-		if ($doms > 1) {
-		    my $acl = join ",", @acls;
-		    my $bcl = join ",", @bcls;
-                
-		    my $cls_offsets = join ",", @offsets;
-		    unless (exists $removed{$org} || exists $removed{$key}) { 
-			push @{$dist{$acl}}, { clusters => $acl, string => $org, offsets => $cls_offsets, ids => \@{$dom_orgs{$org}} };
-			push @{$dist{$bcl}}, { clusters => $bcl, string => $key, offsets => $cls_offsets, ids => \@{$dom_orgs{$key}} };
-			$removed{$key} = 1;
-			$removed{$org} = 1;
-		    }
-		    $cls_num++;
-		}
-		$doms = 0;
-		@offsets = ();
-		@acls = ();
-		@bcls = ();
-	    }
-	    elsif (@bpos == 1) {
-		@acls = ();
-		@bcls = ();
-		push @acls, $1 while $org =~ /(\d+)/g;
-		push @bcls, $1 while $key =~ /(\d+)/g;
-		if (grep { $bpos[0] == $_ } @apos) {
-		    if (defined $acls[ $bpos[0] ] &&
-			$bcls[0] == $acls[ $bpos[0] ] ) {
-			my $acl = join ",", @acls;
-			unless (exists $removed{$key}) {
-			    push @{$dist{$acl}}, { clusters => $acl, string => $key, offsets => $bpos[0], ids => \@{$dom_orgs{$key}} };
-			    $removed{$key} = 1;
-			}
-		    }
-		}
-	    }
-	}
-    }
+    my @compfiles;
+    find( sub { push @compfiles, $File::Find::name if /complete.fasta$/ }, $cpath );
+    my $ltrfas = shift @compfiles;
+    my $seqstore = $self->_store_seq($ltrfas);
+    my $elemct = (keys %$seqstore);
 
-    my %groups;
-    my $group = 0;
-    delete $dom_orgs{$_} for keys %removed;
-    @groups{keys %dom_orgs} = values %dom_orgs;
-
-    for my $joined_cls (keys %dist) {
-	for my $h (@{$dist{$joined_cls}}) {
-	    push @{$groups{$joined_cls}}, @{$h->{ids}};
-	}
-    }
-
-    # write out families
-    my $idx = 0;
+    my ($idx, $famtot) = (0, 0);
     my (%fastas, %annot_ids);
-    for my $str (reverse sort { @{$groups{$a}} <=> @{$groups{$b}} } keys %groups) {  
+
+    for my $str (reverse sort { @{$matches->{$a}} <=> @{$matches->{$b}} } keys %$matches) {
 	my $famfile = $sf."_family$idx".".fasta";
 	my $outfile = File::Spec->catfile($cpath, $famfile);
 	open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-	for my $elem (@{$groups{$str}}) {
-	    if (exists $seqstore->{$elem}) {
-		my $coordsh = $seqstore->{$elem};
+	for my $elem (@{$matches->{$str}}) {
+	    my $query = $elem;
+	    $query =~ s/RL[CGX]_singleton_family\d+_//;
+	    if (exists $seqstore->{$query}) {
+		$famtot++;
+		my $coordsh = $seqstore->{$query};
 		my $coords  = (keys %$coordsh)[0];
-		$seqstore->{$elem}{$coords} =~ s/.{60}\K/\n/g;
-		say $out join "\n", ">$sfname"."_family$idx"."_$elem"."_$coords", $seqstore->{$elem}{$coords};
-		delete $seqstore->{$elem};
-		$annot_ids{$elem} = $sfname."_family$idx";
+		$seqstore->{$query}{$coords} =~ s/.{60}\K/\n/g;
+		say $out join "\n", ">$sfname"."_family$idx"."_$query"."_$coords", $seqstore->{$query}{$coords};
+		delete $seqstore->{$query};
+		$annot_ids{$query} = $sfname."_family$idx";
 	    }
 	    else {
-		die "\nERROR: $elem not found in store. Exiting.";
+		die "\nERROR: $query not found in store. Exiting.";
 	    }
 	}
 	close $out;
@@ -629,7 +334,6 @@ sub parse_clusters {
     my $famct = $idx;
     $idx = 0;
 
-    # write out singletons
     if (%$seqstore) {
 	my $famxfile = $sf.'_singleton_families.fasta';
 	my $xoutfile = File::Spec->catfile($cpath, $famxfile);
@@ -647,7 +351,12 @@ sub parse_clusters {
     }
     my $singct = $idx;
 
-    return (\%fastas, \%annot_ids, { family_count => $famct, singleton_count => $singct });
+    # need to store this
+    say "After BLAST merging...";
+    say join "\t", $sf."_total_elements", $sf."_families", $sf."_total_in_families", $sf."_singletons";
+    say join "\t", $elemct, $famct, $famtot, $singct;
+
+    return (\%fastas, \%annot_ids);
 }
 
 sub combine_families {
@@ -657,7 +366,7 @@ sub combine_families {
     my $outdir = $self->outdir;
     
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
-    my $outfile = File::Spec->catfile($outdir, $name."_combined_LTR_families.fasta");
+    my $outfile = File::Spec->catfile($outdir, $name.'_combined_LTR_families.fasta');
     open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
     for my $file (nsort keys %$outfiles) {
@@ -669,6 +378,7 @@ sub combine_families {
 	    $seq =~ s/.{60}\K/\n/g;
 	    say $out join "\n", ">$id", $seq;
 	}
+	unlink $file;
     }
     close $outfile;
 }
@@ -727,45 +437,6 @@ sub _store_seq {
     }
 
     return \%hash;
-}
-
-sub _remove_singletons {
-    my $self = shift;
-    my ($args) = @_;
-
-    my @singles;
-    my ($index, $seqct) = (0, 0);
-    for my $type (keys %$args) {
-	delete $args->{$type} if ! @{$args->{$type}{seqs}};
-	for my $db (@{$args->{$type}{seqs}}) {
-	    my $kseq = Bio::DB::HTS::Kseq->new($db);
-	    my $iter = $kseq->iterator();
-	    while (my $seqobj = $iter->next_seq) { $seqct++ if defined $seqobj->seq; }
-	    if ($seqct < 2) {
-		push @singles, $index;
-		unlink $db;
-	    }
-	    $index++;
-	    $seqct = 0;
-	}
-
-	if (@{$args->{$type}{seqs}}) {
-	    if (@singles > 1) {
-		for (@singles) {
-		    splice @{$args->{$type}{seqs}}, $_, 1;
-		    @singles = map { $_ - 1 } @singles; # array length is changing after splice so we need to adjust offsets
-		}
-	    }
-	    else {
-		splice @{$args->{$type}{seqs}}, $_, 1 for @singles;
-	    }
-	}
-	else {
-	    delete $args->{$type};
-	}
-	$index = 0;
-	@singles = ();
-    }
 }
 
 =head1 AUTHOR
