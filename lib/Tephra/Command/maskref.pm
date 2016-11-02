@@ -9,15 +9,16 @@ use Tephra::Genome::MaskRef;
 
 sub opt_spec {
     return (    
-	[ "genome|g=s",    "The genome sequences in FASTA format to search for LTR-RTs "                ],
-	[ "outfile|o=s",   "The output filename to use for the masked genome "                          ],
-	[ "repeatdb|d=s",  "The database of repeat sequences to use for masking "                       ],
-	[ "hitlength|l=i", "The alignment length cutoff for hits to the repeat database (Default: 70) " ],
-	[ "threads|t=i",   "The number of threads to use for masking "                                  ],
-	[ "splitsize|s=i", "The chunk size to process at a time (Default: 50kb) "                       ],
-	[ "clean|c=i",     "Clean up the index files (Default: yes) "                                   ],
-	[ "help|h",        "Display the usage menu and exit. "                                          ],
-        [ "man|m",         "Display the full manual. "                                                  ],
+	[ "genome|g=s",    "The genome sequences in FASTA format to search for LTR-RTs "                        ],
+	[ "outfile|o=s",   "The output filename to use for the masked genome "                                  ],
+	[ "repeatdb|d=s",  "The database of repeat sequences to use for masking "                               ],
+	[ "percentid|p=i",  "The percent identity cutoff for classification of pairwise matches (Default: 80) " ],
+	[ "hitlength|l=i", "The alignment length cutoff for hits to the repeat database (Default: 70) "         ],
+	[ "threads|t=i",   "The number of threads to use for masking "                                          ],
+	[ "splitsize|s=i", "The chunk size to process at a time (Default: 50kb) "                               ],
+	[ "clean|c=i",     "Clean up the index files (Default: yes) "                                           ],
+	[ "help|h",        "Display the usage menu and exit. "                                                  ],
+        [ "man|m",         "Display the full manual. "                                                          ],
     );
 }
 
@@ -51,6 +52,7 @@ sub _run_masking {
     my $genome    = $opt->{genome};
     my $repeatdb  = $opt->{repeatdb};
     my $outfile   = $opt->{outfile};
+    my $percentid = $opt->{percentid} // 80;
     my $hitlength = $opt->{hitlength} // 70;
     my $clean     = $opt->{clean} // 1;
     my $threads   = $opt->{threads} // 1;
@@ -59,6 +61,7 @@ sub _run_masking {
     my $mask_obj = Tephra::Genome::MaskRef->new( 
 	genome    => $genome, 
 	repeatdb  => $repeatdb,
+	hit_pid   => $percentid,
 	hitlength => $hitlength,
 	outfile   => $outfile,
 	clean     => $clean,

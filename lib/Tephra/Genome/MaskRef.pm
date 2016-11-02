@@ -67,6 +67,12 @@ has threads => (
     default   => 1,
 );
 
+has hit_pid => (
+    is      => 'ro',
+    isa     => 'Int',
+    default => 80,
+);
+
 has splitsize => (
     is        => 'ro',
     isa       => 'Num',
@@ -162,6 +168,7 @@ sub run_masking {
     my ($wchr) = @_;
     my $repeatdb = $self->repeatdb;
     my $length   = $self->hitlength;
+    my $pid      = $self->hit_pid;
 
     my ($cname, $cpath, $csuffix) = fileparse($wchr, qr/\.[^.]*/);
     if ($cname =~ /(\.fa.*)/) {
@@ -179,8 +186,8 @@ sub run_masking {
     my $vmatch_rlog = File::Spec->catfile($cpath, $cname.'_vmatch_aln.err');
 
     my $mkvtree = "mkvtree -db $wchr -indexname $index -dna -allout -v -pl 2>&1 > $mkvtree_log";
-    my $vmatchm = "vmatch -p -d -q $repeatdb -qspeedup 2 -l $length -best 10000 -identity 80 -dbmaskmatch N $index 1> $outpart 2> $vmatch_mlog";
-    my $vmatchr = "vmatch -p -d -q $repeatdb -qspeedup 2 -l $length -best 10000 -sort ia -identity 80 -showdesc 0 $index 1> $report 2> $vmatch_rlog";
+    my $vmatchm = "vmatch -p -d -q $repeatdb -qspeedup 2 -l $length -best 10000 -identity $pid -dbmaskmatch N $index 1> $outpart 2> $vmatch_mlog";
+    my $vmatchr = "vmatch -p -d -q $repeatdb -qspeedup 2 -l $length -best 10000 -sort ia -identity $pid -showdesc 0 $index 1> $report 2> $vmatch_rlog";
 
     $self->run_cmd($mkvtree); # need to warn here, not just log errors
     $self->run_cmd($vmatchm);
