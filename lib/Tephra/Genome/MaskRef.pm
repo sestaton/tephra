@@ -121,7 +121,18 @@ sub mask_reference {
     my $files = $self->_split_genome($genome, $genome_dir);
     die "\nERROR: No FASTA files found in genome directory. Exiting.\n" if @$files == 0;
 
-    my $pm = Parallel::ForkManager->new($threads);
+    my $thr;
+    if ($threads % 2 == 0) {
+	$thr = sprintf("%.0f",$threads/2);
+    }
+    elsif ($threads-1 % 2 == 0) {
+	$thr = sprintf("%.0f",$threads-1/2);
+    }
+    else {
+	$thr = 1;
+    }
+
+    my $pm = Parallel::ForkManager->new($thr);
     local $SIG{INT} = sub {
         $log->warn("Caught SIGINT; Waiting for child processes to finish.");
         $pm->wait_all_children;
@@ -185,13 +196,30 @@ sub run_masking {
     my $vmatch_mlog = File::Spec->catfile($cpath, $cname.'_vmatch_mask.err');
     my $vmatch_rlog = File::Spec->catfile($cpath, $cname.'_vmatch_aln.err');
 
+    my $thr = 2;
+    my $pm = Parallel::ForkManager->new($thr);
+    local $SIG{INT} = sub {
+        $log->warn("Caught SIGINT; Waiting for child processes to finish.");
+        $pm->wait_all_children;
+        exit 1;
+    };
+
     my $mkvtree = "mkvtree -db $wchr -indexname $index -dna -allout -v -pl 2>&1 > $mkvtree_log";
     my $vmatchm = "vmatch -p -d -q $repeatdb -qspeedup 2 -l $length -best 10000 -identity $pid -dbmaskmatch N $index 1> $outpart 2> $vmatch_mlog";
     my $vmatchr = "vmatch -p -d -q $repeatdb -qspeedup 2 -l $length -best 10000 -sort ia -identity $pid -showdesc 0 $index 1> $report 2> $vmatch_rlog";
 
+    ###TODO: Do not block here, run in parallel
     $self->run_cmd($mkvtree); # need to warn here, not just log errors
-    $self->run_cmd($vmatchm);
-    $self->run_cmd($vmatchr);
+    #$self->run_cmd($vmatchm);
+    #$self->run_cmd($vmatchr);
+    for my $run ($vmatchm, $vmatchr) {
+	$pm->start($run) and next;
+	$SIG{INT} = sub { $pm->finish };
+	$self->run_cmd($run);
+	$pm->finish;
+    }
+
+    $pm->wait_all_children;
 
     my $mask_struct = $self->get_masking_results($wchr, $report, $chr_length);
 
@@ -463,7 +491,7 @@ sub _split_chr_windows {
 	for my $i (0..$steps) {
 	    last if $remainder == 0;
 	    if ($remainder < $split_size) {
-		$split_size = $remainder; # if $remainder < $split_size;
+		$split_size = $remainder;
 		my $seq_part = substr $seq, $start, $split_size;
 		$seq_part =~ s/.{60}\K/\n/g;
 		my $outfile = File::Spec->catfile($path, $id."_$i.fasta");
