@@ -1,12 +1,30 @@
 Revision history for Tephra
 
 Version	Date	Location
-0.04.1	10/12/16	Vancouver, BC
+0.04.2	11/02/16	Vancouver, BC
 
 - Add new LTR family joining method that is less stringent. Now families are joined based
   on shared clustering patterns as opposed to the previous requirement of elements having to
   display the exact same clustering pattern to be included in a family.
+- Refactor LTR family-finding methods by splitting out clustering methods into separate role.
+  Now, the superfamily- and family-finding methods are separated in the command class. We now
+  only call algorithms once instead of separately for each superfamily. This allows all the
+  methods to be run in parallel (by default).
+- Add 'tirage' command for calculating the age of TIR transposons.
+- Fix bug with 'maskref' command with so complete refernce is written to final file instead of
+  the individual split subsets.
+- Adjust the --clean option with 'maskref' command so results may be kept for debugging or other
+  purposes.
+- Add check to 'maskref' to ensure the correct number of subsets are created from the referenc.
+- Add option to modify the percent identity threshold for matches with the 'maskref' command.
+- Add method to not block when masking reference and generating masking report with 'maskref' command.
+  This change results in about 40-50% reduction in runtimes when masking. 
+- Add method to avoid hardcoding BLAST+ version so the latest is always fetched properly.
 
+0.04.1	10/12/16	Vancouver, BC
+
+- Update BLAST+ release.
+- 
 0.04.0	10/04/16	Vancouver, BC
 
 - Add options for controlling how the solo-LTR finding works. There is a reasonable default now,
