@@ -20,11 +20,12 @@ Version	Date	Location
 - Add method to not block when masking reference and generating masking report with 'maskref' command.
   This change results in about 40-50% reduction in runtimes when masking. 
 - Add method to avoid hardcoding BLAST+ version so the latest is always fetched properly.
-
+- Add method to run finding exemplars with 'classifyltrs' command in parallel.
+ 
 0.04.1	10/12/16	Vancouver, BC
 
 - Update BLAST+ release.
-- 
+
 0.04.0	10/04/16	Vancouver, BC
 
 - Add options for controlling how the solo-LTR finding works. There is a reasonable default now,
