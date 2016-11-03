@@ -208,10 +208,7 @@ sub run_masking {
     my $vmatchm = "vmatch -p -d -q $repeatdb -qspeedup 2 -l $length -best 10000 -identity $pid -dbmaskmatch N $index 1> $outpart 2> $vmatch_mlog";
     my $vmatchr = "vmatch -p -d -q $repeatdb -qspeedup 2 -l $length -best 10000 -sort ia -identity $pid -showdesc 0 $index 1> $report 2> $vmatch_rlog";
 
-    ###TODO: Do not block here, run in parallel
     $self->run_cmd($mkvtree); # need to warn here, not just log errors
-    #$self->run_cmd($vmatchm);
-    #$self->run_cmd($vmatchr);
     for my $run ($vmatchm, $vmatchr) {
 	$pm->start($run) and next;
 	$SIG{INT} = sub { $pm->finish };
@@ -332,6 +329,7 @@ sub write_masking_results {
     my $self = shift;
     my ($reports, $seqs, $out, $outfile, $genome_length, $t0) = @_;
     my $genome  = $self->genome;
+    my $split_size = $self->splitsize;
 
     # first write out the masked reference
     for my $id (nsort keys %$seqs) {
@@ -383,6 +381,7 @@ sub write_masking_results {
     say "=" x 80;
     say "Input file:          $genome";
     say "Output file:         $outfile";
+    say "Window size:         $split_size";
     say "Total genome length: $genome_length";
     say "Total masked bases:  $masked% ($masked_total/$genome_length)";
 
