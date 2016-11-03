@@ -165,7 +165,7 @@ sub process_vmatch_args {
 
     my $pm = Parallel::ForkManager->new($threads);
     local $SIG{INT} = sub {
-        $log->warn("Caught SIGINT; Waiting for child processes to finish.");
+        warn("Caught SIGINT; Waiting for child processes to finish.");
         $pm->wait_all_children;
         exit 1;
     };
@@ -188,7 +188,7 @@ sub process_vmatch_args {
 	$pm->start($db) and next;
 	$SIG{INT} = sub { $pm->finish };
 	my ($exemplar, $family) = $self->calculate_exemplars($db);
-	$pm->finish(0, { exemplar => $exemplar, family => $family };
+	$pm->finish(0, { exemplar => $exemplar, family => $family });
 	#my ($name, $path, $suffix) = fileparse($db, qr/\.[^.]*/);
 	#my $index = File::Spec->catfile($path, $name.'_mkvtree.index');
 	#my $vmerSearchOut = File::Spec->catfile($path, $name.'.vmersearch');
