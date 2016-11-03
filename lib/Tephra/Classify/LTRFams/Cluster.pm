@@ -293,10 +293,9 @@ sub collect_feature_args {
 
 sub cluster_features {
     my $self = shift;
-    my $threads = $self->threads;
     my ($dir) = @_;
+    my $threads = $self->threads;
 
-    my $thr = $threads % 3 == 0 ? sprintf("%.0f", $threads/3) : 1;
     my $args = $self->collect_feature_args($dir);
     $self->_remove_singletons($args);
 
@@ -308,6 +307,17 @@ sub cluster_features {
     open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     open my $log, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
     
+    my $thr; 
+    if ($threads % 3 == 0) {
+	$thr = sprintf("%.0f", $threads/3);
+    }
+    elsif ($threads-1 % 3 == 0) {
+	$thr = sprintf("%.0f", $threads-1/3);
+    }
+    else {
+	$thr = 1;
+    }
+
     my $pm = Parallel::ForkManager->new($thr);
     local $SIG{INT} = sub {
         $log->warn("Caught SIGINT; Waiting for child processes to finish.");
