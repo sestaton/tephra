@@ -35,7 +35,7 @@ ok( @files == 1, 'Correctly classified TIRs' );
 
 ## clean up
 my @outfiles;
-find( sub { push @outfiles, $File::Find::name if /^ref_tirs/ }, $testdir);
+find( sub { push @outfiles, $File::Find::name if /^ref_tirs/ && ! /mutator.gff3$/ }, $testdir);
 unlink @outfiles;
     
 done_testing();
