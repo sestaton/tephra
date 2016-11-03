@@ -133,8 +133,8 @@ sub mask_reference {
     }
 
     my $pm = Parallel::ForkManager->new($thr);
-    local $SIG{INT} = sub {
-        $log->warn("Caught SIGINT; Waiting for child processes to finish.");
+    local @{$SIG}{qw(INT TERM)} = sub {
+        $log->warn("Caught SIGINT or SIGTERM; Waiting for child processes to finish.");
         $pm->wait_all_children;
         exit 1;
     };
@@ -156,7 +156,7 @@ sub mask_reference {
 	my $chr_windows = $self->_split_chr_windows($chr);
 	for my $wchr (@$chr_windows) {
 	    $pm->start($wchr) and next;
-	    $SIG{INT} = sub { $pm->finish };
+	    @{$SIG}{qw(INT TERM)} = sub { $pm->finish };
 	    my $mask_struct = $self->run_masking($wchr);
 	    
 	    $pm->finish(0, $mask_struct);
