@@ -281,7 +281,7 @@ sub parse_blast {
 	}
     }
     close $in;
-    #unlink $blast_report;
+    unlink $blast_report;
 
     return \%matches;
 }
