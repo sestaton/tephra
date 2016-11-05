@@ -169,10 +169,6 @@ sub find_soloLTRs {
     $self->do_parallel_search($hmmsearch, $genome, \@ltr_hmm_files, $model_dir, $aln_stats);
     say STDERR "done searching with LTR models.";
 
-    #my @zeroes;
-    #find( sub { push @zeroes, $File::Find::name if -f and ! -s }, $model_dir );
-    #unlink @zeroes;
-    
     print STDERR "Collating results and writing GFF...";
     my @reports;
     find( sub { push @reports, $File::Find::name if -f and /\.txt$/ }, $model_dir );
@@ -188,7 +184,7 @@ sub find_soloLTRs {
     $self->write_sololtr_gff($hmmsearch_summary);
     say STDERR "all done with solo-LTRs.";
 
-    if ($self->clean) {
+    if ($self->clean && !$self->seq) {
 	remove_tree( $model_dir, { safe => 1} );
     }
 }
@@ -323,12 +319,12 @@ sub _get_ltr_alns {
 
     my (@ltrseqs, @aligns);
 
-    find( sub { push @ltrseqs, $File::Find::name if -f and /exemplar_ltrs.fasta$/ }, $dir);
+    my $ltrseqs = $self->_get_exemplar_ltrs($dir);
 
     # This is where families are filtered by size. Since largest families come first,
     # a simple sort will filter the list.
     my $aln_ct = 0;
-    for my $ltrseq (nsort_by { m/family(\d+)/ and $1 } @ltrseqs) {
+    for my $ltrseq (nsort_by { m/family(\d+)/ and $1 } @$ltrseqs) {
 	$aln_ct++;
 	my ($name, $path, $suffix) = fileparse($ltrseq, qr/\.[^.]*/);
 	my $tre = File::Spec->catfile($path, $name.'.dnd');
@@ -348,9 +344,42 @@ sub _get_ltr_alns {
 		push @aligns, $aln;
             }
         }
+	unlink $ltrseq;
     }
 
     return \@aligns;
+}
+
+sub _get_exemplar_ltrs {
+    my $self = shift;
+    my ($dir) = @_;
+
+    my ($ltrfile, @ltrseqs, %ltrfams);
+    find( sub { $ltrfile = $File::Find::name if -f and /exemplar_ltrs.fasta$/ }, $dir);
+
+    my $kseq = Bio::DB::HTS::Kseq->new($ltrfile);
+    my $iter = $kseq->iterator();
+
+    while ( my $seq = $iter->next_seq() ) {
+	my $id  = $seq->name;
+	my $seq = $seq->seq;
+	if ($id =~ /^[35]prime_(RL[CGX]_family\d+)_LTR_retrotransposon.*/) {
+	    my $family = $1;
+	    push @{$ltrfams{$family}}, { id => $id, seq => $seq };
+	}
+    }
+
+    for my $family (keys %ltrfams) {
+	my $outfile = File::Spec->catfile($dir, $family.'_exemplar_ltrseqs.fasta');
+	open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+	for my $pair (@{$ltrfams{$family}}) {
+	    say $out join "\n", ">".$pair->{id}, $pair->{seq};
+	}
+	close $out;
+	push @ltrseqs, $outfile;
+    }
+
+    return \@ltrseqs;
 }
 
 sub _collate {
