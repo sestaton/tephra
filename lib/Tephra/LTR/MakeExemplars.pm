@@ -73,7 +73,6 @@ sub make_exemplars {
 
     open my $allfh, '>>', $exemcomp or die "\nERROR: Could not open file: $exemcomp\n";
     open my $ltrs_outfh, '>>', $ltrs_out or die "\nERROR: Could not open file: $ltrs_out\n";;
-
     open my $gffio, '<', $gff or die "\nERROR: Could not open file: $gff\n";
 
     my ($source_id, $type, $strand, $exemplar_id_form, 
@@ -125,12 +124,6 @@ sub make_exemplars {
 
 	# full element
 	my ($source, $prim_tag, $start, $end, $strand, $family) = split /\|\|/, $ltrs{$ltr}{'full'};
-	#my $exemcomp = File::Spec->catfile($dir, $family.'_exemplar_complete.fasta');
-	#my $ltrs_out = File::Spec->catfile($dir, $family.'_exemplar_ltrs.fasta');
-
-	#open my $allfh, '>>', $exemcomp or die "\nERROR: Could not open file: $exemcomp\n";
-	#open my $ltrs_outfh, '>>', $ltrs_out or die "\nERROR: Could not open file: $ltrs_out\n";;
-	
 	$self->subseq($index, $source, $element, $start, $end, $allfh, undef, $family);
 	
 	# ltrs
@@ -153,9 +146,12 @@ sub make_exemplars {
 		$ltrct++;
 	    }
 	}
-	close $allfh;
-	close $ltrs_outfh;
     }
+    close $allfh;
+    close $ltrs_outfh;
+
+    unlink $exemcomp unless -s $exemcomp;
+    unlink $ltrs_out unless -s $ltrs_out;
 }
 
 sub process_vmatch_args {
@@ -178,10 +174,6 @@ sub process_vmatch_args {
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			      my ($exemplar, $family) = @{$data_ref}{qw(exemplar family)};
 			      $exemplars{$exemplar} = $family;
-			      #my $t1 = gettimeofday();
-			      #my $elapsed = $t1 - $t0;
-			      #my $time = sprintf("%.2f",$elapsed/60);
-			      #say $log "$ident just finished with PID $pid and exit code: $exit_code in $time minutes";
 			} );
 
     for my $db (@fams) {
@@ -189,23 +181,6 @@ sub process_vmatch_args {
 	$SIG{INT} = sub { $pm->finish };
 	my ($exemplar, $family) = $self->calculate_exemplars($db);
 	$pm->finish(0, { exemplar => $exemplar, family => $family });
-	#my ($name, $path, $suffix) = fileparse($db, qr/\.[^.]*/);
-	#my $index = File::Spec->catfile($path, $name.'_mkvtree.index');
-	#my $vmerSearchOut = File::Spec->catfile($path, $name.'.vmersearch');
-	#my $mk_args = "-db $db -dna -indexname $index -allout -pl";
-	#my $vm_args = "-showdesc 0 -qspeedup 2 -l 20 -q $db -identity 80 $index > $vmerSearchOut";
-
-	#my $mkcmd = "mkvtree $mk_args";
-	#my $vmcmd = "vmatch $vm_args";
-	#$self->run_cmd($mkcmd);
-	#$self->run_cmd($vmcmd);
-	#my $exemplar = $self->parse_vmatch($vmerSearchOut);
-	#my ($family) = ($exemplar =~ /(^RL[CGX]_family\d+)/);
-	#$exemplar =~ s/${family}_//;
-	#$exemplars{$exemplar} = $family;
-	#$self->clean_index($path);
-	#unlink $vmerSearchOut;
-	#unlink $db;
     }
 
     $pm->wait_all_children;
@@ -230,7 +205,6 @@ sub calculate_exemplars {
     my $exemplar = $self->parse_vmatch($vmerSearchOut);
     my ($family) = ($exemplar =~ /(^RL[CGX]_family\d+)/);
     $exemplar =~ s/${family}_//;
-    #$exemplars{$exemplar} = $family;
     $self->clean_index($path);
     unlink $vmerSearchOut;
     unlink $db;
