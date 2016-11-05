@@ -99,7 +99,6 @@ sub calculate_ltr_ages {
     my $outfile = $self->outfile;
 
     my $args = $self->collect_feature_args;
-    #dd $args; ## debug
     
     my $resdir = File::Spec->catdir($args->{resdir}, 'divergence_time_stats');
     
@@ -184,12 +183,13 @@ sub collect_feature_args {
         $aln_args{resdir} = $wdir;
     }
     else {
-	my $wanted  = sub { push @ltrs, $File::Find::name if -f && /exemplar_ltrs.fasta$/ };
-	my $process = sub { grep ! -d, @_ };
-	find({ wanted => $wanted, preprocess => $process }, $dir);
+	#my $wanted  = sub { push @ltrs, $File::Find::name if -f && /exemplar_ltrs.fasta$/ };
+	#my $process = sub { grep ! -d, @_ };
+	#find({ wanted => $wanted, preprocess => $process }, $dir);
+	my $ltrseqs = $self->_get_exemplar_ltrs($dir);
 
 	if (@ltrs > 0) {
-	    $aln_args{ltrs} = { seqs => \@ltrs };
+	    $aln_args{ltrs} = { seqs => $ltrseqs };
 	    $aln_args{resdir} = $dir;
 	}
 	else {
@@ -225,7 +225,6 @@ sub extract_ltr_features {
 
     my $index = $self->index_ref($fasta);
 
-    #dd $features;
     my ($family, %ltrs, %seen, %coord_map);
     for my $rep_region (keys %$features) {
         for my $ltr_feature (@{$features->{$rep_region}}) {
@@ -333,6 +332,8 @@ sub process_align_args {
 
     my $fas = File::Spec->catfile($pdir, $name.$suffix);
     copy($db, $fas) or die "\nERROR: Copy failed: $!";
+    unlink $db;
+
     my $tre  = File::Spec->catfile($pdir, $name.'.dnd');
     my $aln  = File::Spec->catfile($pdir, $name.'_muscle-out.aln');
     my $dnd  = File::Spec->catfile($pdir, $name.'_muscle-out.dnd');
@@ -407,6 +408,43 @@ sub collate {
 	<$fh_in>;
     };
     print $fh_out $lines;
+}
+
+sub _get_exemplar_ltrs {
+    my $self = shift;
+    my ($dir) = @_;
+
+    my ($ltrfile, @ltrseqs, %ltrfams);
+    find( sub { $ltrfile = $File::Find::name if -f and /exemplar_ltrs.fasta$/ }, $dir);
+    unless (defined $ltrfile) {
+	say "\nERROR: No exemplar LTR file was found, likely because there were no families identified by the 'classifyltrs' command.";
+	say "       Try the 'ltrage' command again with the --all flag. Please report any issues. Exiting.\n";
+	exit(1);
+    }
+
+    my $kseq = Bio::DB::HTS::Kseq->new($ltrfile);
+    my $iter = $kseq->iterator();
+
+    while ( my $seq = $iter->next_seq() ) {
+        my $id  = $seq->name;
+        my $seq = $seq->seq;
+        if ($id =~ /^[35]prime_(RL[CGX]_family\d+)_LTR_retrotransposon.*/) {
+            my $family = $1;
+            push @{$ltrfams{$family}}, { id => $id, seq => $seq };
+        }
+    }
+
+    for my $family (keys %ltrfams) {
+        my $outfile = File::Spec->catfile($dir, $family.'_exemplar_ltrseqs.fasta');
+        open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+        for my $pair (@{$ltrfams{$family}}) {
+            say $out join "\n", ">".$pair->{id}, $pair->{seq};
+        }
+        close $out;
+        push @ltrseqs, $outfile;
+    }
+
+    return \@ltrseqs;
 }
 
 sub _check_divergence {
