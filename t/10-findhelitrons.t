@@ -28,7 +28,7 @@ my @results   = capture { system([0..5], "$cmd findhelitrons -h") };
 ok(@results, 'Can execute findhelitrons subcommand');
 
 my $find_cmd = "$cmd findhelitrons -g $genome -o $hsgff -f $hsfas";
-say STDERR $find_cmd;
+#say STDERR $find_cmd;
 
 #my @ret = capture { system([0..5], $find_cmd) };
 system([0..5], $find_cmd);
