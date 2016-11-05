@@ -32,10 +32,10 @@ The next two commands install BioPerl, and these can be skipped if BioPerl is in
     cpanm Data::Stag DB_File
     echo "n" | cpanm -n Bio::Root::Version
 
-Finally, download the [latest release](https://github.com/sestaton/tephra/releases/latest) and run the following commands (the version of the package will change of course):
+Finally, download the [latest release](https://github.com/sestaton/tephra/releases/latest) and run the following commands (the version of the package listed below is an example and it may not be the most recent):
 
-    wget https://github.com/sestaton/tephra/archive/v0.04.0.tar.gz
-    tar xzf v0.04.0.tar.gz && cd tephra-0.04.0
+    wget https://github.com/sestaton/tephra/archive/v0.04.2.tar.gz
+    tar xzf v0.04.2.tar.gz && cd tephra-0.04.2
     cpanm --installdeps .
     perl Makefile.PL
     make test
