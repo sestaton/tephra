@@ -143,8 +143,8 @@ sub run_ltr_classification {
     my $dir      = $self->extract_features($gff);
     my $clusters = $self->cluster_features($dir);
     my $dom_orgs = $self->parse_clusters($clusters);
-    my $dom_obj  = $self->make_fasta_from_dom_orgs($dom_orgs, $clusters);
-    my $blastout = $self->process_blast_args($dom_obj);
+    my $fas_obj  = $self->make_fasta_from_dom_orgs($dom_orgs, $clusters);
+    my $blastout = $self->process_blast_args($fas_obj);
     my $matches  = $self->parse_blast($blastout);
 
     my ($fams, $ids) = $self->write_families($matches, $clusters);
@@ -157,7 +157,12 @@ sub run_ltr_classification {
 
     $exm_obj->make_exemplars;
 
-    return ($fams, $ids);
+    my %families = (
+	$fas_obj->{family_fasta}    => 1,
+	$fas_obj->{singleton_fasta} => 1,
+    );
+
+    return (\%families, $ids);
 }
 
 sub make_fasta_from_dom_orgs {
@@ -238,6 +243,12 @@ sub process_blast_args {
     my ($obj) = @_;
     my $threads = $self->threads;
     my ($query, $db) = @{$obj}{qw(singleton_fasta family_fasta)};
+    unless (-s $query && -s $db) {
+	unlink $query unless -s $query;
+	unlink $db unless -s $db;
+	return undef;
+    }
+
     my (@fams, %exemplars);
 
     my $thr = $threads % 3 == 0 ? sprintf("%.0f", $threads/3) : 1;
@@ -245,7 +256,7 @@ sub process_blast_args {
     my $blast_report = $self->run_blast({ query => $query, db => $blastdb, threads => $thr, sort => 1 });
     my @dbfiles = glob "$blastdb*";
     unlink @dbfiles;
-    unlink $query, $db;
+    #unlink $query, $db;
 
     return $blast_report;
 }
@@ -253,6 +264,7 @@ sub process_blast_args {
 sub parse_blast {
     my $self = shift;
     my ($blast_report) = @_;
+    return undef unless defined $blast_report;
 
     my $blast_hpid = $self->blast_hit_pid;
     my $blast_hcov = $self->blast_hit_cov;
@@ -303,33 +315,35 @@ sub write_families {
     my $ltrfas = shift @compfiles;
     my $seqstore = $self->_store_seq($ltrfas);
     my $elemct = (keys %$seqstore);
-
+	
     my ($idx, $famtot) = (0, 0);
     my (%fastas, %annot_ids);
 
-    for my $str (reverse sort { @{$matches->{$a}} <=> @{$matches->{$b}} } keys %$matches) {
-	my $famfile = $sf."_family$idx".".fasta";
-	my $outfile = File::Spec->catfile($cpath, $famfile);
-	open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-	for my $elem (@{$matches->{$str}}) {
-	    my $query = $elem;
-	    $query =~ s/RL[CGX]_singleton_family\d+_//;
-	    if (exists $seqstore->{$query}) {
-		$famtot++;
-		my $coordsh = $seqstore->{$query};
-		my $coords  = (keys %$coordsh)[0];
-		$seqstore->{$query}{$coords} =~ s/.{60}\K/\n/g;
-		say $out join "\n", ">$sfname"."_family$idx"."_$query"."_$coords", $seqstore->{$query}{$coords};
-		delete $seqstore->{$query};
-		$annot_ids{$query} = $sfname."_family$idx";
+    if (defined $matches) {
+	for my $str (reverse sort { @{$matches->{$a}} <=> @{$matches->{$b}} } keys %$matches) {
+	    my $famfile = $sf."_family$idx".".fasta";
+	    my $outfile = File::Spec->catfile($cpath, $famfile);
+	    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+	    for my $elem (@{$matches->{$str}}) {
+		my $query = $elem;
+		$query =~ s/RL[CGX]_singleton_family\d+_//;
+		if (exists $seqstore->{$query}) {
+		    $famtot++;
+		    my $coordsh = $seqstore->{$query};
+		    my $coords  = (keys %$coordsh)[0];
+		    $seqstore->{$query}{$coords} =~ s/.{60}\K/\n/g;
+		    say $out join "\n", ">$sfname"."_family$idx"."_$query"."_$coords", $seqstore->{$query}{$coords};
+		    delete $seqstore->{$query};
+		    $annot_ids{$query} = $sfname."_family$idx";
+		}
+		else {
+		    die "\nERROR: $query not found in store. Exiting.";
+		}
 	    }
-	    else {
-		die "\nERROR: $query not found in store. Exiting.";
-	    }
+	    close $out;
+	    $idx++;
+	    $fastas{$outfile} = 1;
 	}
-	close $out;
-	$idx++;
-	$fastas{$outfile} = 1;
     }
     my $famct = $idx;
     $idx = 0;
@@ -370,6 +384,7 @@ sub combine_families {
     open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
     for my $file (nsort keys %$outfiles) {
+	unlink $file && next unless -s $file;
 	my $kseq = Bio::DB::HTS::Kseq->new($file);
 	my $iter = $kseq->iterator();
 	while (my $seqobj = $iter->next_seq) {
@@ -378,7 +393,7 @@ sub combine_families {
 	    $seq =~ s/.{60}\K/\n/g;
 	    say $out join "\n", ">$id", $seq;
 	}
-	unlink $file;
+	#unlink $file;
     }
     close $outfile;
 }
