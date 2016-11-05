@@ -52,7 +52,7 @@ sub get_config_paths {
     my $transla = File::Spec->catfile($chrdir, 'tephra-translate');
     my $pamlbin = File::Spec->catdir($root,    'paml4.8', 'bin');
     my $transeq = File::Spec->catdir($root,    'EMBOSS-6.5.7', 'bin', 'transeq');
-    my $blastph = File::Spec->catdir($root,    'ncbi-blast-2.5.0+', 'bin');
+    my $blastph = File::Spec->catdir($root,    'ncbi-blast+', 'bin');
     my $htsdir  = File::Spec->catdir($root,    'htslib-1.3.1', 'htslib');
 
     # this is to avoid building each time

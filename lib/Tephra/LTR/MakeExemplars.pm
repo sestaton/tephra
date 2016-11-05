@@ -47,6 +47,14 @@ has gff => (
     coerce   => 1,
 );
 
+has threads => (
+    is        => 'ro',
+    isa       => 'Int',
+    predicate => 'has_threads',
+    lazy      => 1,
+    default   => 1,
+);
+
 #
 # methods
 #
@@ -58,7 +66,13 @@ sub make_exemplars {
    
     my $index = $self->index_ref($fasta);
     my $exemplars = $self->process_vmatch_args($dir);
- 
+
+    my ($sf) = ($dir =~ /_(\w+)$/);
+    my $exemcomp = File::Spec->catfile($dir, $sf.'_exemplar_complete.fasta');
+    my $ltrs_out = File::Spec->catfile($dir, $sf.'_exemplar_ltrs.fasta');
+
+    open my $allfh, '>>', $exemcomp or die "\nERROR: Could not open file: $exemcomp\n";
+    open my $ltrs_outfh, '>>', $ltrs_out or die "\nERROR: Could not open file: $ltrs_out\n";;
     open my $gffio, '<', $gff or die "\nERROR: Could not open file: $gff\n";
 
     my ($source_id, $type, $strand, $exemplar_id_form, 
@@ -110,12 +124,6 @@ sub make_exemplars {
 
 	# full element
 	my ($source, $prim_tag, $start, $end, $strand, $family) = split /\|\|/, $ltrs{$ltr}{'full'};
-	my $exemcomp = File::Spec->catfile($dir, $family.'_exemplar_complete.fasta');
-	my $ltrs_out = File::Spec->catfile($dir, $family.'_exemplar_ltrs.fasta');
-
-	open my $allfh, '>>', $exemcomp or die "\nERROR: Could not open file: $exemcomp\n";
-	open my $ltrs_outfh, '>>', $ltrs_out or die "\nERROR: Could not open file: $ltrs_out\n";;
-	
 	$self->subseq($index, $source, $element, $start, $end, $allfh, undef, $family);
 	
 	# ltrs
@@ -138,40 +146,70 @@ sub make_exemplars {
 		$ltrct++;
 	    }
 	}
-	close $allfh;
-	close $ltrs_outfh;
     }
+    close $allfh;
+    close $ltrs_outfh;
+
+    unlink $exemcomp unless -s $exemcomp;
+    unlink $ltrs_out unless -s $ltrs_out;
 }
 
 sub process_vmatch_args {
     my $self = shift;
     my ($dir) = @_;
+    my $threads = $self->threads;
+
+    my $pm = Parallel::ForkManager->new($threads);
+    local $SIG{INT} = sub {
+        warn("Caught SIGINT; Waiting for child processes to finish.");
+        $pm->wait_all_children;
+        exit 1;
+    };
 
     my (@fams, %exemplars);
     my $wanted  = sub { push @fams, $File::Find::name if -f and /(?:family\d+).fasta$/ };
     my $process = sub { grep ! -d, @_ };
     find({ wanted => $wanted, preprocess => $process }, $dir);
 
-    for my $db (@fams) {
-	my ($name, $path, $suffix) = fileparse($db, qr/\.[^.]*/);
-	my $index = File::Spec->catfile($path, $name."_mkvtree.index");
-	my $vmerSearchOut = File::Spec->catfile($path, $name.".vmersearch");
-	my $mk_args = "-db $db -dna -indexname $index -allout -pl";
-	my $vm_args = "-showdesc 0 -l 20 -q $db -identity 80 $index > $vmerSearchOut";
+    $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
+			      my ($exemplar, $family) = @{$data_ref}{qw(exemplar family)};
+			      $exemplars{$exemplar} = $family;
+			} );
 
-	my $mkcmd = "mkvtree $mk_args";
-	my $vmcmd = "vmatch $vm_args";
-	$self->run_cmd($mkcmd);
-	$self->run_cmd($vmcmd);
-	my $exemplar = $self->parse_vmatch($vmerSearchOut);
-	my ($family) = ($exemplar =~ /(^RL[CGX]_family\d+)/);
-	$exemplar =~ s/${family}_//;
-	$exemplars{$exemplar} = $family;
-	$self->clean_index($path);
-	unlink $vmerSearchOut;
+    for my $db (@fams) {
+	$pm->start($db) and next;
+	$SIG{INT} = sub { $pm->finish };
+	my ($exemplar, $family) = $self->calculate_exemplars($db);
+	$pm->finish(0, { exemplar => $exemplar, family => $family });
     }
+
+    $pm->wait_all_children;
     
     return \%exemplars;
+}
+
+sub calculate_exemplars {
+    my $self = shift;
+    my ($db) = @_;
+
+    my ($name, $path, $suffix) = fileparse($db, qr/\.[^.]*/);
+    my $index = File::Spec->catfile($path, $name.'_mkvtree.index');
+    my $vmerSearchOut = File::Spec->catfile($path, $name.'.vmersearch');
+    my $mk_args = "-db $db -dna -indexname $index -allout -pl";
+    my $vm_args = "-showdesc 0 -qspeedup 2 -l 20 -q $db -identity 80 $index > $vmerSearchOut";
+    
+    my $mkcmd = "mkvtree $mk_args";
+    my $vmcmd = "vmatch $vm_args";
+    $self->run_cmd($mkcmd);
+    $self->run_cmd($vmcmd);
+    my $exemplar = $self->parse_vmatch($vmerSearchOut);
+    my ($family) = ($exemplar =~ /(^RL[CGX]_family\d+)/);
+    $exemplar =~ s/${family}_//;
+    $self->clean_index($path);
+    unlink $vmerSearchOut;
+    unlink $db;
+
+    return ($exemplar, $family);
 }
 
 sub parse_vmatch {

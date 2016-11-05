@@ -75,7 +75,7 @@ sub make_blastdb {
 sub run_blast {
     my $self = shift;
     my ($args) = @_;
-    my ($query, $db, $threads) = @{$args}{qw(query db threads)};
+    my ($query, $db, $threads, $sort) = @{$args}{qw(query db threads sort)};
     my ($dbname, $dbpath, $dbsuffix) = fileparse($db, qr/\.[^.]*/);
     my ($qname, $qpath, $qsuffix) = fileparse($query, qr/\.[^.]*/);
     my $blast_report = File::Spec->catfile($qpath, $qname."_$dbname".'.bln');
@@ -84,11 +84,13 @@ sub run_blast {
     my ($blastbin) = @{$config}{qw(blastpath)};
     my $blastn = File::Spec->catfile($blastbin, 'blastn');
     
-    #my $cmd = "$blastn -query $query -db $db -out $blast_report -outfmt 6";
-    #say STDERR "CMD: $cmd";
+    my $cmd = "$blastn -query $query -db $db -out $blast_report -outfmt 6 -num_threads $threads";
+    if (defined $sort) {
+	$cmd .= " | sort -nrk12,12";
+    }
 
     try {
-	my @makedbout = capture([0..5],"$blastn -query $query -db $db -out $blast_report -outfmt 6 -num_threads $threads");
+	my @makedbout = capture([0..5], $cmd);
     }
     catch {
 	say STDERR "Unable to run blast. Here is the exception: $_.";

@@ -22,16 +22,16 @@ if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
 my $cmd       = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir   = File::Spec->catdir('t', 'test_data');
 my $testfile  = File::Spec->catfile($testdir, 'RLG_family0_exemplar_ltrs.fasta');
-my $outdir    = File::Spec->catdir($testdir, 't_family_domains');
-my $resdir    = File::Spec->catdir($outdir, 'ref_ltrdigest85_combined_filtered_gypsy');
-my $modeldir  = File::Spec->catdir($resdir, 'Tephra_LTR_exemplar_models');
-my $allstfile = File::Spec->catfile($resdir, 'gypsy_sololtr_stats.tsv');
-my $outfile   = File::Spec->catfile($resdir, 'gypsy_sololtrs.gff3');
+my $outdir    = File::Spec->catdir($testdir,  't_family_domains');
+my $resdir    = File::Spec->catdir($outdir,   'ref_ltrdigest85_combined_filtered_gypsy');
+my $modeldir  = File::Spec->catdir($resdir,   'Tephra_LTR_exemplar_models');
+my $allstfile = File::Spec->catfile($resdir,  'gypsy_sololtr_stats.tsv');
+my $outfile   = File::Spec->catfile($resdir,  'gypsy_sololtrs.gff3');
 my $seqfile   = File::Spec->catfile($modeldir, 
-				    'RLG_family0_exemplar_ltrs_muscle-out_ref_masked99_hmmer_parsed_seq.fasta');
+				    'RLG_family0_exemplar_ltrseqs_muscle-out_ref_masked_hmmer_parsed_seq.fasta');
 my $parsfile  = File::Spec->catfile($modeldir,
-				    'RLG_family0_exemplar_ltrs_muscle-out_ref_masked99_hmmer_parsed.txt');
-my $masked    = File::Spec->catfile($testdir, 'ref_masked99.fas');
+				    'RLG_family0_exemplar_ltrseqs_muscle-out_ref_masked_hmmer_parsed.txt');
+my $masked    = File::Spec->catfile($testdir, 'ref_masked.fas');
 
 SKIP: {
     skip 'skip development tests', 8 unless $devtests;
@@ -73,9 +73,9 @@ SKIP: {
     ok( $seqct == $soloct, 'Same number of sequences and elements written to GFF/FASTA' );
 
     # clean up
-    unlink $allstfile, $outfile;
-    remove_tree( $outdir, { safe => 1 } );
-    unlink $masked;
+    #unlink $allstfile, $outfile;
+    #remove_tree( $outdir, { safe => 1 } );
+    #unlink $masked;
 };
 
 done_testing();

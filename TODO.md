@@ -1,4 +1,4 @@
-# TEPHRA TODO
+B1;95;0c# TEPHRA TODO
 
 This file is for logging feature requests and bugs during development. Hopefully, having one list will make it easier to keep track of proposed changes. It would be nice to rank the lists in order to prioritize tasks. It should be noted this list is for development purposes and it may go away once a stable release is made.
 
@@ -91,8 +91,9 @@ This file is for logging feature requests and bugs during development. Hopefully
 ## Command `tephra maskref`
  - [x] Generate masked reference from custom repeat library 
  - [x] Add outfile option instead of creating filename
- - [ ] Make some kind of statistical report about masking percentage. It would be helpful to format
+ - [x] Make some kind of statistical report about masking percentage. It would be helpful to format
        the output like RepeatMasker to give a global view of what was masked.
+ - [ ] Clean up the intermediate folders for each chromosome when masking the genome
 
 ## Command `tephra illrecomb`
 
@@ -115,3 +116,4 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] handle compressed input/output
  - [X] add fasta-handling classes from Transposome, which are faster than BioPerl (Won't do: Added kseq.h methods from HTSlib)
  - [ ] add verbose option for quickly debugging the installation of dependencies
+ - [ ] add command to get TIR ages

@@ -211,11 +211,16 @@ sub fetch_blast {
 
     $ftp->login or die "Cannot login ", $ftp->message;
 
-    my $dir  = '/blast/executables/blast+/LATEST';
+    my $dir = '/blast/executables/blast+/LATEST';
     $ftp->cwd($dir)
 	or die "Cannot change working directory ", $ftp->message;
 
-    my $file = 'ncbi-blast-2.5.0+-x64-linux.tar.gz';
+    my $file;
+    my @listing = $ftp->ls();
+
+    for my $f (@listing) {
+	$file = $f if $f =~ /-x64-linux.tar.gz\z/;
+    }
 
     $ftp->binary();
     my $rsize = $ftp->size($file) or die "Could not get size ", $ftp->message;
@@ -224,7 +229,7 @@ sub fetch_blast {
     die "Failed to fetch complete file: $file (local size: $lsize, remote size: $rsize)"
 	unless $rsize == $lsize;
 
-    my $ldir = 'ncbi-blast-2.5.0+';
+    my $ldir = 'ncbi-blast+';
     system("tar xzf $file 2>&1 > /dev/null") == 0 or die $!;
     unlink $file if -e $file;
     chdir $ldir or die $!;

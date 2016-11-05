@@ -67,6 +67,12 @@ has threads => (
     default   => 1,
 );
 
+has hit_pid => (
+    is      => 'ro',
+    isa     => 'Int',
+    default => 80,
+);
+
 has splitsize => (
     is        => 'ro',
     isa       => 'Num',
@@ -115,18 +121,30 @@ sub mask_reference {
     my $files = $self->_split_genome($genome, $genome_dir);
     die "\nERROR: No FASTA files found in genome directory. Exiting.\n" if @$files == 0;
 
-    my $pm = Parallel::ForkManager->new($threads);
-    local $SIG{INT} = sub {
-        $log->warn("Caught SIGINT; Waiting for child processes to finish.");
+    my $thr;
+    if ($threads % 2 == 0) {
+	$thr = sprintf("%.0f",$threads/2);
+    }
+    elsif ($threads-1 % 2 == 0) {
+	$thr = sprintf("%.0f",$threads-1/2);
+    }
+    else {
+	$thr = 1;
+    }
+
+    my $pm = Parallel::ForkManager->new($thr);
+    local @{$SIG}{qw(INT TERM)} = sub {
+        $log->warn("Caught SIGINT or SIGTERM; Waiting for child processes to finish.");
         $pm->wait_all_children;
         exit 1;
     };
 
-    my (@reports, $genome_length);
+    my (@reports, $genome_length, %seqs);
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
-			      my ($report, $chr_length) = @{$data_ref}{qw(masked chrlen)};
+			      my ($report, $chr_length, $ref, $id, $seq) = @{$data_ref}{qw(masked chrlen ref id seq)};
 			      $genome_length += $chr_length;
 			      push @reports, $report;
+			      $seqs{$ref}{$id} = $seq;
 			      my $t1 = gettimeofday();
                               my $elapsed = $t1 - $t0;
                               my $time = sprintf("%.2f",$elapsed/60);
@@ -138,8 +156,8 @@ sub mask_reference {
 	my $chr_windows = $self->_split_chr_windows($chr);
 	for my $wchr (@$chr_windows) {
 	    $pm->start($wchr) and next;
-	    $SIG{INT} = sub { $pm->finish };
-	    my $mask_struct = $self->run_masking($wchr, $out);
+	    @{$SIG}{qw(INT TERM)} = sub { $pm->finish };
+	    my $mask_struct = $self->run_masking($wchr);
 	    
 	    $pm->finish(0, $mask_struct);
 	    unlink $wchr;
@@ -149,8 +167,8 @@ sub mask_reference {
 
     $pm->wait_all_children;
 
-    $self->write_masking_results(\@reports, $genome_length, $t0);
-    remove_tree( $genome_dir, { safe => 1 } );
+    $self->write_masking_results(\@reports, \%seqs, $out, $outfile, $genome_length, $t0);
+    remove_tree( $genome_dir, { safe => 1 } ) if $self->clean;
     close $log;
 
     return;
@@ -158,9 +176,10 @@ sub mask_reference {
 
 sub run_masking {
     my $self = shift;
-    my ($wchr, $out) = @_;
+    my ($wchr) = @_;
     my $repeatdb = $self->repeatdb;
     my $length   = $self->hitlength;
+    my $pid      = $self->hit_pid;
 
     my ($cname, $cpath, $csuffix) = fileparse($wchr, qr/\.[^.]*/);
     if ($cname =~ /(\.fa.*)/) {
@@ -177,21 +196,38 @@ sub run_masking {
     my $vmatch_mlog = File::Spec->catfile($cpath, $cname.'_vmatch_mask.err');
     my $vmatch_rlog = File::Spec->catfile($cpath, $cname.'_vmatch_aln.err');
 
+    my $thr = 2;
+    my $pm = Parallel::ForkManager->new($thr);
+    local $SIG{INT} = sub {
+        $log->warn("Caught SIGINT; Waiting for child processes to finish.");
+        $pm->wait_all_children;
+        exit 1;
+    };
+
     my $mkvtree = "mkvtree -db $wchr -indexname $index -dna -allout -v -pl 2>&1 > $mkvtree_log";
-    my $vmatchm = "vmatch -p -d -q $repeatdb -qspeedup 2 -l $length -best 10000 -identity 80 -dbmaskmatch N $index 1> $outpart 2> $vmatch_mlog";
-    my $vmatchr = "vmatch -p -d -q $repeatdb -qspeedup 2 -l $length -best 10000 -sort ia -identity 80 -showdesc 0 $index 1> $report 2> $vmatch_rlog";
+    my $vmatchm = "vmatch -p -d -q $repeatdb -qspeedup 2 -l $length -best 10000 -identity $pid -dbmaskmatch N $index 1> $outpart 2> $vmatch_mlog";
+    my $vmatchr = "vmatch -p -d -q $repeatdb -qspeedup 2 -l $length -best 10000 -sort ia -identity $pid -showdesc 0 $index 1> $report 2> $vmatch_rlog";
 
     $self->run_cmd($mkvtree); # need to warn here, not just log errors
-    $self->run_cmd($vmatchm);
-    $self->run_cmd($vmatchr);
+    for my $run ($vmatchm, $vmatchr) {
+	$pm->start($run) and next;
+	$SIG{INT} = sub { $pm->finish };
+	$self->run_cmd($run);
+	$pm->finish;
+    }
+
+    $pm->wait_all_children;
 
     my $mask_struct = $self->get_masking_results($wchr, $report, $chr_length);
 
     $self->clean_index($index);
-    $self->collate($outpart, $out);
-    unlink $outpart, $mkvtree_log, $vmatch_mlog; #, $vmatch_rlog;
+    my ($id, $seq) = $self->_get_seq($outpart);
+    my $ref = $id;
+    $ref =~ s/_\d+$//;
 
-    return { masked => $mask_struct, chrlen => $chr_length };
+    unlink $mkvtree_log, $vmatch_mlog, $vmatch_rlog, $outpart if $self->clean;
+
+    return { masked => $mask_struct, chrlen => $chr_length, ref => $ref, id => $id, seq => $seq };
 }
 
 sub get_masking_results {
@@ -285,15 +321,26 @@ sub get_masking_results {
 	}
     }
 
-    #unlink $voutfile;
+    unlink $voutfile if $self->clean;
     return \%report;
 }
 
 sub write_masking_results {
     my $self = shift;
-    my ($reports, $genome_length, $t0) = @_;
+    my ($reports, $seqs, $out, $outfile, $genome_length, $t0) = @_;
     my $genome  = $self->genome;
-    my $outfile = $self->outfile;
+    my $split_size = $self->splitsize;
+
+    # first write out the masked reference
+    for my $id (nsort keys %$seqs) {
+	my $seq;
+	for my $subs (nsort keys %{$seqs->{$id}}) {
+	    $seq .= $seqs->{$id}{$subs};
+	}
+	$seq =~ s/.{60}\K/\n/g;
+	say $out join "\n", ">$id", $seq;
+	undef $seq;
+    }
 
     my %final_rep;
     my $repeat_map = $self->_build_repeat_map;
@@ -334,22 +381,11 @@ sub write_masking_results {
     say "=" x 80;
     say "Input file:          $genome";
     say "Output file:         $outfile";
+    say "Window size:         $split_size";
     say "Total genome length: $genome_length";
     say "Total masked bases:  $masked% ($masked_total/$genome_length)";
 
     return;
-}
-
-sub collate {
-    my $self = shift;
-    my ($file_in, $fh_out) = @_;
-    
-    open my $fh_in, '<', $file_in or die "\nERROR: Could not open file: $file_in\n";
-
-    while (my $line = <$fh_in>) {
-	chomp $line;
-	say $fh_out $line;
-    }
 }
 
 sub clean_index {
@@ -389,6 +425,22 @@ sub get_mask_stats {
     }
 
     return $total;
+}
+
+sub _get_seq {
+    my $self = shift;
+    my ($fasta) = @_;
+
+    my $kseq = Bio::DB::HTS::Kseq->new($fasta);
+    my $iter = $kseq->iterator;
+
+    my ($id, $seq);
+    while (my $seqobj = $iter->next_seq) {
+        $id = $seqobj->name;
+	$seq = $seqobj->seq;
+    }
+
+    return ($id, $seq);
 }
 
 sub _split_genome {
@@ -431,10 +483,14 @@ sub _split_chr_windows {
 	$remainder = $length;
 	my ($total, $start) = (0, 0);
 	my $steps = sprintf("%.0f", $length/$split_size);
+	# since we start counting at 0, the next line ensures we don't make an extra (and empty) file 
+	# when the desired split size is >= the sequence length
+	$steps = 0 if $length <= $split_size;
 
 	for my $i (0..$steps) {
+	    last if $remainder == 0;
 	    if ($remainder < $split_size) {
-		$split_size = $remainder; # if $remainder < $split_size;
+		$split_size = $remainder;
 		my $seq_part = substr $seq, $start, $split_size;
 		$seq_part =~ s/.{60}\K/\n/g;
 		my $outfile = File::Spec->catfile($path, $id."_$i.fasta");
@@ -453,7 +509,6 @@ sub _split_chr_windows {
                 close $out;
 		push @split_files, $outfile;
 	    }
-
 	    $start += $split_size;
 	    $remainder -= $split_size;
 	    $i++;
