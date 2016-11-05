@@ -22,8 +22,8 @@ my $cmd      = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir  = File::Spec->catdir('t', 'test_data');
 my $genome   = File::Spec->catfile($testdir, 'ref.fas');
 my $repeatdb = File::Spec->catfile($testdir, 'repdb.fas');
-my $masked   = File::Spec->catfile($testdir, 'ref_masked99.fas');
-my $log      = File::Spec->catfile($testdir, 'ref_vmatch.err');
+my $masked   = File::Spec->catfile($testdir, 'ref_masked.fas');
+my $log      = File::Spec->catfile($testdir, 'ref_masked.fas.log');
 
 SKIP: {
     skip 'skip development tests', 3 unless $devtests;
@@ -31,10 +31,10 @@ SKIP: {
 
     ok(@assemb_results, 'Can execute maskref subcommand');
     
-    my $find_cmd = "$cmd maskref -g $genome -d $repeatdb -o $masked --clean";
-    #say STDERR $find_cmd;
+    my $mask_cmd = "$cmd maskref -g $genome -d $repeatdb -o $masked";
+    #say STDERR $mask_cmd;
     
-    my @ret = capture { system([0..5], $find_cmd) };
+    my @ret = capture { system([0..5], $mask_cmd) };
 
     ok( -e $masked, 'Can mask reference' );
     ok( -e $log, 'Can mask reference' );

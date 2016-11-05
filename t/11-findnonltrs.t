@@ -31,8 +31,9 @@ SKIP: {
     my $find_cmd = "$cmd findnonltrs -g $genome";
     say STDERR $find_cmd;
 
-    my ($stdout, $stderr, @ret) = capture { system([0..5], $find_cmd) };
-       
+    #my ($stdout, $stderr, @ret) = capture { system([0..5], $find_cmd) };
+    system([0..5], $find_cmd);
+
     my @files;
     find( sub { push @files, $File::Find::name if /\.gff3$/ }, $outdir);
     ok( @files == 1, 'Can find some non-LTRs' );

@@ -21,11 +21,11 @@ if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
 
 my $cmd       = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir   = File::Spec->catdir('t', 'test_data');
-my $outdir    = File::Spec->catdir($testdir, 't_family_domains');
-my $resdir    = File::Spec->catdir($outdir, 'ref_ltrdigest85_combined_filtered_gypsy');
-my $allstfile = File::Spec->catfile($resdir, 'gypsy_illrecomb_stats.tsv');
-my $illstfile = File::Spec->catfile($resdir, 'gypsy_illrecomb_illrecstats.tsv');
-my $seqfile   = File::Spec->catfile($resdir, 'gypsy_illrecomb_seqs.fasta');
+my $outdir    = File::Spec->catdir($testdir,  't_family_domains');
+my $resdir    = File::Spec->catdir($outdir,   'ref_ltrdigest85_combined_filtered_gypsy');
+my $allstfile = File::Spec->catfile($resdir,  'gypsy_illrecomb_stats.tsv');
+my $illstfile = File::Spec->catfile($resdir,  'gypsy_illrecomb_illrecstats.tsv');
+my $seqfile   = File::Spec->catfile($resdir,  'gypsy_illrecomb_seqs.fasta');
 my $genome    = File::Spec->catfile($testdir, 'ref.fas');
 my $testfile  = File::Spec->catfile($testdir, 'tephra_ltrs_gypsy_family9.fasta');
 
@@ -37,7 +37,7 @@ SKIP: {
     ok(@results, 'Can execute illrecomb subcommand');
 
     my $find_cmd = "$cmd illrecomb -i $resdir -s $allstfile -r $illstfile -o $seqfile";
-    say STDERR $find_cmd;
+    #say STDERR $find_cmd;
 
     my @ret = capture { system([0..5], $find_cmd) };
     #system([0..5], $find_cmd);
