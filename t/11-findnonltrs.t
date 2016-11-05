@@ -29,7 +29,7 @@ ok( @results, 'Can execute findnonltrs subcommand' );
 SKIP: {
     skip 'skip lengthy tests', 1 unless $devtests;
     my $find_cmd = "$cmd findnonltrs -g $genome";
-    say STDERR $find_cmd;
+    #say STDERR $find_cmd;
 
     #my ($stdout, $stderr, @ret) = capture { system([0..5], $find_cmd) };
     system([0..5], $find_cmd);
