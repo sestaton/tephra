@@ -24,7 +24,7 @@ my $gff     = File::Spec->catfile($testdir, 'ref_tirs_filtered_mutator.gff3');
 my $outdir  = File::Spec->catdir($testdir, 'ref_tirs_filtered_mutator_tirages');
 
 SKIP: {
-    skip 'skip development tests', 3 unless $devtests;
+    skip 'skip development tests', 4 unless $devtests;
     my @results = capture { system([0..5], "$cmd tirage -h") };
 
     ok(@results, 'Can execute ltrage subcommand');
