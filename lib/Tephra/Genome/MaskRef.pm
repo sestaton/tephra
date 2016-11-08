@@ -141,7 +141,8 @@ sub mask_reference {
 
     my (@reports, $genome_length, %seqs);
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
-			      my ($report, $chr_length, $ref, $id, $seq) = @{$data_ref}{qw(masked chrlen ref id seq)};
+			      my ($report, $chr_length, $ref, $id, $seq, $path) 
+				  = @{$data_ref}{qw(masked chrlen ref id seq path)};
 			      $genome_length += $chr_length;
 			      push @reports, $report;
 			      $seqs{$ref}{$id} = $seq;
@@ -150,6 +151,7 @@ sub mask_reference {
                               my $time = sprintf("%.2f",$elapsed/60);
                               say $log basename($ident),
                               " just finished with PID $pid and exit code: $exit_code in $time minutes";
+			      remove_tree( $path, { safe => 1 } ) if $self->clean;
                         } );
 
     for my $chr (nsort @$files) {
@@ -160,7 +162,7 @@ sub mask_reference {
 	    my $mask_struct = $self->run_masking($wchr);
 	    
 	    $pm->finish(0, $mask_struct);
-	    unlink $wchr;
+	    #unlink $wchr;
 	}
 	unlink $chr;
     }
@@ -201,7 +203,7 @@ sub run_masking {
     local $SIG{INT} = sub {
         $log->warn("Caught SIGINT; Waiting for child processes to finish.");
         $pm->wait_all_children;
-        exit 1;
+         exit 1;
     };
 
     my $mkvtree = "mkvtree -db $wchr -indexname $index -dna -allout -v -pl 2>&1 > $mkvtree_log";
@@ -227,7 +229,12 @@ sub run_masking {
 
     unlink $mkvtree_log, $vmatch_mlog, $vmatch_rlog, $outpart if $self->clean;
 
-    return { masked => $mask_struct, chrlen => $chr_length, ref => $ref, id => $id, seq => $seq };
+    return { masked => $mask_struct, 
+	     chrlen => $chr_length, 
+	     ref    => $ref, 
+	     id     => $id, 
+	     seq    => $seq, 
+	     path   => $cpath };
 }
 
 sub get_masking_results {
