@@ -14,6 +14,7 @@ sub opt_spec {
 	[ "genome|g=s",  "The genome sequences in FASTA format to search for non-LTR-RTs " ],
 	[ "pdir|d=s",    "The directory to search for HMMs (configured automatically) "    ],
 	[ "outdir|o=s",  "The location to place the results "                              ],
+	[ "verbose|v",   "Display progress for each chromosome (Default: no) "             ],
 	[ "help|h",      "Display the usage menu and exit. "                               ],
         [ "man|m",       "Display the full manual. "                                       ],
     );
@@ -46,14 +47,16 @@ sub execute {
 sub _run_nonltr_search {
     my ($opt) = @_;
     
-    my $genome = $opt->{genome};
-    my $outdir = $opt->{outdir};
-    my $pdir   = $opt->{pdir} // $ENV{TEPHRA_DIR} // File::Spec->catdir($ENV{HOME}, '.tephra');
+    my $genome  = $opt->{genome};
+    my $outdir  = $opt->{outdir};
+    my $pdir    = $opt->{pdir} // $ENV{TEPHRA_DIR} // File::Spec->catdir($ENV{HOME}, '.tephra');
+    my $verbose = $opt->{verbose} // 0;
 
     my $nonltr_obj = Tephra::NonLTR::NonLTRSearch->new(
-	genome => $genome,
-	outdir => $outdir,
-	pdir   => $pdir );
+	genome  => $genome,
+	outdir  => $outdir,
+	pdir    => $pdir,
+	verbose => $verbose );
     
     my ($genomedir, $outputdir) = $nonltr_obj->find_nonltrs;
 

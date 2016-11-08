@@ -33,6 +33,7 @@ has fasta   => ( is => 'ro', isa => 'Path::Class::File', required => 1, coerce =
 has outdir  => ( is => 'ro', isa => 'Path::Class::Dir',  required => 1, coerce => 1 );
 has phmmdir => ( is => 'ro', isa => 'Path::Class::Dir',  required => 1, coerce => 1 );
 has pdir    => ( is => 'ro', isa => 'Path::Class::Dir',  required => 1, coerce => 1 );
+has verbose => ( is => 'ro', isa => 'Bool', predicate  => 'has_debug', lazy => 1, default => 0 );
 
 sub run_mgescan {
     my $self = shift;
@@ -53,24 +54,24 @@ sub run_mgescan {
     }
     
     # get signal for some state of ORF1, RT, and APE
-    print "Getting signal...\n";
-    print "    Protein sequence...\n";
+    print "Getting signal...\n" if $self->verbose;
+    print "    Protein sequence...\n" if $self->verbose;
     my $pep_file = File::Spec->catfile($out_dir, $dna_name.$dna_suffix.'.pep');
     $self->translate_forward($dna_file, $pep_file);
 
-    print "    RT signal...\n";
+    print "    RT signal...\n" if $self->verbose;
     my $phmm_file = File::Spec->catfile($phmm_dir, 'ebi_ds36752_seq.hmm');
     my $domain_rt_pos_file = File::Spec->catfile($pos_dir, $dna_name.$dna_suffix.'.rt.pos');
     $self->get_signal_domain($pep_file, $phmm_file, $domain_rt_pos_file);
     
-    print "    APE signal...\n";
+    print "    APE signal...\n" if $self->verbose;
     $phmm_file = File::Spec->catfile($phmm_dir, 'ebi_ds36736_seq.hmm');
     my $domain_ape_pos_file = File::Spec->catfile($pos_dir, $dna_name.$dna_suffix.'.ape.pos');
     $self->get_signal_domain($pep_file, $phmm_file, $domain_ape_pos_file);
     
     # generate corresponsing empty domains files if either of them does not exist 
     if (-e $domain_rt_pos_file || -e $domain_ape_pos_file ){
-	print $dna_name."\n";	
+	print $dna_name."\n" if $self->verbose;	
 	if (! -e $domain_rt_pos_file){
 	    open my $out, '>', $domain_rt_pos_file or die "\nERROR: Could not open file: $domain_rt_pos_file\n";
 	    print $out "";
@@ -83,7 +84,7 @@ sub run_mgescan {
 	}
 
 	# run hmm
-	print "Running HMM...\n";
+	print "Running HMM...\n" if $self->verbose;
 
 	my $mgescan  = File::Spec->catfile($pdir, 'hmm', 'tephra-MGEScan');
 	my $out_file = File::Spec->catfile($outf_dir, $dna_name.$dna_suffix);

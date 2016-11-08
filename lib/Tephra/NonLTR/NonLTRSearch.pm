@@ -28,9 +28,10 @@ Version 0.04.2
 our $VERSION = '0.04.2';
 $VERSION = eval $VERSION;
 
-has genome => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
-has outdir => ( is => 'ro', isa => 'Maybe[Str]',  required => 0 );
-has pdir   => ( is => 'ro', isa => 'Maybe[Str]',  required => 0 );
+has genome  => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
+has outdir  => ( is => 'ro', isa => 'Maybe[Str]', required => 0 );
+has pdir    => ( is => 'ro', isa => 'Maybe[Str]', required => 0 );
+has verbose => ( is => 'ro', isa => 'Bool', predicate  => 'has_debug', lazy => 1, default => 0 );
 
 sub find_nonltrs {
     my $self = shift;
@@ -66,13 +67,14 @@ sub find_nonltrs {
     find( sub { push @fasfiles, $File::Find::name if -f and /\.fa.*?$/ }, $genome_dir );
     die "\nERROR: No FASTA files found in genome directory. Exiting.\n" if @fasfiles == 0;
 
-    printf STDERR "Running forward...\n";
+    printf STDERR "Running forward...\n" if $self->verbose;
     for my $file (sort @fasfiles) {    
 	my $run_hmm = Tephra::NonLTR::RunHMM->new( 
 	    fasta   => $file, 
 	    outdir  => $plus_out_dir, 
 	    phmmdir => $phmm_dir, 
-	    pdir    => $program_dir );
+	    pdir    => $program_dir,
+	    verbose => $self->verbose );
 	$run_hmm->run_mgescan;
     }
 
@@ -83,7 +85,7 @@ sub find_nonltrs {
     $pp->postprocess;
 
     # Backward strand
-    printf "Running backward...\n";
+    printf "Running backward...\n" if $self->verbose;
 
     my $sequtils = Tephra::NonLTR::SeqUtils->new;
     $sequtils->invert_seq($genome_dir, $minus_dna_dir);
@@ -96,8 +98,8 @@ sub find_nonltrs {
 	    fasta   => $file, 
 	    outdir  => $minus_out_dir, 
 	    phmmdir => $phmm_dir, 
-	    pdir    => $program_dir );
-
+	    pdir    => $program_dir,
+	    verbose => $self->verbose );
 	$run_rev_hmm->run_mgescan;
     }
 
