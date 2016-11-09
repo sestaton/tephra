@@ -3,17 +3,18 @@ package Tephra::Config::Install;
 use 5.010;
 use Moose;
 use MooseX::Types::Path::Class;
+use Path::Class::File;
 use Cwd;
 use File::Spec;
 use File::Find;
-use File::Copy qw(copy move);
-use File::Path qw(make_path remove_tree);
 use File::Basename;
-use Path::Class::File;
-use HTML::TreeBuilder;
+use Log::Any      qw($log);
+use File::Copy    qw(copy move);
+use File::Path    qw(make_path remove_tree);
+use Capture::Tiny qw(capture);
 use HTTP::Tiny;
+use HTML::TreeBuilder;
 use Net::FTP;
-use Log::Any qw($log);
 use Tephra::Config::Exe;
 use namespace::autoclean;
 #use Data::Dump::Color;
@@ -326,8 +327,14 @@ sub fetch_paml {
     find( sub { push @exes, $File::Find::name if -f and /\.exe$/ }, $bin );
     unlink @exes;
     chdir 'src';
-    system("make -j4 2>&1 >/dev/null") == 0 
-	or die "make failed: $!";
+
+    my @results = capture { system('make', '-j4') };
+    for my $l (split /^/, @results) {
+        if ($l =~ /error/i) {
+            say STDERR "\nERROR: 'make' failed for PAML. Please report the error below. Exiting.\n";
+            say STDERR @results;
+        }
+    }
 
     my @exelist = ('yn00', 'baseml', 'basemlg', 'mcmctree', 'pamp', 'evolver', 'infinitesites', 'codeml');
     my $rootdir = File::Spec->catdir($root, 'paml4.8', 'bin');
