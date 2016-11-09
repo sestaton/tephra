@@ -29,7 +29,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] check if input directory exists
  - [x] make sure to set path to correct version of hmmer
  - [x] add family name to GFF output (the family name is now in the Parent tag)
- - [ ] add option to pick on the top 20 families to speed up execution
+ - [x] add option to pick on the top 20 families to speed up execution
 
 ## Command `tephra classifytirs`
  - [x] Classify 'best' TIR elements into superfamilies based on domain content, TSD, and/or motif
@@ -59,7 +59,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Find helitrons in reference sequences with HelitronScanner
  - [x] Generate GFF3 of full-length helitrons
  - [ ] Annotate coding domains in helitrons and include domains in GFF 
- - [ ] Adjust header for full length elements to match output of other commands
+ - [x] Adjust header for full length elements to match output of other commands
 
 ## Command `tephra findtrims`
  - [x] Find all non-overlapping TRIMs under strict and relaxed conditions
@@ -93,7 +93,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Add outfile option instead of creating filename
  - [x] Make some kind of statistical report about masking percentage. It would be helpful to format
        the output like RepeatMasker to give a global view of what was masked.
- - [ ] Clean up the intermediate folders for each chromosome when masking the genome
+ - [x] Clean up the intermediate folders for each chromosome when masking the genome
 
 ## Command `tephra illrecomb`
 
@@ -102,7 +102,7 @@ This file is for logging feature requests and bugs during development. Hopefully
 *** 
 
 ## Meta
- - [ ] logging results/progress
+ - [ ] logging results/progress (need to log progress and errors to the correct location)
  - [ ] add debug options for seeing commands (done for LTR search)
  - [ ] documentation of algorithms, in addition to usage
  - [ ] reduce LTRs/TRIMs....perhaps when combining all GFFs
@@ -116,4 +116,4 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] handle compressed input/output
  - [X] add fasta-handling classes from Transposome, which are faster than BioPerl (Won't do: Added kseq.h methods from HTSlib)
  - [ ] add verbose option for quickly debugging the installation of dependencies
- - [ ] add command to get TIR ages
+ - [x] add command to get TIR ages
