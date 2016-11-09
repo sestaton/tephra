@@ -1,6 +1,14 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.04.3	11/09/16	Vancouver, BC
+
+- Add verbose option to 'findnonltrs' command to monitor progress.
+- Add method to remove progress for each chromosome when masking with 'maskref' command
+  to same disk space.
+- Quiet the build of PAML when configuring dependencies. We still check for errors but the 
+  user does not need to see the warnings.
+
 0.04.2	11/05/16	Vancouver, BC
 
 - Add new LTR family joining method that is less stringent. Now families are joined based
@@ -15,7 +23,7 @@ Version	Date	Location
   the individual split subsets.
 - Adjust the --clean option with 'maskref' command so results may be kept for debugging or other
   purposes.
-- Add check to 'maskref' to ensure the correct number of subsets are created from the referenc.
+- Add check to 'maskref' to ensure the correct number of subsets are created from the reference.
 - Add option to modify the percent identity threshold for matches with the 'maskref' command.
 - Add method to not block when masking reference and generating masking report with 'maskref' command.
   This change results in about 40-50% reduction in runtimes when masking. 
