@@ -10,11 +10,11 @@ Tephra - Transposable element palenontology
 
 =head1 VERSION
 
-Version 0.04.2
+Version 0.04.3
 
 =cut
 
-our $VERSION = '0.04.2';
+our $VERSION = '0.04.3';
 #$VERSION = eval $VERSION;
 
 =head1 SYNOPSIS
