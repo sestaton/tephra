@@ -1,4 +1,4 @@
-B1;95;0c# TEPHRA TODO
+# TEPHRA TODO
 
 This file is for logging feature requests and bugs during development. Hopefully, having one list will make it easier to keep track of proposed changes. It would be nice to rank the lists in order to prioritize tasks. It should be noted this list is for development purposes and it may go away once a stable release is made.
 
