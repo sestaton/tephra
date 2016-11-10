@@ -49,6 +49,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] add options for LTR size parameters
  - [ ] add LTR_Finder
  - [x] add config file to handle the multitude of LTR-RT constraints
+ - [ ] clean up ltrharvest and ltrdigest intermediate files
 
  - Domain matches 
    - [ ] adjust duplicate domain filtering to consider strand and range of matches
