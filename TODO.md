@@ -95,6 +95,8 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Make some kind of statistical report about masking percentage. It would be helpful to format
        the output like RepeatMasker to give a global view of what was masked.
  - [x] Clean up the intermediate folders for each chromosome when masking the genome
+ - [ ] Create overlapping windows for masking subsets to solve the issue of reduced representation when
+       generating smaller chunks
 
 ## Command `tephra illrecomb`
 
