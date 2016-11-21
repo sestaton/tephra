@@ -16,6 +16,7 @@ sub opt_spec {
 	[ "hitlength|l=i", "The alignment length cutoff for hits to the repeat database (Default: 70) "         ],
 	[ "threads|t=i",   "The number of threads to use for masking "                                          ],
 	[ "splitsize|s=i", "The chunk size to process at a time (Default: 50kb) "                               ],
+	[ "overlap|v=i",   "The overlap between the chunks of the chromosomes (Default: 100 bp) "               ],
 	[ "clean|c=i",     "Clean up the index files (Default: yes) "                                           ],
 	[ "help|h",        "Display the usage menu and exit. "                                                  ],
         [ "man|m",         "Display the full manual. "                                                          ],
@@ -57,6 +58,7 @@ sub _run_masking {
     my $clean     = $opt->{clean} // 1;
     my $threads   = $opt->{threads} // 1;
     my $splitsize = $opt->{splitsize} // 5e4;
+    my $overlap   = $opt->{overlap} // 100;
 
     my $mask_obj = Tephra::Genome::MaskRef->new( 
 	genome    => $genome, 
@@ -67,6 +69,7 @@ sub _run_masking {
 	clean     => $clean,
 	threads   => $threads,
 	splitsize => $splitsize,
+	overlap   => $overlap,
     );
     
     $mask_obj->mask_reference;
@@ -92,6 +95,7 @@ Options:
     -c|clean      :   Clean up the index files (Default: yes).
     -t|threads    :   The number of threads to use for masking (Default: 1).
     -s|splitsize  :   The chunk size to process at a time (Default: 50kb).
+    -v|overlap    :   The overlap between the chunks of the chromosomes (Default: 100 bp).
 
 END
 }
@@ -159,6 +163,11 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
  The chunk size to process at a time (Default: 50kb). Increasing the size to processes will speed up the
  execution time but will increase memory usage. 
+
+=item -v, -- overlap 
+
+ The overlap between the chunks of the chromosomes (Default: 100 bp). Increasing this value will slow down 
+ processing. The goal is to reduce artifacts by spliting up the chromosomes.
 
 =item -h, --help
 
