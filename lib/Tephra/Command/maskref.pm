@@ -90,6 +90,7 @@ Required:
     -d|repeatdb   :   The database of repeat sequences to use for masking.
 
 Options:
+    -p|percentid  :   The percent identity cutoff for classification of pairwise matches (Default: 80).
     -l|hitlength  :   The alignment length cutoff for hits to the repeat database (Default: 70).
     -o|outfile    :   The output filename to use for the masked genome.
     -c|clean      :   Clean up the index files (Default: yes).
@@ -153,6 +154,11 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =item -t, --threads
 
  The number of threads to use for masking (Default: 1). 
+
+=item -p, --percentid
+
+ The percent identity cutoff for classification of pairwise matches with the repeat database
+ and the reference (Default: 80).
 
 =item -l, --hitlength
 
