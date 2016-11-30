@@ -81,6 +81,14 @@ has splitsize => (
     default   => 5e4,
 );
 
+has overlap => (
+    is        => 'ro',
+    isa       => 'Int',
+    predicate => 'has_overlap',
+    lazy      => 1,
+    default   => 100,
+);
+
 has hitlength => (
     is      => 'ro',
     isa     => 'Int',
@@ -139,7 +147,7 @@ sub mask_reference {
         exit 1;
     };
 
-    my (@reports, $genome_length, %seqs);
+    my (@reports, $genome_length, %seqs, $window_ct);
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			      my ($report, $chr_length, $ref, $id, $seq, $path) 
 				  = @{$data_ref}{qw(masked chrlen ref id seq path)};
@@ -151,25 +159,31 @@ sub mask_reference {
                               my $time = sprintf("%.2f",$elapsed/60);
                               say $log basename($ident),
                               " just finished with PID $pid and exit code: $exit_code in $time minutes";
-			      remove_tree( $path, { safe => 1 } ) if $self->clean;
+			      #remove_tree( $path, { safe => 1 } ) if $self->clean;
                         } );
 
     for my $chr (nsort @$files) {
-	my $chr_windows = $self->_split_chr_windows($chr);
-	for my $wchr (@$chr_windows) {
+	#my $chr_windows = $self->_split_chr_windows($chr);
+	my ($chr_windows, $rep_intervals) = $self->_split_chr_windows($chr);
+	$window_ct += (keys %$chr_windows);
+	for my $seq_index (sort { $a <=> $b } keys %$chr_windows) { #@$chr_windows) {
+	    my $wchr = $chr_windows->{$seq_index};
+	    my $rep_coords = $rep_intervals->{$seq_index};
+	    #say STDERR join q{ }, $wchr, $index, $rep_coords and exit;
 	    $pm->start($wchr) and next;
 	    @{$SIG}{qw(INT TERM)} = sub { $pm->finish };
-	    my $mask_struct = $self->run_masking($wchr);
+	    my $mask_struct = $self->run_masking($seq_index, $wchr, $rep_coords);
 	    
 	    $pm->finish(0, $mask_struct);
 	    #unlink $wchr;
 	}
 	unlink $chr;
+	#remove_tree( $path, { safe => 1 } ) if $self->clean;
     }
 
     $pm->wait_all_children;
 
-    $self->write_masking_results(\@reports, \%seqs, $out, $outfile, $genome_length, $t0);
+    $self->write_masking_results(\@reports, \%seqs, $out, $outfile, $genome_length, $window_ct, $t0);
     remove_tree( $genome_dir, { safe => 1 } ) if $self->clean;
     close $log;
 
@@ -178,7 +192,7 @@ sub mask_reference {
 
 sub run_masking {
     my $self = shift;
-    my ($wchr) = @_;
+    my ($seq_index, $wchr, $rep_coords) = @_;
     my $repeatdb = $self->repeatdb;
     my $length   = $self->hitlength;
     my $pid      = $self->hit_pid;
@@ -188,6 +202,7 @@ sub run_masking {
 	$cname =~ s/$1//;
     }
 
+    #say STDERR $wchr;
     my $chr_length = $self->get_mask_stats($wchr);
 
     my $report  = File::Spec->catfile($cpath, $cname.'_vmatch_report.txt');
@@ -220,12 +235,13 @@ sub run_masking {
 
     $pm->wait_all_children;
 
-    my $mask_struct = $self->get_masking_results($wchr, $report, $chr_length);
+    my $mask_struct = $self->get_masking_results($wchr, $report, $chr_length, $rep_coords, $seq_index);
 
     $self->clean_index($index);
     my ($id, $seq) = $self->_get_seq($outpart);
     my $ref = $id;
     $ref =~ s/_\d+$//;
+    #say STDERR join q{ }, $id, length($seq);
 
     unlink $mkvtree_log, $vmatch_mlog, $vmatch_rlog, $outpart if $self->clean;
 
@@ -239,9 +255,27 @@ sub run_masking {
 
 sub get_masking_results {
     my $self = shift;
-    my ($chr, $voutfile, $genome_length) = @_;
+    my ($chr, $voutfile, $genome_length, $rep_coords, $seq_index) = @_;
     my $genome  = $self->genome;
     my $outfile = $self->outfile;
+    my $overlap_size = $self->overlap;
+    #say STDERR "DEBUG: $overlap_size";
+
+    my ($rep_start, $rep_end);
+    my ($split_start, $split_end) = split /\|\|/, $rep_coords;
+    if ($seq_index > 0) {
+	$rep_start = $overlap_size;
+	$rep_end = $genome_length-$overlap_size;
+	#say STDERR "DEBUG1-2: $genome_length $overlap_size";
+	#say STDERR "DEBUG1-2: $seq_index -> $rep_start -> $rep_end";
+    }
+    else {
+	$rep_start = 1;
+	$rep_end = $genome_length-$overlap_size;
+	#$rep_end = $genome_length-$overlap_size;
+	#say STDERR "DEBUG0: $genome_length $overlap_size";
+	#say STDERR "DEBUG0: $seq_index -> $rep_start -> $rep_end";
+    }
 
     my $repeat_map = $self->_build_repeat_map;
 
@@ -251,39 +285,51 @@ sub get_masking_results {
 
     my $tree = Set::IntervalTree->new;
     my $comm = <$in>; # discard the args to vmatch
-    my $line = <$in>;
-    unless (defined $line && $line =~ /\S/) {
-	# if no hits, return
-	close $in;
-	unlink $voutfile;
-	return \%report;
+    my $line;
+    line : { 
+	$line = <$in>;
+	unless (defined $line && $line =~ /\S/) {
+	    # if no hits, return
+	    close $in;
+	    unlink $voutfile;
+	    return \%report;
+	}
+	# $line is the following format: 
+	# l(S) h(S) r(S) t l(Q) h(Q) r(Q) d e s i
+	# where:
+	# l = length
+	# h = sequence header
+	# r = relative position
+	# t = type (D=direct, P=palindromic)
+	# d = distance value (negative=hamming distance, 0=exact, positive=edit distance)
+	# e = E-value
+	# s = score value (negative=hamming score, positive=edit score)
+	# i = percent identity
+	# (S) = in Subject
+	# (Q) = in Query
+	#line : {
+	my $line = <$in>;
+	chomp $line;
+	$line =~ s/^\s+//;
+	my @f = split /\s+/, $line;
+	my $send = $f[2] + $f[0]; # + $rep_end;
+	#say STDERR "DEBUG: $seq_index -> start => $f[2] -> rep_start => $rep_start";
+	redo line unless $f[2] >= $rep_start; # && $send <= $rep_end;
+
+	$tree->insert({ id => $f[1], match => $f[5], start => $f[2], end => $send, len => $f[0] }, 
+		      $f[2], $send);
+	$windows{$f[2]} = { start => $f[2], end => $send, len => $f[0], overlap => 0, match => $f[5] };
     }
-    # $line is the following format: 
-    # l(S) h(S) r(S) t l(Q) h(Q) r(Q) d e s i
-    # where:
-    # l = length
-    # h = sequence header
-    # r = relative position
-    # t = type (D=direct, P=palindromic)
-    # d = distance value (negative=hamming distance, 0=exact, positive=edit distance)
-    # e = E-value
-    # s = score value (negative=hamming score, positive=edit score)
-    # i = percent identity
-    # (S) = in Subject
-    # (Q) = in Query
-    chomp $line;
-    $line =~ s/^\s+//;
-    my @f = split /\s+/, $line;
-    my $send = $f[2] + $f[0];
-    $tree->insert({ id => $f[1], match => $f[5], start => $f[2], end => $send, len => $f[0] }, $f[2], $send);
-    $windows{$f[2]} = { start => $f[2], end => $send, len => $f[0], overlap => 0, match => $f[5] };
 
     while (my $line = <$in>) {
 	chomp $line;
 	$line =~ s/^\s+//;
 	my ($slen, $sid, $spos, $htype, $qlen, $hid, $qpos, $dist, $evalue, $score, $pid) = split /\s+/, $line;
-	my $end = $spos + $slen;
-
+	my $end = $spos + $slen; # + $rep_end;
+	#$spos = $spos + $rep_start;
+	next unless $spos >= $rep_start;
+	last if $end >= $rep_end;
+	#say join "\t", $seq_index, $spos, $end;
 	my $res = $tree->fetch($spos, $end);
     
 	if (@$res) {
@@ -301,10 +347,12 @@ sub get_masking_results {
         
 	    my $nlen = $best_start > 0 ? $best_end-$best_start : $best_end;
 	    $windows{$best_start} = { start => $best_start, end => $best_end, len => $nlen, match => $hid, overlap => $overl };
-	    $tree->insert({ id => $sid, match => $hid, start => $best_start, end => $best_end, len => $nlen }, $best_start, $best_end);
+	    $tree->insert({ id => $sid, match => $hid, start => $best_start, end => $best_end, len => $nlen }, 
+			  $best_start, $best_end);
 	}
 	else {
-	    $tree->insert({ id => $sid, match => $hid, start => $spos, end => $end, len => $slen }, $spos, $end);
+	    $tree->insert({ id => $sid, match => $hid, start => $spos, end => $end, len => $slen }, 
+			  $spos, $end);
 	    $windows{$spos} = { start => $spos, end => $end, len => $slen, overlap => 0, match => $hid};
 	}
     }
@@ -334,20 +382,58 @@ sub get_masking_results {
 
 sub write_masking_results {
     my $self = shift;
-    my ($reports, $seqs, $out, $outfile, $genome_length, $t0) = @_;
-    my $genome  = $self->genome;
+    my ($reports, $seqs, $out, $outfile, $genome_length, $window_ct, $t0) = @_;
+    my $genome = $self->genome;
     my $split_size = $self->splitsize;
+    my $overlap = $self->overlap;
+
+    ## debug adjusting genome length
+    #say STDERR "genome length: $genome_length";
+    #say STDERR "windowct: $window_ct, overlap: $overlap";          
+    #$genome_length -= $overlap * ($window_ct+1);
+    #say STDERR "genome length: $genome_length";
 
     # first write out the masked reference
+    my $final = (nsort keys %$seqs)[-1];
+    my $seqct = 0;
+    my $seq;
+    my $final_length = 0;
+
     for my $id (nsort keys %$seqs) {
-	my $seq;
 	for my $subs (nsort keys %{$seqs->{$id}}) {
-	    $seq .= $seqs->{$id}{$subs};
+	    my $length = length($seqs->{$id}{$subs});
+	    if ($seqct > 0) {
+		if ($id eq $final) {
+		    $length -= $overlap;
+		    #say STDERR "debug final: $seqct $overlap, $length";
+		    my $seqpart = substr $seqs->{$id}{$subs}, $overlap, $length;
+		    $seq .= $seqpart;
+		}
+		else {
+		    $length -= $overlap*2;
+		    #say STDERR "debug intermediate: $seqct $overlap, $length";
+		    my $seqpart = substr $seqs->{$id}{$subs}, $overlap, $length;
+		    $seq .= $seqpart;
+		}
+	    }
+	    else {
+		$length -= $overlap;
+		#say STDERR "debug initial: $seqct 0, $length";
+		my $seqpart = substr $seqs->{$id}{$subs}, 0, $length;
+		$seq .= $seqpart;
+	    }
 	}
-	$seq =~ s/.{60}\K/\n/g;
-	say $out join "\n", ">$id", $seq;
-	undef $seq;
+	$seqct++;
     }
+    $seqct -= 1;
+    $final_length += length($seq);
+    $genome_length = $final_length;  # adjust for overlaps
+    #say STDERR "final length: $final_length";
+
+    my $seqid = $final; # =~ s/\d+_\d+$//);
+    $seqid =~ s/_${seqct}_.*//;
+    $seq =~ s/.{60}\K/\n/g;
+    say $out join "\n", ">$seqid", $seq;
 
     my %final_rep;
     my $repeat_map = $self->_build_repeat_map;
@@ -475,54 +561,71 @@ sub _split_chr_windows {
     my $self = shift;
     my ($genome) = @_;
     my $split_size = $self->splitsize;
+    my $overlap = $self->overlap;
 
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
 
-    my @split_files;
+    my (%rep_intervals, %split_files);
     my $remainder = 0;
     my $kseq = Bio::DB::HTS::Kseq->new($genome);
     my $iter = $kseq->iterator;
 
     while (my $seqobj = $iter->next_seq) {
-	my $id  = $seqobj->name;
-	my $seq = $seqobj->seq;
-	my $length = length($seq);
-	$remainder = $length;
-	my ($total, $start) = (0, 0);
-	my $steps = sprintf("%.0f", $length/$split_size);
-	# since we start counting at 0, the next line ensures we don't make an extra (and empty) file 
-	# when the desired split size is >= the sequence length
-	$steps = 0 if $length <= $split_size;
+        my $id  = $seqobj->name;
+        my $seq = $seqobj->seq;
+        my $length = length($seq);
+        $remainder = $length;
+        my ($total, $start, $end, $chunk_size) = (0, 0, 0, 0);
+        my $steps = sprintf("%.0f", $length/$split_size);
+        # since we start counting at 0, the next line ensures we don't make an extra (and empty) file 
+        # when the desired split size is >= the sequence length
+        $steps = 0 if $length <= $split_size;
 
-	for my $i (0..$steps) {
-	    last if $remainder == 0;
-	    if ($remainder < $split_size) {
-		$split_size = $remainder;
-		my $seq_part = substr $seq, $start, $split_size;
-		$seq_part =~ s/.{60}\K/\n/g;
-		my $outfile = File::Spec->catfile($path, $id."_$i.fasta");
-		open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-		say $out join "\n", ">".$id."_$i", $seq_part;
-		close $out;
-		push @split_files, $outfile;
-		last;
-	    }
-	    else {
-		my $seq_part = substr $seq, $start, $split_size;
+        for my $i (0..$steps) {
+            last if $remainder == 0;
+            if ($remainder < $chunk_size) {
+                $start = $end - ($overlap*2);
+                $end = $length;
+		$chunk_size = $end - $start;
+                #say STDERR "SEQ: $i $start $end $chunk_size";
+                my $seq_part = substr $seq, $start, $chunk_size;
                 $seq_part =~ s/.{60}\K/\n/g;
                 my $outfile = File::Spec->catfile($path, $id."_$i.fasta");
                 open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-                say $out join "\n", ">".$id."_$i", $seq_part;
+                say $out join "\n", ">".$id."_$i"."_".$start."_$end", $seq_part;
                 close $out;
-		push @split_files, $outfile;
-	    }
-	    $start += $split_size;
-	    $remainder -= $split_size;
-	    $i++;
-	}
+                $rep_intervals{$i} = join "||", $start+$overlap, $end;
+                $split_files{$i} = $outfile;
+                last;
+            }
+            else {
+                if ($i > 0) {
+		    $start = $end - ($overlap*2);
+                    $end = $start + $split_size + ($overlap*2);
+                    $rep_intervals{$i} = join "||", $start+$overlap, $start+$split_size+$overlap;
+                }
+                else {
+                    $end = $split_size + $overlap;
+                    $rep_intervals{$i} = join "||", $start+1, $start+$split_size;
+                }
+                $chunk_size = $end - $start;
+                #say STDERR "SEQ: $i $start $end $chunk_size";
+                my $seq_part = substr $seq, $start, $chunk_size;
+                $seq_part =~ s/.{60}\K/\n/g;
+                my $outfile = File::Spec->catfile($path, $id."_$i.fasta");
+                open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+                $start = $i > 0 ? $start : $start+1;
+                say $out join "\n", ">".$id."_$i"."_".$start."_$end", $seq_part;
+                close $out;
+                $split_files{$i} = $outfile;
+                $remainder -= $chunk_size;
+                $i++;
+                #say STDERR "rem: $remainder";
+            }
+        }
     }
 
-    return \@split_files;
+    return (\%split_files, \%rep_intervals);
 }
 
 sub _build_repeat_map {
