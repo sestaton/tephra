@@ -7,6 +7,7 @@ Version	Date	Location
   (the specifics of the length and overlaps can be changed by the user) for
   masking. This allows more accurate estimates to be gained with very large
   (i.e, megabase sized) subsets, which greatly speeds up the process.
+  The overlap size is added to the output table for comparing different parameters.
 
 0.04.3	11/09/16	Vancouver, BC
 
