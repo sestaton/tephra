@@ -1,6 +1,13 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.04.4	11/29/16	Vancouver, BC
+
+- Modify 'maskref' command to now generate overlapping subsets of the genome
+  (the specifics of the length and overlaps can be changed by the user) for
+  masking. This allows more accurate estimates to be gained with very large
+  (i.e, megabase sized) subsets, which greatly speeds up the process.
+
 0.04.3	11/09/16	Vancouver, BC
 
 - Add verbose option to 'findnonltrs' command to monitor progress.
