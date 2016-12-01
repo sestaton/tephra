@@ -16,8 +16,8 @@ sudo cp hmmer-3.1b2-linux-intel-x86_64/binaries/* /usr/local/bin/
 perl Makefile.PL
 make
 #cover -test -report coveralls
-#cover -test -blib -ignore "blib/lib/Tephra/Command.pm" -report coveralls
-prove -bv t/04-findtirs.t
+cover -test -blib -ignore "blib/lib/Tephra/Command.pm" -report coveralls
+#prove -bv t/04-findtirs.t
 #prove -bv t/0[45]*t
 #make test
 #prove -bv t/01-findltrs.t
