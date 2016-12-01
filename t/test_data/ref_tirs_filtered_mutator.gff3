@@ -1,8 +1,0 @@
-##gff-version   3
-##sequence-region   Contig57_HLAC-254L24 1 119871
-Contig57_HLAC-254L24	TIRvish	repeat_region	111284	111673	.	?	.	ID=repeat_region2
-Contig57_HLAC-254L24	TIRvish	target_site_duplication	111284	111293	.	?	.	Parent=repeat_region2
-Contig57_HLAC-254L24	TIRvish	terminal_inverted_repeat_element	111294	111663	.	?	.	ID=terminal_inverted_repeat_element2;Parent=repeat_region2;tir_similarity=91.67
-Contig57_HLAC-254L24	TIRvish	terminal_inverted_repeat	111294	111414	.	?	.	Parent=terminal_inverted_repeat_element2
-Contig57_HLAC-254L24	TIRvish	terminal_inverted_repeat	111543	111663	.	?	.	Parent=terminal_inverted_repeat_element2
-Contig57_HLAC-254L24	TIRvish	target_site_duplication	111664	111673	.	?	.	Parent=repeat_region2
