@@ -1,7 +1,7 @@
 Revision history for Tephra
 
 Version	Date	Location
-0.04.4	11/30/16	Vancouver, BC
+0.04.4	12/01/16	Vancouver, BC
 
 - Modify 'maskref' command to now generate overlapping subsets of the genome
   (the specifics of the length and overlaps can be changed by the user) for
