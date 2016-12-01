@@ -1,5 +1,5 @@
 # Tephra
-Transposable Element Paleontology by Historical Reconstruction from Annotations
+A tool discovering transposable elements and describing patterns of genome evolution
 
 [![Build Status](https://travis-ci.org/sestaton/tephra.svg?branch=master)](https://travis-ci.org/sestaton/tephra) [![Coverage Status](https://coveralls.io/repos/github/sestaton/tephra/badge.svg?branch=master)](https://coveralls.io/github/sestaton/tephra?branch=master) [![GitHub version](https://badge.fury.io/gh/sestaton%2Ftephra.svg)](https://badge.fury.io/gh/sestaton%2Ftephra)
 
