@@ -18,4 +18,4 @@ requires 'HTML::TreeBuilder';
 requires 'autodie';
 requires 'Net::FTP';
 requires 'Bio::GFF3::LowLevel';
-requires 'Data::Dump::Color';
+#requires 'Data::Dump::Color';
