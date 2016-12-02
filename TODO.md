@@ -120,3 +120,4 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [X] add fasta-handling classes from Transposome, which are faster than BioPerl (Won't do: Added kseq.h methods from HTSlib)
  - [ ] add verbose option for quickly debugging the installation of dependencies
  - [x] add command to get TIR ages
+ - [ ] investigate why tests fail with Perl version 5.12 or lower
