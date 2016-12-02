@@ -9,7 +9,7 @@ use Capture::Tiny       qw(capture);
 use List::Util          qw(sum);
 use File::Find;
 use File::Spec;
-#use Data::Dump::Color;
+use Data::Dump::Color;
 
 use Test::More tests => 9;
 
@@ -35,7 +35,7 @@ my ($stdout, $stderr, @ret) = capture { system([0..5], $find_cmd) };
 my @files;
 find( sub { push @files, $File::Find::name if /\.gff3$/ }, $testdir);
 
-#dd \@files;
+dd \@files;
 ok( @files == 3, 'Can find some ltrs' ); # 2 ltrdigest files + combined file
 
 my $combined;
