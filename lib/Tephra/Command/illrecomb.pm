@@ -9,7 +9,7 @@ use Tephra::Genome::IllRecombination;
 
 sub opt_spec {
     return (
-	[ "indir|i=s",       "The directory of LTR families in FASTA format. "                             ],
+	[ "infile|i=s",      "The combined file of LTR families in FASTA format. "                         ],
 	[ "outfile|o=s",     "The filename to write the extracted sequences to "                           ],
 	[ "statsfile|s=s",   "The file to write the alignment stats for all gaps to "                      ],
 	[ "recombstats|r=s", "The file to write the alignment stats for illegetimate recombination sites " ],
@@ -33,7 +33,7 @@ sub validate_args {
         $self->help;
         exit(0);
     }
-    elsif (!$opt->{indir} || !$opt->{outfile} || !$opt->{statsfile}) {
+    elsif (!$opt->{infile} || !$opt->{outfile} || !$opt->{statsfile}) {
 	say "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
@@ -48,7 +48,7 @@ sub execute {
 sub _calculate_ill_recomb {
     my ($opt) = @_;
 
-    my $dir          = $opt->{indir};
+    my $infile       = $opt->{infile};
     my $outfile      = $opt->{outfile};
     my $allstatsfile = $opt->{statsfile};
     my $illrecstats  = $opt->{recombstats};
@@ -56,7 +56,7 @@ sub _calculate_ill_recomb {
     my $clean        = $opt->{clean} // 0;
 
     my $ill_obj = Tephra::Genome::IllRecombination->new(
-	dir             => $dir,
+	infile          => $infile,
 	outfile         => $outfile,
 	allstatsfile    => $allstatsfile,
 	illrecstatsfile => $illrecstats,
@@ -75,7 +75,8 @@ USAGE: tephra illrecomb [-h] [-m]
     -h --help        :   Print the command usage.
 
 Required:
-    -i|indir         :    The directory of LTR families in FASTA format.
+    -i|infile        :    The combined file of LTR families in FASTA format produced by the
+                          'tephra classifyltrs' command.
     -o|outfile       :    File name to write the extracted sequences to.
     -s|statsfile     :    A file to write alignment stats to.
 
@@ -97,7 +98,7 @@ END
 
 =head1 SYNOPSIS    
 
- tephra illrecomb -i tephra_ltr_familyX_dir -s familyX_illrecomb_stats.txt -o familyX_illrecomb_seqs.fasta
+ tephra illrecomb -i tephra_combined_ltrs.fasta -s illrecomb_stats.txt -o illrecomb_seqs.fasta
 
 =head1 DESCRIPTION
 
@@ -113,9 +114,9 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =over 2
 
-=item -i, --indir
+=item -i, --infile
 
- The directory of LTR families in FASTA format.
+ The file of combined LTR families in FASTA format that is produced by the 'tephra classifyltrs' command.
 
 =item -o, --outfile
 
