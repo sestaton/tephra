@@ -20,7 +20,7 @@ use Time::HiRes  qw(gettimeofday);
 use Log::Any     qw($log);
 use Scalar::Util qw(openhandle);
 use Tephra::Config::Exe;
-use Data::Dump::Color;
+#use Data::Dump::Color;
 use namespace::autoclean;
 
 with 'Tephra::Role::Util';
@@ -94,9 +94,9 @@ sub find_illegitimate_recombination {
     my $statsfile = $self->allstatsfile;
 
     my $alignments = $self->align_features;
-
+ 
     my $all_gap_stats = {};
-     for my $aln_file (@$alignments) {
+    for my $aln_file (@$alignments) {
 	$self->find_align_gaps($all_gap_stats, $aln_file);
     }
 
@@ -352,8 +352,8 @@ sub get_indel_range {
 sub bl2seq_compare {
     my $self = shift;
     my ($args) = @_;
-    my ($indel_len, $upstr_seq, $downstr_seq, $upstr_id, $downstr_id, $fname, $fpath, $each_out, $illrecstat_fh)
-	= @{$args}{qw(indel_length upstream_seq downstream_seq upstream_id downstream_id fas_name fas_path seqs_fh stats_fh)};
+    my ($indel_len, $upstr_seq, $downstr_seq, $upstr_id, $downstr_id, $fname, $fpath, $each_out, $illrecstat_fh) =
+	@{$args}{qw(indel_length upstream_seq downstream_seq upstream_id downstream_id fas_name fas_path seqs_fh stats_fh)};
 
     my $qname = File::Temp->new( TEMPLATE => $fname.'_XXXX',
 				 DIR      => $fpath,
@@ -561,7 +561,6 @@ sub collate_gap_stats {
 
 sub _filter_families_by_size {
     my $self = shift;
-    #my ($seqs) = @_;
     my $infile  = $self->infile;
     my $sthresh = $self->family_size;
     my $lthresh = 1.2e4; # elements over 12kb cannot be aligned reliably
@@ -577,22 +576,16 @@ sub _filter_families_by_size {
         my ($family) = ($id =~ /^(RL[CGX]_family\d+)_LTR/);
         if (defined $family) {
             $foutfile = File::Spec->catfile($path, $family.'.fas');
-	    say STDERR "debug: $foutfile";
             if (-e $foutfile && openhandle($fout)) {
-		say STDERR "$foutfile exists and is open";
                 say $fout join "\n",">$id", $seq;
-                #push @full, $foutfile;
             }
             else {
-                #$foutfile = File::Spec->catfile($path, $family.'.fas');          
-                open $fout, '>>', $foutfile or die "\nERROR: Could not open file: $foutfile\n";
+                open $fout, '>', $foutfile or die "\nERROR: Could not open file: $foutfile\n";
                 say $fout join "\n", ">$id", $seq;
                 push @seqs, $foutfile;
             }
         }
     }
-
-    dd \@seqs;
 
     my ($largest, $seqct) = (0, 0);
     my (%seqstore, @over_thresh);
