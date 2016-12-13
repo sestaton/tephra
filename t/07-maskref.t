@@ -9,7 +9,7 @@ use Capture::Tiny       qw(capture);
 use File::Path          qw(remove_tree);
 use File::Find;
 use File::Spec;
-#use Data::Dump;
+#use Data::Dump::Color;
 
 use Test::More tests => 3;
 
@@ -31,7 +31,7 @@ SKIP: {
 
     ok(@assemb_results, 'Can execute maskref subcommand');
     
-    my $mask_cmd = "$cmd maskref -g $genome -d $repeatdb -o $masked";
+    my $mask_cmd = "$cmd maskref -g $genome -d $repeatdb -o $masked > $log";
     #say STDERR $mask_cmd;
     
     my @ret = capture { system([0..5], $mask_cmd) };
