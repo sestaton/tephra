@@ -1,6 +1,12 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.04.5	12/12/16	Vancouver, BC
+
+- Modify 'illrecomb' command to take combined LTR family FASTA file instead
+  of input directory of classified elements. This prevents having to keep intermediate
+  files or regenerate data to calculating patterns of DNA removal.
+
 0.04.4	12/01/16	Vancouver, BC
 
 - Modify 'maskref' command to now generate overlapping subsets of the genome

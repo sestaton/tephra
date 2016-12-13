@@ -22,21 +22,19 @@ if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
 my $cmd       = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir   = File::Spec->catdir('t', 'test_data');
 my $outdir    = File::Spec->catdir($testdir,  't_family_domains');
-my $resdir    = File::Spec->catdir($outdir,   'ref_ltrdigest85_combined_filtered_gypsy');
-my $allstfile = File::Spec->catfile($resdir,  'gypsy_illrecomb_stats.tsv');
-my $illstfile = File::Spec->catfile($resdir,  'gypsy_illrecomb_illrecstats.tsv');
-my $seqfile   = File::Spec->catfile($resdir,  'gypsy_illrecomb_seqs.fasta');
+my $allstfile = File::Spec->catfile($testdir, 'gypsy_illrecomb_stats.tsv');
+my $illstfile = File::Spec->catfile($testdir, 'gypsy_illrecomb_illrecstats.tsv');
+my $seqfile   = File::Spec->catfile($testdir, 'gypsy_illrecomb_seqs.fasta');
 my $genome    = File::Spec->catfile($testdir, 'ref.fas');
 my $testfile  = File::Spec->catfile($testdir, 'tephra_ltrs_gypsy_family9.fasta');
 
 SKIP: {
     skip 'skip development tests', 8 unless $devtests;
-    copy $testfile, $resdir or die "\nERROR: copy failed $!";
 
-    my @results   = capture { system([0..5], "$cmd illrecomb -h") };    
+    my @results = capture { system([0..5], "$cmd illrecomb -h") };    
     ok(@results, 'Can execute illrecomb subcommand');
 
-    my $find_cmd = "$cmd illrecomb -i $resdir -s $allstfile -r $illstfile -o $seqfile";
+    my $find_cmd = "$cmd illrecomb -i $testfile -s $allstfile -r $illstfile -o $seqfile";
     #say STDERR $find_cmd;
 
     my @ret = capture { system([0..5], $find_cmd) };
@@ -66,7 +64,15 @@ SKIP: {
     ok( $hmatch == 18, 'Correct number of illigetimate recombination events detected downstream of gap' );
     ok( $seqct == $qmatch+$hmatch, 'Correct number of illigetimate recombination events detected' );
     
-    #unlink $allstfile, $illstfile, $seqfile;
+    unlink $allstfile, $illstfile, $seqfile;
+
+    ## clean up
+    my @outfiles;
+    find( sub { 
+        push @outfiles, $File::Find::name 
+            if /\.log$|RLG_family9/ }, $testdir);
+
+    unlink @outfiles;
 };
 
 done_testing();

@@ -11,7 +11,7 @@ use Capture::Tiny       qw(capture);
 use File::Path          qw(remove_tree);
 use File::Find;
 use File::Spec;
-#use Data::Dump;
+#use Data::Dump::Color;
 
 use Test::More tests => 3;
 
@@ -38,14 +38,6 @@ SKIP: {
 
     my @ret = capture { system([0..5], $find_cmd) };
 
-    #my @files;
-    #find( sub { 
-	#push @files, $File::Find::name if /(?:gypsy|copia|unclassified).gff3$/ }, 
-	#  $testdir );
-    #ok( @files == 3, 'Correctly generated GFF3 files for LTR superfamilies' ); # 2 ltrdigest files + combined file
-    #say scalar(@files);
-    #say scalar(@files)," number of files";
-
     my @dirs;
     find( sub { 
 	push @dirs, $File::Find::name if -d && /(?:gypsy|copia|unclassified)$/ }, 
@@ -68,14 +60,6 @@ SKIP: {
     ok( $ct == 6, 'Correct number of classified elements in combined family file' );
     say "$ct total combined elements";
 
-    ## clean up
-    my @outfiles;
-    find( sub { 
-	push @outfiles, $File::Find::name 
-	    if /^ref_ltr/ && ! /(?:gypsy|copia|unclassified).gff3$/ && ! /$gff/ }, $testdir);
-
-    #unlink @outfiles;
-    #remove_tree( $outdir, { safe => 1 } );
 };
 
 unlink $gff;

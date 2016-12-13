@@ -16,8 +16,9 @@ use Bio::SearchIO;
 use Sort::Naturally;
 use Parallel::ForkManager;
 use Statistics::Descriptive;
-use Time::HiRes qw(gettimeofday);
-use Log::Any    qw($log);
+use Time::HiRes  qw(gettimeofday);
+use Log::Any     qw($log);
+use Scalar::Util qw(openhandle);
 use Tephra::Config::Exe;
 #use Data::Dump::Color;
 use namespace::autoclean;
@@ -30,16 +31,16 @@ Tephra::Genome::IllRecombination - Calculate illegitimate recombination in a gen
 
 =head1 VERSION
 
-Version 0.04.4
+Version 0.04.5
 
 =cut
 
-our $VERSION = '0.04.4';
+our $VERSION = '0.04.5';
 $VERSION = eval $VERSION;
 
-has dir => (
+has infile => (
       is       => 'ro',
-      isa      => 'Path::Class::Dir',
+      isa      => 'Path::Class::File',
       required => 1,
       coerce   => 1,
 );
@@ -93,9 +94,9 @@ sub find_illegitimate_recombination {
     my $statsfile = $self->allstatsfile;
 
     my $alignments = $self->align_features;
-
+ 
     my $all_gap_stats = {};
-     for my $aln_file (@$alignments) {
+    for my $aln_file (@$alignments) {
 	$self->find_align_gaps($all_gap_stats, $aln_file);
     }
 
@@ -105,13 +106,14 @@ sub find_illegitimate_recombination {
 sub align_features {
     my $self = shift;
     my $threads = $self->threads;
-    my $dir = $self->dir;
+    my $infile = $self->infile;
 
-    my $args = $self->collect_align_args($dir);
-
+    my $args = $self->collect_align_args;
     my $t0 = gettimeofday();
     my $doms = 0;
-    my $logfile = File::Spec->catfile($dir, 'all_illrecomb_muscle_reports.log');
+
+    my ($name, $path, $suffix) = fileparse($infile, qr/\.[^.]*/);
+    my $logfile = File::Spec->catfile($path, 'all_illrecomb_muscle_reports.log');
     open my $log, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
 
     my $pm = Parallel::ForkManager->new($threads);
@@ -145,6 +147,7 @@ sub align_features {
 
     say $log "\n========> Finished running MUSCLE on $doms families in $final_time minutes";
     close $log;
+    #unlink $logfile if $self->clean;
 
     my @aligns;
     for my $k (keys %$args) {
@@ -156,11 +159,10 @@ sub align_features {
 
 sub collect_align_args {
     my $self = shift;
-    my ($dir) = @_;
     my (@full, @aln, %aln_args);
-    find( sub { push @full, $File::Find::name if -f and /family\d+.fasta$/ }, $dir);
-    my $seqstore = $self->_filter_families_by_size(\@full);
-    
+
+    my $seqstore = $self->_filter_families_by_size;
+
     for my $fam (keys %$seqstore) {
 	my ($name, $path, $suffix) = fileparse($seqstore->{$fam}, qr/\.[^.]*/);
 	my $aln = File::Spec->catfile($path, $name.'_muscle-out.fas');
@@ -168,6 +170,11 @@ sub collect_align_args {
 	
 	my $muscmd  = "muscle -quiet -in $seqstore->{$fam} -out $aln -log $log";
 	$aln_args{$name} = { seqs => $fam, args => $muscmd, aln => $aln };
+	unlink $log if $self->clean;
+    }
+
+    if ($self->clean) {
+	unlink $_ for keys %$seqstore;
     }
 
     return \%aln_args;
@@ -272,6 +279,9 @@ sub find_align_gaps {
     }
     close $out;
     close $illrecstat_fh;
+    unlink $aln_file if $self->clean;
+
+    return;
 }
 
 sub split_aln {
@@ -342,8 +352,8 @@ sub get_indel_range {
 sub bl2seq_compare {
     my $self = shift;
     my ($args) = @_;
-    my ($indel_len, $upstr_seq, $downstr_seq, $upstr_id, $downstr_id, $fname, $fpath, $each_out, $illrecstat_fh)
-	= @{$args}{qw(indel_length upstream_seq downstream_seq upstream_id downstream_id fas_name fas_path seqs_fh stats_fh)};
+    my ($indel_len, $upstr_seq, $downstr_seq, $upstr_id, $downstr_id, $fname, $fpath, $each_out, $illrecstat_fh) =
+	@{$args}{qw(indel_length upstream_seq downstream_seq upstream_id downstream_id fas_name fas_path seqs_fh stats_fh)};
 
     my $qname = File::Temp->new( TEMPLATE => $fname.'_XXXX',
 				 DIR      => $fpath,
@@ -551,13 +561,36 @@ sub collate_gap_stats {
 
 sub _filter_families_by_size {
     my $self = shift;
-    my ($seqs) = @_;
+    my $infile  = $self->infile;
     my $sthresh = $self->family_size;
-    my $lthresh = 1.2e4; # elements over 15kb cannot be aligned
+    my $lthresh = 1.2e4; # elements over 12kb cannot be aligned reliably
+
+    my ($name, $path, $suffix) = fileparse($infile, qr/\.[^.]*/);
+    my $kseq = Bio::DB::HTS::Kseq->new($infile);
+    my $iter = $kseq->iterator();
+
+    my (@seqs, $foutfile, $fout);
+    while (my $seqobj = $iter->next_seq) {
+        my $id = $seqobj->name;
+        my $seq = $seqobj->seq;
+        my ($family) = ($id =~ /^(RL[CGX]_family\d+)_LTR/);
+        if (defined $family) {
+            $foutfile = File::Spec->catfile($path, $family.'.fas');
+            if (-e $foutfile && openhandle($fout)) {
+                say $fout join "\n",">$id", $seq;
+            }
+            else {
+                open $fout, '>', $foutfile or die "\nERROR: Could not open file: $foutfile\n";
+                say $fout join "\n", ">$id", $seq;
+                push @seqs, $foutfile;
+            }
+        }
+    }
 
     my ($largest, $seqct) = (0, 0);
-    my %seqstore;
-    for my $seqfile (@$seqs) {
+    my (%seqstore, @over_thresh);
+
+    for my $seqfile (@seqs) {
 	my ($family) = ($seqfile =~ /\/(\w+_family\d+)/);
 	my $kseq = Bio::DB::HTS::Kseq->new($seqfile);
 	my $iter = $kseq->iterator();
@@ -570,8 +603,12 @@ sub _filter_families_by_size {
 	if ($seqct <= $sthresh && $largest <= $lthresh) {
 	    $seqstore{ $family } = $seqfile;
 	}
+	else {
+	    push @over_thresh, $seqfile;
+	}
 	($seqct, $largest) = (0, 0);
     }
+    unlink @over_thresh; # remove temp files that cannot be aligned
 
     return \%seqstore;
 }
