@@ -22,30 +22,23 @@ if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
 my $cmd       = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir   = File::Spec->catdir('t', 'test_data');
 my $outdir    = File::Spec->catdir($testdir,  't_family_domains');
-#my $resdir    = File::Spec->catdir($outdir,   'ref_ltrdigest85_combined_filtered_gypsy');
-my $allstfile = File::Spec->catfile($outdir,  'gypsy_illrecomb_stats.tsv');
-my $illstfile = File::Spec->catfile($outdir,  'gypsy_illrecomb_illrecstats.tsv');
-my $seqfile   = File::Spec->catfile($outdir,  'gypsy_illrecomb_seqs.fasta');
+my $allstfile = File::Spec->catfile($testdir, 'gypsy_illrecomb_stats.tsv');
+my $illstfile = File::Spec->catfile($testdir, 'gypsy_illrecomb_illrecstats.tsv');
+my $seqfile   = File::Spec->catfile($testdir, 'gypsy_illrecomb_seqs.fasta');
 my $genome    = File::Spec->catfile($testdir, 'ref.fas');
 my $testfile  = File::Spec->catfile($testdir, 'tephra_ltrs_gypsy_family9.fasta');
-#my $infile    = File::Spec->catfile($outdir,  'ref_combined_LTR_families.fasta');
-#my $resdir    = File::Spec->catdir($outdir,   'ref_ltrdigest85_combined_filtered_gypsy');
-#my $allstfile = File::Spec->catfile($outdir,  'ref_combined_LTR_families_illrecomb_stats.tsv');
-#my $illstfile = File::Spec->catfile($outdir,  'ref_combined_LTR_families_illrecomb_illrecstats.tsv');
-#my $seqfile   = File::Spec->catfile($outdir,  'ref_combined_LTR_families_illrecomb_seqs.fasta');
 
 SKIP: {
     skip 'skip development tests', 8 unless $devtests;
-    copy $testfile, $outdir or die "\nERROR: copy failed $!";
 
-    my @results   = capture { system([0..5], "$cmd illrecomb -h") };    
+    my @results = capture { system([0..5], "$cmd illrecomb -h") };    
     ok(@results, 'Can execute illrecomb subcommand');
 
     my $find_cmd = "$cmd illrecomb -i $testfile -s $allstfile -r $illstfile -o $seqfile";
-    say STDERR $find_cmd;
+    #say STDERR $find_cmd;
 
     my @ret = capture { system([0..5], $find_cmd) };
-    system([0..5], $find_cmd);
+    #system([0..5], $find_cmd);
 
     ok( -s $allstfile, 'Generated statistics for all gap sites' );
     ok( -s $illstfile, 'Generated statistics for all putative illegetimate recombination sites' );
@@ -54,7 +47,7 @@ SKIP: {
     my $seqct = 0;
     open my $in, '<', $seqfile;
     while (<$in>) { $seqct++ if /^>/; }
-    say STDERR "seqct: $seqct";
+    #say STDERR "seqct: $seqct";
     ok( $seqct == 36, 'Correct number of illigetimate recombination events detected' );
     close $in;
     
@@ -66,12 +59,12 @@ SKIP: {
 	$hmatch++ if /^Hit match string/;
     }
 
-    say STDERR join q{ }, $qmatch, $hmatch;
+    #say STDERR join q{ }, $qmatch, $hmatch;
     ok( $qmatch == 18, 'Correct number of illigetimate recombination events detected upstream of gap' );
     ok( $hmatch == 18, 'Correct number of illigetimate recombination events detected downstream of gap' );
     ok( $seqct == $qmatch+$hmatch, 'Correct number of illigetimate recombination events detected' );
     
-    #unlink $allstfile, $illstfile, $seqfile;
+    unlink $allstfile, $illstfile, $seqfile;
 };
 
 done_testing();
