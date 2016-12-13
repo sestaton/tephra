@@ -10,7 +10,7 @@ use File::Path          qw(remove_tree);
 use File::Find;
 use File::Spec;
 use File::Copy;
-#use Data::Dump;
+#use Data::Dump::Color;
 
 use Test::More tests => 8;
 
