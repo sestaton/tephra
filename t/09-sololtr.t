@@ -43,7 +43,7 @@ SKIP: {
 
     my $find_cmd = "$cmd sololtr -i $resdir -g $masked -r $allstfile -o $outfile -l 80 -c 0.09 -s";
     #say STDERR $find_cmd;
-
+    
     my @ret = capture { system([0..5], $find_cmd) };
     #system([0..5], $find_cmd);
 
@@ -73,9 +73,9 @@ SKIP: {
     ok( $seqct == $soloct, 'Same number of sequences and elements written to GFF/FASTA' );
 
     # clean up
-    #unlink $allstfile, $outfile;
-    #remove_tree( $outdir, { safe => 1 } );
-    #unlink $masked;
+    unlink $allstfile, $outfile;
+    remove_tree( $outdir, { safe => 1 } );
+    unlink $masked;
 };
 
 done_testing();
