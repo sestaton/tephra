@@ -65,6 +65,14 @@ SKIP: {
     ok( $seqct == $qmatch+$hmatch, 'Correct number of illigetimate recombination events detected' );
     
     unlink $allstfile, $illstfile, $seqfile;
+
+    ## clean up
+    my @outfiles;
+    find( sub { 
+        push @outfiles, $File::Find::name 
+            if /\.log$|RLG_family9/ }, $testdir);
+
+    unlink @outfiles;
 };
 
 done_testing();
