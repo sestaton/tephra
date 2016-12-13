@@ -12,11 +12,11 @@ Tephra::NonLTR::SeqUtils - Minor sequence utilities for non-LTR finding
 
 =head1 VERSION
 
-Version 0.04.4
+Version 0.04.5
 
 =cut
 
-our $VERSION = '0.04.4';
+our $VERSION = '0.04.5';
 $VERSION = eval $VERSION;
 
 sub invert_seq {
