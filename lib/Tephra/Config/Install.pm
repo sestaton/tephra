@@ -435,7 +435,10 @@ sub fetch_htslib {
     $ENV{HTSLIB_DIR} = $libdir;
     #system("cpanm -q Bio::DB::HTS") == 0
 	#or die "Installing Bio::DB::HTS failed. Here is the HTSLIB_DIR: $libdir. ERROR: $!\n";
-    my @results = capture { system('cpanm', '-q', 'Bio::DB::HTS') };
+    #system('cpanm', '-q', '-n', 'Bio::Root::Version') == 0
+        #or die "BioPerl install failed: $!";
+    my @results = capture { system('cpanm', '-q', '-n', 'Bio::Root::Version') };
+    @results = capture { system('cpanm', '-q', 'Bio::DB::HTS') };
 
     return $libdir;
 }
