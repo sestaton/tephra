@@ -288,7 +288,8 @@ sub build_model {
     # hmmer3 has --dna and --cpu options and not -g (global)
     my $hmm_cmd = "$hmmbuild -f --nucleic $model_path $aln";
 
-    $self->capture_cmd($hmm_cmd);
+    my $status = $self->capture_cmd($hmm_cmd);
+    unlink $aln && return if $status =~ /failed/i;
 }
 
 sub search_with_models {
@@ -333,13 +334,15 @@ sub _get_ltr_alns {
      
 	my $muscmd = "muscle -quiet -clwstrict -in $ltrseq -out $aln -log $log";
         if ($allfams) {
-	    $self->capture_cmd($muscmd);
+	    my $status = $self->capture_cmd($muscmd);
+	    unlink $ltrseq && next if $status =~ /failed/i;
 	    unlink $log;
 	    push @aligns, $aln;
 	}
 	else {
             if ($numfams >= $aln_ct) {
-		$self->capture_cmd($muscmd);
+		my $status = $self->capture_cmd($muscmd);
+		unlink $ltrseq && next if $status =~ /failed/i;
 		unlink $log;
 		push @aligns, $aln;
             }
