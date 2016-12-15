@@ -342,8 +342,11 @@ sub process_align_args {
 
     my $muscmd = "muscle -clwstrict -in $fas -out $aln 2>$alog";
     my $trecmd = "muscle -maketree -in $fas -out $tre -cluster neighborjoining 2>$tlog";
-    $self->capture_cmd($muscmd);
-    $self->capture_cmd($trecmd);
+    my $status = $self->capture_cmd($muscmd);
+    unlink $db && return if $status =~ /failed/i;
+    $status = $self->capture_cmd($trecmd);
+    unlink $db && return if $status =~ /failed/i;
+
     my $phy = $self->parse_aln($aln, $tre, $dnd);
     $self->process_baseml_args($phy, $dnd, $resdir);
     
