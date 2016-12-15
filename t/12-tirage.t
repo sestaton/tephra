@@ -50,10 +50,11 @@ SKIP: {
     
     ## clean up
     my @outfiles;
-    find( sub { push @outfiles, $File::Find::name if /^ref_tir/ }, $testdir);
+    find( sub { push @outfiles, $File::Find::name if /^ref_tirs/ }, $testdir);
     unlink @outfiles;
 
     remove_tree( $outdir, { safe => 1 } );
 };
 
+unlink $gff if -e $gff;
 done_testing();
