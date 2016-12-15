@@ -41,6 +41,10 @@ sub capture_cmd {
 	my @out = capture { system([0..5], $cmd) };
     }
     catch {
+	my $err = $_;
+	if ($err =~ /SEGV/) {
+	    return 'failed';
+	}
 	die "\nERROR: $cmd failed. Here is the exception: $_\n";
     };
 }
