@@ -97,11 +97,16 @@ sub find_illegitimate_recombination {
  
     my $all_gap_stats = {};
     for my $aln_file (@$alignments) {
+	unless (defined $aln_file && -s $aln_file) {
+	    unlink $aln_file if -e $aln_file;
+	    next;
+	}
 	$self->find_align_gaps($all_gap_stats, $aln_file);
     }
 
     $self->collate_gap_stats($all_gap_stats, $statsfile);
 }
+
 
 sub align_features {
     my $self = shift;
@@ -124,19 +129,25 @@ sub align_features {
     };
 
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
-			      my $t1 = gettimeofday();
-			      my $elapsed = $t1 - $t0;
-			      my $time = sprintf("%.2f",$elapsed/60);
-			      say $log basename($ident),
-			          " just finished with PID $pid and exit code: $exit_code in $time minutes";
+			      unlink $data_ref->{data}{seqs}, $data_ref->{data}{log};
+			      if ($data_ref->{status} =~ /failed/i) {
+				  say $log "WARNING: ",basename($ident), " failed with exit code: $exit_code";
+			      }
+			      else {
+				  my $t1 = gettimeofday();
+				  my $elapsed = $t1 - $t0;
+				  my $time = sprintf("%.2f",$elapsed/60);
+				  say $log basename($ident),
+			              " just finished with PID $pid and exit code: $exit_code in $time minutes";
+			      }
 			} );
 
     for my $name (keys %$args) {
 	$doms++;
 	$pm->start($name) and next;
 	$SIG{INT} = sub { $pm->finish };
-	$self->capture_cmd($args->{$name}{args});
-	$pm->finish(0);
+	my $status = $self->capture_cmd($args->{$name}{args});
+	$pm->finish(0, { data => $args->{$name}, status => $status });
     }
 
     $pm->wait_all_children;
@@ -169,8 +180,7 @@ sub collect_align_args {
 	my $log = File::Spec->catfile($path, $name.'_muscle-out.log');
 	
 	my $muscmd  = "muscle -quiet -in $seqstore->{$fam} -out $aln -log $log";
-	$aln_args{$name} = { seqs => $fam, args => $muscmd, aln => $aln };
-	unlink $log if $self->clean;
+	$aln_args{$name} = { seqs => $seqstore->{$fam}, args => $muscmd, aln => $aln, log => $log };
     }
 
     if ($self->clean) {
@@ -330,9 +340,8 @@ sub split_aln {
 sub get_indel_range {
     my $self = shift;
     my @indels = @_;
-    my @indel_ranges;
-    my @indel_lengths;
 
+    my (@indel_ranges, @indel_lengths);
     my $gap_range = [ $indels[0] ];
 
     for my $indel (@indels[1..$#indels]) {
@@ -346,6 +355,7 @@ sub get_indel_range {
 	    $gap_range = [ $indel ];
 	}
     }
+
     return (\@indel_lengths, \@indel_ranges);
 }
 
