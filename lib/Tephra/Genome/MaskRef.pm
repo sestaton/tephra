@@ -456,7 +456,7 @@ sub write_masking_results {
 
     ($classlen,$orderlen, $namelen) = ($classlen+10, $orderlen+10, $namelen+15);
     my $masked_total = 0;
-    say "=================== 'Tephra maskref' finished in $final_time minutes =================";
+    say "=================== 'Tephra maskref' finished in $final_time minutes ==================";
     printf "%-${classlen}s %-${classlen}s %-${orderlen}s %-${namelen}s\n", "Class", "Order", "Superfamily", "Percent Masked";
 
     say "-" x 80;
