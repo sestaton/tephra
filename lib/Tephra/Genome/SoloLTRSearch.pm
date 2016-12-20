@@ -20,7 +20,7 @@ use Set::IntervalTree;
 use Carp 'croak';
 use Tephra::Config::Exe;
 use namespace::autoclean;
-#use Data::Dump::Color;
+use Data::Dump::Color;
 
 with 'Tephra::Role::Util';
 
@@ -134,10 +134,12 @@ sub find_soloLTRs {
     my $hmmsearch_summary = $self->report // File::Spec->catfile($path, $name.'_tephra_soloLTRs.tsv');
     my ($hmmbuild, $hmmsearch) = $self->_find_hmmer;
 
+    #say STDERR "DEBUG: ",$self->numfamilies;
     print STDERR "Getting LTR alignments....";
     my $ltr_aln_files = $self->_get_ltr_alns($dir);
     say STDERR "done with alignments.";
-    
+    #dd $ltr_aln_files and exit;
+
     ## need masked genome here
     if (@$ltr_aln_files < 1 || ! -e $genome) {
 	croak "\nERROR: No genome was found or the expected alignments files were not found. Exiting.";
@@ -321,6 +323,7 @@ sub _get_ltr_alns {
     my (@ltrseqs, @aligns);
 
     my $ltrseqs = $self->_get_exemplar_ltrs($dir);
+    #dd $ltrseqs and exit;
 
     # This is where families are filtered by size. Since largest families come first,
     # a simple sort will filter the list.
@@ -358,8 +361,19 @@ sub _get_exemplar_ltrs {
     my ($dir) = @_;
 
     my ($ltrfile, @ltrseqs, %ltrfams);
+    #find( sub { push @ltrseqs, $File::Find::name if -f and /exemplar_ltrs.fasta$/ }, $dir);
     find( sub { $ltrfile = $File::Find::name if -f and /exemplar_ltrs.fasta$/ }, $dir);
-
+    if ($ltrfile =~ /^RL|family\d+/) {
+	die "\nERROR: Expecting a single file of LTR exemplar sequences but it appears this command has ".
+	    "been run before. This will cause problems. Please re-run 'classifyltrs' or report this issue. Exiting.\n";
+    }
+    #if (@ltrseqs) {
+	#return \@ltrseqs;
+    #} 
+    #else {
+	#croak "\nERROR: No exemplar LTR sequences found. The 'classifyltrs' command should have created ".
+	#    "files. Please report this issue. Exiting.\n";
+    #}
     my $kseq = Bio::DB::HTS::Kseq->new($ltrfile);
     my $iter = $kseq->iterator();
 
@@ -371,6 +385,7 @@ sub _get_exemplar_ltrs {
 	    push @{$ltrfams{$family}}, { id => $id, seq => $seq };
 	}
     }
+    #dd \%ltrfams;
 
     for my $family (keys %ltrfams) {
 	my $outfile = File::Spec->catfile($dir, $family.'_exemplar_ltrseqs.fasta');
@@ -381,6 +396,7 @@ sub _get_exemplar_ltrs {
 	close $out;
 	push @ltrseqs, $outfile;
     }
+    #dd \@ltrseqs;
 
     return \@ltrseqs;
 }
