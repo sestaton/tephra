@@ -18,7 +18,7 @@ WriteMakefile(
     VERSION_FROM     => 'bin/tephra',
     LICENSE          => 'MIT',
     PL_FILES         => {},
-    MIN_PERL_VERSION => 5.010,
+    MIN_PERL_VERSION => 5.014,
     CONFIGURE_REQUIRES => {
         'ExtUtils::MakeMaker' => 6.5503,
     },

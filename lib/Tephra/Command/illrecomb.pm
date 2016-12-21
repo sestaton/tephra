@@ -1,7 +1,7 @@
 package Tephra::Command::illrecomb;
 # ABSTRACT: Characterize the distribution of illegitimate recombination in a genome.
 
-use 5.010;
+use 5.014;
 use strict;
 use warnings;
 use Tephra -command;

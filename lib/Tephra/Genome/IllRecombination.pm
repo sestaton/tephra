@@ -1,6 +1,6 @@
 package Tephra::Genome::IllRecombination;
 
-use 5.010;
+use 5.014;
 use Moose;
 use Cwd;
 use File::Spec;

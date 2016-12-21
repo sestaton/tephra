@@ -1,7 +1,7 @@
 package Tephra::Command::classifytirs;
 # ABSTRACT: Classify TIR transposons into superfamilies.
 
-use 5.010;
+use 5.014;
 use strict;
 use warnings;
 use Tephra -command;

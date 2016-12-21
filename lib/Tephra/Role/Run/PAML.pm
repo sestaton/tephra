@@ -1,6 +1,6 @@
 package Tephra::Role::Run::PAML;
 
-use 5.010;
+use 5.014;
 use Moose::Role;
 use MooseX::Types::Path::Class;
 use File::Spec;

@@ -1,7 +1,7 @@
 package Tephra::Command::sololtr;
 # ABSTRACT: Find solo-LTRs in a genome assembly.
 
-use 5.010;
+use 5.014;
 use strict;
 use warnings;
 #use Pod::Find     qw(pod_where);

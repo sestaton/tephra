@@ -1,6 +1,6 @@
 package Tephra::TIR::TIRSearch;
 
-use 5.010;
+use 5.014;
 use Moose;
 use Bio::GFF3::LowLevel qw(gff3_format_feature);
 use List::UtilsBy       qw(nsort_by);

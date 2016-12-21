@@ -1,6 +1,6 @@
 package Tephra::NonLTR::QValidation;
 
-use 5.010;
+use 5.014;
 use Moose;
 use MooseX::Types::Path::Class;
 use IPC::System::Simple qw(system capture);

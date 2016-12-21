@@ -1,7 +1,7 @@
 package Tephra::Command::reannotate;
 # ABSTRACT: Transfer annotations from a reference set of repeats to Tephra annotations.
 
-use 5.010;
+use 5.014;
 use strict;
 use warnings;
 use File::Path qw(make_path remove_tree);

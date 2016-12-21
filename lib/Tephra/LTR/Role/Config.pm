@@ -1,6 +1,6 @@
 package Tephra::LTR::Role::Config;
 
-use 5.010;
+use 5.014;
 use Moose::Role;
 
 =head1 NAME

@@ -1,6 +1,6 @@
 package Tephra::NonLTR::Postprocess;
 
-use 5.010;
+use 5.014;
 use Moose;
 use MooseX::Types::Path::Class;
 use Bio::DB::HTS::Kseq;

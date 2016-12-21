@@ -1,7 +1,7 @@
 package Tephra::Command::findtrims;
 # ABSTRACT: Find TRIM retrotransposons in a genome assembly.
 
-use 5.010;
+use 5.014;
 use strict;
 use warnings;
 use File::Basename;

@@ -1,6 +1,6 @@
 package Tephra::Role::GFF;
 
-use 5.010;
+use 5.014;
 use Moose::Role;
 use Bio::GFF3::LowLevel qw(gff3_parse_feature);
 use Path::Class::File;

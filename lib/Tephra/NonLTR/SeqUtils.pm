@@ -1,6 +1,6 @@
 package Tephra::NonLTR::SeqUtils;
 
-use 5.010;
+use 5.014;
 use Moose;
 use File::Find;
 use File::Basename;

@@ -1,7 +1,7 @@
 package Tephra::Command::tirage;
 # ABSTRACT: Calculate the age distribution of TIR transposons.
 
-use 5.010;
+use 5.014;
 use strict;
 use warnings;
 use Tephra -command;

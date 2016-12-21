@@ -1,6 +1,6 @@
 package Tephra::Config::Install;
 
-use 5.010;
+use 5.014;
 use Moose;
 use MooseX::Types::Path::Class;
 use Path::Class::File;

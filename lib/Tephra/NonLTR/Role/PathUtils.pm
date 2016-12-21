@@ -1,6 +1,6 @@
 package Tephra::NonLTR::Role::PathUtils;
 
-use 5.010;
+use 5.014;
 use Moose::Role;
 use Config;
 use File::Spec;

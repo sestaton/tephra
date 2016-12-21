@@ -1,7 +1,7 @@
 package Tephra::Command::classifyltrs;
 # ABSTRACT: Classify LTR retrotransposons into superfamilies and families.
 
-use 5.010;
+use 5.014;
 use strict;
 use warnings;
 use File::Path qw(make_path remove_tree);

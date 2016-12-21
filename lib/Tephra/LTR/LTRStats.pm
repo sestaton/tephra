@@ -1,6 +1,6 @@
 package Tephra::LTR::LTRStats;
 
-use 5.010;
+use 5.014;
 use Moose;
 use MooseX::Types::Path::Class;
 use Statistics::Descriptive;

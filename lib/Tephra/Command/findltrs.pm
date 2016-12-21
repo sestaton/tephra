@@ -1,7 +1,7 @@
 package Tephra::Command::findltrs;
 # ABSTRACT: Find LTR retrotransposons in a genome assembly.
 
-use 5.010;
+use 5.014;
 use strict;
 use warnings;
 use File::Find;

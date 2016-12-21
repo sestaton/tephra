@@ -1,6 +1,6 @@
 package Tephra::LTR::LTRRefine;
 
-use 5.010;
+use 5.014;
 use Moose;
 use Cwd;
 use File::Spec;

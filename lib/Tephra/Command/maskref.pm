@@ -1,7 +1,7 @@
 package Tephra::Command::maskref;
 # ABSTRACT: Mask a reference genome with transposons.
 
-use 5.010;
+use 5.014;
 use strict;
 use warnings;
 use Tephra -command;

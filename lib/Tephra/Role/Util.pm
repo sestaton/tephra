@@ -1,6 +1,6 @@
 package Tephra::Role::Util;
 
-use 5.010;
+use 5.014;
 use Moose::Role;
 use Bio::DB::HTS::Faidx;
 use IPC::System::Simple qw(system);

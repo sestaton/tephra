@@ -1,6 +1,6 @@
 package Tephra::NonLTR::GFFWriter;
 
-use 5.010;
+use 5.014;
 use Moose;
 use Bio::DB::HTS::Kseq;
 use File::Find;

@@ -1,7 +1,7 @@
 package Tephra::Command::findhelitrons;
 # ABSTRACT: Find Helitons in a genome assembly.
 
-use 5.010;
+use 5.014;
 use strict;
 use warnings;
 use File::Basename;
