@@ -1,6 +1,13 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.04.6	12/22/16	Vancouver, BC
+
+- Add test to 'sololtr' command to ensure the expected file of LTR exemplar sequences
+  exists.
+- Store LTR family statistics when classifying LTRs to ensure the data for each
+  superfamily is presented together (not split up as other threads are finishing).
+
 0.04.5	12/12/16	Vancouver, BC
 
 - Modify 'illrecomb' command to take combined LTR family FASTA file instead
