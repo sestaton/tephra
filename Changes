@@ -7,6 +7,8 @@ Version	Date	Location
   exists.
 - Store LTR family statistics when classifying LTRs to ensure the data for each
   superfamily is presented together (not split up as other threads are finishing).
+- Increase Perl version requirement to 5.14, which is the minimum required to 
+  build Bio::DB::HTS.
 
 0.04.5	12/12/16	Vancouver, BC
 
