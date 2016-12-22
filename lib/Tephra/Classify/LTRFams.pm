@@ -99,6 +99,22 @@ sub make_ltr_families {
     my (%reports, @family_fastas, @annotated_ids);
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			      for my $type (keys %$data_ref) {
+				  my ($unmerged_stats, $merged_stats) =
+				      ($data_ref->{$type}{unmerged_stats}, $data_ref->{$type}{merged_stats});
+				  my ($um_sf, $um_elemct, $um_famct, $um_famtot, $um_singct) =
+				      @{$unmerged_stats}{qw(superfamily total_elements families total_in_families singletons)};
+				  my ($m_sf, $m_elemct, $m_famct, $m_famtot, $m_singct) =
+				      @{$merged_stats}{qw(superfamily total_elements families total_in_families singletons)};
+
+				  say "=====> Family-level statistics for $um_sf before BLAST merging:";
+				  say join "\t", $um_sf."_total_elements", $um_sf."_families", 
+				      $um_sf."_total_in_families", $um_sf."_singletons";
+				  say join "\t", $um_elemct, $um_famct, $um_famtot, $um_singct;
+				  say "=====> Family-level statistics for $m_sf after BLAST merging:";
+				  say join "\t", $m_sf."_total_elements", $m_sf."_families", 
+				      $m_sf."_total_in_families", $m_sf."_singletons";
+				  say join "\t", $m_elemct, $m_famct, $m_famtot, $m_singct;
+
 				  push @family_fastas, $data_ref->{$type}{family_fasta};
 				  push @annotated_ids, $data_ref->{$type}{annotated_ids};
 			      }
@@ -112,9 +128,14 @@ sub make_ltr_families {
     for my $type (keys %$gff_obj) {
 	$pm->start($type) and next;
 	$SIG{INT} = sub { $pm->finish };
-	my ($fams, $ids) = $self->run_ltr_classification($gff_obj->{$type});
 
-	$reports{$type} = { family_fasta => $fams, annotated_ids => $ids };
+	my ($fams, $ids, $unmerged_stats, $merged_stats) = 
+	    $self->run_ltr_classification($gff_obj->{$type});
+
+	$reports{$type} = { family_fasta   => $fams, 
+			    annotated_ids  => $ids, 
+			    unmerged_stats => $unmerged_stats,
+	                    merged_stats   => $merged_stats };
 
 	$pm->finish(0, \%reports);
     }
@@ -143,11 +164,11 @@ sub run_ltr_classification {
     my $dir      = $self->extract_features($gff);
     my $clusters = $self->cluster_features($dir);
     my $dom_orgs = $self->parse_clusters($clusters);
-    my $fas_obj  = $self->make_fasta_from_dom_orgs($dom_orgs, $clusters);
+    my ($fas_obj, $unmerged_stats) = $self->make_fasta_from_dom_orgs($dom_orgs, $clusters);
     my $blastout = $self->process_blast_args($fas_obj);
     my $matches  = $self->parse_blast($blastout);
 
-    my ($fams, $ids) = $self->write_families($matches, $clusters);
+    my ($fams, $ids, $merged_stats) = $self->write_families($matches, $clusters);
 
     my $exm_obj = Tephra::LTR::MakeExemplars->new(
         genome => $genome,
@@ -162,7 +183,7 @@ sub run_ltr_classification {
 	$fas_obj->{singleton_fasta} => 1,
     );
 
-    return (\%families, $ids);
+    return (\%families, $ids, $unmerged_stats, $merged_stats);
 }
 
 sub make_fasta_from_dom_orgs {
@@ -227,15 +248,20 @@ sub make_fasta_from_dom_orgs {
     undef $seqstore;
 
     # need to store this
-    say "Before BLAST merging...";
-    say join "\t", $sf."_total_elements", $sf."_families", $sf."_total_in_families", $sf."_singletons";
-    say join "\t", $elemct, $famct, $famtot, $singct;
+    #say "Before BLAST merging...";
+    #say join "\t", $sf."_total_elements", $sf."_families", $sf."_total_in_families", $sf."_singletons";
+    #say join "\t", $elemct, $famct, $famtot, $singct;
 
     return ({ family_fasta      => $foutfile, 
 	      singleton_fasta   => $soutfile, 
 	      family_count      => $famct, 
 	      total_in_families => $famtot, 
-	      singleton_count   => $singct });
+	      singleton_count   => $singct }, 
+	   { superfamily       => $sf,
+	     total_elements    => $elemct,
+	     families          => $famct,
+	     total_in_families => $famtot,
+	     singletons        => $singct });
 }
 
 sub process_blast_args {
@@ -366,11 +392,16 @@ sub write_families {
     my $singct = $idx;
 
     # need to store this
-    say "After BLAST merging...";
-    say join "\t", $sf."_total_elements", $sf."_families", $sf."_total_in_families", $sf."_singletons";
-    say join "\t", $elemct, $famct, $famtot, $singct;
+    #say "After BLAST merging...";
+    #say join "\t", $sf."_total_elements", $sf."_families", $sf."_total_in_families", $sf."_singletons";
+    #say join "\t", $elemct, $famct, $famtot, $singct;
 
-    return (\%fastas, \%annot_ids);
+    return (\%fastas, \%annot_ids,
+	{ superfamily       => $sf,
+	  total_elements    => $elemct,
+	  families          => $famct,
+	  total_in_families => $famtot,
+	  singletons        => $singct });
 }
 
 sub combine_families {
