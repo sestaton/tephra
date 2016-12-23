@@ -20,7 +20,7 @@ use Set::IntervalTree;
 use Carp 'croak';
 use Tephra::Config::Exe;
 use namespace::autoclean;
-use Data::Dump::Color;
+#use Data::Dump::Color;
 
 with 'Tephra::Role::Util';
 
@@ -323,7 +323,6 @@ sub _get_ltr_alns {
     my (@ltrseqs, @aligns);
 
     my $ltrseqs = $self->_get_exemplar_ltrs($dir);
-    #dd $ltrseqs and exit;
 
     # This is where families are filtered by size. Since largest families come first,
     # a simple sort will filter the list.
@@ -361,19 +360,12 @@ sub _get_exemplar_ltrs {
     my ($dir) = @_;
 
     my ($ltrfile, @ltrseqs, %ltrfams);
-    #find( sub { push @ltrseqs, $File::Find::name if -f and /exemplar_ltrs.fasta$/ }, $dir);
     find( sub { $ltrfile = $File::Find::name if -f and /exemplar_ltrs.fasta$/ }, $dir);
     if ($ltrfile =~ /^RL|family\d+/) {
-	die "\nERROR: Expecting a single file of LTR exemplar sequences but it appears this command has ".
+	croak "\nERROR: Expecting a single file of LTR exemplar sequences but it appears this command has ".
 	    "been run before. This will cause problems. Please re-run 'classifyltrs' or report this issue. Exiting.\n";
     }
-    #if (@ltrseqs) {
-	#return \@ltrseqs;
-    #} 
-    #else {
-	#croak "\nERROR: No exemplar LTR sequences found. The 'classifyltrs' command should have created ".
-	#    "files. Please report this issue. Exiting.\n";
-    #}
+
     my $kseq = Bio::DB::HTS::Kseq->new($ltrfile);
     my $iter = $kseq->iterator();
 
