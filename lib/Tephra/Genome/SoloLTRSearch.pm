@@ -134,11 +134,9 @@ sub find_soloLTRs {
     my $hmmsearch_summary = $self->report // File::Spec->catfile($path, $name.'_tephra_soloLTRs.tsv');
     my ($hmmbuild, $hmmsearch) = $self->_find_hmmer;
 
-    #say STDERR "DEBUG: ",$self->numfamilies;
     print STDERR "Getting LTR alignments....";
     my $ltr_aln_files = $self->_get_ltr_alns($dir);
     say STDERR "done with alignments.";
-    #dd $ltr_aln_files and exit;
 
     ## need masked genome here
     if (@$ltr_aln_files < 1 || ! -e $genome) {
@@ -156,9 +154,7 @@ sub find_soloLTRs {
     }
 
     print STDERR "Building LTR exemplar models...";
-    #dd $ltr_aln_files;
     for my $ltr_aln (nsort_by { m/family(\d+)/ and $1 } @$ltr_aln_files) {
-	#say basename($ltr_aln); ## debug
 	$self->build_model($ltr_aln, $model_dir, $hmmbuild);	
 	unlink $ltr_aln;	
     }
@@ -377,7 +373,6 @@ sub _get_exemplar_ltrs {
 	    push @{$ltrfams{$family}}, { id => $id, seq => $seq };
 	}
     }
-    #dd \%ltrfams;
 
     for my $family (keys %ltrfams) {
 	my $outfile = File::Spec->catfile($dir, $family.'_exemplar_ltrseqs.fasta');
@@ -388,7 +383,6 @@ sub _get_exemplar_ltrs {
 	close $out;
 	push @ltrseqs, $outfile;
     }
-    #dd \@ltrseqs;
 
     return \@ltrseqs;
 }
