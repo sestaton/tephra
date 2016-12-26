@@ -29,11 +29,11 @@ with 'Tephra::Role::GFF',
 
 =head1 VERSION
 
-Version 0.04.5
+Version 0.04.6
 
 =cut
 
-our $VERSION = '0.04.5';
+our $VERSION = '0.04.6';
 $VERSION = eval $VERSION;
 
 sub extract_features {

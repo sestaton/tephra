@@ -33,11 +33,11 @@ Tephra::TIR::TIRStats - Calculate the age distribution of TIR transposons
 
 =head1 VERSION
 
-Version 0.04.5
+Version 0.04.6
 
 =cut
 
-our $VERSION = '0.04.5';
+our $VERSION = '0.04.6';
 $VERSION = eval $VERSION;
 
 has genome => (
