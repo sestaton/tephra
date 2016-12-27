@@ -65,11 +65,11 @@ has outfile => (
     coerce   => 1,
 );
 
-has seq => (
+has seqfile => (
     is       => 'ro',
-    isa      => 'Bool',
+    isa      => 'Path::Class::File',
     required => 0,
-    default  => 1,
+    coerce   => 1,
 );
 
 has percentident => (
@@ -182,7 +182,7 @@ sub find_soloLTRs {
     $self->write_sololtr_gff($hmmsearch_summary);
     say STDERR "all done with solo-LTRs.";
 
-    if ($self->clean && !$self->seq) {
+    if ($self->clean) { # && !$self->seq) {
 	remove_tree( $model_dir, { safe => 1} );
     }
 }
@@ -310,6 +310,85 @@ sub search_with_models {
     return $hmmsearch_out;
 }
 
+sub write_hmmsearch_report {
+    my $self = shift;
+    my ($aln_stats, $search_report) = @_;
+    my $genome     = $self->genome;
+    my $match_pid  = $self->percentident;
+    my $match_len  = $self->matchlen;
+    my $match_pcov = $self->percentcov;
+
+    my $parsed = $search_report;
+    $parsed =~ s/\.hmmer$/\_hmmer_parsed.txt/;
+    my $element = $search_report;
+
+    my $model_type = 'local';
+
+    my ($gname, $gpath, $gsuffix) = fileparse($genome, qr/\.[^.]*/);
+    my ($name, $path, $suffix)    = fileparse($search_report, qr/\.[^.]*/);
+    $element =~ s/_$gname*//;
+    open my $out, ">$parsed" or die "\nERROR: Could not open file: $parsed\n";
+
+    my ($seq, $seqfile);
+    if ($self->seqfile) {
+	$seqfile = $self->seqfile;
+	open $seq, ">$seqfile" or die "\nERROR: Could not open file: $seqfile";
+    }
+
+    my $hmmerin = Bio::SearchIO->new(-file => $search_report, -format => 'hmmer');
+
+    my ($positions, $matches) = (0, 0);
+    while ( my $result = $hmmerin->next_result() ) {
+	my $query    = $result->query_name();
+	my $num_hits = $result->num_hits();
+	my $qlen     = $aln_stats->{$query};
+	die "\nERROR: Could not determine query length for: $query" 
+	    unless defined $qlen;
+	while ( my $hit = $result->next_hit() ) {
+	    my $hitid = $hit->name();
+	    while ( my $hsp = $hit->next_hsp() ) {
+		my $percent_q_coverage = sprintf("%.2f", $hsp->length('query')/$qlen * 100);
+		my @ident_pos = $hsp->seq_inds('query','identical');
+		my $hspgaps   = $hsp->gaps;
+		my $hsplen    = $hsp->length('total');
+		my $hstart    = $hsp->start('hit');
+		my $hstop     = $hsp->end('hit');
+		my $qstart    = $hsp->start('query');
+		my $qstop     = $hsp->end('query');
+		my $qstring   = $hsp->query_string;
+		my $qhsplen   = $hsp->length('query');
+		
+		if (exists $aln_stats->{$query}) {
+		    my $percent_coverage = sprintf("%.2f",$hsplen/$aln_stats->{$query});
+		    $positions++ for @ident_pos;
+		    my $pid = sprintf("%.2f", $positions/$aln_stats->{$query} * 100);
+		    if ( $hsplen >= $match_len && $hsplen >= $aln_stats->{$query} * $match_pcov ) {
+			if ($pid >= $match_pid) {
+			    $matches++;
+			    say $out join "\t", $query, $aln_stats->{$query}, $num_hits, $hitid, 
+			            $percent_q_coverage, $hsplen, $pid, $qstart, $qstop, $hstart, 
+			    $hstop, $model_type;
+
+			    if ($self->seqfile) {
+				my $seqid = '>'.$query.'_'.$hitid.'_'.$hstart.'_'.$hstop; 
+				## It makes more sense to show the location of the hit
+				## Also, this would pave the way for creating a gff of solo-LTRs
+				## my $seqid = ">".$query."|".$hitid."_".$hstart."-".$hstop
+				say $seq join "\n", $seqid, $qstring;
+			    }
+			}
+		    }
+		    $positions = 0;
+		}
+	    }
+	}
+    }
+    close $out;
+    close $seq;
+    unlink $seqfile, $parsed if $matches == 0;
+
+}
+
 sub _get_ltr_alns {
     my $self = shift;
     my ($dir) = @_;
@@ -357,6 +436,9 @@ sub _get_exemplar_ltrs {
 
     my ($ltrfile, @ltrseqs, %ltrfams);
     find( sub { $ltrfile = $File::Find::name if -f and /exemplar_ltrs.fasta$/ }, $dir);
+    croak "\nERROR: Exemplar LTR file not found. Exiting.\n" 
+	unless defined $ltrfile;
+
     if ($ltrfile =~ /^RL|family\d+/) {
 	croak "\nERROR: Expecting a single file of LTR exemplar sequences but it appears this command has ".
 	    "been run before. This will cause problems. Please re-run 'classifyltrs' or report this issue. Exiting.\n";
@@ -477,86 +559,6 @@ sub _get_aln_len {
     }
 
     return \%aln_stats;
-}
-
-sub write_hmmsearch_report {
-    my $self = shift;
-    my $genome     = $self->genome;
-    my $match_pid  = $self->percentident;
-    my $match_len  = $self->matchlen;
-    my $match_pcov = $self->percentcov;
-    my ($aln_stats, $search_report) = @_;
-
-    my $parsed = $search_report;
-    $parsed =~ s/\.hmmer$/\_hmmer_parsed.txt/;
-    my $seqfile = $parsed;
-    $seqfile =~ s/\.txt$/\_seq.fasta/;
-    my $element = $search_report;
-
-    my $model_type = 'local';
-
-    my ($gname, $gpath, $gsuffix) = fileparse($genome, qr/\.[^.]*/);
-    my ($name, $path, $suffix)    = fileparse($search_report, qr/\.[^.]*/);
-    $element =~ s/_$gname*//;
-    open my $out, ">$parsed" or die "\nERROR: Could not open file: $parsed\n";
-
-    my $seq;
-    if (defined $self->seq) {
-	open $seq, ">$seqfile" or die "\nERROR: Could not open file: $seqfile";
-    }
-
-    my $hmmerin = Bio::SearchIO->new(-file => $search_report, -format => 'hmmer');
-
-    my ($positions, $matches) = (0, 0);
-    while ( my $result = $hmmerin->next_result() ) {
-	my $query    = $result->query_name();
-	my $num_hits = $result->num_hits();
-	my $qlen     = $aln_stats->{$query};
-	die "\nERROR: Could not determine query length for: $query" 
-	    unless defined $qlen;
-	while ( my $hit = $result->next_hit() ) {
-	    my $hitid = $hit->name();
-	    while ( my $hsp = $hit->next_hsp() ) {
-		my $percent_q_coverage = sprintf("%.2f", $hsp->length('query')/$qlen * 100);
-		my @ident_pos = $hsp->seq_inds('query','identical');
-		my $hspgaps   = $hsp->gaps;
-		my $hsplen    = $hsp->length('total');
-		my $hstart    = $hsp->start('hit');
-		my $hstop     = $hsp->end('hit');
-		my $qstart    = $hsp->start('query');
-		my $qstop     = $hsp->end('query');
-		my $qstring   = $hsp->query_string;
-		my $qhsplen   = $hsp->length('query');
-		
-		if (exists $aln_stats->{$query}) {
-		    my $percent_coverage = sprintf("%.2f",$hsplen/$aln_stats->{$query});
-		    $positions++ for @ident_pos;
-		    my $pid = sprintf("%.2f", $positions/$aln_stats->{$query} * 100);
-		    if ( $hsplen >= $match_len && $hsplen >= $aln_stats->{$query} * $match_pcov ) {
-			if ($pid >= $match_pid) {
-			    $matches++;
-			    say $out join "\t", $query, $aln_stats->{$query}, $num_hits, $hitid, 
-			        $percent_q_coverage, $hsplen, $pid, $qstart, $qstop, $hstart, 
-			        $hstop, $model_type;
-
-			    if ($self->seq) {
-				my $seqid = '>'.$query.'_'.$hitid.'_'.$hstart.'_'.$hstop; 
-				## It makes more sense to show the location of the hit
-				## Also, this would pave the way for creating a gff of solo-LTRs
-				## my $seqid = ">".$query."|".$hitid."_".$hstart."-".$hstop
-				say $seq join "\n", $seqid, $qstring;
-			    }
-			}		
-		    }
-		    $positions = 0;
-		}
-	    }
-	}
-    }
-    close $out;
-    close $seq;
-    unlink $seqfile, $parsed if $matches == 0;
-
 }
 
 =head1 AUTHOR
