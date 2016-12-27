@@ -1,7 +1,7 @@
 Revision history for Tephra
 
 Version	Date	Location
-0.04.6	12/22/16	Vancouver, BC
+0.04.6	12/26/16	Vancouver, BC
 
 - Add test to 'sololtr' command to ensure the expected file of LTR exemplar sequences
   exists.
@@ -9,6 +9,8 @@ Version	Date	Location
   superfamily is presented together (not split up as other threads are finishing).
 - Increase Perl version requirement to 5.14, which is the minimum required to 
   build Bio::DB::HTS.
+- Add requirement of a filename for --seq option with 'sololtr' command, which makes
+  testing and setting options more stable.
 
 0.04.5	12/12/16	Vancouver, BC
 
