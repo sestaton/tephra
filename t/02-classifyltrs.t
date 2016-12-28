@@ -35,7 +35,7 @@ SKIP: {
 
     my $find_cmd = "$cmd classifyltrs -g $genome -d $repeatdb -f $gff -o $outdir";
     #say STDERR $find_cmd;
-
+    
     my @ret = capture { system([0..5], $find_cmd) };
 
     my @dirs;
