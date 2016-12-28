@@ -38,7 +38,7 @@ sub validate_args {
         exit(0);
     }
     elsif (!$opt->{genome} || !$opt->{repeatdb} || !$opt->{gff}) {
-	say "\nERROR: Required arguments not given.";
+	say STDERR "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
 } 
@@ -100,7 +100,7 @@ sub _classify_ltr_families {
 
     for my $file ($cop_gff, $gyp_gff, $unc_gff) {
 	unless (defined $file && -e $file) {
-	    say "\nERROR: There was an error generating GFF3 for family level classification. Exiting.\n";
+	    say STDERR "\nERROR: There was an error generating GFF3 for family level classification. Exiting.\n";
 	}
     }
 
@@ -117,13 +117,6 @@ sub _classify_ltr_families {
     $classify_fams_obj->combine_families($outfiles);
     $classify_fams_obj->annotate_gff($annot_ids, $gff);
     unlink $gyp_gff, $cop_gff, $unc_gff;
-
-    #say STDERR '=' x 50;
-    #say STDERR join "\t", 'Gypsy_families', 'Gypsy_singletons', 'Copia_families', 'Copia_singletons', 
-        #'Unclassified_families', 'Unclassified_singletons';
-    #say STDERR join "\t", @{$gyp_ct}{qw(family_count singleton_count)}, @{$cop_ct}{qw(family_count singleton_count)},
-        #@{$unc_ct}{qw(family_count singleton_count)};
-    #say STDERR '=' x 50;
 }
 
 sub help {
