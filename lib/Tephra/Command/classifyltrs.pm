@@ -8,7 +8,6 @@ use File::Path qw(make_path remove_tree);
 use Tephra -command;
 use Tephra::Classify::LTRSfams;
 use Tephra::Classify::LTRFams;
-use Tephra::LTR::MakeExemplars;
 
 sub opt_spec {
     return (    
