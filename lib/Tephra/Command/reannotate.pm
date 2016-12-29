@@ -33,7 +33,7 @@ sub validate_args {
         exit(0);
     }
     elsif (!$opt->{fasta} || !$opt->{repeatdb} || !$opt->{outfile}) {
-	say "\nERROR: Required arguments not given.";
+	say STDERR "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
 } 

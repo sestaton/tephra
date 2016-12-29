@@ -114,7 +114,7 @@ sub translate_forward {
 	system($cmd);
     }
     catch {
-	say "\nERROR: tephra-translate died. Here is the exception: $_\n";
+	say STDERR "\nERROR: tephra-translate died. Here is the exception: $_\n";
 	exit(1);
     };
 

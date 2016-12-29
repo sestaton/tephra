@@ -42,15 +42,15 @@ sub validate_args {
         exit(0);
     }
     elsif (!$opt->{config} || !$opt->{genome}) {
-	say "\nERROR: Required arguments not given.";
+	say STDERR "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
     elsif (! -e $opt->{config}) { 
-	say "\nERROR: '--config' file given but does not appear to exist. Check input.";
+	say STDERR "\nERROR: '--config' file given but does not appear to exist. Check input.";
 	$self->help and exit(0);
     }
     elsif (! -e $opt->{genome}) { 
-	say "\nERROR: '--genome' file given but does not appear to exist. Check input.";
+	say STDERR "\nERROR: '--genome' file given but does not appear to exist. Check input.";
 	$self->help and exit(0);
     }
 } 

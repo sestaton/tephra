@@ -420,7 +420,7 @@ sub _get_exemplar_ltrs {
     my ($ltrfile, @ltrseqs, %ltrfams);
     find( sub { $ltrfile = $File::Find::name if -f and /exemplar_ltrs.fasta$/ }, $dir);
     unless (defined $ltrfile) {
-	say "\nERROR: No exemplar LTR file was found, likely because there were no families identified by the 'classifyltrs' command.";
+	say STDERR "\nERROR: No exemplar LTR file was found, likely because there were no families identified by the 'classifyltrs' command.";
 	say "       Try the 'ltrage' command again with the --all flag. Please report any issues. Exiting.\n";
 	exit(1);
     }

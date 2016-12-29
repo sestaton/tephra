@@ -42,15 +42,15 @@ sub validate_args {
 	exit(0);
     }
     elsif (!$opt->{indir} || !$opt->{genome} || !$opt->{outfile}) {
-	say "\nERROR: Required arguments not given.";
+	say STDERR "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
     elsif (! -e $opt->{indir}) {
-	say "\nERROR: The '--indir' directory does not appear to exist. Check input.";
+	say STDERR "\nERROR: The '--indir' directory does not appear to exist. Check input.";
         $self->help and exit(0);
     }
     elsif (! -e $opt->{genome}) {
-	say "\nERROR: The '--genome' file does not appear to exist. Check input.";
+	say STDERR "\nERROR: The '--genome' file does not appear to exist. Check input.";
         $self->help and exit(0);
     }
 }

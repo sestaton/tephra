@@ -108,7 +108,7 @@ sub _fasta_to_gff {
 	    say $out join q{ }, '##sequence-region', $name, '1', $lens->{$name};
 	}
 	else {
-	    say "\nERROR: Could not find $name in map.\n";
+	    say STDERR "\nERROR: Could not find $name in map.\n";
 	}
     }
 

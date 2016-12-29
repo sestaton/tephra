@@ -108,7 +108,7 @@ sub mask_reference {
 
     my $outfile  = $self->outfile // File::Spec->catfile($path, $name.'_masked.fas');
     if (-e $outfile) {
-	say "\nERROR: '$outfile' already exists. Please delete this or rename it before proceeding. Exiting.\n";
+	say STDERR "\nERROR: '$outfile' already exists. Please delete this or rename it before proceeding. Exiting.\n";
         exit(1);
     }
     my $logfile = $outfile.'.log';
@@ -119,7 +119,7 @@ sub mask_reference {
     my $genome_dir = File::Spec->catfile($path, $name.'_tephra_masked_tmp');    
 
     if (-d $genome_dir) {
-	say "\nERROR: '$genome_dir' already exists. Please delete this or rename it before proceeding. Exiting.\n";
+	say STDERR "\nERROR: '$genome_dir' already exists. Please delete this or rename it before proceeding. Exiting.\n";
 	exit(1);
     }
     else {

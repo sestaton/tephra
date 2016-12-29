@@ -34,7 +34,7 @@ sub validate_args {
         exit(0);
     }
     elsif (!$opt->{genome}) {
-	say "\nERROR: Required arguments not given.";
+	say STDERR "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
 } 
