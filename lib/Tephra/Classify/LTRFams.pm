@@ -159,7 +159,8 @@ sub make_ltr_families {
 sub run_ltr_classification {
     my $self = shift;
     my ($gff) = @_;
-    my $genome = $self->genome;
+    my $genome  = $self->genome;
+    my $threads = $self->threads;
 
     my $dir      = $self->extract_features($gff);
     my $clusters = $self->cluster_features($dir);
@@ -170,10 +171,14 @@ sub run_ltr_classification {
 
     my ($fams, $ids, $merged_stats) = $self->write_families($matches, $clusters);
 
+    #say STDERR join q{ }, "genome", "dir", "gff";
+    #say STDERR join q{ }, $genome, $dir, $gff;
+
     my $exm_obj = Tephra::LTR::MakeExemplars->new(
-        genome => $genome,
-        dir    => $dir,
-        gff    => $gff
+        genome  => $genome,
+        dir     => $dir,
+        gff     => $gff,
+	threads => $threads
     );
 
     $exm_obj->make_exemplars;
