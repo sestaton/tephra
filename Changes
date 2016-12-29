@@ -11,6 +11,9 @@ Version	Date	Location
   build Bio::DB::HTS.
 - Add requirement of a filename for --seq option with 'sololtr' command, which makes
   testing and setting options more stable.
+- Properly set threads attribute when making LTR family exemplars (was being set to 1
+  regardless of options).
+- Write all errors to STDERR instead of sometimes going to STDOUT.
 
 0.04.5	12/12/16	Vancouver, BC
 
