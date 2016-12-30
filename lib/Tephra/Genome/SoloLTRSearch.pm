@@ -11,6 +11,7 @@ use File::Path          qw(make_path remove_tree);
 use IPC::System::Simple qw(capture system);
 use Time::HiRes         qw(gettimeofday);
 use List::UtilsBy       qw(nsort_by);
+use Sort::Naturally;
 use Path::Class::File;
 use Bio::DB::HTS::Kseq;
 use Bio::AlignIO;
@@ -142,17 +143,19 @@ sub find_soloLTRs {
 	"check input. Exiting.\n" unless @sfs == 2;
 
     my $dirct = 0;
-    for my $dir (nsort_by { m/_(copia|gypsy)\z/i and $1 } @sfs) {
-	print STDERR "Getting LTR alignments for $dir....";
+    for my $dir (nsort @sfs) {
+	my $sf = (split /_/, $dir)[-1];
+	print STDERR "Getting LTR alignments for ",ucfirst($sf),"....";
 	my $ltr_aln_files = $self->_get_ltr_alns($dir);
-	say STDERR "done with alignments for $dir.";
+	say STDERR "done with alignments.";
 
 	## need masked genome here
 	if (!defined $ltr_aln_files || @$ltr_aln_files < 1 || ! -e $genome) {
-	    croak "\nERROR: No genome was found or the expected alignments files were not found. Exiting.";
+	    croak "\nERROR: No genome was found or the expected alignments files were not found for ",
+	        ucfirst($sf),". Exiting.";
 	}
 	
-	print STDERR "Getting alignment statistics...";
+	print STDERR "Getting alignment statistics for ",ucfirst($sf),"...";
 	my $aln_stats = $self->_get_aln_len($ltr_aln_files); # return a hash-ref
 	say STDERR "done with alignment statistics.";
 	
@@ -162,7 +165,7 @@ sub find_soloLTRs {
 	    make_path( $model_dir, {verbose => 0, mode => 0771,} );
 	}
 	
-	print STDERR "Building LTR exemplar models...";
+	print STDERR "Building LTR exemplar models for ",ucfirst($sf),"...";
 	for my $ltr_aln (nsort_by { m/family(\d+)/ and $1 } @$ltr_aln_files) {
 	    $self->build_model($ltr_aln, $model_dir, $hmmbuild);	
 	    unlink $ltr_aln;	
@@ -172,7 +175,7 @@ sub find_soloLTRs {
 	my @ltr_hmm_files;
 	find( sub { push @ltr_hmm_files, $File::Find::name if -f and /\.hmm$/ }, $model_dir);
 	
-	print STDERR "Search genome with models...";
+	print STDERR "Search genome with models for ",ucfirst($sf),"...";
 	$self->do_parallel_search($hmmsearch, $genome, \@ltr_hmm_files, $model_dir, $aln_stats);
 	say STDERR "done searching with LTR models.";
 	
@@ -183,7 +186,7 @@ sub find_soloLTRs {
 	    $self->_collate(\@reports, $hmmsearch_summary, $dirct);
 	}
 	else {
-	    say STDERR "\nWARNING: No solo-LTRs found for $dir so none will be reported. Exiting.\n";
+	    say STDERR "\nWARNING: No solo-LTRs found for ",ucfirst($sf)," so none will be reported.\n";
 	    unlink $hmmsearch_summary if -e $hmmsearch_summary;
 
 	    if ($self->clean) {
@@ -193,7 +196,7 @@ sub find_soloLTRs {
 	}
 	
 	$self->write_sololtr_gff($hmmsearch_summary, $dirct);
-	say STDERR "all done with solo-LTRs.";
+	say STDERR "all done with solo-LTRs for ",ucfirst($sf),".";
 	
 	if ($self->clean) { # && !$self->seq) {
 	    remove_tree( $model_dir, { safe => 1} );
