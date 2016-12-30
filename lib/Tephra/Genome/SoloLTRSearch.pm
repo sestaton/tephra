@@ -128,62 +128,77 @@ has threads => (
 
 sub find_soloLTRs {
     my $self = shift;
-    my $dir = $self->dir;
+    #my $dir = $self->dir;
+    my $anno_dir = $self->dir;
     my $genome = $self->genome;
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
     my $hmmsearch_summary = $self->report // File::Spec->catfile($path, $name.'_tephra_soloLTRs.tsv');
     my ($hmmbuild, $hmmsearch) = $self->_find_hmmer;
 
-    print STDERR "Getting LTR alignments....";
-    my $ltr_aln_files = $self->_get_ltr_alns($dir);
-    say STDERR "done with alignments.";
+    ## HERE <-------> 
+    my @sfs;
+    find( sub { push @sfs, $File::Find::name if /_copia\z|_gypsy\z/ }, $anno_dir);
+    croak "\nERROR: Could not find the expected sub-directories ending in 'copia' and 'gypsy' please ".
+	"check input. Exiting.\n" unless @sfs == 2;
 
-    ## need masked genome here
-    if (@$ltr_aln_files < 1 || ! -e $genome) {
-	croak "\nERROR: No genome was found or the expected alignments files were not found. Exiting.";
-    }
-    
-    print STDERR "Getting alignment statistics...";
-    my $aln_stats = $self->_get_aln_len($ltr_aln_files); # return a hash-ref
-    say STDERR "done with alignment statistics.";
+    my $dirct = 0;
+    for my $dir (nsort_by { m/_(copia|gypsy)\z/i and $1 } @sfs) {
+	print STDERR "Getting LTR alignments for $dir....";
+	my $ltr_aln_files = $self->_get_ltr_alns($dir);
+	say STDERR "done with alignments for $dir.";
 
-    # make one directory
-    my $model_dir = File::Spec->catdir($dir, 'Tephra_LTR_exemplar_models');
-    unless ( -e $model_dir ) {
-	make_path( $model_dir, {verbose => 0, mode => 0771,} );
-    }
+	## need masked genome here
+	if (!defined $ltr_aln_files || @$ltr_aln_files < 1 || ! -e $genome) {
+	    croak "\nERROR: No genome was found or the expected alignments files were not found. Exiting.";
+	}
+	
+	print STDERR "Getting alignment statistics...";
+	my $aln_stats = $self->_get_aln_len($ltr_aln_files); # return a hash-ref
+	say STDERR "done with alignment statistics.";
+	
+	# make one directory
+	my $model_dir = File::Spec->catdir($dir, 'Tephra_LTR_exemplar_models');
+	unless ( -e $model_dir ) {
+	    make_path( $model_dir, {verbose => 0, mode => 0771,} );
+	}
+	
+	print STDERR "Building LTR exemplar models...";
+	for my $ltr_aln (nsort_by { m/family(\d+)/ and $1 } @$ltr_aln_files) {
+	    $self->build_model($ltr_aln, $model_dir, $hmmbuild);	
+	    unlink $ltr_aln;	
+	}
+	say STDERR "done with models.";
+	
+	my @ltr_hmm_files;
+	find( sub { push @ltr_hmm_files, $File::Find::name if -f and /\.hmm$/ }, $model_dir);
+	
+	print STDERR "Search genome with models...";
+	$self->do_parallel_search($hmmsearch, $genome, \@ltr_hmm_files, $model_dir, $aln_stats);
+	say STDERR "done searching with LTR models.";
+	
+	print STDERR "Collating results and writing GFF...";
+	my @reports;
+	find( sub { push @reports, $File::Find::name if -f and /\.txt$/ }, $model_dir );
+	if (@reports) {
+	    $self->_collate(\@reports, $hmmsearch_summary, $dirct);
+	}
+	else {
+	    say STDERR "\nWARNING: No solo-LTRs found for $dir so none will be reported. Exiting.\n";
+	    unlink $hmmsearch_summary if -e $hmmsearch_summary;
 
-    print STDERR "Building LTR exemplar models...";
-    for my $ltr_aln (nsort_by { m/family(\d+)/ and $1 } @$ltr_aln_files) {
-	$self->build_model($ltr_aln, $model_dir, $hmmbuild);	
-	unlink $ltr_aln;	
-    }
-    say STDERR "done with models.";
-    
-    my @ltr_hmm_files;
-    find( sub { push @ltr_hmm_files, $File::Find::name if -f and /\.hmm$/ }, $model_dir);
-
-    print STDERR "Search genome with models...";
-    $self->do_parallel_search($hmmsearch, $genome, \@ltr_hmm_files, $model_dir, $aln_stats);
-    say STDERR "done searching with LTR models.";
-
-    print STDERR "Collating results and writing GFF...";
-    my @reports;
-    find( sub { push @reports, $File::Find::name if -f and /\.txt$/ }, $model_dir );
-    if (@reports) {
-	$self->_collate(\@reports, $hmmsearch_summary);
-    }
-    else {
-	say "\nWARNING: No solo-LTRs found so none will be reported. Exiting.\n";
-	unlink $hmmsearch_summary if -e $hmmsearch_summary;
-	exit(1);
-    }
-
-    $self->write_sololtr_gff($hmmsearch_summary);
-    say STDERR "all done with solo-LTRs.";
-
-    if ($self->clean) { # && !$self->seq) {
-	remove_tree( $model_dir, { safe => 1} );
+	    if ($self->clean) {
+		remove_tree( $model_dir, { safe => 1} );
+	    }
+	    next;
+	}
+	
+	$self->write_sololtr_gff($hmmsearch_summary, $dirct);
+	say STDERR "all done with solo-LTRs.";
+	
+	if ($self->clean) { # && !$self->seq) {
+	    remove_tree( $model_dir, { safe => 1} );
+	}
+	$dirct++;
     }
 }
 
@@ -240,17 +255,19 @@ sub do_parallel_search {
 
 sub write_sololtr_gff {
     my $self = shift;
-    my ($hmmsearch_summary) = @_;
+    my ($hmmsearch_summary, $dirct) = @_;
     my $genome  = $self->genome;
     my $outfile = $self->outfile;
 
     my $seqlen = $self->_get_seq_len($genome);
     open my $in, '<', $hmmsearch_summary or die "\nERROR: Could not open file: $hmmsearch_summary\n";
-    open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
-    say $out '##gff-version 3';
-    for my $id (nsort keys %$seqlen) {
-	say $out join q{ }, '##sequence-region', $id, '1', $seqlen->{$id};
+    if ($dirct == 0) {
+	say $out '##gff-version 3';
+	for my $id (nsort keys %$seqlen) {
+	    say $out join q{ }, '##sequence-region', $id, '1', $seqlen->{$id};
+	}
     }
 
     my $ct = 0;
@@ -327,12 +344,12 @@ sub write_hmmsearch_report {
     my ($gname, $gpath, $gsuffix) = fileparse($genome, qr/\.[^.]*/);
     my ($name, $path, $suffix)    = fileparse($search_report, qr/\.[^.]*/);
     $element =~ s/_$gname*//;
-    open my $out, ">$parsed" or die "\nERROR: Could not open file: $parsed\n";
+    open my $out, ">>$parsed" or die "\nERROR: Could not open file: $parsed\n";
 
     my ($seq, $seqfile);
     if ($self->seqfile) {
 	$seqfile = $self->seqfile;
-	open $seq, ">$seqfile" or die "\nERROR: Could not open file: $seqfile";
+	open $seq, ">>$seqfile" or die "\nERROR: Could not open file: $seqfile";
     }
 
     my $hmmerin = Bio::SearchIO->new(-file => $search_report, -format => 'hmmer');
@@ -398,6 +415,7 @@ sub _get_ltr_alns {
     my (@ltrseqs, @aligns);
 
     my $ltrseqs = $self->_get_exemplar_ltrs($dir);
+    return unless defined $ltrseqs && @$ltrseqs;
 
     # This is where families are filtered by size. Since largest families come first,
     # a simple sort will filter the list.
@@ -436,9 +454,11 @@ sub _get_exemplar_ltrs {
 
     my ($ltrfile, @ltrseqs, %ltrfams);
     find( sub { $ltrfile = $File::Find::name if -f and /exemplar_ltrs.fasta$/ }, $dir);
-    croak "\nERROR: Exemplar LTR file not found. Exiting.\n" 
-	unless defined $ltrfile;
-
+    unless (defined $ltrfile) {
+	say STDERR "\nWARNING: Exemplar LTR file not found in $dir.\n";
+	return;
+    }
+	    
     if ($ltrfile =~ /^RL|family\d+/) {
 	croak "\nERROR: Expecting a single file of LTR exemplar sequences but it appears this command has ".
 	    "been run before. This will cause problems. Please re-run 'classifyltrs' or report this issue. Exiting.\n";
@@ -471,7 +491,7 @@ sub _get_exemplar_ltrs {
 
 sub _collate {
     my $self = shift;
-    my ($files, $outfile) = @_;
+    my ($files, $outfile, $dirct) = @_;
 
     ##TODO: use lexical vars instead for array indexes
     my (%seen, %parsed_alns);
@@ -494,9 +514,12 @@ sub _collate {
     }
 
     open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-    say $out join "\t", "#query", "query_length", "number_of_hits", "hit_name",
-        "perc_coverage","hsp_length", "hsp_perc_ident","hsp_query_start", "hsp_query_end",
-        "hsp_hit_start", "hsp_hit_end","search_type";
+    if ($dirct == 0) { 
+	say $out join "\t", "#query", "query_length", "number_of_hits", "hit_name",
+            "perc_coverage","hsp_length", "hsp_perc_ident","hsp_query_start", "hsp_query_end",
+            "hsp_hit_start", "hsp_hit_end","search_type";
+
+    }
 
     for my $chr (nsort keys %parsed_alns) {
 	for my $start (sort { $a <=> $b } keys %{$parsed_alns{$chr}}) {
@@ -505,6 +528,8 @@ sub _collate {
 	}
     }
     close $out;
+
+    return;
 }
 
 sub _find_hmmer {
