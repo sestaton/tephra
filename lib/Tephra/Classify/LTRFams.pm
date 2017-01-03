@@ -124,7 +124,6 @@ sub make_ltr_families {
 			      say $log "$ident just finished with PID $pid and exit code: $exit_code in $time minutes";
 			} );
 
-
     for my $type (keys %$gff_obj) {
 	$pm->start($type) and next;
 	$SIG{INT} = sub { $pm->finish };
@@ -279,7 +278,17 @@ sub process_blast_args {
 
     my (@fams, %exemplars);
 
-    my $thr = $threads % 3 == 0 ? sprintf("%.0f", $threads/3) : 1;
+    my $thr;
+    if ($threads % 3 == 0) {
+        $thr = sprintf("%.0f",$threads/2);
+    }
+    elsif ($threads-1 % 3 == 0) {
+        $thr = sprintf("%.0f",$threads-1/3);
+    }
+    else {
+        $thr = 1;
+    }
+
     my $blastdb = $self->make_blastdb($db);
     my $blast_report = $self->run_blast({ query => $query, db => $blastdb, threads => $thr, sort => 1 });
     my @dbfiles = glob "$blastdb*";
