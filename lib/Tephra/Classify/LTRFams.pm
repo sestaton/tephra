@@ -171,9 +171,6 @@ sub run_ltr_classification {
 
     my ($fams, $ids, $merged_stats) = $self->write_families($matches, $clusters);
 
-    #say STDERR join q{ }, "genome", "dir", "gff";
-    #say STDERR join q{ }, $genome, $dir, $gff;
-
     my $exm_obj = Tephra::LTR::MakeExemplars->new(
         genome  => $genome,
         dir     => $dir,
