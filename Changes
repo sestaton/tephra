@@ -5,15 +5,19 @@ Version	Date	Location
 
 - Add test to 'sololtr' command to ensure the expected file of LTR exemplar sequences
   exists.
-- Store LTR family statistics when classifying LTRs to ensure the data for each
-  superfamily is presented together (not split up as other threads are finishing).
-- Increase Perl version requirement to 5.14, which is the minimum required to 
-  build Bio::DB::HTS.
 - Add requirement of a filename for --seq option with 'sololtr' command, which makes
   testing and setting options more stable.
+- Add method to process both superfamilies concurrently with 'sololtr' command to 
+  avoid waiting for one to finish before starting to process the other, while
+  also handling individual sequences with child processes. This greatly speeds up
+  processing, especially for large genomes.
+- Store LTR family statistics when classifying LTRs to ensure the data for each
+  superfamily is presented together (not split up as other threads are finishing).
 - Properly set threads attribute when making LTR family exemplars (was being set to 1
   regardless of options).
-- Write all errors to STDERR instead of sometimes going to STDOUT.
+- Increase Perl version requirement to 5.14, which is the minimum required to 
+  build Bio::DB::HTS.
+- Write all errors to STDERR instead of sometimes going to STDOUT for all classes.
 
 0.04.5	12/12/16	Vancouver, BC
 
