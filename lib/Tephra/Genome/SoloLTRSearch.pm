@@ -420,7 +420,7 @@ sub write_hmmsearch_report {
 			        $percent_q_coverage, $hsplen, $pid, $qstart, $qstop, $hstart, $hstop, $model_type;
 
 			    if ($self->seqfile) {
-				my $seqid = '>'.$qid.'_'.$hitid.'_'.$hstart.'_'.$hstop; 
+				my $seqid = join '_', '>'.$qid, $hitid, $hstart, $hstop; 
 				## It makes more sense to show the location of the hit
 				## Also, this would pave the way for creating a gff of solo-LTRs
 				## my $seqid = ">".$query."|".$hitid."_".$hstart."-".$hstop
