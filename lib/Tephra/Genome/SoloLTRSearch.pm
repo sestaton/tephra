@@ -415,7 +415,8 @@ sub write_hmmsearch_report {
 		    if ( $hsplen >= $match_len && $hsplen >= $aln_stats->{$query} * $match_pcov ) {
 			if ($pid >= $match_pid) {
 			    $matches++;
-			    say $out join "\t", $query, $aln_stats->{$query}, $num_hits, $hitid, 
+			    my $qid = $query =~ s/_ltrseqs_muscle-out//r; # non-destructive substitution in v5.14+
+			    say $out join "\t", $qid, $aln_stats->{$query}, $num_hits, $hitid, 
 			        $percent_q_coverage, $hsplen, $pid, $qstart, $qstop, $hstart, $hstop, $model_type;
 
 			    if ($self->seqfile) {
