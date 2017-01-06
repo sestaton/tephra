@@ -413,14 +413,14 @@ sub write_hmmsearch_report {
 		    $positions++ for @ident_pos;
 		    my $pid = sprintf("%.2f", $positions/$aln_stats->{$query} * 100);
 		    if ( $hsplen >= $match_len && $hsplen >= $aln_stats->{$query} * $match_pcov ) {
+			my $qid = $query =~ s/_ltrseqs_muscle-out//r; # non-destructive substitution in v5.14+
 			if ($pid >= $match_pid) {
 			    $matches++;
-			    my $qid = $query =~ s/_ltrseqs_muscle-out//r; # non-destructive substitution in v5.14+
 			    say $out join "\t", $qid, $aln_stats->{$query}, $num_hits, $hitid, 
 			        $percent_q_coverage, $hsplen, $pid, $qstart, $qstop, $hstart, $hstop, $model_type;
 
 			    if ($self->seqfile) {
-				my $seqid = '>'.$query.'_'.$hitid.'_'.$hstart.'_'.$hstop; 
+				my $seqid = '>'.$qid.'_'.$hitid.'_'.$hstart.'_'.$hstop; 
 				## It makes more sense to show the location of the hit
 				## Also, this would pave the way for creating a gff of solo-LTRs
 				## my $seqid = ">".$query."|".$hitid."_".$hstart."-".$hstop
