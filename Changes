@@ -18,6 +18,8 @@ Version	Date	Location
 - Increase Perl version requirement to 5.14, which is the minimum required to 
   build Bio::DB::HTS.
 - Write all errors to STDERR instead of sometimes going to STDOUT for all classes.
+- Add the sum of all deletions to report for 'illrecomb' command to get an idea about
+  the total DNA removal for an LTR family.
 
 0.04.5	12/12/16	Vancouver, BC
 
