@@ -19,11 +19,11 @@ Tephra::NonLTR::GFFWriter - Take results from non-LTR search and make an annotat
 
 =head1 VERSION
 
-Version 0.04.6
+Version 0.05.0
 
 =cut
 
-our $VERSION = '0.04.6';
+our $VERSION = '0.05.0';
 $VERSION = eval $VERSION;
 
 has genome      => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );

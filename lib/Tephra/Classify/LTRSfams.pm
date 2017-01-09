@@ -26,11 +26,11 @@ Tephra::Classify::LTRSFams - Classify LTR retrotransposons into superfamilies
 
 =head1 VERSION
 
-Version 0.04.6
+Version 0.05.0
 
 =cut
 
-our $VERSION = '0.04.6';
+our $VERSION = '0.05.0';
 $VERSION = eval $VERSION;
 
 has genome => (
