@@ -47,7 +47,7 @@ SKIP: {
     my $seqct = 0;
     open my $in, '<', $seqfile;
     while (<$in>) { $seqct++ if /^>/; }
-    say STDERR "seqct: $seqct";
+    #say STDERR "seqct: $seqct";
     ok( $seqct == 36, 'Correct number of illigetimate recombination events detected' );
     close $in;
     
@@ -59,7 +59,7 @@ SKIP: {
 	$hmatch++ if /^Hit match string/;
     }
 
-    say STDERR join q{ }, $qmatch, $hmatch;
+    #say STDERR join q{ }, $qmatch, $hmatch;
     ok( $qmatch == 18, 'Correct number of illigetimate recombination events detected upstream of gap' );
     ok( $hmatch == 18, 'Correct number of illigetimate recombination events detected downstream of gap' );
     ok( $seqct == $qmatch+$hmatch, 'Correct number of illigetimate recombination events detected' );
@@ -71,7 +71,7 @@ SKIP: {
     find( sub { 
         push @outfiles, $File::Find::name 
             if /\.log$|RLG_family9/ }, $testdir);
-
+    
     unlink @outfiles;
 };
 
