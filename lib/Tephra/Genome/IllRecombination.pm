@@ -481,8 +481,9 @@ sub get_stats {
 	my $mean = sprintf("%.2f",$ave);
 	my $min = $stat->min; # // 0;
 	my $max = $stat->max; # // 0;
-	
-	push @{$gap_stats->{$fasname}}, join "||", $gap, $count, $gap_percent, $mean, $min, $max;
+	my $sum = $stat->sum;
+
+	push @{$gap_stats->{$fasname}}, join "||", $gap, $count, $gap_percent, $mean, $min, $max, $sum;
     }
 }
 
@@ -504,9 +505,9 @@ sub collate_gap_stats {
 
     open my $gap_stats_fh_out, '>', $statsfile or die "\nERROR: Could not open file: $statsfile\n";
     
-    say $gap_stats_fh_out join "\t", "Family_name", "Total_fam_gap_count", "Mean_fam_gap_count (stddev)",
-        "Mean_fam_gap_size (stddev)", "Mean_fam_gap_perc (stdev)", "Mean_fam_gap_size (stddev)", 
-        "Mean_gap_min_size (stddev)", "Mean_gap_max_size (stddev)";
+    say $gap_stats_fh_out join "\t", "Family_name", "Total_fam_gap_count", "Total_length_of_gaps", 
+        "Mean_fam_gap_count (stddev)", "Mean_fam_gap_size (stddev)", "Mean_fam_gap_perc (stdev)", 
+        "Mean_fam_gap_size (stddev)", "Mean_gap_min_size (stddev)", "Mean_gap_max_size (stddev)";
 
     my (@repeat_names, @total_gap_char, @diff_gap_sizes, @gap_char_perc, 
 	@mean_gap_size, @min_gap_size, @max_gap_size, %fam_gap_stats);
@@ -515,12 +516,13 @@ sub collate_gap_stats {
 	for my $gap (@{$gap_stats->{$fasname}}) {
 	    my @all_gap_stats = split /\|\|/, $gap;
 
-	    push @{$fam_gap_stats{ $fasname }{ total_gap_char }}, $all_gap_stats[0];
-	    push @{$fam_gap_stats{ $fasname }{ diff_gap_sizes }}, $all_gap_stats[1];
-	    push @{$fam_gap_stats{ $fasname }{ gap_char_perc }},  $all_gap_stats[2];
-	    push @{$fam_gap_stats{ $fasname }{ mean_gap_size }},  $all_gap_stats[3];
-	    push @{$fam_gap_stats{ $fasname }{ min_gap_size }},   $all_gap_stats[4];
-	    push @{$fam_gap_stats{ $fasname }{ max_gap_size }},   $all_gap_stats[5];
+	    push @{$fam_gap_stats{ $fasname }{ total_gap_char }},  $all_gap_stats[0];
+	    push @{$fam_gap_stats{ $fasname }{ diff_gap_sizes }},  $all_gap_stats[1];
+	    push @{$fam_gap_stats{ $fasname }{ gap_char_perc }},   $all_gap_stats[2];
+	    push @{$fam_gap_stats{ $fasname }{ mean_gap_size }},   $all_gap_stats[3];
+	    push @{$fam_gap_stats{ $fasname }{ min_gap_size }},    $all_gap_stats[4];
+	    push @{$fam_gap_stats{ $fasname }{ max_gap_size }},    $all_gap_stats[5];
+	    push @{$fam_gap_stats{ $fasname }{ sum_gap_lengths }}, $all_gap_stats[6];
 	}
     }
 
@@ -535,14 +537,16 @@ sub collate_gap_stats {
 	my $mean_gap_size_stats  = Statistics::Descriptive::Full->new;
 	my $min_gap_size_stats   = Statistics::Descriptive::Full->new;
 	my $max_gap_size_stats   = Statistics::Descriptive::Full->new;
-	
+	my $gap_length_sum_stats = Statistics::Descriptive::Full->new;
+
 	$total_gap_char_stats->add_data(@{$fam_gap_stats{$family}{total_gap_char}});
 	$gap_size_stats->add_data(@{$fam_gap_stats{$family}{diff_gap_sizes}});
 	$gap_char_perc_stats->add_data(@{$fam_gap_stats{$family}{gap_char_perc}});
 	$mean_gap_size_stats->add_data(@{$fam_gap_stats{$family}{mean_gap_size}});
 	$min_gap_size_stats->add_data(@{$fam_gap_stats{$family}{min_gap_size}});
 	$max_gap_size_stats->add_data(@{$fam_gap_stats{$family}{max_gap_size}});
-	
+	$gap_length_sum_stats->add_data(@{$fam_gap_stats{$family}{sum_gap_lengths}});
+
 	my $grand_mean_fam_count = $total_gap_char_stats->count;
 	my $grand_gap_char_mean  = sprintf("%.2f",$total_gap_char_stats->mean);
 	my $grand_gap_size_mean  = sprintf("%.2f",$gap_size_stats->mean);
@@ -550,6 +554,7 @@ sub collate_gap_stats {
 	my $grand_mean_gap_size  = sprintf("%.2f",$mean_gap_size_stats->mean);
 	my $grand_gap_size_min   = sprintf("%.2f",$min_gap_size_stats->mean);
 	my $grand_gap_size_max   = sprintf("%.2f",$max_gap_size_stats->mean);
+	my $gap_lengths_sum      = $gap_length_sum_stats->sum;
 	
 	my $grand_gap_char_sd      = sprintf("%.2f",$total_gap_char_stats->standard_deviation);
 	my $grand_gap_size_sd      = sprintf("%.2f",$gap_size_stats->standard_deviation);
@@ -558,7 +563,7 @@ sub collate_gap_stats {
 	my $grand_gap_size_min_sd  = sprintf("%.2f",$min_gap_size_stats->standard_deviation);
 	my $grand_gap_size_max_sd  = sprintf("%.2f",$max_gap_size_stats->standard_deviation);
 	
-	say $gap_stats_fh_out join "\t", $fam_name, $grand_mean_fam_count, 
+	say $gap_stats_fh_out join "\t", $fam_name, $grand_mean_fam_count, $gap_lengths_sum, 
 	    $grand_gap_char_mean.' ('.$grand_gap_char_sd.')',
 	    $grand_gap_size_mean.' ('.$grand_gap_size_sd.')',
 	    $grand_gap_char_perc.' ('.$grand_gap_char_perc_sd.')',
