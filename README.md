@@ -78,10 +78,9 @@ You can also look for information at:
 
 Tephra is a command-line program only for now. The command `tephra` itself controls all the action of the subcommands, which perform specific tasks. Typing the command `tephra` will show the available commands. Here is an example,
 
-    $ tephra
-    tephra <command> [-?h] [long options...]
-    -? -h --help --help    show help
-   
+    $ tephra <command> [-?h] [long options...]
+        -? -h --help  show help
+    
     Available commands:
     
            commands: list the application's commands
@@ -99,8 +98,8 @@ Tephra is a command-line program only for now. The command `tephra` itself contr
             maskref: Mask a reference genome with transposons.
          reannotate: Transfer annotations from a reference set of repeats to Tephra annotations.
             sololtr: Find solo-LTRs in a genome assembly.
+             tirage: Calculate the age distribution of TIR transposons.
             version: display an app's version
-
 
 Typing a subcommand will show the usage of that command, for example:
 
