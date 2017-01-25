@@ -4,6 +4,8 @@ package Tephra::Command::findtrims;
 use 5.014;
 use strict;
 use warnings;
+use Cwd qw(abs_path);
+use File::Spec;
 use File::Basename;
 use Tephra -command;
 use Tephra::Config::Exe;
@@ -17,6 +19,7 @@ sub opt_spec {
 	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains "    ],
 	[ "outfile|o=s", "The final combined and filtered GFF3 file of TRIMs "           ],
 	[ "clean",       "Clean up the index files (Default: yes) "                      ],
+	[ "debug",       "Show external command for debugging (Default: no) "            ],
 	[ "help|h",      "Display the usage menu and exit. "                             ],
         [ "man|m",       "Display the full manual. "                                     ],
     );
@@ -52,7 +55,7 @@ sub execute {
 sub _refine_trim_predictions {
     my ($relaxed_gff, $strict_gff, $fasta, $outfile) = @_;
 
-    my $refine_obj = Tephra::LTR::LTRRefine->new( genome => $fasta, outfile => $outfile );
+    my $refine_obj = Tephra::LTR::LTRRefine->new( genome => $fasta, outfile => $outfile, is_trim => 1 );
 	
     my $relaxed_features
 	= $refine_obj->collect_features({ gff => $relaxed_gff, pid_threshold => 85 });
@@ -68,6 +71,8 @@ sub _refine_trim_predictions {
 
     $refine_obj->sort_features({ gff               => $relaxed_gff, 
 				 combined_features => $combined_features });
+
+    unlink $relaxed_gff, $strict_gff;
 }
 
 sub _run_trim_search {
@@ -80,17 +85,20 @@ sub _run_trim_search {
     my $hmmdb  = $opt->{hmmdb} // $tephra_hmmdb;
     my $trnadb = $opt->{trnadb} // $tephra_trnadb;
     my $clean  = $opt->{clean} // 0;
-    
+    my $debug  = $opt->{debug} // 0;
+
     my $trim_search = Tephra::TRIM::TRIMSearch->new( 
 	genome => $genome, 
 	hmmdb  => $hmmdb,
 	trnadb => $trnadb, 
-	clean  => $clean
+	clean  => $clean,
+	debug  => $debug,
     );
 
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
-    my $index = $genome.'.index';
+    my $index = File::Spec->catfile( abs_path($path), $name.$suffix.'.index');
 
+    $genome = abs_path($genome);
     my @suff_args = qq(-db $genome -indexname $index -tis -suf -lcp -ssp -sds -des -dna);
     $trim_search->create_index(\@suff_args);
     
