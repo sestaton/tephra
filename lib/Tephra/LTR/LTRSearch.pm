@@ -45,36 +45,16 @@ sub ltr_search_strict {
     my $hmmdb  = $self->hmmdb;
     my $trnadb = $self->trnadb;
 
-    ## LTR constraints
-    my $overlaps   = $config->{overlaps};
-    my $mintsd     = $config->{mintsd};
-    my $maxtsd     = $config->{maxtsd};
-    my $minlenltr  = $config->{minlenltr};
-    my $maxlenltr  = $config->{maxlenltr};
-    my $mindistltr = $config->{mindistltr};
-    my $maxdistltr = $config->{maxdistltr};
-    my $pdomcutoff = $config->{pdomcutoff};
-    my $pdomevalue = $config->{pdomevalue};
+    ## LTRharvest constraints
+    my ($overlaps, $mintsd, $maxtsd, $minlenltr, $maxlenltr, $mindistltr, $maxdistltr, $pdomcutoff, $pdomevalue) = 
+	@{$config}{qw(overlaps mintsd maxtsd minlenltr maxlenltr mindistltr maxdistltr pdomcutoff pdomevalue)};
 
-    my $pptradius = $config->{pptradius};
-    my $pptlen    = $config->{pptlen};
-    my $pptagpr   = $config->{pptagpr};
-    my $uboxlen   = $config->{uboxlen};
-    my $uboxutpr  = $config->{uboxutpr};
-    my $pbsradius = $config->{pbsradius};
-    my $pbslen    = $config->{pbslen};
-    my $pbsoffset = $config->{pbsoffset};
-    my $pbstrnaoffset  = $config->{pbstrnaoffset};
-    my $pbsmaxeditdist = $config->{pbsmaxeditdist};
-    my $maxgaplen = $config->{maxgaplen};
+    my ($seedlength, $tsdradius, $xdrop, $swmat, $swmis, $swins, $swdel) = 
+	@{$config}{qw(seedlength tsdradius xdrop swmat swmis swins swdel)};
 
-    my $seedlength = $config->{seedlength};
-    my $tsdradius  = $config->{tsdradius};
-    my $xdrop      = $config->{xdrop};
-    my $swmat      = $config->{swmat};
-    my $swmis      = $config->{swmis};
-    my $swins      = $config->{swins};
-    my $swdel      = $config->{swdel};
+    ## LTRdigest constraints
+    my ($pptradius, $pptlen, $pptagpr, $uboxlen, $uboxutpr, $pbsradius, $pbslen, $pbsoffset, $pbstrnaoffset, $pbsmaxeditdist, $maxgaplen) = 
+	@{$config}{qw(pptradius pptlen pptagpr uboxlen uboxutpr pbsradius pbslen pbsoffset pbstrnaoffset pbsmaxeditdist maxgaplen)};
 
     my (%suf_args, %ltrh_cmd, %ltrd_cmd);
     
@@ -83,17 +63,17 @@ sub ltr_search_strict {
 	$name =~ s/$1//;
     }
     
-    my $ltrh_out = File::Spec->catfile($path, $name."_ltrharvest99_pred-all");
-    my $ltrh_out_inner = File::Spec->catfile($path, $name."_ltrharvest99_pred-inner");
-    my $ltrh_gff = File::Spec->catfile($path, $name."_ltrharvest99.gff3");
-    my $ltrg_gff = File::Spec->catfile($path, $name."_ltrdigest99.gff3");
-    my $ltrg_out = File::Spec->catfile($path, $name."_ltrdigest99");
+    #my $ltrh_out = File::Spec->catfile($path, $name.'_ltrharvest99_pred-all');
+    #my $ltrh_out_inner = File::Spec->catfile($path, $name.'_ltrharvest99_pred-inner');
+    my $ltrh_gff = File::Spec->catfile($path, $name.'_ltrharvest99.gff3');
+    my $ltrg_gff = File::Spec->catfile($path, $name.'_ltrdigest99.gff3');
+    #my $ltrg_out = File::Spec->catfile($path, $name.'_ltrdigest99');
 
-    my @ltrh_opts = qw(-longoutput -seqids -tabout -mintsd -maxtsd -minlenltr -maxlenltr -mindistltr 
-                       -maxdistltr -motif -similar -vic -index -out -outinner -overlaps -seed -vic 
+    my @ltrh_opts = qw(-seqids -mintsd -maxtsd -minlenltr -maxlenltr -mindistltr 
+                       -maxdistltr -motif -similar -vic -index -overlaps -seed -vic 
                        -xdrop -mat -mis -ins -del -gff3);
-    my @ltrh_args = ("no","yes","no",$mintsd,$maxtsd,$minlenltr,$maxlenltr,$mindistltr,$maxdistltr,"tgca","99",
-		     "10",$index,$ltrh_out,$ltrh_out_inner,$overlaps,$seedlength,$tsdradius,$xdrop,
+    my @ltrh_args = ("yes",$mintsd,$maxtsd,$minlenltr,$maxlenltr,$mindistltr,$maxdistltr,"tgca","99",
+		     "10",$index,$overlaps,$seedlength,$tsdradius,$xdrop,
 		     $swmat,$swmis,$swins,$swdel,$ltrh_gff);
     @ltrh_cmd{@ltrh_opts} = @ltrh_args;
     
@@ -101,11 +81,11 @@ sub ltr_search_strict {
     if (-s $ltrh_gff > 1) {
 	my $gffh_sort = $self->sort_gff($ltrh_gff);
 
-	my @ltrd_opts = qw(-trnas -hmms -aliout -aaout -seqfile -matchdescstart -seqnamelen -o 
-                           -outfileprefix -pdomevalcutoff -pdomcutoff -pptradius -pptlen -pptaprob 
+	my @ltrd_opts = qw(-trnas -hmms -seqfile -matchdescstart -seqnamelen -o 
+                           -pdomevalcutoff -pdomcutoff -pptradius -pptlen -pptaprob 
                            -pptgprob -uboxlen -pptuprob -pbsalilen -pbsradius -pbsoffset -pbstrnaoffset
                            -pbsmaxedist -maxgaplen);
-	my @ltrd_args = ($trnadb,$hmmdb,"no","no",$genome,"yes","50",$ltrg_gff,$ltrg_out,
+	my @ltrd_args = ($trnadb,$hmmdb,$genome,"yes","50",$ltrg_gff,
 			 $pdomevalue,$pdomcutoff,$pptradius,$pptlen,$pptagpr,$pptagpr,$uboxlen,
 	                 $uboxutpr,$pbslen,$pbsradius,$pbsoffset,$pbstrnaoffset,$pbsmaxeditdist,$maxgaplen);
 	@ltrd_cmd{@ltrd_opts} = @ltrd_args;
@@ -129,42 +109,17 @@ sub ltr_search_relaxed {
     my $genome = $self->genome;
     my $hmmdb  = $self->hmmdb;
     my $trnadb = $self->trnadb;
-    #my $index  = $self->index;
 
-    ## LTR constraints                                                                                         
-    my $overlaps   = $config->{overlaps};
-    my $mintsd     = $config->{mintsd};
-    my $maxtsd     = $config->{maxtsd};
-    my $minlenltr  = $config->{minlenltr};
-    my $maxlenltr  = $config->{maxlenltr};
-    my $mindistltr = $config->{mindistltr};
-    my $maxdistltr = $config->{maxdistltr};
-    my $pdomcutoff = $config->{pdomcutoff};
-    my $pdomevalue = $config->{pdomevalue};
-    
-    my $seedlength = $config->{seedlength};
-    my $tsdradius  = $config->{tsdradius};
-    my $xdrop      = $config->{xdrop};
-    my $swmat      = $config->{swmat};
-    my $swmis      = $config->{swmis};
-    my $swins      = $config->{swins};
-    my $swdel      = $config->{swdel};
+    ## LTRharvest constraints
+    my ($overlaps, $mintsd, $maxtsd, $minlenltr, $maxlenltr, $mindistltr, $maxdistltr, $pdomcutoff, $pdomevalue) = 
+	@{$config}{qw(overlaps mintsd maxtsd minlenltr maxlenltr mindistltr maxdistltr pdomcutoff pdomevalue)};
 
-    my $pptradius = $config->{pptradius};
-    my $pptlen    = $config->{pptlen};
-    my $pptagpr   = $config->{pptagpr};
-    my $uboxlen   = $config->{uboxlen};
-    my $uboxutpr  = $config->{uboxutpr};
-    my $pbsradius = $config->{pbsradius};
-    my $pbslen    = $config->{pbslen};
-    my $pbsoffset = $config->{pbsoffset};
-    my $pbstrnaoffset  = $config->{pbstrnaoffset};
-    my $pbsmaxeditdist = $config->{pbsmaxeditdist};
-    my $maxgaplen = $config->{maxgaplen};
-    #my $genome = $self->genome->absolute;
-    #my $hmmdb  = $self->hmmdb;
-    #my $trnadb = $self->trnadb;
-    my $gt = $self->get_gt_exec;
+    my ($seedlength, $tsdradius, $xdrop, $swmat, $swmis, $swins, $swdel) = 
+	@{$config}{qw(seedlength tsdradius xdrop swmat swmis swins swdel)};
+
+    ## LTRdigest constraints
+    my ($pptradius, $pptlen, $pptagpr, $uboxlen, $uboxutpr, $pbsradius, $pbslen, $pbsoffset, $pbstrnaoffset, $pbsmaxeditdist, $maxgaplen) = 
+	@{$config}{qw(pptradius pptlen pptagpr uboxlen uboxutpr pbsradius pbslen pbsoffset pbstrnaoffset pbsmaxeditdist maxgaplen)};
 
     my (%suf_args, %ltrh_cmd, %ltrd_cmd);
     
@@ -173,29 +128,28 @@ sub ltr_search_relaxed {
 	$name =~ s/$1//;
     }
     
-    my $ltrh_out = File::Spec->catfile($path, $name."_ltrharvest85_pred-all");
-    my $ltrh_out_inner = File::Spec->catfile($path, $name."_ltrharvest85_pred-inner");
-    my $ltrh_gff = File::Spec->catfile($path, $name."_ltrharvest85.gff3");
-    my $ltrg_gff = File::Spec->catfile($path, $name."_ltrdigest85.gff3");
-    my $ltrg_out = File::Spec->catfile($path, $name."_ltrdigest85");
+    #my $ltrh_out = File::Spec->catfile($path, $name.'_ltrharvest85_pred-all');
+    #my $ltrh_out_inner = File::Spec->catfile($path, $name.'_ltrharvest85_pred-inner');
+    my $ltrh_gff = File::Spec->catfile($path, $name.'_ltrharvest85.gff3');
+    my $ltrg_gff = File::Spec->catfile($path, $name.'_ltrdigest85.gff3');
+    #my $ltrg_out = File::Spec->catfile($path, $name.'_ltrdigest85');
 
-    my @ltrh_opts = qw(-longoutput -seqids -tabout -mintsd -maxtsd -minlenltr -maxlenltr 
-                       -mindistltr -maxdistltr -similar -vic -index -out -outinner -overlaps
+    my @ltrh_opts = qw(-seqids -mintsd -maxtsd -minlenltr -maxlenltr 
+                       -mindistltr -maxdistltr -similar -vic -index -overlaps
                        -seed -vic -xdrop -mat -mis -ins -del -gff3);
-
-    my @ltrh_args = ("no","yes","no",$mintsd,$maxtsd,$minlenltr,$maxlenltr,$mindistltr,$maxdistltr,"85","10",
-		     $index,$ltrh_out,$ltrh_out_inner,$overlaps,$seedlength,$tsdradius,$xdrop,$swmat,
+    my @ltrh_args = ("yes",$mintsd,$maxtsd,$minlenltr,$maxlenltr,$mindistltr,$maxdistltr,"85","10",
+		     $index,$overlaps,$seedlength,$tsdradius,$xdrop,$swmat,
                      $swmis,$swins,$swdel,$ltrh_gff);
     @ltrh_cmd{@ltrh_opts} = @ltrh_args;
     
     my $ltr_succ  = $self->run_ltrharvest(\%ltrh_cmd);
     my $gffh_sort = $self->sort_gff($ltrh_gff);
 
-    my @ltrd_opts = qw(-trnas -hmms -aliout -aaout -seqfile -matchdescstart -seqnamelen -o 
-                       -outfileprefix -pdomevalcutoff -pdomcutoff -pptradius -pptlen -pptaprob
+    my @ltrd_opts = qw(-trnas -hmms -seqfile -matchdescstart -seqnamelen -o 
+                       -pdomevalcutoff -pdomcutoff -pptradius -pptlen -pptaprob
                        -pptgprob -uboxlen -pptuprob -pbsalilen -pbsradius -pbsoffset 
                        -pbstrnaoffset -pbsmaxedist -maxgaplen);
-    my @ltrd_args = ($trnadb,$hmmdb,"no","no",$genome,"yes","50",$ltrg_gff,$ltrg_out,$pdomevalue,
+    my @ltrd_args = ($trnadb,$hmmdb,$genome,"yes","50",$ltrg_gff,$pdomevalue,
 		     $pdomcutoff,$pptradius,$pptlen,$pptagpr,$pptagpr,$uboxlen,$uboxutpr,$pbslen,
 		     $pbsradius,$pbsoffset,$pbstrnaoffset,$pbsmaxeditdist,$maxgaplen);
     @ltrd_cmd{@ltrd_opts} = @ltrd_args;
