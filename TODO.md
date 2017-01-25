@@ -67,6 +67,8 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Filter elements by quality score, retaining the best elements
  - [x] Generate combined GFF3 of high-quality TRIMs
  - [ ] Create a feature type called 'TRIM_retrotransposon' to distinguish these elements from other LTR-RTs
+ - [ ] create developer tests to operate on a larger data set to positively identify elements rather than just
+       operation of the command
 
 ## Command `tephra findnonltrs`
  - [ ] break chromosomes to reduce memory usage in hmmsearch (only applies to HMMERv3)
