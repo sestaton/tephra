@@ -15,6 +15,7 @@ sub opt_spec {
 	[ "genome|g=s",  "The genome sequences in FASTA format to search for LTR-RTs "   ],
 	[ "trnadb|t=s",  "The file of tRNA sequences in FASTA format to search for PBS " ], 
 	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains "    ],
+	[ "outfile|o=s", "The final combined and filtered GFF3 file of TRIMs "           ],
 	[ "clean",       "Clean up the index files (Default: yes) "                      ],
 	[ "help|h",      "Display the usage menu and exit. "                             ],
         [ "man|m",       "Display the full manual. "                                     ],
@@ -33,7 +34,7 @@ sub validate_args {
         $self->help;
         exit(0);
     }
-    elsif (!$opt->{genome}) {
+    elsif (!$opt->{genome} || !$opt->{outfile}) {
 	say STDERR "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
@@ -44,14 +45,14 @@ sub execute {
 
     my ($relaxed_gff, $strict_gff) = _run_trim_search($opt);
     if ($relaxed_gff && $strict_gff) {
-	my $some = _refine_trim_predictions($relaxed_gff, $strict_gff, $opt->{genome});
+	my $some = _refine_trim_predictions($relaxed_gff, $strict_gff, $opt->{genome}, $opt->{outfile});
     }
 }
 
 sub _refine_trim_predictions {
-    my ($relaxed_gff, $strict_gff, $fasta) = @_;
+    my ($relaxed_gff, $strict_gff, $fasta, $outfile) = @_;
 
-    my $refine_obj = Tephra::LTR::LTRRefine->new( genome => $fasta );
+    my $refine_obj = Tephra::LTR::LTRRefine->new( genome => $fasta, outfile => $outfile );
 	
     my $relaxed_features
 	= $refine_obj->collect_features({ gff => $relaxed_gff, pid_threshold => 85 });
@@ -108,6 +109,7 @@ USAGE: tephra findltrs [-h] [-m]
 
 Required:
     -g|genome     :   The genome sequences in FASTA format to search for LTR-RTs. 
+    -o|outfile    :   The final combined and filtered GFF3 file of TRIMs. 
 
 Options:
     -t|trnadb     :   The file of tRNA sequences in FASTA format to search for PBS. 
@@ -148,6 +150,10 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =item -g, --genome
 
  The genome sequences in FASTA format to search for LTR-RTs.
+
+=item -o, --outfile
+
+ The final combined and filtered GFF3 file of TRIMs.
 
 =back
 
