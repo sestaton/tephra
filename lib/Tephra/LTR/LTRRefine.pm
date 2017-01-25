@@ -70,6 +70,13 @@ has remove_tnp_domains => (
     default   => 0,
 );
 
+has is_trim => (
+    is        => 'ro',
+    isa       => 'Bool',
+    lazy      => 1,
+    default   => 0,
+);
+
 #
 # methods
 #
@@ -364,7 +371,7 @@ sub get_ltr_score_dups {
 	}
     }
 
-    ## First, evaluate wheter there is only one best element by score and similarity.
+    ## First, evaluate whether there is only one best element by score and similarity.
     ## Then, if there are multiple elements with the same best score/similarity, pick one
     ## based on the similarity.
     for my $source (keys %$scores) {
@@ -595,6 +602,8 @@ sub sort_features {
 		    my $gff3_str = gff3_format_feature($entry);
 		    $gff_feats .= $gff3_str;
 		}
+		$gff_feats =~ s/LTR_/TRIM_/g 
+		    if $self->is_trim;
 		print $ogff $gff_feats;
 		$count++;
 		undef $gff_feats;
@@ -618,6 +627,8 @@ sub sort_features {
 		my $elem = $feature->{attributes}{ID}[0];
 		$elem =~ s/\d+.*//;
 		$elem .= $count;
+		$elem =~ s/LTR_/TRIM_/g 
+		    if $self->is_trim;
 		my $id = join "_", $elem, $chromosome, $start, $end;
 		$self->_get_ltr_range($index, $id, $chromosome, $start, $end, $ofas);
 	    }
