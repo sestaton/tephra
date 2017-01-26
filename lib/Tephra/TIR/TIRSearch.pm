@@ -4,6 +4,7 @@ use 5.014;
 use Moose;
 use Bio::GFF3::LowLevel qw(gff3_format_feature);
 use List::UtilsBy       qw(nsort_by);
+use Cwd                 qw(abs_path);
 use File::Spec;
 use File::Basename;
 use Path::Class::File;
@@ -41,7 +42,7 @@ sub tir_search {
     my $self = shift;
     my ($index) = @_;
     
-    my $genome  = $self->genome->absolute;
+    my $genome  = $self->genome->absolute->resolve;
     my $hmmdb   = $self->hmmdb;
     my $outfile = $self->outfile;
     my (%suf_args, %tirv_cmd);
@@ -51,7 +52,7 @@ sub tir_search {
 	$name =~ s/$1//;
     }
     
-    my $gff = $outfile // File::Spec->catfile($path, $name.'_tirs.gff3');
+    my $gff = $outfile // File::Spec->catfile( abs_path($path), $name.'_tirs.gff3' );
     my $fas = $gff;
     $fas =~ s/\.gff.*/.fasta/;
 
@@ -64,7 +65,7 @@ sub tir_search {
     
     my $filtered = $self->_filter_tir_gff($gff, $fas);
 
-    $self->clean_index if $self->clean;
+    $self->clean_index($path) if $self->clean;
     
     return $filtered;
 }
@@ -72,10 +73,10 @@ sub tir_search {
 sub _filter_tir_gff {
     my $self = shift;
     my ($gff, $fas) = @_;
-    my $genome = $self->genome;
+    my $genome = $self->genome->absolute->resolve;
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $outfile = File::Spec->catfile($path, $name.'_filtered.gff3');
+    my $outfile = File::Spec->catfile( abs_path($path), $name.'_filtered.gff3' );
     open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     open my $faout, '>>', $fas or die "\nERROR: Could not open file: $fas\n";
     
