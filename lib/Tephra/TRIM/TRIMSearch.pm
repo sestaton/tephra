@@ -2,12 +2,12 @@ package Tephra::TRIM::TRIMSearch;
 
 use 5.014;
 use Moose;
-use Cwd;
+use Path::Class::File;
 use File::Spec;
 use File::Find;
 use File::Basename;
+use Cwd                 qw(getcwd abs_path);
 use IPC::System::Simple qw(system EXIT_ANY);
-use Path::Class::File;
 use Log::Any            qw($log);
 use Try::Tiny;
 use namespace::autoclean;
@@ -31,7 +31,7 @@ sub trim_search_strict {
     my $self = shift;
     my ($index) = @_;
     
-    my $genome = $self->genome->absolute;
+    my $genome = $self->genome->absolute->resolve;
     my $hmmdb  = $self->hmmdb;
     my $trnadb = $self->trnadb;
 
@@ -42,11 +42,8 @@ sub trim_search_strict {
 	$name =~ s/$1//;
     }
     
-    #my $ltrh_out = File::Spec->catfile($path, $name.'_trim_ltrharvest99_pred-all');
-    #my $ltrh_out_inner = File::Spec->catfile($path, $name.'_trim_ltrharvest99_pred-inner');
-    my $ltrh_gff = File::Spec->catfile($path, $name.'_trim_ltrharvest99.gff3');
-    my $ltrg_gff = File::Spec->catfile($path, $name.'_trim_ltrdigest99.gff3');
-    #my $ltrg_out = File::Spec->catfile($path, $name.'_trim_ltrdigest99');
+    my $ltrh_gff = File::Spec->catfile( abs_path($path), $name.'_trim_ltrharvest99.gff3' );
+    my $ltrg_gff = File::Spec->catfile( abs_path($path), $name.'_trim_ltrdigest99.gff3' );
 
     my @ltrh_opts = qw(-seqids -mintsd -maxtsd -minlenltr -maxlenltr 
                        -mindistltr -maxdistltr -motif -similar -vic -index -gff3);
@@ -63,7 +60,6 @@ sub trim_search_strict {
 	@ltrd_cmd{@ltrd_opts} = @ltrd_args;
 	
 	my $ltr_dig = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort);
-	#$self->clean_index if $self->clean;
 	unlink $ltrh_gff;
 	unlink $gffh_sort;
     
@@ -77,7 +73,7 @@ sub trim_search_strict {
 sub trim_search_relaxed {
     my $self = shift;
     my ($index) = @_;
-    my $genome = $self->genome->absolute;
+    my $genome = $self->genome->absolute->resolve;
     my $hmmdb  = $self->hmmdb;
     my $trnadb = $self->trnadb;
 
@@ -88,11 +84,8 @@ sub trim_search_relaxed {
 	$name =~ s/$1//;
     }
     
-    #my $ltrh_out = File::Spec->catfile($path, $name.'_trim_ltrharvest85_pred-all');
-    #my $ltrh_out_inner = File::Spec->catfile($path, $name.'_trim_ltrharvest85_pred-inner');
-    my $ltrh_gff = File::Spec->catfile($path, $name.'_trim_ltrharvest85.gff3');
-    my $ltrg_gff = File::Spec->catfile($path, $name.'_trim_ltrdigest85.gff3');
-    #my $ltrg_out = File::Spec->catfile($path, $name.'_trim_ltrdigest85');
+    my $ltrh_gff = File::Spec->catfile( abs_path($path), $name.'_trim_ltrharvest85.gff3' );
+    my $ltrg_gff = File::Spec->catfile( abs_path($path), $name.'_trim_ltrdigest85.gff3' );
 
     my @ltrh_opts = qw(-seqids -mintsd -maxtsd -minlenltr -maxlenltr -mindistltr 
                        -maxdistltr -similar -vic -index -gff3);
@@ -109,14 +102,14 @@ sub trim_search_relaxed {
 	@ltrd_cmd{@ltrd_opts} = @ltrd_args;
 	
 	my $ltr_dig = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort);
-	$self->clean_index if $self->clean;
+	$self->clean_index($path) if $self->clean;
 	unlink $ltrh_gff;
 	unlink $gffh_sort;
 	
 	return $ltrg_gff;
     }
     else {
-	$self->clean_index if $self->clean;
+	$self->clean_index($path) if $self->clean;
 	return 0;
     }
 }
