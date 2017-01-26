@@ -3,6 +3,7 @@ package Tephra::Role::Run::GT;
 use 5.014;
 use Moose::Role;
 use MooseX::Types::Path::Class;
+use Cwd                 qw(getcwd abs_path);
 use Log::Any            qw($log);
 use IPC::System::Simple qw(system);
 use Capture::Tiny       qw(capture);
@@ -10,7 +11,6 @@ use Try::Tiny;
 use File::Spec;
 use File::Find;
 use File::Basename;
-use Cwd;
 use Tephra::Config::Exe;
 use namespace::autoclean;
 
@@ -187,7 +187,7 @@ sub sort_gff {
     my $debug = $self->debug;
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $gff_sort = File::Spec->catfile($path, $name."_sort".$suffix);
+    my $gff_sort = File::Spec->catfile( abs_path($path), $name."_sort".$suffix );
     my $gt = $self->get_gt_exec;
 
     my $cmd = "$gt gff3 -sort $gff > $gff_sort";
@@ -205,8 +205,8 @@ sub sort_gff {
 
 sub clean_index {
     my $self = shift;
+    my ($dir) = @_;
 
-    my $dir = getcwd();
     my @files;
     find( sub { push @files, $File::Find::name
 		    if /\.llv|\.md5|\.prf|\.tis|\.suf|\.lcp|\.ssp|\.sds|\.des|\.dna|\.esq|\.prj|\.ois/
@@ -231,7 +231,7 @@ sub _build_gt_exec {
 
 	my @path = split /:|;/, $ENV{PATH};
 	for my $p (@path) {
-	    my $gt = File::Spec->catfile($p, 'gt');
+	    my $gt = File::Spec->catfile( abs_path($p), 'gt' );
 
 	    if (-e $gt && -x $gt) {
 		$self->set_gt_exec($gt);
