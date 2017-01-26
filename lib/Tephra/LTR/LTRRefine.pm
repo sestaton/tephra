@@ -2,7 +2,6 @@ package Tephra::LTR::LTRRefine;
 
 use 5.014;
 use Moose;
-use Cwd;
 use File::Spec;
 use File::Find;
 use File::Basename;
@@ -10,6 +9,7 @@ use File::Copy          qw(move);
 use Sort::Naturally     qw(nsort);
 use List::UtilsBy       qw(nsort_by);
 use List::Util          qw(sum max);
+use Cwd                 qw(abs_path);
 use Bio::GFF3::LowLevel qw(gff3_parse_feature gff3_format_feature);
 use Bio::DB::HTS::Kseq;
 use Bio::DB::HTS::Faidx;
@@ -438,7 +438,7 @@ sub get_ltr_score_dups {
 sub reduce_features {
     my $self = shift;
     my ($feature_ref) = @_;
-    my $fasta = $self->genome;
+    my $fasta = $self->genome->absolute->resolve;
     my $index = $self->index_ref($fasta);
 
     my ($relaxed_features, $strict_features, $best_elements)
@@ -529,19 +529,19 @@ sub sort_features {
     my $self = shift;
     my ($feature_ref) = @_;
     my ($gff, $combined_features) = @{$feature_ref}{qw(gff combined_features)};
-    my $fasta = $self->genome;
+    my $fasta = $self->genome->absolute->resolve;
     my $index = $self->index_ref($fasta);
     my ($outfile, $outfasta);
  
     if ($self->has_outfile) {
 	$outfile = $self->outfile;
 	my ($name, $path, $suffix) = fileparse($outfile, qr/\.[^.]*/);
-	$outfasta = File::Spec->catfile($path, $name.'.fasta');
+	$outfasta = File::Spec->catfile( abs_path($path), $name.'.fasta' );
     }
     else {
 	my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-	$outfasta = File::Spec->catfile($path, $name.'_combined_filtered.fasta');
-	$outfile  = File::Spec->catfile($path, $name.'_combined_filtered.gff3');
+	$outfasta = File::Spec->catfile( abs_path($path), $name.'_combined_filtered.fasta' );
+	$outfile  = File::Spec->catfile( abs_path($path), $name.'_combined_filtered.gff3' );
     }
 
     open my $ofas, '>>', $outfasta or die "\nERROR: Could not open file: $outfasta\n";
@@ -588,6 +588,9 @@ sub sort_features {
 			$elem =~ s/\d+.*/$count/;
 
 			my $id = join "_", $elem, $chromosome, $start, $end;
+			$id =~ s/LTR_/TRIM_/g
+			    if $self->is_trim;
+
 			$self->_get_ltr_range($index, $id, $chromosome, $start, $end, $ofas);
 			$entry->{attributes}{ID}[0] = $elem;
 			$entry->{attributes}{Parent}[0] = $new_rreg;
@@ -604,6 +607,7 @@ sub sort_features {
 		}
 		$gff_feats =~ s/LTR_/TRIM_/g 
 		    if $self->is_trim;
+
 		print $ogff $gff_feats;
 		$count++;
 		undef $gff_feats;
@@ -629,6 +633,7 @@ sub sort_features {
 		$elem .= $count;
 		$elem =~ s/LTR_/TRIM_/g 
 		    if $self->is_trim;
+
 		my $id = join "_", $elem, $chromosome, $start, $end;
 		$self->_get_ltr_range($index, $id, $chromosome, $start, $end, $ofas);
 	    }
