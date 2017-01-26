@@ -25,11 +25,11 @@ Tephra::Config::Install - Class for setting up Tephra dependencies
 
 =head1 VERSION
 
-Version 0.05.0
+Version 0.05.1
 
 =cut
 
-our $VERSION = '0.05.0';
+our $VERSION = '0.05.1';
 
 has basedir => (
     is       => 'ro',
