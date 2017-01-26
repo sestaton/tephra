@@ -1,6 +1,9 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.05.1	1/25/17	Vancouver, BC
+
+- Clean up file paths across in all classes to use 
 0.05.0	1/12/17	Vancouver, BC
 
 - Add test to 'sololtr' command to ensure the expected file of LTR exemplar sequences
