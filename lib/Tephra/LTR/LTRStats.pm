@@ -13,7 +13,7 @@ use File::Copy      qw(move copy);
 use List::MoreUtils qw(indexes any);
 use Time::HiRes     qw(gettimeofday);
 use Log::Any        qw($log);
-use Cwd             qw(abs_path);
+use Cwd             qw(getcwd abs_path);
 use Bio::DB::HTS::Kseq;
 use Bio::AlignIO;
 use Bio::TreeIO;
@@ -96,7 +96,7 @@ has all => (
 sub calculate_ltr_ages {
     my $self = shift;
     my $threads = $self->threads;
-    my $outfile = $self->outfile->absolute->resolve;
+    my $outfile = $self->outfile;;
 
     my $args = $self->collect_feature_args;
     

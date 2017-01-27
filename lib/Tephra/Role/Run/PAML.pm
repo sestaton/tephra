@@ -196,7 +196,7 @@ sub _build_baseml_exec { # this should probably be a separate role
 
 	my @path = split /:|;/, $ENV{PATH};
 	for my $p (@path) {
-	    my $bl = File::Spec->catfile( abs_path($p), 'baseml' );
+	    my $bl = File::Spec->catfile($p, 'baseml');
 
 	    if (-e $bl && -x $bl) {
 		$self->set_baseml_exec($bl);

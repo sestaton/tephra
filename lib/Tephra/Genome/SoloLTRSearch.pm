@@ -288,7 +288,7 @@ sub write_sololtr_gff {
     my $self = shift;
     my ($hmmsearch_summary) = @_;
     my $genome  = $self->genome->absolute->resolve;
-    my $outfile = $self->outfile->absolute->resolve;
+    my $outfile = $self->outfile;;
 
     my $seqlen = $self->_get_seq_len($genome);
     open my $in, '<', $hmmsearch_summary or die "\nERROR: Could not open file: $hmmsearch_summary\n";

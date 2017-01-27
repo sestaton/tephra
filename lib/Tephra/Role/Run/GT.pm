@@ -231,7 +231,7 @@ sub _build_gt_exec {
 
 	my @path = split /:|;/, $ENV{PATH};
 	for my $p (@path) {
-	    my $gt = File::Spec->catfile( abs_path($p), 'gt' );
+	    my $gt = File::Spec->catfile($p, 'gt');
 
 	    if (-e $gt && -x $gt) {
 		$self->set_gt_exec($gt);

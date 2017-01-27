@@ -194,8 +194,8 @@ sub find_align_gaps {
     my $self = shift;
     my ($gap_stats, $aln_file) = @_;
 
-    my $outfile = $self->outfile->absolute->resolve;
-    my $illrecstatsfile = $self->illrecstatsfile->absolute->resolve;
+    my $outfile = $self->outfile;;
+    my $illrecstatsfile = $self->illrecstatsfile;;
 
     my ($pos, $gap, $del) = (0, 0, 0);
     my (@indels, @flanking_seqs);

@@ -39,7 +39,7 @@ has verbose => ( is => 'ro', isa => 'Bool', predicate  => 'has_debug', lazy => 1
 sub run_mgescan {
     my $self = shift;
     my $dna_file = $self->fasta->absolute->resolve;
-    my $out_dir  = $self->outdir->absolute->resolve;
+    my $out_dir  = $self->outdir;;
     my $phmm_dir = $self->phmmdir->absolute->resolve;
     my $pdir     = $self->pdir->absolute->resolve;
 

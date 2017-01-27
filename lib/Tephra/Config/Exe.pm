@@ -5,8 +5,8 @@ use Moose;
 use MooseX::Types::Path::Class;
 use File::Spec;
 use File::Path qw(make_path remove_tree);
+use Log::Any   qw($log);
 use File::Basename;
-use Log::Any qw($log);
 use namespace::autoclean;
 
 =head1 NAME
@@ -58,8 +58,8 @@ sub get_config_paths {
     # this is to avoid building each time
     my @path = split /:|;/, $ENV{PATH};    
     for my $p (@path) {
-	my $texe  = File::Spec->catfile( abs_path($p), 'transeq' );
-	my $bexe  = File::Spec->catfile( abs_path($p), 'blastn' );
+	my $texe = File::Spec->catfile($p, 'transeq');
+	my $bexe = File::Spec->catfile($p, 'blastn');
 	if (-e $texe && -x $texe) {
 	    $transeq = $texe;
 	}

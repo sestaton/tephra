@@ -79,8 +79,8 @@ sub find_helitrons {
 sub make_hscan_outfiles {
     my $self = shift;
     my ($helitrons) = @_;
-    my $gff    = $self->gff->absolute->resolve;
-    my $fasta  = $self->fasta->absolute->resolve;
+    my $gff    = $self->gff; 
+    my $fasta  = $self->fasta;
     my $genome = $self->genome->absolute->resolve;
 
     open my $outg, '>', $gff or die "\nERROR: Could not open file: $gff\n";

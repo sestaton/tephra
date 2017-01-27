@@ -5,7 +5,7 @@ use Moose;
 use MooseX::Types::Path::Class;
 use IPC::System::Simple qw(system capture);
 use File::Path          qw(make_path);
-use Cwd                 qw(abs_path):
+use Cwd                 qw(abs_path);
 use Bio::SearchIO;
 use File::Find;
 use File::Spec;

@@ -11,7 +11,7 @@ use Bio::GFF3::LowLevel qw(gff3_parse_feature gff3_format_feature);
 use IPC::System::Simple qw(capture);
 use List::UtilsBy       qw(nsort_by);
 use Cwd                 qw(getcwd abs_path);
-use Path::Class::File;
+use Path::Class         qw(file);
 use Try::Tiny;
 use Tephra::Config::Exe;
 #use Data::Dump::Color;
@@ -181,8 +181,8 @@ sub find_gypsy_copia {
 sub find_unclassified {
     my $self = shift;
     my ($features) = @_;
-    my $gff   = $self->gff->absolute->resolute;
-    my $fasta = $self->genome->absolute->resolute;
+    my $gff   = $self->gff->absolute->resolve;
+    my $fasta = $self->genome->absolute->resolve;
     my $index = $self->index_ref($fasta);
 
     my %ltr_rregion_map;
@@ -215,7 +215,7 @@ sub find_unclassified {
 sub search_unclassified {
     my $self = shift;
     my ($unc_fas) = @_;
-    my $repeatdb = $self->repeatdb->absolute->resolute;
+    my $repeatdb = $self->repeatdb->absolute->resolve;
     my $threads  = $self->threads;
     my $blastdb  = $self->_make_blastdb($repeatdb);
 
@@ -270,7 +270,7 @@ sub annotate_unclassified {
 sub write_gypsy {
     my $self = shift;
     my ($gypsy, $header) = @_;
-    my $gff = $self->gff->absolute->resolute;
+    my $gff = $self->gff->absolute->resolve;
 
     my @lengths;
     my $gyp_feats;
@@ -351,7 +351,7 @@ sub write_gypsy {
 sub write_copia {
     my $self = shift;
     my ($copia, $header) = @_;
-    my $gff = $self->gff->absolute->resolute;
+    my $gff = $self->gff->absolute->resolve;
     
     my @lengths;
     my $cop_feats;
@@ -434,7 +434,7 @@ sub write_copia {
 sub write_unclassified {
     my $self = shift;
     my ($features, $header) = @_;
-    my $gff = $self->gff->absolute->resolute;
+    my $gff = $self->gff->absolute->resolve;
 
     my %pdom_index;
     my @all_pdoms;
@@ -515,7 +515,7 @@ sub write_unclassified {
 
 sub _map_repeat_types {
     my $self = shift;
-    my $repeatdb = $self->repeatdb->absolute->resolute;
+    my $repeatdb = $self->repeatdb->absolute->resolve;
     my %family_map;
 
     open my $in, '<', $repeatdb or die "\nERROR: Could not open file: $repeatdb\n";
