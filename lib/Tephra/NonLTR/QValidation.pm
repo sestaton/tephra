@@ -5,6 +5,7 @@ use Moose;
 use MooseX::Types::Path::Class;
 use IPC::System::Simple qw(system capture);
 use File::Path          qw(make_path);
+use Cwd                 qw(abs_path):
 use Bio::SearchIO;
 use File::Find;
 use File::Spec;
@@ -33,9 +34,9 @@ has phmmdir => ( is => 'ro', isa => 'Path::Class::Dir',  required => 1, coerce =
 
 sub validate_q_score {
     my $self = shift;
-    my $dir     = $self->outdir;
-    my $hmm_dir = $self->phmmdir;
-    my $genome  = $self->fasta;
+    my $dir     = $self->outdir->absolute->resolve;
+    my $hmm_dir = $self->phmmdir->absolute->resolve;
+    my $genome  = $self->fasta->absolute->resolve;
 
     my $hmmsearch = $self->find_hmmsearch;
     my @all_clade = ('CR1', 'I', 'Jockey', 'L1', 'L2', 'R1', 'RandI', 'Rex', 'RTE', 'Tad1', 'R2','CRE');

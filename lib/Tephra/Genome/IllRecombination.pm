@@ -2,7 +2,6 @@ package Tephra::Genome::IllRecombination;
 
 use 5.014;
 use Moose;
-use Cwd;
 use File::Spec;
 use File::Find;
 use File::Basename;
@@ -19,6 +18,7 @@ use Statistics::Descriptive;
 use Time::HiRes  qw(gettimeofday);
 use Log::Any     qw($log);
 use Scalar::Util qw(openhandle);
+use Cwd          qw(getcwd abs_path);
 use Tephra::Config::Exe;
 #use Data::Dump::Color;
 use namespace::autoclean;
@@ -111,14 +111,14 @@ sub find_illegitimate_recombination {
 sub align_features {
     my $self = shift;
     my $threads = $self->threads;
-    my $infile = $self->infile;
+    my $infile = $self->infile->absolute->resolve;
 
     my $args = $self->collect_align_args;
     my $t0 = gettimeofday();
     my $doms = 0;
 
     my ($name, $path, $suffix) = fileparse($infile, qr/\.[^.]*/);
-    my $logfile = File::Spec->catfile($path, 'all_illrecomb_muscle_reports.log');
+    my $logfile = File::Spec->catfile( abs_path($path), 'all_illrecomb_muscle_reports.log' );
     open my $log, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
 
     my $pm = Parallel::ForkManager->new($threads);
@@ -176,8 +176,8 @@ sub collect_align_args {
 
     for my $fam (keys %$seqstore) {
 	my ($name, $path, $suffix) = fileparse($seqstore->{$fam}, qr/\.[^.]*/);
-	my $aln = File::Spec->catfile($path, $name.'_muscle-out.fas');
-	my $log = File::Spec->catfile($path, $name.'_muscle-out.log');
+	my $aln = File::Spec->catfile( abs_path($path), $name.'_muscle-out.fas' );
+	my $log = File::Spec->catfile( abs_path($path), $name.'_muscle-out.log' );
 	
 	my $muscmd  = "muscle -quiet -in $seqstore->{$fam} -out $aln -log $log";
 	$aln_args{$name} = { seqs => $seqstore->{$fam}, args => $muscmd, aln => $aln, log => $log };
@@ -194,8 +194,8 @@ sub find_align_gaps {
     my $self = shift;
     my ($gap_stats, $aln_file) = @_;
 
-    my $outfile = $self->outfile;
-    my $illrecstatsfile = $self->illrecstatsfile;
+    my $outfile = $self->outfile->absolute->resolve;
+    my $illrecstatsfile = $self->illrecstatsfile->absolute->resolve;
 
     my ($pos, $gap, $del) = (0, 0, 0);
     my (@indels, @flanking_seqs);
@@ -211,7 +211,7 @@ sub find_align_gaps {
 	my $aln_in = Bio::AlignIO->new(-fh => \*$fas, -format => 'fasta');
 
 	my ($fname, $fpath, $fsuffix) = fileparse($fas, qr/\.[^.]*/);
-	my $seq_out = File::Spec->catfile($fpath, $fname.'_gap_flanking_sequences.fasta');
+	my $seq_out = File::Spec->catfile( abs_path($fpath), $fname.'_gap_flanking_sequences.fasta' );
 	open my $each_out, '>>', $seq_out or die "\nERROR: Could not open file: $seq_out\n";
 
 	while ( my $aln = $aln_in->next_aln() ) {

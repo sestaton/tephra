@@ -5,11 +5,11 @@ use Moose::Role;
 use MooseX::Types::Path::Class;
 use Log::Any            qw($log);
 use IPC::System::Simple qw(system capture);
+use Cwd                 qw(abs_path);
 use Try::Tiny;
 use File::Spec;
 use File::Find;
 use File::Basename;
-use Cwd;
 use Tephra::Config::Exe;
 use namespace::autoclean;
 
@@ -50,8 +50,8 @@ sub make_blastdb {
     my ($dbname, $dbpath, $dbsuffix) = fileparse($db_fas, qr/\.[^.]*/);
 
     my $db = $dbname.'_blastdb';
-    my $dir = getcwd();
-    my $db_path = Path::Class::File->new($dir, $db);
+    #my $dir = getcwd();
+    my $db_path = Path::Class::File->new( abs_path($dbpath), $db );
     unlink $db_path if -e $db_path;
     #say STDERR "DB: $db_path";
 
@@ -78,7 +78,7 @@ sub run_blast {
     my ($query, $db, $threads, $sort) = @{$args}{qw(query db threads sort)};
     my ($dbname, $dbpath, $dbsuffix) = fileparse($db, qr/\.[^.]*/);
     my ($qname, $qpath, $qsuffix) = fileparse($query, qr/\.[^.]*/);
-    my $blast_report = File::Spec->catfile($qpath, $qname."_$dbname".'.bln');
+    my $blast_report = File::Spec->catfile( abs_path($qpath), $qname."_$dbname".'.bln' );
 
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($blastbin) = @{$config}{qw(blastpath)};

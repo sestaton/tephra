@@ -33,7 +33,7 @@ has basedir => (
 
 sub get_config_paths {
     my $self = shift;
-    my $root = $self->basedir;
+    my $root = $self->basedir->absolute->resolve;
 
     unless (-e $root) {
         make_path($root, {verbose => 0, mode => 0711,});
@@ -58,8 +58,8 @@ sub get_config_paths {
     # this is to avoid building each time
     my @path = split /:|;/, $ENV{PATH};    
     for my $p (@path) {
-	my $texe  = File::Spec->catfile($p, 'transeq');
-	my $bexe  = File::Spec->catfile($p, 'blastn');
+	my $texe  = File::Spec->catfile( abs_path($p), 'transeq' );
+	my $bexe  = File::Spec->catfile( abs_path($p), 'blastn' );
 	if (-e $texe && -x $texe) {
 	    $transeq = $texe;
 	}

@@ -5,6 +5,7 @@ use Moose;
 use File::Find;
 use File::Basename;
 use File::Path qw(make_path);
+use Cwd        qw(abs_path);
 
 =head1 NAME
 
@@ -24,7 +25,7 @@ sub invert_seq {
     my ($plus_dna_dir, $minus_dna_dir) = @_;
 
     unless ( -d $minus_dna_dir ) {
-        make_path( $minus_dna_dir, {verbose => 0, mode => 0771,} );
+        make_path( abs_path($minus_dna_dir), {verbose => 0, mode => 0771,} );
     }
 
     my @fasfiles;

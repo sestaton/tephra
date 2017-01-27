@@ -12,9 +12,9 @@ use IPC::System::Simple qw(capture);
 use Sort::Naturally     qw(nsort);
 use List::UtilsBy       qw(nsort_by);
 use List::Util          qw(sum max);
+use Cwd                 qw(getcwd abs_path);
 use Path::Class::File;
 use Try::Tiny;
-use Cwd;
 use Carp 'croak';
 use Tephra::Config::Exe;
 use namespace::autoclean;
@@ -55,8 +55,8 @@ has gff => (
 sub find_tc1_mariner {
     my $self = shift;
     my ($feature, $header) = @_;
-    my $fasta = $self->genome;
-    my $gff   = $self->gff;
+    my $fasta = $self->genome->absolute->resolve;
+    my $gff   = $self->gff->absolute->resolve;
 
     my @lengths;
     my $mar_feats;
@@ -163,8 +163,8 @@ sub find_tc1_mariner {
 sub find_hat {
     my $self = shift;
     my ($feature, $header) = @_;
-    my $gff   = $self->gff;
-    my $fasta = $self->genome;
+    my $gff   = $self->gff->absolute->resolve;
+    my $fasta = $self->genome->absolute->resolve;
     
     my @lengths;
     my $hat_feats;
@@ -269,8 +269,8 @@ sub find_hat {
 sub find_mutator {
     my $self = shift;
     my ($feature, $header) = @_;
-    my $gff   = $self->gff;
-    my $fasta = $self->genome;
+    my $gff   = $self->gff->absolute->resolve;
+    my $fasta = $self->genome->absolute->resolve;
 
     my @lengths;
     my $mut_feats;
@@ -377,8 +377,8 @@ sub find_mutator {
 sub find_cacta {
     my $self = shift;
     my ($feature, $header) = @_;
-    my $fasta = $self->genome;
-    my $gff   = $self->gff;
+    my $fasta = $self->genome->absolute->resolve;
+    my $gff   = $self->gff->absolute->resolve;
 
     my @lengths;
     my $cac_feats;
@@ -488,8 +488,8 @@ sub find_cacta {
 sub write_unclassified_tirs {
     my $self = shift;
     my ($feature, $header) = @_;
-    my $gff   = $self->gff;
-    my $fasta = $self->genome;
+    my $gff   = $self->gff->absolute->resolve;
+    my $fasta = $self->genome->absolute->resolve;
 
     my @lengths;
     my $unc_feats;

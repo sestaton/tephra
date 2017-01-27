@@ -6,8 +6,9 @@ use MooseX::Types::Path::Class;
 use Bio::DB::HTS::Kseq;
 use File::Find;
 use File::Spec;
-use File::Path qw(make_path);
 use File::Basename;
+use File::Path qw(make_path);
+use Cwd        qw(abs_path);
 use namespace::autoclean;
 
 =head1 NAME
@@ -30,8 +31,8 @@ has n_threshold => ( is => 'ro', isa => 'Num',  required => 0, default => 0.30 )
 
 sub postprocess {
     my $self = shift;
-    my $dna_dir = $self->fastadir;
-    my $out_dir = $self->outdir;
+    my $dna_dir = $self->fastadir->absolute->resolve;
+    my $out_dir = $self->outdir->absolute->resolve;
     my $rev     = $self->reverse;
 
     # identify full and frag

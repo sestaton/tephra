@@ -13,11 +13,11 @@ use File::Copy      qw(move copy);
 use List::MoreUtils qw(indexes any);
 use Time::HiRes     qw(gettimeofday);
 use Log::Any        qw($log);
+use Cwd             qw(abs_path);
 use Bio::DB::HTS::Kseq;
 use Bio::AlignIO;
 use Bio::TreeIO;
 use Parallel::ForkManager;
-use Cwd;
 use Carp 'croak';
 use Try::Tiny;
 #use Data::Dump::Color;
@@ -96,18 +96,18 @@ has all => (
 sub calculate_ltr_ages {
     my $self = shift;
     my $threads = $self->threads;
-    my $outfile = $self->outfile;
+    my $outfile = $self->outfile->absolute->resolve;
 
     my $args = $self->collect_feature_args;
     
-    my $resdir = File::Spec->catdir($args->{resdir}, 'divergence_time_stats');
+    my $resdir = File::Spec->catdir( abs_path($args->{resdir}), 'divergence_time_stats');
     
     unless ( -d $resdir ) {
 	make_path( $resdir, {verbose => 0, mode => 0771,} );
     }
     
     my $t0 = gettimeofday();
-    my $ltrrts = 0;
+    my $ltrrts  = 0;
     my $logfile = File::Spec->catfile($resdir, 'all_aln_reports.log');
     open my $logfh, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
     
@@ -174,7 +174,7 @@ sub calculate_ltr_ages {
 
 sub collect_feature_args {
     my $self = shift;
-    my $dir = $self->dir;
+    my $dir = $self->dir->absolute->resolve;
 
     my (@ltrs, %aln_args);
     if ($self->all) {
@@ -212,8 +212,8 @@ sub collect_feature_args {
 
 sub extract_ltr_features {
     my $self = shift;
-    my $fasta = $self->genome;
-    my $gff   = $self->gff;
+    my $fasta = $self->genome->absolute->resolve;
+    my $gff   = $self->gff->absolute->resolve;
     
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $dir = File::Spec->catdir($path, $name.'_ltrages');
@@ -295,7 +295,7 @@ sub process_baseml_args {
 
     my $cwd = getcwd();
     my ($pname, $ppath, $psuffix) = fileparse($phy, qr/\.[^.]*/);
-    my $divfile = File::Spec->catfile($ppath, $pname.'-divergence.txt');
+    my $divfile = File::Spec->catfile( abs_path($ppath), $pname.'-divergence.txt' );
     $divfile = basename($divfile);
 
     my $divergence = $self->_check_divergence($phy);
@@ -327,7 +327,7 @@ sub process_align_args {
     my ($db, $resdir) = @_;
 
     my ($name, $path, $suffix) = fileparse($db, qr/\.[^.]*/);
-    my $pdir = File::Spec->catdir($path, $name.'_pamltmp');
+    my $pdir = File::Spec->catdir( abs_path($path), $name.'_pamltmp' );
     make_path( $pdir, {verbose => 0, mode => 0771,} );
 
     my $fas = File::Spec->catfile($pdir, $name.$suffix);
@@ -358,7 +358,7 @@ sub parse_aln {
     my ($aln, $tre, $dnd) = @_;
 
     my ($name, $path, $suffix) = fileparse($aln, qr/\.[^.]*/);
-    my $phy = File::Spec->catfile($path, $name.'.phy');
+    my $phy = File::Spec->catfile( abs_path($path), $name.'.phy' );
     
     my $aln_in  = Bio::AlignIO->new(-file  => $aln,    -format => 'clustalw');
     my $aln_out = Bio::AlignIO->new(-file  => ">$phy", -format => 'phylip', -flag_SI => 1, -idlength => 20);

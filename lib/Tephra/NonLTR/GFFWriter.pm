@@ -6,6 +6,7 @@ use Bio::DB::HTS::Kseq;
 use File::Find;
 use File::Spec;
 use File::Path qw(make_path remove_tree);
+use Cwd        qw(abs_path);
 use File::Basename;
 use Sort::Naturally;
 use Tephra::Config::Exe;
@@ -37,8 +38,8 @@ sub write_gff {
     my $fastadir = $self->fastadir;
 
     my @all_clade = ('CR1', 'I', 'Jockey', 'L1', 'L2', 'R1', 'RandI', 'Rex', 'RTE', 'Tad1', 'R2', 'CRE');
-    my $seq_dir   = File::Spec->catdir($outdir, 'info', 'full');
-    my @cladedirs = map { File::Spec->catdir($seq_dir, $_) } @all_clade;
+    my $seq_dir   = File::Spec->catdir( abs_path($outdir), 'info', 'full' );
+    my @cladedirs = map { File::Spec->catdir( abs_path($seq_dir), $_) } @all_clade;
     my @nonltrs;
 
     for my $clade (@cladedirs) {
@@ -53,8 +54,8 @@ sub write_gff {
     say STDERR "Done with non-LTR search.";
 
     ## clean up
-    my $fdir  = File::Spec->catdir($outdir, 'f');
-    my $rdir  = File::Spec->catdir($outdir, 'b');
+    my $fdir  = File::Spec->catdir( abs_path($outdir), 'f' );
+    my $rdir  = File::Spec->catdir( abs_path($outdir), 'b' );
     my $rgdir = $fastadir.'_b';
 
     for my $dir ($fdir, $rdir, $rgdir, $fastadir) {
@@ -72,8 +73,8 @@ sub _fasta_to_gff {
     my $clade_map = $self->_build_clade_map;
 
     my $name = basename($outdir);
-    my $outfile = File::Spec->catfile($outdir, $name.'_tephra_nonltr.gff3');
-    my $fas     = File::Spec->catfile($outdir, $name.'_tephra_nonltr.fasta');
+    my $outfile = File::Spec->catfile( abs_path($outdir), $name.'_tephra_nonltr.gff3' );
+    my $fas     = File::Spec->catfile( abs_path($outdir), $name.'_tephra_nonltr.fasta' );
     open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     open my $faout, '>', $fas or die "\nERROR: Could not open file: $fas\n";
     my ($lens, $combined) = $self->_get_seq_region;
@@ -148,7 +149,7 @@ sub _get_seq_region {
 
     my (@seqs, %lens);
     find( sub { push @seqs, $File::Find::name if -f and /\.fa.*$/ }, $fasdir );
-    my $combined = File::Spec->catfile($fasdir, 'tephra_all_genome_seqs.fas');
+    my $combined = File::Spec->catfile( abs_path($fasdir), 'tephra_all_genome_seqs.fas' );
     open my $out, '>', $combined or die "\nERROR: Could not open file: $combined\n";
 
     for my $seq (nsort @seqs) {

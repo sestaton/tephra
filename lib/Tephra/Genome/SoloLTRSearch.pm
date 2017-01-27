@@ -2,7 +2,6 @@ package Tephra::Genome::SoloLTRSearch;
 
 use 5.014;
 use Moose;
-use Cwd;
 use File::Spec;
 use File::Find;
 use File::Basename;
@@ -11,6 +10,7 @@ use File::Path          qw(make_path remove_tree);
 use IPC::System::Simple qw(capture system);
 use Time::HiRes         qw(gettimeofday);
 use List::UtilsBy       qw(nsort_by);
+use Cwd                 qw(abs_path);
 use Sort::Naturally;
 use Path::Class::File;
 use Bio::DB::HTS::Kseq;
@@ -129,8 +129,8 @@ has threads => (
 
 sub find_soloLTRs {
     my $self = shift;
-    my $anno_dir = $self->dir;
-    my $genome = $self->genome;
+    my $anno_dir = $self->dir->absolute->resolve;
+    my $genome = $self->genome->absolute->resolve;
 
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);                                                                
     my $hmmsearch_summary = $self->report // File::Spec->catfile($path, $name.'_tephra_soloLTRs.tsv'); 
@@ -176,7 +176,7 @@ sub find_soloLTRs {
 sub run_sf_search {
     my $self = shift;
     my ($sf, $dir, $dirct, $hmmsearch_summary) = @_;
-    my $genome = $self->genome;
+    my $genome = $self->genome->absolute->resolve;
     
     my ($hmmbuild, $hmmsearch) = $self->_find_hmmer;
 
@@ -287,8 +287,8 @@ sub do_parallel_search {
 sub write_sololtr_gff {
     my $self = shift;
     my ($hmmsearch_summary) = @_;
-    my $genome  = $self->genome;
-    my $outfile = $self->outfile;
+    my $genome  = $self->genome->absolute->resolve;
+    my $outfile = $self->outfile->absolute->resolve;
 
     my $seqlen = $self->_get_seq_len($genome);
     open my $in, '<', $hmmsearch_summary or die "\nERROR: Could not open file: $hmmsearch_summary\n";
@@ -363,7 +363,7 @@ sub search_with_models {
 sub write_hmmsearch_report {
     my $self = shift;
     my ($aln_stats, $search_report) = @_;
-    my $genome     = $self->genome;
+    my $genome     = $self->genome->absolute->resolve;
     my $match_pid  = $self->percentident;
     my $match_len  = $self->matchlen;
     my $match_pcov = $self->percentcov;
@@ -456,9 +456,9 @@ sub _get_ltr_alns {
     for my $ltrseq (nsort_by { m/family(\d+)/ and $1 } @$ltrseqs) {
 	$aln_ct++;
 	my ($name, $path, $suffix) = fileparse($ltrseq, qr/\.[^.]*/);
-	my $tre = File::Spec->catfile($path, $name.'.dnd');
-	my $aln = File::Spec->catfile($path, $name.'_muscle-out.aln');
-	my $log = File::Spec->catfile($path, $name.'_muscle-out.log');
+	my $tre = File::Spec->catfile( abs_path($path), $name.'.dnd' );
+	my $aln = File::Spec->catfile( abs_path($path), $name.'_muscle-out.aln' );
+	my $log = File::Spec->catfile( abs_path($path), $name.'_muscle-out.log' );
      
 	my $muscmd = "muscle -quiet -clwstrict -in $ltrseq -out $aln -log $log";
         if ($allfams) {

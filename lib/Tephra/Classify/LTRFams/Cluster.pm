@@ -14,6 +14,7 @@ use Bio::GFF3::LowLevel qw(gff3_parse_feature);
 use List::Util          qw(min max);
 use Time::HiRes         qw(gettimeofday);
 use File::Path          qw(make_path);
+use Cwd                 qw(abs_path);
 use Parallel::ForkManager;
 use Carp 'croak';
 use Try::Tiny;
@@ -38,8 +39,8 @@ $VERSION = eval $VERSION;
 
 sub extract_features {
     my $self = shift;
-    my $fasta  = $self->genome;
-    my $dir    = $self->outdir;
+    my $fasta = $self->genome->absolute->resolve;
+    my $dir   = $self->outdir->absolute->resolve;
     my ($infile) = @_;
     
     my $index = $self->index_ref($fasta);
@@ -54,11 +55,11 @@ sub extract_features {
         make_path( $resdir, {verbose => 0, mode => 0771,} );
     }
     
-    my $comp = File::Spec->catfile($resdir, $name.'_complete.fasta');
-    my $ppts = File::Spec->catfile($resdir, $name.'_ppt.fasta');
-    my $pbs  = File::Spec->catfile($resdir, $name.'_pbs.fasta');
-    my $five_pr_ltrs  = File::Spec->catfile($resdir, $name.'_5prime-ltrs.fasta');
-    my $three_pr_ltrs = File::Spec->catfile($resdir, $name.'_3prime-ltrs.fasta');
+    my $comp = File::Spec->catfile( abs_path($resdir), $name.'_complete.fasta' );
+    my $ppts = File::Spec->catfile( abs_path($resdir), $name.'_ppt.fasta' );
+    my $pbs  = File::Spec->catfile( abs_path($resdir), $name.'_pbs.fasta' );
+    my $five_pr_ltrs  = File::Spec->catfile( abs_path($resdir), $name.'_5prime-ltrs.fasta' );
+    my $three_pr_ltrs = File::Spec->catfile( abs_path($resdir), $name.'_3prime-ltrs.fasta' );
 
     open my $allfh, '>>', $comp or die "\nERROR: Could not open file: $comp\n";
     open my $pptfh, '>>', $ppts or die "\nERROR: Could not open file: $ppts\n";
@@ -180,7 +181,7 @@ sub extract_features {
             my ($pdom_s, $pdom_e, $str);
             for my $pdom_type (keys %{$pdoms{$src}{$element}}) {
                 my (%lrange, %seqs, $union);
-                my $pdom_file = File::Spec->catfile($resdir, $pdom_type.'_pdom.fasta');
+                my $pdom_file = File::Spec->catfile( abs_path($resdir), $pdom_type.'_pdom.fasta' );
                 open my $fh, '>>', $pdom_file or die "\nERROR: Could not open file: $pdom_file\n";
                 for my $split_dom (@{$pdoms{$src}{$element}{$pdom_type}}) {
                     ($pdom_s, $pdom_e, $str) = split /\|\|/, $split_dom;
@@ -261,29 +262,29 @@ sub collect_feature_args {
     find( sub { push @pdoms, $File::Find::name if -f and /pdom.fasta$/ }, $dir);
 
     # ltr
-    my $ltr5name = File::Spec->catfile($dir, 'dbcluster-5primeseqs');
+    my $ltr5name = File::Spec->catfile( abs_path($dir), 'dbcluster-5primeseqs' );
     my $fiveargs = "-qspeedup 2 -dbcluster 80 0 $ltr5name -p -d -seedlength 30 ";
     $fiveargs .= "-exdrop 7 -l 80 -showdesc 0 -sort ld -best 10000 -identity 80";
     $vmatch_args{fiveltr} = { seqs => \@fiveltrs, args => $fiveargs };
 
-    my $ltr3name  = File::Spec->catfile($dir, 'dbcluster-3primeseqs');
+    my $ltr3name  = File::Spec->catfile( abs_path($dir), 'dbcluster-3primeseqs' );
     my $threeargs = "-qspeedup 2 -dbcluster 80 0 $ltr3name -p -d -seedlength 30 ";
     $threeargs .= "-exdrop 7 -l 80 -showdesc 0 -sort ld -best 10000 -identity 80";
     $vmatch_args{threeltr} = { seqs => \@threeltrs, args => $threeargs };
 
     # pbs/ppt
-    my $pbsname = File::Spec->catfile($dir, 'dbcluster-pbs');
+    my $pbsname = File::Spec->catfile( abs_path($dir), 'dbcluster-pbs' );
     my $pbsargs = "-dbcluster 90 90 $pbsname -p -d -seedlength 5 -exdrop 2 ";
     $pbsargs .= "-l 3 -showdesc 0 -sort ld -best 10000 -identity 90";
     $vmatch_args{pbs} = { seqs => \@pbs, args => $pbsargs, prefixlen => 1 };
 
-    my $pptname = File::Spec->catfile($dir, 'dbcluster-ppt');
+    my $pptname = File::Spec->catfile( abs_path($dir), 'dbcluster-ppt' );
     my $pptargs = "-dbcluster 90 90 $pptname -p -d -seedlength 5 -exdrop 2 ";
     $pptargs .= "-l 3 -showdesc 0 -sort ld -best 10000 -identity 90";
     $vmatch_args{ppt} = { seqs => \@ppt, args => $pptargs, prefixlen => 5 };
 
     # pdoms
-    my $pdomname = File::Spec->catfile($dir, 'dbcluster-pdoms');
+    my $pdomname = File::Spec->catfile( abs_path($dir), 'dbcluster-pdoms' );
     my $pdomargs = "-qspeedup 2 -dbcluster 80 0 $pdomname -p -d -seedlength 30 -exdrop 3 ";
     $pdomargs .= "-l 40 -showdesc 0 -sort ld -best 10000";
     $vmatch_args{pdoms} = { seqs => \@pdoms, args => $pdomargs };
@@ -302,8 +303,8 @@ sub cluster_features {
     my $t0 = gettimeofday();
     my $doms = 0;
     my %reports;
-    my $outfile = File::Spec->catfile($dir, 'all_vmatch_reports.txt');
-    my $logfile = File::Spec->catfile($dir, 'all_vmatch_reports.log');
+    my $outfile = File::Spec->catfile( abs_path($dir), 'all_vmatch_reports.txt' );
+    my $logfile = File::Spec->catfile( abs_path($dir), 'all_vmatch_reports.log' );
     open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     open my $log, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
     
@@ -369,9 +370,9 @@ sub process_cluster_args {
     my ($args, $type, $db) = @_;
 
     my ($name, $path, $suffix) = fileparse($db, qr/\.[^.]*/);
-    my $index = File::Spec->catfile($path, $name.'.index');
-    my $vmrep = File::Spec->catfile($path, $name.'_vmatch-out.txt');
-    my $log   = File::Spec->catfile($path, $name.'_vmatch-out.log');;
+    my $index = File::Spec->catfile( abs_path($path), $name.'.index' );
+    my $vmrep = File::Spec->catfile( abs_path($path), $name.'_vmatch-out.txt' );
+    my $log   = File::Spec->catfile( abs_path($path), $name.'_vmatch-out.log' );
 
     my $mkvtreecmd = "mkvtree -db $db -dna -indexname $index -allout -v -pl ";
     if (defined $args->{$type}{prefixlen}) {
@@ -406,7 +407,7 @@ sub subseq {
 sub parse_clusters {
     my $self = shift;
     my ($clsfile) = @_;
-    my $genome = $self->genome;
+    my $genome = $self->genome->absolute->resolve;
     
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
     if ($name =~ /(\.fa.*)/) {
@@ -422,7 +423,7 @@ sub parse_clusters {
             my ($type) = ($line =~ /\/(\S+).index\z/);
             $dom = basename($type);
             $dom =~ s/${name}_//;
-	$dom =~ s/_pdom//;
+	    $dom =~ s/_pdom//;
 	    $all_pdoms{$dom} = 1;
         }
         next if $line =~ /^# \d+/;

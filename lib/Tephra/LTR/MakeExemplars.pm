@@ -6,6 +6,7 @@ use MooseX::Types::Path::Class;
 use File::Find;
 use File::Basename;
 use Bio::GFF3::LowLevel qw(gff3_parse_feature);
+use Cwd                 qw(abs_path);
 use Carp 'croak';
 #use Data::Dump::Color;
 use namespace::autoclean;
@@ -60,9 +61,9 @@ has threads => (
 #
 sub make_exemplars {
     my $self = shift;
-    my $dir   = $self->dir;
-    my $gff   = $self->gff;
-    my $fasta = $self->genome;
+    my $dir   = $self->dir->absolute->resolve;
+    my $gff   = $self->gff->absolute->resolve;
+    my $fasta = $self->genome->absolute->resolve;
    
     my $index = $self->index_ref($fasta);
     my $exemplars = $self->process_vmatch_args($dir);
@@ -72,7 +73,7 @@ sub make_exemplars {
     my $ltrs_out = File::Spec->catfile($dir, $sf.'_exemplar_ltrs.fasta');
 
     open my $allfh, '>>', $exemcomp or die "\nERROR: Could not open file: $exemcomp\n";
-    open my $ltrs_outfh, '>>', $ltrs_out or die "\nERROR: Could not open file: $ltrs_out\n";;
+    open my $ltrs_outfh, '>>', $ltrs_out or die "\nERROR: Could not open file: $ltrs_out\n";
     open my $gffio, '<', $gff or die "\nERROR: Could not open file: $gff\n";
 
     my ($source_id, $type, $strand, $exemplar_id_form, 
@@ -193,8 +194,8 @@ sub calculate_exemplars {
     my ($db) = @_;
 
     my ($name, $path, $suffix) = fileparse($db, qr/\.[^.]*/);
-    my $index = File::Spec->catfile($path, $name.'_mkvtree.index');
-    my $vmerSearchOut = File::Spec->catfile($path, $name.'.vmersearch');
+    my $index = File::Spec->catfile( abs_path($path), $name.'_mkvtree.index' );
+    my $vmerSearchOut = File::Spec->catfile( abs_path($path), $name.'.vmersearch' );
     my $mk_args = "-db $db -dna -indexname $index -allout -pl";
     my $vm_args = "-showdesc 0 -qspeedup 2 -l 20 -q $db -identity 80 $index > $vmerSearchOut";
     

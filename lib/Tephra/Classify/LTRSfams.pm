@@ -10,9 +10,9 @@ use File::Basename;
 use Bio::GFF3::LowLevel qw(gff3_parse_feature gff3_format_feature);
 use IPC::System::Simple qw(capture);
 use List::UtilsBy       qw(nsort_by);
+use Cwd                 qw(getcwd abs_path);
 use Path::Class::File;
 use Try::Tiny;
-use Cwd;
 use Tephra::Config::Exe;
 #use Data::Dump::Color;
 use namespace::autoclean;
@@ -181,8 +181,8 @@ sub find_gypsy_copia {
 sub find_unclassified {
     my $self = shift;
     my ($features) = @_;
-    my $gff   = $self->gff;
-    my $fasta = $self->genome;
+    my $gff   = $self->gff->absolute->resolute;
+    my $fasta = $self->genome->absolute->resolute;
     my $index = $self->index_ref($fasta);
 
     my %ltr_rregion_map;
@@ -215,7 +215,7 @@ sub find_unclassified {
 sub search_unclassified {
     my $self = shift;
     my ($unc_fas) = @_;
-    my $repeatdb = $self->repeatdb;
+    my $repeatdb = $self->repeatdb->absolute->resolute;
     my $threads  = $self->threads;
     my $blastdb  = $self->_make_blastdb($repeatdb);
 
@@ -270,7 +270,7 @@ sub annotate_unclassified {
 sub write_gypsy {
     my $self = shift;
     my ($gypsy, $header) = @_;
-    my $gff = $self->gff;
+    my $gff = $self->gff->absolute->resolute;
 
     my @lengths;
     my $gyp_feats;
@@ -281,7 +281,7 @@ sub write_gypsy {
     my @all_pdoms;
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $outfile = File::Spec->catfile($path, $name.'_gypsy.gff3');
+    my $outfile    = File::Spec->catfile($path, $name.'_gypsy.gff3');
     my $domoutfile = File::Spec->catfile($path, $name.'_gypsy_domain_org.tsv');
     open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";
@@ -351,7 +351,7 @@ sub write_gypsy {
 sub write_copia {
     my $self = shift;
     my ($copia, $header) = @_;
-    my $gff = $self->gff;
+    my $gff = $self->gff->absolute->resolute;
     
     my @lengths;
     my $cop_feats;
@@ -434,7 +434,7 @@ sub write_copia {
 sub write_unclassified {
     my $self = shift;
     my ($features, $header) = @_;
-    my $gff = $self->gff;
+    my $gff = $self->gff->absolute->resolute;
 
     my %pdom_index;
     my @all_pdoms;
@@ -515,7 +515,7 @@ sub write_unclassified {
 
 sub _map_repeat_types {
     my $self = shift;
-    my $repeatdb = $self->repeatdb;
+    my $repeatdb = $self->repeatdb->absolute->resolute;
     my %family_map;
 
     open my $in, '<', $repeatdb or die "\nERROR: Could not open file: $repeatdb\n";
@@ -545,11 +545,11 @@ sub _make_blastdb {
 
     my $db = $dbname.'_blastdb';
     my $dir = getcwd();
-    my $db_path = Path::Class::File->new($dir, $db);
-    unlink $db_path if -e $db_path;
+    my $db_path = file($dir, $db);
+    $db_path->remove if -e $db_path;
 
     my $config = Tephra::Config::Exe->new->get_config_paths;
-    my ($blastbin) = @{$config}{qw(blastpath)};
+    my ($blastbin)  = @{$config}{qw(blastpath)};
     my $makeblastdb = File::Spec->catfile($blastbin, 'makeblastdb');
 
     try {

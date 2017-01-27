@@ -12,7 +12,7 @@ use IPC::System::Simple qw(system);
 use File::Path          qw(remove_tree);
 use File::Copy          qw(move copy);
 use Log::Any            qw($log);
-use Cwd;
+use Cwd                 qw(getcwd abs_path);
 use Tephra::Config::Exe;
 use namespace::autoclean;
 
@@ -89,7 +89,7 @@ sub create_baseml_files {
     
     my $cwd = getcwd();
     my ($pname, $ppath, $psuffix) = fileparse($phy, qr/\.[^.]*/);
-    my $outfile = $pname.'-paml.out';
+    my $outfile = File::Spec->catfile( abs_path($ppath), $pname.'-paml.out' );
     
     my $ctl_file = "      seqfile = $seqfile
      treefile = $treefile
@@ -120,7 +120,7 @@ sub create_baseml_files {
 *  fix_blength = -1  * 0: ignore, -1: random, 1: initial, 2: fixed
        method = 0  * Optimization method 0: simultaneous; 1: one branch a time";
 
-    my $control_file = File::Spec->catfile($ppath, 'baseml.ctl');
+    my $control_file = File::Spec->catfile( abs_path($ppath), 'baseml.ctl' );
     open my $out, '>', $control_file or die "\nERROR: Could not open file: $control_file\n";
     print $out $ctl_file;
     close $out;
@@ -196,7 +196,7 @@ sub _build_baseml_exec { # this should probably be a separate role
 
 	my @path = split /:|;/, $ENV{PATH};
 	for my $p (@path) {
-	    my $bl = File::Spec->catfile($p, 'baseml');
+	    my $bl = File::Spec->catfile( abs_path($p), 'baseml' );
 
 	    if (-e $bl && -x $bl) {
 		$self->set_baseml_exec($bl);

@@ -2,10 +2,10 @@ package Tephra::Genome::MaskRef;
 
 use 5.014;
 use Moose;
-use Cwd;
 use File::Spec;
 use File::Find;
 use File::Basename;
+use Cwd         qw(abs_path);
 use File::Path  qw(make_path remove_tree);
 use List::Util  qw(sum);
 use Log::Any    qw($log);
@@ -106,7 +106,7 @@ sub mask_reference {
 	$name =~ s/$1//;
     }
 
-    my $outfile  = $self->outfile // File::Spec->catfile($path, $name.'_masked.fas');
+    my $outfile  = $self->outfile // File::Spec->catfile( abs_path($path), $name.'_masked.fas' );
     if (-e $outfile) {
 	say STDERR "\nERROR: '$outfile' already exists. Please delete this or rename it before proceeding. Exiting.\n";
         exit(1);
@@ -116,7 +116,7 @@ sub mask_reference {
     open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     open my $log, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
 
-    my $genome_dir = File::Spec->catfile($path, $name.'_tephra_masked_tmp');    
+    my $genome_dir = File::Spec->catfile( abs_path($path), $name.'_tephra_masked_tmp' );
 
     if (-d $genome_dir) {
 	say STDERR "\nERROR: '$genome_dir' already exists. Please delete this or rename it before proceeding. Exiting.\n";
@@ -197,13 +197,13 @@ sub run_masking {
 
     my $sub_chr_length = $self->get_mask_stats($wchr);
 
-    my $report  = File::Spec->catfile($cpath, $cname.'_vmatch_report.txt');
-    my $outpart = File::Spec->catfile($cpath, $cname.'_masked.fas');
+    my $report  = File::Spec->catfile( abs_path($cpath), $cname.'_vmatch_report.txt' );
+    my $outpart = File::Spec->catfile( abs_path($cpath), $cname.'_masked.fas' );
 
-    my $index = File::Spec->catfile($cpath, $cname.'.index');
-    my $mkvtree_log = File::Spec->catfile($cpath, $cname.'_mkvtree_log.err');
-    my $vmatch_mlog = File::Spec->catfile($cpath, $cname.'_vmatch_mask.err');
-    my $vmatch_rlog = File::Spec->catfile($cpath, $cname.'_vmatch_aln.err');
+    my $index = File::Spec->catfile( abs_path($cpath), $cname.'.index' );
+    my $mkvtree_log = File::Spec->catfile( abs_path($cpath), $cname.'_mkvtree_log.err' );
+    my $vmatch_mlog = File::Spec->catfile( abs_path($cpath), $cname.'_vmatch_mask.err' );
+    my $vmatch_rlog = File::Spec->catfile( abs_path($cpath), $cname.'_vmatch_aln.err' );
 
     my $thr = 2;
     my $pm = Parallel::ForkManager->new($thr);
@@ -304,7 +304,7 @@ sub get_masking_results {
 	$firstline =~ s/^\s+//;
 	my @f = split /\s+/, $firstline;
 	my $send = $f[2] + $f[0];
-	# The next checks if we are within the masking window or in an overlapping region. 
+	# The next line checks if we are within the masking window or in an overlapping region. 
 	# If not in the masking window, grab the next alignment and evaluate.
 	redo line unless $f[2] >= $rep_start;
 
@@ -600,7 +600,7 @@ sub _split_chr_windows {
             }
             else {
                 if ($i > 0) {
-		    # If no the first window, then there are two overlaps (start and end).
+		    # If not the first window, then there are two overlaps (start and end).
 		    $start = $end - ($overlap*2);
                     $end = $start + $split_size + ($overlap*2);
 		    $chunk_size = $end - $start;

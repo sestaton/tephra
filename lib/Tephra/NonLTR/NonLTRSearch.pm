@@ -2,11 +2,11 @@ package Tephra::NonLTR::NonLTRSearch;
 
 use 5.014;
 use Moose;
-use Cwd;
 use File::Spec;
 use File::Find;
 use File::Basename;
 use File::Path qw(make_path);
+use Cwd        qw(abs_path);
 use Bio::DB::HTS::Kseq;
 use Tephra::NonLTR::RunHMM;
 use Tephra::NonLTR::Postprocess;
@@ -42,8 +42,8 @@ sub find_nonltrs {
     my ($phmm_dir) = @{$config}{qw(modeldir)};
 
     my ($gname, $gpath, $gsuffix) = fileparse($genome, qr/\.[^.]*/);
-    my $genome_dir = File::Spec->catdir($gpath, $gname.'_genome');
-    $main_data_dir //= File::Spec->catdir($gpath, $gname.'_nonLTRs');
+    my $genome_dir = File::Spec->catdir( abs_path($gpath), $gname.'_genome' );
+    $main_data_dir //= File::Spec->catdir( abs_path($gpath), $gname.'_nonLTRs' );
 
     unless ( -d $genome_dir ) {
 	make_path( $genome_dir, {verbose => 0, mode => 0771,} );

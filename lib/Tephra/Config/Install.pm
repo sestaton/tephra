@@ -4,10 +4,10 @@ use 5.014;
 use Moose;
 use MooseX::Types::Path::Class;
 use Path::Class::File;
-use Cwd;
 use File::Spec;
 use File::Find;
 use File::Basename;
+use Cwd           qw(getcwd abs_path);
 use Log::Any      qw($log);
 use File::Copy    qw(copy move);
 use File::Path    qw(make_path remove_tree);
@@ -50,7 +50,7 @@ has workingdir => (
 
 sub configure_root {
     my $self = shift;
-    my $basedir = $self->basedir;
+    my $basedir = $self->basedir->absolute->resolve;
 
     my $config = Tephra::Config::Exe->new( basedir => $basedir )->get_config_paths;
 
@@ -139,8 +139,8 @@ sub configure_root {
 
 sub fetch_gt_exes {
     my $self = shift;
-    my $root = $self->basedir;
-    my $wd   = $self->workingdir;
+    my $root = $self->basedir->absolute->resolve;
+    my $wd   = $self->workingdir->absolute->resolve;
     
     my $host = 'http://genometools.org';
     my $dir  = 'pub/binary_distributions';
@@ -178,8 +178,8 @@ sub fetch_gt_exes {
 
 sub fetch_hscan {
     my $self = shift;
-    my $root = $self->basedir;
-    my $wd   = $self->workingdir;
+    my $root = $self->basedir->absolute->resolve;
+    my $wd   = $self->workingdir->absolute->resolve;
     
     my $host = 'https://sourceforge.net';
     my $dir  = 'projects/helitronscanner/files/HelitronScanner_V1.0.zip';
@@ -202,8 +202,8 @@ sub fetch_hscan {
 
 sub fetch_blast {
     my $self = shift;
-    my $root = $self->basedir;
-    my $wd   = $self->workingdir;
+    my $root = $self->basedir->absolute->resolve;
+    my $wd   = $self->workingdir->absolute->resolve;
 
     chdir $root or die $!;
     my $host = 'ftp.ncbi.nlm.nih.gov';
@@ -243,8 +243,8 @@ sub fetch_blast {
 
 sub fetch_hmmer2 {
     my $self = shift;
-    my $root = $self->basedir;
-    my $wd   = $self->workingdir;
+    my $root = $self->basedir->absolute->resolve;
+    my $wd   = $self->workingdir->absolute->resolve;
     
     my $urlbase = 'http://eddylab.org'; 
     my $dir     = 'software';
@@ -276,8 +276,8 @@ sub fetch_hmmer2 {
 
 sub fetch_hmmer3 {
     my $self = shift;
-    my $root = $self->basedir;
-    my $wd   = $self->workingdir;
+    my $root = $self->basedir->absolute->resolve;
+    my $wd   = $self->workingdir->absolute->resolve;
     
     my $urlbase = 'http://eddylab.org'; 
     my $dir     = 'software';
@@ -303,8 +303,8 @@ sub fetch_hmmer3 {
 
 sub fetch_paml {
     my $self = shift;
-    my $root = $self->basedir;
-    my $wd   = $self->workingdir;
+    my $root = $self->basedir->absolute->resolve;
+    my $wd   = $self->workingdir->absolute->resolve;
 
     my $urlbase = 'http://abacus.gene.ucl.ac.uk';
     my $dir     = 'software';
@@ -356,8 +356,8 @@ sub fetch_paml {
 
 sub fetch_emboss {
     my $self = shift;
-    my $root = $self->basedir;
-    my $wd   = $self->workingdir;
+    my $root = $self->basedir->absolute->resolve;
+    my $wd   = $self->workingdir->absolute->resolve;
 
     # this is to avoid building each time
     my @path = split /:|;/, $ENV{PATH};    
@@ -391,7 +391,7 @@ sub fetch_emboss {
     system("make install 2>&1 > /dev/null") == 0
 	or die "make failed: $!";
     
-    my $transeq = File::Spec->catdir($cwd, 'bin', 'transeq');
+    my $transeq  = File::Spec->catdir($cwd, 'bin', 'transeq');
     my $distfile = File::Spec->catfile($root, $file);
     unlink $distfile;
     chdir $wd;
@@ -401,8 +401,8 @@ sub fetch_emboss {
 
 sub fetch_htslib {
     my $self = shift;
-    my $root = $self->basedir;
-    my $wd   = $self->workingdir;
+    my $root = $self->basedir->absolute->resolve;
+    my $wd   = $self->workingdir->absolute->resolve;
 
     my $urlbase = 'https://github.com';
     my $dir     = 'samtools';
@@ -445,7 +445,7 @@ sub fetch_htslib {
 
 sub fetch_trnadb {
     my $self = shift;
-    my $root = $self->basedir;
+    my $root = $self->basedir->absolute->resolve;
 
     # make db directory
     my $db_dir = File::Spec->catdir($root, 'TephraDB');
@@ -478,8 +478,8 @@ sub fetch_trnadb {
 
 sub fetch_hmmdb {
     my $self = shift;
-    my $root = $self->basedir;
-    my $wd   = $self->workingdir;
+    my $root = $self->basedir->absolute->resolve;
+    my $wd   = $self->workingdir->absolute->resolve;
    
     chdir $wd;
     # make db directory
@@ -506,8 +506,8 @@ sub fetch_hmmdb {
 
 sub fetch_hmm_models {
     my $self = shift;
-    my $root = $self->basedir;
-    my $wd   = $self->workingdir;
+    my $root = $self->basedir->absolute->resolve;
+    my $wd   = $self->workingdir->absolute->resolve;
    
     chdir $wd;
     my $file = 'pHMM.tar.gz';
@@ -525,7 +525,7 @@ sub fetch_hmm_models {
 
 sub make_chrom_dir {
     my $self = shift;
-    my $root = $self->basedir;
+    my $root = $self->basedir->absolute->resolve;
 
     my $hmm_dir = File::Spec->catdir($root, 'hmm');
     unless ( -d $hmm_dir ) {
@@ -612,8 +612,8 @@ sub make_chrom_dir {
 
 sub build_mgescan {
     my $self = shift;
-    my $root = $self->basedir;
-    my $wd   = $self->workingdir;
+    my $root = $self->basedir->absolute->resolve;
+    my $wd   = $self->workingdir->absolute->resolve;
 
     my $hmm_dir = File::Spec->catdir($root, 'hmm');
     my $src_dir = File::Spec->catdir($wd, 'src');
@@ -644,6 +644,7 @@ sub build_mgescan {
 sub fetch_file {
     my $self = shift;
     my ($file, $endpoint) = @_;
+
     unless (-e $file) {
 	my $response = HTTP::Tiny->new->get($endpoint);
 	unless ($response->{success}) {

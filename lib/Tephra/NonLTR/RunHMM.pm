@@ -6,6 +6,7 @@ use MooseX::Types::Path::Class;
 use autodie;
 use File::Path          qw(make_path);
 use IPC::System::Simple qw(capture EXIT_ANY);
+use Cwd                 qw(abs_path);
 use File::Basename;
 use File::Spec;
 use File::Find;
@@ -37,10 +38,10 @@ has verbose => ( is => 'ro', isa => 'Bool', predicate  => 'has_debug', lazy => 1
 
 sub run_mgescan {
     my $self = shift;
-    my $dna_file = $self->fasta;
-    my $out_dir  = $self->outdir;
-    my $phmm_dir = $self->phmmdir;
-    my $pdir     = $self->pdir;
+    my $dna_file = $self->fasta->absolute->resolve;
+    my $out_dir  = $self->outdir->absolute->resolve;
+    my $phmm_dir = $self->phmmdir->absolute->resolve;
+    my $pdir     = $self->pdir->absolute->resolve;
 
     my ($dna_name, $dna_path, $dna_suffix) = fileparse($dna_file, qr/\.[^.]*/);
     my $outf_dir = File::Spec->catdir($out_dir, 'out1');
@@ -103,7 +104,7 @@ sub run_mgescan {
 sub translate_forward {
     my $self = shift;
     my ($in, $out) = @_;
-    my $pdir = $self->pdir;
+    my $pdir = $self->pdir->absolute->resolve;
 
     my $name = basename($in);
     my $config = Tephra::Config::Exe->new->get_config_paths;

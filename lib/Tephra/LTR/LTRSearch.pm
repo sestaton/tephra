@@ -2,12 +2,11 @@ package Tephra::LTR::LTRSearch;
 
 use 5.014;
 use Moose;
-use Cwd;
 use File::Spec;
 use File::Find;
 use File::Basename;
 use IPC::System::Simple qw(system EXIT_ANY);
-use Path::Class::File;
+use Cwd                 qw(abs_path);
 use Log::Any            qw($log);
 use Try::Tiny;
 use YAML::Tiny;
@@ -41,9 +40,9 @@ sub ltr_search_strict {
     my $self = shift;
     my ($config, $index) = @_;
     
-    my $genome = $self->genome;
-    my $hmmdb  = $self->hmmdb;
-    my $trnadb = $self->trnadb;
+    my $genome = $self->genome->absolute->resolve;
+    my $hmmdb  = $self->hmmdb->absolute->resolve;
+    my $trnadb = $self->trnadb->absolute->resolve;
 
     ## LTRharvest constraints
     my ($overlaps, $mintsd, $maxtsd, $minlenltr, $maxlenltr, $mindistltr, $maxdistltr, $pdomcutoff, $pdomevalue) = 
@@ -63,11 +62,8 @@ sub ltr_search_strict {
 	$name =~ s/$1//;
     }
     
-    #my $ltrh_out = File::Spec->catfile($path, $name.'_ltrharvest99_pred-all');
-    #my $ltrh_out_inner = File::Spec->catfile($path, $name.'_ltrharvest99_pred-inner');
-    my $ltrh_gff = File::Spec->catfile($path, $name.'_ltrharvest99.gff3');
-    my $ltrg_gff = File::Spec->catfile($path, $name.'_ltrdigest99.gff3');
-    #my $ltrg_out = File::Spec->catfile($path, $name.'_ltrdigest99');
+    my $ltrh_gff = File::Spec->catfile( abs_path($path), $name.'_ltrharvest99.gff3' );
+    my $ltrg_gff = File::Spec->catfile( abs_path($path), $name.'_ltrdigest99.gff3' );
 
     my @ltrh_opts = qw(-seqids -mintsd -maxtsd -minlenltr -maxlenltr -mindistltr 
                        -maxdistltr -motif -similar -vic -index -overlaps -seed -vic 
@@ -106,9 +102,9 @@ sub ltr_search_relaxed {
     my $self = shift;
     my ($config, $index) = @_;
     
-    my $genome = $self->genome;
-    my $hmmdb  = $self->hmmdb;
-    my $trnadb = $self->trnadb;
+    my $genome = $self->genome->absolute->resolve;
+    my $hmmdb  = $self->hmmdb->absolute->resolve;
+    my $trnadb = $self->trnadb->absolute->resolve;
 
     ## LTRharvest constraints
     my ($overlaps, $mintsd, $maxtsd, $minlenltr, $maxlenltr, $mindistltr, $maxdistltr, $pdomcutoff, $pdomevalue) = 
@@ -128,11 +124,8 @@ sub ltr_search_relaxed {
 	$name =~ s/$1//;
     }
     
-    #my $ltrh_out = File::Spec->catfile($path, $name.'_ltrharvest85_pred-all');
-    #my $ltrh_out_inner = File::Spec->catfile($path, $name.'_ltrharvest85_pred-inner');
-    my $ltrh_gff = File::Spec->catfile($path, $name.'_ltrharvest85.gff3');
-    my $ltrg_gff = File::Spec->catfile($path, $name.'_ltrdigest85.gff3');
-    #my $ltrg_out = File::Spec->catfile($path, $name.'_ltrdigest85');
+    my $ltrh_gff = File::Spec->catfile( abs_path($path), $name.'_ltrharvest85.gff3' );
+    my $ltrg_gff = File::Spec->catfile( abs_path($path), $name.'_ltrdigest85.gff3' );
 
     my @ltrh_opts = qw(-seqids -mintsd -maxtsd -minlenltr -maxlenltr 
                        -mindistltr -maxdistltr -similar -vic -index -overlaps

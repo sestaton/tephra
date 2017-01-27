@@ -2,7 +2,6 @@ package Tephra::Hel::HelSearch;
 
 use 5.014;
 use Moose;
-use Cwd;
 use File::Spec;
 use File::Find;
 use File::Basename;
@@ -11,6 +10,7 @@ use Bio::DB::HTS::Kseq;
 use Sort::Naturally;
 use IPC::System::Simple qw(system EXIT_ANY);
 use Log::Any            qw($log);
+use Cwd                 qw(abs_path);
 use Try::Tiny;
 use namespace::autoclean;
 
@@ -32,7 +32,7 @@ $VERSION = eval $VERSION;
 sub find_helitrons {
     my $self = shift;
     
-    my $genome = $self->genome->absolute;
+    my $genome = $self->genome->absolute->resolve;
     my $jar    = $self->helitronscanner;
 
     my (%scanh_cmd, %scant_cmd, %pair_cmd, %draw_cmd);
@@ -79,9 +79,9 @@ sub find_helitrons {
 sub make_hscan_outfiles {
     my $self = shift;
     my ($helitrons) = @_;
-    my $gff    = $self->gff;
-    my $fasta  = $self->fasta;
-    my $genome = $self->genome;
+    my $gff    = $self->gff->absolute->resolve;
+    my $fasta  = $self->fasta->absolute->resolve;
+    my $genome = $self->genome->absolute->resolve;
 
     open my $outg, '>', $gff or die "\nERROR: Could not open file: $gff\n";
     open my $outf, '>', $fasta or die "\nERROR: Could not open file: $fasta\n";

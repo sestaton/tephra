@@ -13,11 +13,11 @@ use File::Copy      qw(move copy);
 use List::MoreUtils qw(indexes any);
 use Time::HiRes     qw(gettimeofday);
 use Log::Any        qw($log);
+use Cwd             qw(getcwd abs_path);
 use Bio::DB::HTS::Kseq;
 use Bio::AlignIO;
 use Bio::TreeIO;
 use Parallel::ForkManager;
-use Cwd;
 use Carp 'croak';
 use Try::Tiny;
 #use Data::Dump::Color;
@@ -96,7 +96,7 @@ has all => (
 sub calculate_tir_ages {
     my $self = shift;
     my $threads = $self->threads;
-    my $outfile = $self->outfile;
+    my $outfile = $self->outfile->absolute->resolve;
 
     my $args = $self->collect_feature_args;
     #dd $args; ## debug
@@ -109,7 +109,7 @@ sub calculate_tir_ages {
     
     my $t0 = gettimeofday();
     my $tirts = 0;
-    my $logfile = File::Spec->catfile($resdir, 'all_aln_reports.log');
+    my $logfile = File::Spec->catfile( abs_path($resdir), 'all_aln_reports.log' );
     open my $logfh, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
     
     my $pm = Parallel::ForkManager->new($threads);
@@ -175,7 +175,7 @@ sub calculate_tir_ages {
 
 sub collect_feature_args {
     my $self = shift;
-    my $dir = $self->dir;
+    my $dir = $self->dir->absolute->resolve;
 
     my (@tirs, %aln_args);
     if ($self->all) {
@@ -212,8 +212,8 @@ sub collect_feature_args {
 
 sub extract_tir_features {
     my $self = shift;
-    my $fasta = $self->genome;
-    my $gff   = $self->gff;
+    my $fasta = $self->genome->absolute->resolve;
+    my $gff   = $self->gff->absolute->resolve;
     
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $dir = File::Spec->catdir($path, $name.'_tirages');
@@ -296,7 +296,7 @@ sub process_baseml_args {
 
     my $cwd = getcwd();
     my ($pname, $ppath, $psuffix) = fileparse($phy, qr/\.[^.]*/);
-    my $divfile = File::Spec->catfile($ppath, $pname.'-divergence.txt');
+    my $divfile = File::Spec->catfile( abs_path($ppath), $pname.'-divergence.txt' );
     $divfile = basename($divfile);
 
     my $divergence = $self->_check_divergence($phy);
@@ -317,7 +317,7 @@ sub process_baseml_args {
 	open my $divout, '>', $divfile or die "\nERROR: Could not open divergence file: $divfile\n";
 	say $divout join "\t", $element, $divergence , '0', '0';
 	close $divout;
-	my $dest_file = File::Spec->catfile($resdir, $divfile);
+	my $dest_file = File::Spec->catfile( abs_path($resdir), $divfile );
 	copy($divfile, $dest_file) or die "\nERROR: Copy failed: $!";
 	unlink $divfile;
     }
@@ -331,16 +331,16 @@ sub process_align_args {
     unlink $db && return unless $seqct == 2;
 
     my ($name, $path, $suffix) = fileparse($db, qr/\.[^.]*/);
-    my $pdir = File::Spec->catdir($path, $name.'_pamltmp');
+    my $pdir = File::Spec->catdir( abs_path($path), $name.'_pamltmp' );
     make_path( $pdir, {verbose => 0, mode => 0771,} );
 	
-    my $fas = File::Spec->catfile($pdir, $name.$suffix);
+    my $fas = File::Spec->catfile( abs_path($pdir), $name.$suffix );
     copy($db, $fas) or die "\nERROR: Copy failed: $!";
-    my $tre  = File::Spec->catfile($pdir, $name.'.dnd');
-    my $aln  = File::Spec->catfile($pdir, $name.'_muscle-out.aln');
-    my $dnd  = File::Spec->catfile($pdir, $name.'_muscle-out.dnd');
-    my $alog = File::Spec->catfile($pdir, $name.'_muscle-out.alnlog');
-    my $tlog = File::Spec->catfile($pdir, $name.'_muscle-out.trelog');
+    my $tre  = File::Spec->catfile( abs_path($pdir), $name.'.dnd' );
+    my $aln  = File::Spec->catfile( abs_path($pdir), $name.'_muscle-out.aln' );
+    my $dnd  = File::Spec->catfile( abs_path($pdir), $name.'_muscle-out.dnd' );
+    my $alog = File::Spec->catfile( abs_path($pdir), $name.'_muscle-out.alnlog' );
+    my $tlog = File::Spec->catfile( abs_path($pdir), $name.'_muscle-out.trelog' );
     
     my $muscmd = "muscle -clwstrict -in $fas -out $aln 2>$alog";
     my $trecmd = "muscle -maketree -in $fas -out $tre -cluster neighborjoining 2>$tlog";
@@ -360,7 +360,7 @@ sub parse_aln {
     my ($aln, $tre, $dnd) = @_;
 
     my ($name, $path, $suffix) = fileparse($aln, qr/\.[^.]*/);
-    my $phy = File::Spec->catfile($path, $name.'.phy');
+    my $phy = File::Spec->catfile( abs_path($path), $name.'.phy' );
     
     my $aln_in  = Bio::AlignIO->new(-file  => $aln,    -format => 'clustalw');
     my $aln_out = Bio::AlignIO->new(-file  => ">$phy", -format => 'phylip', -flag_SI => 1, -idlength => 20);

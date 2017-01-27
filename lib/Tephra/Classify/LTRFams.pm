@@ -9,9 +9,10 @@ use File::Find;
 use File::Basename;
 use Bio::DB::HTS::Kseq;
 use Bio::DB::HTS::Faidx;
-use List::Util          qw(min max);
-use Time::HiRes         qw(gettimeofday);
-use File::Path          qw(make_path);
+use List::Util  qw(min max);
+use Time::HiRes qw(gettimeofday);
+use File::Path  qw(make_path);
+use Cwd         qw(abs_path);         
 use Parallel::ForkManager;
 use Carp 'croak';
 use Try::Tiny;
@@ -82,12 +83,12 @@ has threads => (
 sub make_ltr_families {
     my $self = shift;
     my ($gff_obj) = @_;
+    my $outdir = $self->outdir->absolute->resolve;
 
     my $threads = $self->threads;    
     my $t0 = gettimeofday();
-    my $logfile = File::Spec->catfile($self->outdir, 'ltr_superfamilies_thread_report.log');
+    my $logfile = File::Spec->catfile($outdir, 'ltr_superfamilies_thread_report.log');
     open my $log, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
-
 
     my $pm = Parallel::ForkManager->new(3);
     local $SIG{INT} = sub {
@@ -232,7 +233,7 @@ sub make_fasta_from_dom_orgs {
 
     my $reduc = (keys %$seqstore);
     my $singfile = $sfname.'_singletons.fasta';
-    my $soutfile = File::Spec->catfile($cpath, $singfile);
+    my $soutfile = File::Spec->catfile( abs_path($cpath), $singfile );
     open my $outx, '>>', $soutfile or die "\nERROR: Could not open file: $soutfile\n";
 
     if (%$seqstore) {
@@ -359,7 +360,7 @@ sub write_families {
     if (defined $matches) {
 	for my $str (reverse sort { @{$matches->{$a}} <=> @{$matches->{$b}} } keys %$matches) {
 	    my $famfile = $sf."_family$idx".".fasta";
-	    my $outfile = File::Spec->catfile($cpath, $famfile);
+	    my $outfile = File::Spec->catfile( abs_path($cpath), $famfile );
 	    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 	    for my $elem (@{$matches->{$str}}) {
 		my $query = $elem;
@@ -387,7 +388,7 @@ sub write_families {
 
     if (%$seqstore) {
 	my $famxfile = $sf.'_singleton_families.fasta';
-	my $xoutfile = File::Spec->catfile($cpath, $famxfile);
+	my $xoutfile = File::Spec->catfile( abs_path($cpath), $famxfile );
 	open my $outx, '>', $xoutfile or die "\nERROR: Could not open file: $xoutfile\n";
 	for my $k (nsort keys %$seqstore) {
 	    my $coordsh = $seqstore->{$k};
@@ -418,8 +419,8 @@ sub write_families {
 sub combine_families {
     my ($self) = shift;
     my ($outfiles) = @_;
-    my $genome = $self->genome;
-    my $outdir = $self->outdir;
+    my $genome = $self->genome->absolute->resolve;
+    my $outdir = $self->outdir->absolute->resolve;
     
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($outdir, $name.'_combined_LTR_families.fasta');
@@ -443,7 +444,7 @@ sub combine_families {
 sub annotate_gff {
     my $self = shift;
     my ($annot_ids, $gff) = @_;
-    my $outdir = $self->outdir;
+    my $outdir = $self->outdir->absolute->resolve;
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($outdir, $name.'_families.gff3');
