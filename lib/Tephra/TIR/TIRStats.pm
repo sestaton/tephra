@@ -96,7 +96,7 @@ has all => (
 sub calculate_tir_ages {
     my $self = shift;
     my $threads = $self->threads;
-    my $outfile = $self->outfile->absolute->resolve;
+    my $outfile = $self->outfile; 
 
     my $args = $self->collect_feature_args;
     #dd $args; ## debug
@@ -175,15 +175,15 @@ sub calculate_tir_ages {
 
 sub collect_feature_args {
     my $self = shift;
-    my $dir = $self->dir->absolute->resolve;
 
     my (@tirs, %aln_args);
-    if ($self->all) {
+    if ($self->all || ! $self->dir) {
 	my ($files, $wdir) = $self->extract_tir_features;
         $aln_args{tirs} = { seqs => $files };
         $aln_args{resdir} = $wdir;
     }
     else {
+	my $dir = $self->dir->absolute->resolve;
 	my $wanted  = sub { push @tirs, $File::Find::name if -f && /exemplar_tirs.fasta$/ };
 	my $process = sub { grep ! -d, @_ };
 	find({ wanted => $wanted, preprocess => $process }, $dir);
