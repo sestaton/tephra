@@ -3,7 +3,14 @@ Revision history for Tephra
 Version	Date	Location
 0.05.1	1/25/17	Vancouver, BC
 
-- Clean up file paths across in all classes to use 
+- Clean up file paths across in all classes to use absolute paths instead
+  of relative to avoid problems.
+- Modify handling of genometools index files to not assume they are in the working directory.
+  This ensures they will be cleaned up as expected.
+- Reduce output of 'findltrs' and 'findtrims' commands to GFF3 only.
+- Add --debug option for 'findtrims' command.
+- Add -o output file option for 'findtrims' command to clarify what result files are generated.
+
 0.05.0	1/12/17	Vancouver, BC
 
 - Add test to 'sololtr' command to ensure the expected file of LTR exemplar sequences
