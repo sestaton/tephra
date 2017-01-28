@@ -37,6 +37,14 @@ Version 0.05.1
 our $VERSION = '0.05.1';
 $VERSION = eval $VERSION;
 
+has debug => (
+    is         => 'ro',
+    isa        => 'Bool',
+    predicate  => 'has_debug',
+    lazy       => 1,
+    default    => 0,
+);
+
 sub extract_features {
     my $self = shift;
     my $fasta = $self->genome->absolute->resolve;
@@ -55,11 +63,11 @@ sub extract_features {
         make_path( $resdir, {verbose => 0, mode => 0771,} );
     }
     
-    my $comp = File::Spec->catfile( abs_path($resdir), $name.'_complete.fasta' );
-    my $ppts = File::Spec->catfile( abs_path($resdir), $name.'_ppt.fasta' );
-    my $pbs  = File::Spec->catfile( abs_path($resdir), $name.'_pbs.fasta' );
-    my $five_pr_ltrs  = File::Spec->catfile( abs_path($resdir), $name.'_5prime-ltrs.fasta' );
-    my $three_pr_ltrs = File::Spec->catfile( abs_path($resdir), $name.'_3prime-ltrs.fasta' );
+    my $comp = File::Spec->catfile($resdir, $name.'_complete.fasta');
+    my $ppts = File::Spec->catfile($resdir, $name.'_ppt.fasta');
+    my $pbs  = File::Spec->catfile($resdir, $name.'_pbs.fasta');
+    my $five_pr_ltrs  = File::Spec->catfile($resdir, $name.'_5prime-ltrs.fasta');
+    my $three_pr_ltrs = File::Spec->catfile($resdir, $name.'_3prime-ltrs.fasta');
 
     open my $allfh, '>>', $comp or die "\nERROR: Could not open file: $comp\n";
     open my $pptfh, '>>', $ppts or die "\nERROR: Could not open file: $ppts\n";
@@ -254,6 +262,7 @@ sub concat_pdoms {
 sub collect_feature_args {
     my $self = shift;
     my ($dir) = @_;
+
     my (@fiveltrs, @threeltrs, @ppt, @pbs, @pdoms, %vmatch_args);
     find( sub { push @fiveltrs, $File::Find::name if -f and /5prime-ltrs.fasta$/ }, $dir);
     find( sub { push @threeltrs, $File::Find::name if -f and /3prime-ltrs.fasta$/ }, $dir);
@@ -379,7 +388,9 @@ sub process_cluster_args {
         $mkvtreecmd .= "$args->{$type}{prefixlen} ";
     }
     $mkvtreecmd .= "2>&1 > $log";
+    say STDERR "DEBUG: $mkvtreecmd" if $self->debug;
     my $vmatchcmd  = "vmatch $args->{$type}{args} $index > $vmrep";
+    say STDERR "DEBUG: $vmatchcmd" if $self->debug;
     $self->run_cmd($mkvtreecmd);
     $self->run_cmd($vmatchcmd);
     unlink glob "$index*";

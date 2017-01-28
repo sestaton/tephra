@@ -12,7 +12,8 @@ use Carp 'croak';
 use namespace::autoclean;
 
 with 'Tephra::Role::GFF',
-     'Tephra::Role::Util';
+     'Tephra::Role::Util',
+     'Tephra::Role::Run::GT';
 
 =head1 NAME
 
@@ -56,6 +57,13 @@ has threads => (
     default   => 1,
 );
 
+has debug => (
+    is         => 'ro',
+    isa        => 'Bool',
+    predicate  => 'has_debug',
+    lazy       => 1,
+    default    => 0,
+);
 #
 # methods
 #
@@ -171,7 +179,7 @@ sub process_vmatch_args {
     my $wanted  = sub { push @fams, $File::Find::name if -f and /(?:family\d+).fasta$/ };
     my $process = sub { grep ! -d, @_ };
     find({ wanted => $wanted, preprocess => $process }, $dir);
-
+ 
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			      my ($exemplar, $family) = @{$data_ref}{qw(exemplar family)};
 			      $exemplars{$exemplar} = $family;
@@ -194,21 +202,23 @@ sub calculate_exemplars {
     my ($db) = @_;
 
     my ($name, $path, $suffix) = fileparse($db, qr/\.[^.]*/);
-    my $index = File::Spec->catfile( abs_path($path), $name.'_mkvtree.index' );
-    my $vmerSearchOut = File::Spec->catfile( abs_path($path), $name.'.vmersearch' );
+    my $index = File::Spec->catfile($path, $name.'_mkvtree.index');
+    my $vmerSearchOut = File::Spec->catfile($path, $name.'.vmersearch');
     my $mk_args = "-db $db -dna -indexname $index -allout -pl";
     my $vm_args = "-showdesc 0 -qspeedup 2 -l 20 -q $db -identity 80 $index > $vmerSearchOut";
     
     my $mkcmd = "mkvtree $mk_args";
     my $vmcmd = "vmatch $vm_args";
+    say STDERR "DEBUG: $mkcmd" if $self->debug;
+    say STDERR "DEBUG: $vmcmd" if $self->debug;
     $self->run_cmd($mkcmd);
     $self->run_cmd($vmcmd);
     my $exemplar = $self->parse_vmatch($vmerSearchOut);
     my ($family) = ($exemplar =~ /(^RL[CGX]_family\d+)/);
     $exemplar =~ s/${family}_//;
-    $self->clean_index($path);
-    unlink $vmerSearchOut;
-    unlink $db;
+    $self->clean_index_files($index);
+    #unlink $vmerSearchOut;
+    #unlink $db;
 
     return ($exemplar, $family);
 }
@@ -247,17 +257,6 @@ sub subseq {
 
     $seq =~ s/.{60}\K/\n/g;
     say $out join "\n", ">$id", $seq;
-}
-
-sub clean_index {
-    my $self = shift;
-    my ($dir) = @_;
-    
-    my @files;
-    find( sub { push @files, $File::Find::name
-		    if /\.al1|\.bck|\.bwt|\.des|\.lcp|\.llv|\.ois|\.prj|\.sds|\.skp|\.ssp|\.sti1|\.suf|\.tis/
-	  }, $dir);
-    unlink @files;
 }
 
 =head1 AUTHOR

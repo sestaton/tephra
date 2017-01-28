@@ -65,7 +65,7 @@ sub tir_search {
     
     my $filtered = $self->_filter_tir_gff($gff, $fas);
 
-    $self->clean_index($path) if $self->clean;
+    $self->clean_indexes($path) if $self->clean;
     
     return $filtered;
 }

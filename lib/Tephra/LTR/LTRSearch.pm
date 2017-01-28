@@ -148,7 +148,7 @@ sub ltr_search_relaxed {
     @ltrd_cmd{@ltrd_opts} = @ltrd_args;
     
     my $ltr_dig = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort);
-    $self->clean_index($path) if $self->clean;
+    $self->clean_indexes($path) if $self->clean;
     unlink $ltrh_gff;
     unlink $gffh_sort;
 

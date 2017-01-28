@@ -21,6 +21,7 @@ sub opt_spec {
 	[ "percentcov|c=i", "The percent coverage cutoff for the shorter element in pairwise matches (Default: 50) " ],
         [ "percentid|p=i",  "The percent identity cutoff for classification of pairwise matches (Default: 80) "      ],
         [ "hitlen|l=i",     "The minimum length for classifying pairwise BLAST hits (Default: 80) "                  ],
+	[ "debug",       "Show external command for debugging (Default: no) "                                        ],
     );
 }
 
@@ -94,6 +95,7 @@ sub _classify_ltr_families {
     my $hpcov    = $opt->{percentcov} // 50;
     my $hpid     = $opt->{percentid} // 80;
     my $hlen     = $opt->{hitlen} // 80;
+    my $debug    = $opt->{debug} // 0;
 
     my ($cop_gff, $gyp_gff, $unc_gff) = @{$gffs}{qw(copia gypsy unclassified)};
 
@@ -110,6 +112,7 @@ sub _classify_ltr_families {
 	blast_hit_cov => $hpcov,
         blast_hit_pid => $hpid,
         blast_hit_len => $hlen,
+	debug         => $debug,
     );
 
     my ($outfiles, $annot_ids) = $classify_fams_obj->make_ltr_families($gffs);

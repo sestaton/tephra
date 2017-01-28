@@ -90,12 +90,16 @@ sub _refine_ltr_predictions {
 
 	$refine_obj->sort_features({ gff               => $relaxed_gff, 
 				     combined_features => $combined_features });
+
+	unlink $relaxed_gff, $strict_gff;
     }
     elsif (defined $relaxed_gff && !defined $strict_gff) {
 	say STDERR "\nWARNING: No LTR retrotransposons were found under strict conditions. ".                  
             "Skipping refinement step.\n";
 	$refine_obj->sort_features({ gff               => $relaxed_gff,
                                      combined_features => undef });
+	
+	unlink $relaxed_gff;
     }
     else {
 	say STDERR "\nWARNING: No LTR retrotransposons were found with the given parameters.\n";

@@ -159,8 +159,9 @@ sub make_ltr_families {
 sub run_ltr_classification {
     my $self = shift;
     my ($gff) = @_;
-    my $genome  = $self->genome;
+    my $genome  = $self->genome->absolute->resolve;
     my $threads = $self->threads;
+    my $debug   = $self->debug,
 
     my $dir      = $self->extract_features($gff);
     my $clusters = $self->cluster_features($dir);
@@ -175,7 +176,8 @@ sub run_ltr_classification {
         genome  => $genome,
         dir     => $dir,
         gff     => $gff,
-	threads => $threads
+	threads => $threads,
+	debug   => $debug,
     );
 
     $exm_obj->make_exemplars;

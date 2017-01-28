@@ -77,13 +77,13 @@ has debug => (
 sub create_index {
     my $self = shift;
     my ($args) = @_;
-    my $debug = $self->debug;
+
     my $gt = $self->get_gt_exec;
     unshift @$args, 'suffixerator';
     unshift @$args, $gt;
     my $cmd = join qq{ }, @$args;
 
-    say STDERR $cmd if $debug;
+    say STDERR "DEBUG: $cmd" if $self->debug;
     my ($stdout, $stderr, $exit);
     try {
 	system($cmd);
@@ -111,7 +111,7 @@ sub run_ltrharvest {
     } 
 
     my $cmd = join qq{ }, @ltrh_args;
-    say STDERR $cmd if $debug; # and exit;
+    say STDERR "DEBUG: $cmd" if $self->debug; # and exit;
     try {
 	#system($cmd);
 	my @out = capture { system([0..5], $cmd) };
@@ -141,7 +141,7 @@ sub run_ltrdigest {
     }
     
     my $cmd = join qq{ }, @ltrd_args, $gff;
-    say STDERR $cmd if $debug;
+    say STDERR "DEBUG: $cmd" if $self->debug;
     try {
 	#system($cmd);
 	my @out = capture { system([0..5], $cmd) };
@@ -171,7 +171,7 @@ sub run_tirvish {
     }
 
     my $cmd = join qq{ }, @tirv_args, ">", $gff;
-    say STDERR $cmd if $debug;
+    say STDERR "DEBUG: $cmd" if $self->debug;
     try {
 	my @out = capture { system([0..5], $cmd) };
     }
@@ -191,7 +191,7 @@ sub sort_gff {
     my $gt = $self->get_gt_exec;
 
     my $cmd = "$gt gff3 -sort $gff > $gff_sort";
-    say STDERR $cmd if $debug;
+    say STDERR "DEBUG: $cmd" if $self->debug;
     try {
 	my @out = capture { system([0..5], $cmd) };
     }
@@ -203,7 +203,7 @@ sub sort_gff {
     return $gff_sort;
 }
 
-sub clean_index {
+sub clean_indexes {
     my $self = shift;
     my ($dir) = @_;
 
@@ -212,6 +212,25 @@ sub clean_index {
 		    if /\.llv|\.md5|\.prf|\.tis|\.suf|\.lcp|\.ssp|\.sds|\.des|\.dna|\.esq|\.prj|\.ois/
 	  }, $dir);
     unlink @files;
+}
+
+sub clean_index_files {
+    my $self = shift;
+    my ($index) = @_;
+    
+    my ($name, $path, $suffix) = fileparse($index, qr/\.[^.]*/);
+
+    my $pat;
+    for my $suf (qw(.al1 .llv .ssp .bck .ois .sti1 .bwt .prj .suf .des .sds .tis .lcp .skp)) {
+        $pat .= "$name$suffix$suf|";
+    }
+    $pat =~ s/\|$//;
+
+    my @files;
+    find( sub { push @files, $File::Find::name if /$pat/ }, $path);
+
+    unlink @files;
+    return;
 }
 
 sub _build_gt_exec {

@@ -16,7 +16,8 @@ use Parallel::ForkManager;
 use namespace::autoclean;
 #use Data::Dump::Color qw(dump dd);
 
-with 'Tephra::Role::Util';
+with 'Tephra::Role::Util',
+     'Tephra::Role::Run::GT';
 
 =head1 NAME
 
@@ -229,7 +230,7 @@ sub run_masking {
 
     my $mask_struct = $self->get_masking_results($wchr, $report, $sub_chr_length, $seq_index, $chr_windows);
 
-    $self->clean_index($index);
+    $self->clean_index_files($index);
     my ($id, $seq) = $self->_get_seq($outpart);
     # each reference sequence is in a separate directory so we just need that directory name 
     my $ref = dirname($chr);
@@ -480,25 +481,6 @@ sub write_masking_results {
     say "Total genome length: $genome_length";
     say "Total masked bases:  $masked% ($masked_total/$genome_length)";
 
-    return;
-}
-
-sub clean_index {
-    my $self = shift;
-    my ($index) = @_;
-    
-    my ($name, $path, $suffix) = fileparse($index, qr/\.[^.]*/);
-
-    my $pat;
-    for my $suf (qw(.al1 .llv .ssp .bck .ois .sti1 .bwt .prj .suf .des .sds .tis .lcp .skp)) {
-	$pat .= "$name$suffix$suf|";
-    }
-    $pat =~ s/\|$//;
-
-    my @files;
-    find( sub { push @files, $File::Find::name if /$pat/ }, $path);
-
-    unlink @files;
     return;
 }
 

@@ -158,7 +158,7 @@ sub get_domain_pep_seq {
     my (%domain_start, %domain_end, %result_start, %result_end, %uniq_head);
 
     my ($name, $path, $suffix) = fileparse($pep_file, qr/\.[^.]*/);
-    my $hmmout = File::Spec->catfile($path, $name."_hmmsearch.txt");
+    my $hmmout = File::Spec->catfile($path, $name.'_hmmsearch.txt');
     open my $o, '>', $hmmout or die "\nERROR: Could not open file: $hmmout";
     print $o @hmm_results;
     close $o;

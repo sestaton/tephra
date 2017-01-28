@@ -174,7 +174,7 @@ sub calculate_ltr_ages {
 
 sub collect_feature_args {
     my $self = shift;
-    my $dir = $self->dir->absolute->resolve;
+    my $dir = $self->dir; #->absolute->resolve;
 
     my (@ltrs, %aln_args);
     if ($self->all) {
