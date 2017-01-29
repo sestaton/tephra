@@ -21,7 +21,7 @@ sub opt_spec {
 	[ "percentcov|c=i", "The percent coverage cutoff for the shorter element in pairwise matches (Default: 50) " ],
         [ "percentid|p=i",  "The percent identity cutoff for classification of pairwise matches (Default: 80) "      ],
         [ "hitlen|l=i",     "The minimum length for classifying pairwise BLAST hits (Default: 80) "                  ],
-	[ "debug",       "Show external command for debugging (Default: no) "                                        ],
+	[ "debug",          "Show external command for debugging (Default: no) "                                     ],
     );
 }
 
