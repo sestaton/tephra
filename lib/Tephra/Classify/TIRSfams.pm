@@ -8,19 +8,22 @@ use File::Spec;
 use File::Find;
 use File::Basename;
 use Bio::GFF3::LowLevel qw(gff3_format_feature);
-use IPC::System::Simple qw(capture);
 use Sort::Naturally     qw(nsort);
 use List::UtilsBy       qw(nsort_by);
 use List::Util          qw(sum max);
 use Cwd                 qw(getcwd abs_path);
+use IPC::System::Simple qw(system);
+use Capture::Tiny       qw(capture);
 use Path::Class::File;
 use Try::Tiny;
 use Carp 'croak';
 use Tephra::Config::Exe;
+#use Data::Dump::Color;
 use namespace::autoclean;
 
 with 'Tephra::Role::GFF',
-     'Tephra::Role::Util';
+     'Tephra::Role::Util',
+     'Tephra::Role::Run::GT';
 
 =head1 NAME
 
@@ -49,6 +52,12 @@ has gff => (
       coerce   => 1,
 );
 
+has outfile => (
+      is       => 'ro',
+      isa      => 'Path::Class::File',
+      required => 1,
+      coerce   => 1,
+);
 #
 # methods
 #
@@ -152,8 +161,9 @@ sub find_tc1_mariner {
     my $count = $stat->count;
 
     if ($count > 0) {
-	say STDERR join "\t", "mariner_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";		
+	say STDERR join "\t", "mariner_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
 	say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+	return ($outfile, $fas);
     }
     else {
 	unlink $outfile, $fas;	
@@ -260,6 +270,7 @@ sub find_hat {
     if ($count > 0) {
 	say STDERR join "\t", "hat_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
 	say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+	return ($outfile, $fas);
     }
     else {
 	unlink $outfile, $fas;
@@ -368,6 +379,7 @@ sub find_mutator {
     if ($count > 0) {
 	say STDERR join "\t", "mutator_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";	
 	say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+	return ($outfile, $fas);
     }
     else {
 	unlink $outfile, $fas;
@@ -477,8 +489,9 @@ sub find_cacta {
     my $count = $stat->count;
 
     if ($count > 0) {
-	say STDERR join "\t", "cacta_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";		
+	say STDERR join "\t", "cacta_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
 	say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+	return ($outfile, $fas);
     }
     else {
 	unlink $outfile, $fas;
@@ -572,12 +585,41 @@ sub write_unclassified_tirs {
     my $count = $stat->count;
 
     if ($count > 0) {
-	say STDERR join "\t", "unclassified_tir_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";		
+	say STDERR join "\t", "unclassified_tir_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
 	say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+	return ($outfile, $fas);
     }
     else {
 	unlink $outfile, $fas;
     }
+}
+
+sub write_combined_output {
+    my $self = shift;
+    my ($outfiles) = @_;
+    my $outfile = $self->outfile;
+
+    my ($name, $path, $suffix) = fileparse($outfile, qr/\.[^.]*/);
+    my $fasout = File::Spec->catfile($path, $name.'.fasta');
+    open my $out, '>', $fasout or die "\nERROR: Could not open file: $fasout\n";
+
+    for my $file (@{$outfiles->{fastas}}) {
+	my $lines = do { 
+	    local $/ = undef; 
+	    open my $fh_in, '<', $file or die "\nERROR: Could not open file: $file\n";
+	    <$fh_in>;
+	};
+	print $out $lines;
+    }
+    close $out;
+
+    my $gt  = $self->get_gt_exec;
+    my $cmd = "$gt gff3 -sort @{$outfiles->{gffs}} > $outfile";
+    #say STDERR $cmd;
+    my @out = capture { system([0..5], $cmd) };
+    unlink @{$outfiles->{fastas}}, @{$outfiles->{gffs}};
+
+    return;
 }
 
 sub subseq {

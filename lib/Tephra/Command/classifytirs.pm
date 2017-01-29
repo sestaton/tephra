@@ -11,6 +11,7 @@ sub opt_spec {
     return (    
 	[ "genome|g=s",   "The genome sequences in FASTA format to search for TIRs "   ],
 	[ "gff|f=s",      "The GFF3 file of TIR TEs in <genome> "                      ],
+	[ "outfile|o=s",  "The final combined and filtered GFF3 file of TIRs "         ],
 	[ "help|h",       "Display the usage menu and exit. "                          ],
         [ "man|m",        "Display the full manual. "                                  ],
     );
@@ -28,7 +29,7 @@ sub validate_args {
         $self->help;
         exit(0);
     }
-    elsif (!$opt->{genome} || !$opt->{gff}) {
+    elsif (!$opt->{genome} || !$opt->{gff} || !$opt->{outfile}) {
 	say STDERR "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
@@ -49,7 +50,8 @@ sub _classify_tir_predictions {
 
     my $classify_obj = Tephra::Classify::TIRSfams->new( 
 	genome   => $opt->{genome}, 
-	gff      => $opt->{gff} 
+	gff      => $opt->{gff},
+	outfile  => $opt->{outfile}
     );
 
     my $index = $opt->{genome}.'.fai';
@@ -58,22 +60,39 @@ sub _classify_tir_predictions {
     }
     my ($header, $features) = $classify_obj->collect_gff_features($opt->{gff});
 
+    #my (@fastas, @gffs);
     my $all_ct = (keys %$features);
-    $classify_obj->find_tc1_mariner($features, $header);
+    my ($tcmoutfile, $tcmfas) = $classify_obj->find_tc1_mariner($features, $header);
+    say join q{ }, $tcmoutfile, $tcmfas;
     my $tc1_ct = (keys %$features);
-    $classify_obj->find_hat($features, $header);
+    my ($hatoutfile, $hatfas) = $classify_obj->find_hat($features, $header);
     my $hat_ct = (keys %$features);
-    $classify_obj->find_mutator($features, $header);
+    my ($mutoutfile, $mutfas) = $classify_obj->find_mutator($features, $header);
     my $mut_ct = (keys %$features);
-    $classify_obj->find_cacta($features, $header);
+    my ($cacoutfile, $cacfas) = $classify_obj->find_cacta($features, $header);
     my $cacta_ct = (keys %$features);
-    $classify_obj->write_unclassified_tirs($features, $header);
+    my ($uncoutfile, $uncfas) = $classify_obj->write_unclassified_tirs($features, $header);
     my $rem_ct = (keys %$features);
 
-    say STDERR join "\t", "all", "after_tc1", "after_hat", "after_mut", "after_cacta", "after_rem";
-    say STDERR join "\t", $all_ct, $tc1_ct, $hat_ct, $mut_ct, $cacta_ct, $rem_ct;
-}
+    my @fastas = grep { defined && /\.fasta$/ } ($tcmfas, $hatfas, $mutfas, $cacfas, $uncfas);
+    my @gffs = grep { defined && /\.gff.*$/ } ($tcmoutfile, $hatoutfile, $mutoutfile, $cacoutfile, $uncoutfile);
 
+    if (@fastas && @gffs) {
+	my %outfiles = (
+	    fastas => \@fastas,
+	    gffs   => \@gffs
+	 );
+
+	$classify_obj->write_combined_output(\%outfiles);
+	
+	say STDERR join "\t", "all", "after_tc1", "after_hat", "after_mut", "after_cacta", "after_rem";
+	say STDERR join "\t", $all_ct, $tc1_ct, $hat_ct, $mut_ct, $cacta_ct, $rem_ct;
+    }
+    else {
+	say STDERR "\nWARNING: No TIR elements were classified. Check input.\n";
+    }
+}
+    
 sub help {
     print STDERR<<END
 
@@ -84,6 +103,7 @@ USAGE: tephra classifytirs [-h] [-m]
 Required:
     -g|genome     :   The genome sequences in FASTA format to search for TIR TEs. 
     -f|gff        :   The GFF3 file of LTR-RTs in <--genome>.
+    -o|outfile    :   The final combined and filtered GFF3 file of TIRs.
 
 END
 }
@@ -100,7 +120,7 @@ __END__
 
 =head1 SYNOPSIS    
 
- tephra findltrs -g ref.fas -f ref_tephra_tirs.gff3
+ tephra findltrs -g ref.fas -f ref_tephra_tirs.gff3 -o ref_tephra_tirs_classified.gff3
 
 =head1 DESCRIPTION
  
@@ -122,6 +142,10 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =item -f, --gff
 
  The GFF3 file of LTR-RTs in <--genome> as output by the 'tephra findtirs' command.
+
+=item -o, --outfile
+
+ The final combined and filtered GFF3 file of TIRs.
 
 =back
 
