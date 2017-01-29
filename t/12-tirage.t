@@ -20,8 +20,8 @@ if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
 my $cmd     = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir = File::Spec->catdir('t', 'test_data');
 my $genome  = File::Spec->catfile($testdir, 'ref.fas');
-my $gff     = File::Spec->catfile($testdir, 'ref_tirs_filtered_mutator.gff3');
-my $outdir  = File::Spec->catdir($testdir, 'ref_tirs_filtered_mutator_tirages');
+my $gff     = File::Spec->catfile($testdir, 'ref_tirs_filtered_classified.gff3');
+my $outdir  = File::Spec->catdir($testdir,  'ref_tirs_filtered_classified_tirages');
 
 SKIP: {
     skip 'skip development tests', 4 unless $devtests;
