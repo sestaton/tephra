@@ -10,6 +10,7 @@ Version	Date	Location
 - Reduce output of 'findltrs' and 'findtrims' commands to GFF3 only.
 - Add --debug option for 'findtrims' command.
 - Add -o output file option for 'findtrims' command to clarify what result files are generated.
+- Reduce memory usage with 'findhelitrons' command and clean up intermediate files.
 
 0.05.0	1/12/17	Vancouver, BC
 
