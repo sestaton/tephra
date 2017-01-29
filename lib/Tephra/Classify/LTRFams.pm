@@ -420,12 +420,12 @@ sub write_families {
 
 sub combine_families {
     my ($self) = shift;
-    my ($outfiles) = @_;
+    my ($outfiles, $gff) = @_;
     my $genome = $self->genome->absolute->resolve;
     my $outdir = $self->outdir->absolute->resolve;
     
-    my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
-    my $outfile = File::Spec->catfile($outdir, $name.'_combined_LTR_families.fasta');
+    my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
+    my $outfile = File::Spec->catfile($outdir, $name.'_families.fasta');
     open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
     for my $file (nsort keys %$outfiles) {
