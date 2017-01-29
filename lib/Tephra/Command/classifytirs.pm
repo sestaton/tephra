@@ -60,10 +60,8 @@ sub _classify_tir_predictions {
     }
     my ($header, $features) = $classify_obj->collect_gff_features($opt->{gff});
 
-    #my (@fastas, @gffs);
     my $all_ct = (keys %$features);
     my ($tcmoutfile, $tcmfas) = $classify_obj->find_tc1_mariner($features, $header);
-    say join q{ }, $tcmoutfile, $tcmfas;
     my $tc1_ct = (keys %$features);
     my ($hatoutfile, $hatfas) = $classify_obj->find_hat($features, $header);
     my $hat_ct = (keys %$features);
@@ -75,7 +73,7 @@ sub _classify_tir_predictions {
     my $rem_ct = (keys %$features);
 
     my @fastas = grep { defined && /\.fasta$/ } ($tcmfas, $hatfas, $mutfas, $cacfas, $uncfas);
-    my @gffs = grep { defined && /\.gff.*$/ } ($tcmoutfile, $hatoutfile, $mutoutfile, $cacoutfile, $uncoutfile);
+    my @gffs = grep { defined && /\.gff3$/ } ($tcmoutfile, $hatoutfile, $mutoutfile, $cacoutfile, $uncoutfile);
 
     if (@fastas && @gffs) {
 	my %outfiles = (
