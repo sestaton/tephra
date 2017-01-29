@@ -174,15 +174,15 @@ sub calculate_ltr_ages {
 
 sub collect_feature_args {
     my $self = shift;
-    my $dir = $self->dir; #->absolute->resolve;
 
     my (@ltrs, %aln_args);
-    if ($self->all) {
+    if ($self->all || ! $self->dir) {
 	my ($files, $wdir) = $self->extract_ltr_features;
         $aln_args{ltrs} = { seqs => $files };
         $aln_args{resdir} = $wdir;
     }
     else {
+	my $dir = $self->dir->absolute->resolve; 
 	#my $wanted  = sub { push @ltrs, $File::Find::name if -f && /exemplar_ltrs.fasta$/ };
 	#my $process = sub { grep ! -d, @_ };
 	#find({ wanted => $wanted, preprocess => $process }, $dir);

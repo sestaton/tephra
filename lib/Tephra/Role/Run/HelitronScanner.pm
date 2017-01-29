@@ -67,7 +67,7 @@ sub run_hscan_headtail {
     my ($args, $jar, $subcmd) = @_;
     
     my @scan_args;
-    push @scan_args, "java -jar $jar $subcmd";
+    push @scan_args, "java -Xmx4g -jar $jar $subcmd";
 
     for my $opt (keys %$args) {
 	if (defined $args->{$opt}) {
@@ -96,7 +96,7 @@ sub run_hscan_pair {
     my ($args, $jar) = @_;
 
     my @pair_args;
-    push @pair_args, "java -jar $jar pairends";
+    push @pair_args, "java -Xmx4g -jar $jar pairends";
 
     for my $opt (keys %$args) {
 	if (defined $args->{$opt}) {
@@ -123,7 +123,7 @@ sub run_hscan_draw {
     my ($args, $jar) = @_;
 
     my @draw_args;
-    push @draw_args, "java -jar $jar draw";
+    push @draw_args, "java -Xmx4g -jar $jar draw";
 
     for my $opt (keys %$args) {
 	if (defined $args->{$opt}) {

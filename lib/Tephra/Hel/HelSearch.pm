@@ -46,6 +46,8 @@ sub find_helitrons {
     my $g_paired   = File::Spec->catfile($path, $name.'_hscan_paired.txt');
     my $g_helname  = File::Spec->catfile($path, $name.'_tephra_hscan_helitrons');
     my $full_hels  = $g_helname.'.hel.fa';
+    my $exte_hels  = $g_helname.'.ext.hel.fa';
+    my $flan_hels  = $g_helname.'.flanking.fa';
 
     #my $jar  = File::Spec->catfile($hscan_dir, "HelitronScanner.jar");
     my $parent = $jar->parent->parent; # unfortunately, the dist does not unpack in a separate dir
@@ -73,7 +75,13 @@ sub find_helitrons {
     $self->run_hscan_pair(\%pair_cmd, $jar);
     $self->run_hscan_draw(\%draw_cmd, $jar);
 
-    return $full_hels;
+    return { full_helitrons => $full_hels, 
+	     extended_seqs  => $exte_hels, 
+	     flanking_seqs  => $flan_hels,
+	     head           => $g_headlcvs,
+             tail           => $g_taillcvs,
+	     paired         => $g_paired
+    };
 }
 
 sub make_hscan_outfiles {
@@ -82,6 +90,8 @@ sub make_hscan_outfiles {
     my $gff    = $self->gff; 
     my $fasta  = $self->fasta;
     my $genome = $self->genome->absolute->resolve;
+    my ($full, $exte, $flank, $head, $tail, $paired) = 
+	@{$helitrons}{qw(full_helitrons extended_seqs flanking_seqs head tail paired)};
 
     open my $outg, '>', $gff or die "\nERROR: Could not open file: $gff\n";
     open my $outf, '>', $fasta or die "\nERROR: Could not open file: $fasta\n";
@@ -106,7 +116,7 @@ sub make_hscan_outfiles {
     
     my ($name, $seq, %hel);
     my $helct = 0;
-    open my $hin, '<', $helitrons or die "\nERROR: Could not open file: $helitrons\n";
+    open my $hin, '<', $full or die "\nERROR: Could not open file: $full\n";
     while (($name, $seq) = $self->read_seq(\*$hin)) {
 	$helct++;
 	my ($ref, $start, $stop) = ($name =~ /(^\S+)_\#SUB_(\d+)-(\d+)/);
@@ -140,6 +150,8 @@ sub make_hscan_outfiles {
 	}
     }
     close $outg;
+
+    unlink $full, $exte, $flank, $head, $tail, $paired; #TODO: optionally keep intermediate files
 }
 
 sub read_seq {
