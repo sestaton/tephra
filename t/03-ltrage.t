@@ -19,12 +19,12 @@ if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
 
 my $cmd     = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir = File::Spec->catdir('t', 'test_data');
-my $outdir  = File::Spec->catdir($testdir, 't_family_domains');
+my $outdir  = File::Spec->catdir($testdir,  't_family_domains');
 my $genome  = File::Spec->catfile($testdir, 'ref.fas');
-my $gff     = File::Spec->catfile($outdir, 'ref_ltrdigest85_combined_filtered_families.gff3');
-my $gindir  = File::Spec->catfile($outdir, 'ref_ltrdigest85_combined_filtered_gypsy');
-my $cindir  = File::Spec->catfile($outdir, 'ref_ltrdigest85_combined_filtered_copia');
-my $iindir  = File::Spec->catfile($outdir, 'ref_ltrdigest85_combined_filtered_unclassified');
+my $gff     = File::Spec->catfile($testdir, 'ref_tephra_ltrs_combined_filtered_classified.gff3');
+my $gindir  = File::Spec->catfile($outdir,  'ref_tephra_ltrs_combined_filtered_gypsy');
+my $cindir  = File::Spec->catfile($outdir,  'ref_tephra_ltrs_combined_filtered_copia');
+my $iindir  = File::Spec->catfile($outdir,  'ref_tephra_ltrs_combined_filtered_unclassified');
 my @dirs = ($gindir, $cindir, $iindir);
 
 SKIP: {
