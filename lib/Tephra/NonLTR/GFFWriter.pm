@@ -11,6 +11,7 @@ use File::Basename;
 use Sort::Naturally;
 use Tephra::Config::Exe;
 use namespace::autoclean;
+#use Data::Dump::Color;
 
 with 'Tephra::Role::Util';
 
@@ -84,7 +85,7 @@ sub _fasta_to_gff {
 
     my %regions;
     for my $file (@$seqs) {
-	next if $file =~ /tephra/;
+	#next if $file =~ /tephra/;
 	my ($name, $path, $suffix) = fileparse($file, qr/\.[^.]*/);
 	open my $in, '<', $file or die "\nERROR: Could not open file: $file\n";
 	while (my $line = <$in>) {
@@ -144,6 +145,8 @@ sub _fasta_to_gff {
     }
     close $faout;
     unlink $combined;
+
+    return;
 }
 
 sub _get_seq_region {
