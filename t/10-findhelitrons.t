@@ -27,7 +27,7 @@ my $hsfas     = File::Spec->catfile($testdir, 'ref_tephra_helitrons.fasta');
 my @results   = capture { system([0..5], "$cmd findhelitrons -h") };
 ok(@results, 'Can execute findhelitrons subcommand');
 
-my $find_cmd = "$cmd findhelitrons -g $genome -o $hsgff -f $hsfas";
+my $find_cmd = "$cmd findhelitrons -g $genome -o $hsgff";
 #say STDERR $find_cmd;
 
 #my @ret = capture { system([0..5], $find_cmd) };
