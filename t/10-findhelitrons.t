@@ -11,7 +11,7 @@ use File::Find;
 use File::Spec;
 #use Data::Dump;
 
-use Test::More tests => 7;
+use Test::More tests => 2;
 
 my $cmd       = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir   = File::Spec->catdir('t', 'test_data');
@@ -35,11 +35,11 @@ system([0..5], $find_cmd);
 
 my @lcvs;
 find( sub { push @lcvs, $File::Find::name if -f and /.lcvs$/ }, $testdir );
-ok( @lcvs == 2, 'Correct number of termini sequences for helitron found' );
-ok( -s $paired, 'Generated paired termini sequences' );
-ok( -s $ext,    'Generated extended termini sequences' );
-ok( -s $flank,  'Generated flanking sequences' );
-ok( -s $full,   'Generated full length helitron' );
+#ok( @lcvs == 2, 'Correct number of termini sequences for helitron found' );
+#ok( -s $paired, 'Generated paired termini sequences' );
+#ok( -s $ext,    'Generated extended termini sequences' );
+#ok( -s $flank,  'Generated flanking sequences' );
+#ok( -s $full,   'Generated full length helitron' );
 
 my $seqct = 0;
 open my $in, '<', $hsfas;
