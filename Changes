@@ -1,7 +1,7 @@
 Revision history for Tephra
 
 Version	Date	Location
-0.05.1	1/25/17	Vancouver, BC
+0.06.0	1/25/17	Vancouver, BC
 
 - Clean up file paths across in all classes to use absolute paths instead
   of relative to avoid problems.
@@ -12,7 +12,9 @@ Version	Date	Location
 - Add -o output file option for 'findtrims' command to clarify what result files are generated.
 - Reduce memory usage with 'findhelitrons' command and clean up intermediate files.
 - Add checks for required input files to 'maskref' command.
-
+- Modify output of 'findnonltrs' command to have identical basename for FASTA/GFF3.
+- Modify output	of 'classifyltrs' command to have identical basename for FASTA/GFF3.
+ 
 0.05.0	1/12/17	Vancouver, BC
 
 - Add test to 'sololtr' command to ensure the expected file of LTR exemplar sequences
