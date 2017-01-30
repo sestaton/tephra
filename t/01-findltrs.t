@@ -34,11 +34,11 @@ my $find_cmd = "$cmd findltrs -c $config -g $genome --clean";
 
 my ($stdout, $stderr, @ret) = capture { system([0..5], $find_cmd) };
       
-my @files;
-find( sub { push @files, $File::Find::name if /\.gff3$/ }, $testdir);
+#my @files;
+#find( sub { push @files, $File::Find::name if /\.gff3$/ }, $testdir);
 
 #dd \@files;
-ok( @files == 1, 'Can find some ltrs' ); # 2 ltrdigest files + combined file
+ok( -e $outgff, 'Can find some LTRs' );
 
 my $combined;
 for my $line (split /^/, $stderr) {
