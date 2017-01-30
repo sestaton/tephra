@@ -12,6 +12,7 @@ use Bio::DB::HTS::Faidx;
 use List::Util  qw(min max);
 use Time::HiRes qw(gettimeofday);
 use File::Path  qw(make_path);
+#use File::Copy  qw(move);
 use Cwd         qw(abs_path);         
 use Parallel::ForkManager;
 use Carp 'croak';
@@ -425,7 +426,8 @@ sub combine_families {
     my $outdir = $self->outdir->absolute->resolve;
     
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $outfile = File::Spec->catfile($outdir, $name.'_families.fasta');
+    my $outfile = File::Spec->catfile($outdir, $name.'_classified_families.fasta');
+
     open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
     for my $file (nsort keys %$outfiles) {
@@ -441,6 +443,8 @@ sub combine_families {
 	#unlink $file;
     }
     close $outfile;
+
+    return;
 }
 
 sub annotate_gff {
@@ -449,7 +453,7 @@ sub annotate_gff {
     my $outdir = $self->outdir->absolute->resolve;
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $outfile = File::Spec->catfile($outdir, $name.'_families.gff3');
+    my $outfile = File::Spec->catfile($outdir, $name.'_classified_families.gff3');
     open my $in, '<', $gff or die "\nERROR: Could not open file: $gff\n";
     open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
@@ -479,6 +483,10 @@ sub annotate_gff {
     }
     close $in;
     close $out;
+
+    #move $outfile, $gff or die "ERROR: move failed: $!";
+
+    return;
 }
 
 sub _store_seq {
