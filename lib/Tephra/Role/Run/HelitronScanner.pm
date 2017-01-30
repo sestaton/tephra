@@ -50,7 +50,7 @@ has gff => (
 has fasta => (
     is       => 'ro',
     isa      => 'Path::Class::File',
-    required => 1,
+    required => 0,
     coerce   => 1,
 );
 
