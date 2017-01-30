@@ -15,8 +15,9 @@ sub opt_spec {
 	[ "repeatdb|d=s",   "The file of repeat sequences in FASTA format to use for classification "                ], 
 	[ "hitlength|l=i",  "The alignment length cutoff for BLAST hits to the repeat database (Default: 80) "       ],
 	[ "percentid|p=i",  "The percent identity cutoff for BLAST hits to the repeat database (Default: 80) "       ],
-	[ "gff|f=s",        "The GFF3 file of LTR-RTs in <genome> "                                                  ],
-	[ "outdir|o=s",     "The output directory for placing categorized elements "                                 ],
+	[ "outgff|o=s",     "The output GFF3 file of classified LTR-RTs in <genome> "                                ],
+	[ "ingff|i=s",      "The input GFF3 file of LTR-RTs in <genome> "                                            ],
+	[ "outdir|r=s",     "The output directory for placing categorized elements "                                 ],
 	[ "threads|t=i",    "The number of threads to use for clustering coding domains "                            ],
 	[ "percentcov|c=i", "The percent coverage cutoff for the shorter element in pairwise matches (Default: 50) " ],
         [ "percentid|p=i",  "The percent identity cutoff for classification of pairwise matches (Default: 80) "      ],
@@ -37,7 +38,7 @@ sub validate_args {
         $self->help;
         exit(0);
     }
-    elsif (!$opt->{genome} || !$opt->{repeatdb} || !$opt->{gff} || !$opt->{outdir}) {
+    elsif (!$opt->{genome} || !$opt->{repeatdb} || !$opt->{ingff} || !$opt->{outgff} || !$opt->{outdir}) {
 	say STDERR "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
@@ -49,7 +50,7 @@ sub validate_args {
         say STDERR "\nERROR: The repeat database file does not exist. Check arguments.";
         $self->help and exit(0);
     }
-    elsif (! -e $opt->{gff}) {
+    elsif (! -e $opt->{ingff}) {
         say STDERR "\nERROR: The input GFF3 file does not exist. Check arguments.";
         $self->help and exit(0);
     }
@@ -67,7 +68,7 @@ sub _classify_ltr_superfamilies {
 
     my $genome   = $opt->{genome};
     my $repeatdb = $opt->{repeatdb};
-    my $gff      = $opt->{gff};
+    my $ingff    = $opt->{ingff};
     my $outdir   = $opt->{outdir};
     my $threads  = $opt->{threads} // 1;
 
@@ -78,11 +79,11 @@ sub _classify_ltr_superfamilies {
     my $classify_obj = Tephra::Classify::LTRSfams->new( 
 	genome   => $genome, 
 	repeatdb => $repeatdb, 
-	gff      => $gff,
+	gff      => $ingff,
 	threads  => $threads,
     );
 
-    my ($header, $features) = $classify_obj->collect_gff_features($gff);
+    my ($header, $features) = $classify_obj->collect_gff_features($ingff);
     my ($gypsy, $copia) = $classify_obj->find_gypsy_copia($features);
 
     my ($unc_fas, $ltr_rregion_map) = $classify_obj->find_unclassified($features);
@@ -101,7 +102,8 @@ sub _classify_ltr_families {
 
     my $genome   = $opt->{genome};
     my $repeatdb = $opt->{repeatdb};
-    my $gff      = $opt->{gff};
+    my $ingff    = $opt->{ingff};
+    my $outgff   = $opt->{outgff};
     my $outdir   = $opt->{outdir};
     my $threads  = $opt->{threads} // 1;
     my $hpcov    = $opt->{percentcov} // 50;
@@ -119,6 +121,7 @@ sub _classify_ltr_families {
 
     my $classify_fams_obj = Tephra::Classify::LTRFams->new(
 	genome        => $genome,
+	gff           => $outgff,
 	outdir        => $outdir,
 	threads       => $threads,
 	blast_hit_cov => $hpcov,
@@ -128,8 +131,8 @@ sub _classify_ltr_families {
     );
 
     my ($outfiles, $annot_ids) = $classify_fams_obj->make_ltr_families($gffs);
-    $classify_fams_obj->combine_families($outfiles, $gff);
-    $classify_fams_obj->annotate_gff($annot_ids, $gff);
+    $classify_fams_obj->combine_families($outfiles);
+    $classify_fams_obj->annotate_gff($annot_ids, $ingff);
     unlink $gyp_gff, $cop_gff, $unc_gff;
 }
 
@@ -143,8 +146,9 @@ USAGE: tephra classifyltrs [-h] [-m]
 Required:
     -g|genome     :   The genome sequences in FASTA format used to search for LTR-RTs. 
     -d|repeatdb   :   The file of repeat sequences in FASTA format to use for classification. 
-    -f|gff        :   The GFF3 file of LTR-RTs in <--genome>.
-    -o|outdir     :   The output directory for placing categorized elements.
+    -o|outgff     :   The output GFF3 file of classified LTR-RTs in <genome>.
+    -i|ingff      :   The input GFF3 file of LTR-RTs in <genome>.
+    -r|outdir     :   The output directory for placing categorized elements.
 
 Options:
     -t|threads    :   The number of threads to use for clustering coding domains (Default: 1).    
@@ -167,7 +171,7 @@ __END__
 
 =head1 SYNOPSIS    
 
- tephra classifyltrs -g ref.fas -d repeatdb.fas -f ref_tephra.gff3 -o ref_classified_ltrs -t 12
+ tephra classifyltrs -g ref.fas -d repeatdb.fas -i ref_tephra.gff3 -o ref_tephra_classified.gff3 -r ref_classified_ltrs -t 12
 
 =head1 DESCRIPTION
 
@@ -190,11 +194,15 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
  The file of repeat sequences in FASTA format to use for classification.
 
-=item -f, --gff
+=item -o, --outgff
 
- The GFF3 file of LTR-RTs in <--genome> as output by the 'tephra findltrs' command.
+ The output GFF3 file of classified LTR-RTs in <genome>.
 
-=item -o, --outdir
+=item -i, --ingff
+
+ The input GFF3 file of LTR-RTs in <genome>.
+
+=item -r, --outdir
 
  The output directory for placing categorized elements.
 
