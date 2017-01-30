@@ -11,11 +11,13 @@ use File::Find;
 use File::Spec;
 #use Data::Dump::Color;
 
-use Test::More tests => 9;
+use Test::More tests => 13;
 
 my $cmd     = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir = File::Spec->catdir('t', 'test_data');
 my $genome  = File::Spec->catfile($testdir, 'ref.fas');
+my $outgff  = File::Spec->catfile($testdir, 'ref_tephra_ltrs_combined_filtered.gff3');
+my $outfas  = File::Spec->catfile($testdir, 'ref_tephra_ltrs_combined_filtered.fasta');
 ## these are subsets for testing
 #my $model   = File::Spec->catfile($testdir, 'te.hmm');
 #my $trnas   = File::Spec->catfile($testdir, 'trnas.fas');
@@ -36,7 +38,7 @@ my @files;
 find( sub { push @files, $File::Find::name if /\.gff3$/ }, $testdir);
 
 #dd \@files;
-ok( @files == 3, 'Can find some ltrs' ); # 2 ltrdigest files + combined file
+ok( @files == 1, 'Can find some ltrs' ); # 2 ltrdigest files + combined file
 
 my $combined;
 for my $line (split /^/, $stderr) {
@@ -59,9 +61,30 @@ for my $line (split /^/, $stderr) {
     }
 }
 
+ok( -e $outgff, 'Correctly classified LTRs' );
+ok( -e $outfas, 'Correctly classified LTRs' );
+
+my $seqct = 0;
+open my $in, '<', $outfas;
+while (<$in>) { $seqct++ if /^>/; }
+close $in;
+
+my $gffct = 0;
+open my $gin, '<', $outgff;
+while (<$gin>) { 
+    chomp;
+    next if /^#/;
+    my @f = split /\t/;
+    $gffct++ if $f[2] eq 'LTR_retrotransposon'
+}
+close $gin;
+
+ok( $seqct == 6, 'Correct number of LTRs classified' );
+ok( $gffct == 6, 'Correct number of LTRs classified' );
+
 ## clean up
 my @outfiles;
-find( sub { push @outfiles, $File::Find::name if /^ref_ltr/ && ! /combined_filtered.gff3$/ }, $testdir);
+find( sub { push @outfiles, $File::Find::name if /^ref_/ && ! /combined_filtered.gff3$/ }, $testdir);
 unlink @outfiles;
 unlink $config;
     
