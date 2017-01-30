@@ -540,6 +540,8 @@ sub sort_features {
     }
     else {
 	my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
+	my $label = $self->is_trim ? 'tephra_trims' : 'tephra_ltrs';
+	$name =~ s/ltrdigest85/$label/;
 	$outfasta = File::Spec->catfile( abs_path($path), $name.'_combined_filtered.fasta' );
 	$outfile  = File::Spec->catfile( abs_path($path), $name.'_combined_filtered.gff3' );
     }
