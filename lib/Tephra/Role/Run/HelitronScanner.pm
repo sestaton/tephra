@@ -19,11 +19,11 @@ Tephra::Role::Run::HelitronScanner - Helper role for running HelitronScanner
 
 =head1 VERSION
 
-Version 0.05.1
+Version 0.06.0
 
 =cut
 
-our $VERSION = '0.05.1';
+our $VERSION = '0.06.0';
 $VERSION = eval $VERSION;
 
 has genome => (
