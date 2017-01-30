@@ -33,7 +33,7 @@ sub validate_args {
         $self->help;
         exit(0);
     }
-    elsif (!$opt->{genome} || !$opt->{outgff} || !$opt->{outfasta}) {
+    elsif (!$opt->{genome} || !$opt->{outgff}) {
 	say STDERR "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
@@ -54,7 +54,6 @@ sub _run_helitron_search {
     my $genome   = $opt->{genome};
     my $hscan    = $opt->{helitronscanner};
     my $gff      = $opt->{outgff};
-    my $fasta    = $opt->{outfasta};
     my $debug    = $opt->{debug} // 0;
     my $config   = Tephra::Config::Exe->new->get_config_paths;
     my ($hscanj) = @{$config}{qw(hscanjar)};
@@ -62,13 +61,17 @@ sub _run_helitron_search {
     $hscan //= $hscanj;
 
     #say STDERR "hscandir: $hscan";
-    my $hel_search = Tephra::Hel::HelSearch->new( 
-	genome          => $genome, 
+    my %opts = (
+	genome          => $genome,
 	helitronscanner => $hscan,
-	gff             => $gff,
-	fasta           => $fasta,
-	debug           => $debug,
-    );
+        gff             => $gff,
+        debug           => $debug );
+
+    if (defined $opt->{outfasta}) {
+	$opts{fasta} = $opt->{outfasta};
+    }
+
+    my $hel_search = Tephra::Hel::HelSearch->new(%opts);
 
     my $hel_seqs = $hel_search->find_helitrons;
     $hel_search->make_hscan_outfiles($hel_seqs);
@@ -86,9 +89,10 @@ USAGE: tephra findhelitrons [-h] [-m]
 Required:
     -g|genome               :   The genome sequences in FASTA format to search for Helitrons.. 
     -o|outgff               :   The final combined and filtered GFF3 file of Helitrons.
-    -f|outfasta             :   The final combined and filtered FASTA file of Helitrons.
 
 Options:
+    -f|outfasta             :   The final combined and filtered FASTA file of Helitrons.
+                                (Default name is that same as the GFF3 file except with the ".fasta" extension)
     -d|helitronscanner_dir  :   The HelitronScanner directory containing the ".jar" files and Training Set.
                                 This should be configured automatically upon a successful install.
     --debug                 :   Show external command for debugging (Default: no).
@@ -107,7 +111,7 @@ __END__
 
 =head1 SYNOPSIS    
 
- tephra findhelitrons -g ref.fas -o ref_helitrons.gff3 -f ref_helitrons.fasta
+ tephra findhelitrons -g ref.fas -o ref_helitrons.gff3
 
 =head1 DESCRIPTION
 
@@ -129,15 +133,15 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
  The final combined and filtered GFF3 file of Helitrons.
 
-=item -f, --outfasta
-
- The final combined and filtered FASTA file of Helitrons.
-
 =back
 
 =head1 OPTIONS
 
 =over 2
+
+=item -f, --outfasta
+
+  The final combined and filtered FASTA file of Helitrons.  
 
 =item -d, --helitronscanner_dir
 
