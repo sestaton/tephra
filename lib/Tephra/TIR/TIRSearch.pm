@@ -5,6 +5,7 @@ use Moose;
 use Bio::GFF3::LowLevel qw(gff3_format_feature);
 use List::UtilsBy       qw(nsort_by);
 use Cwd                 qw(abs_path);
+use File::Copy          qw(move);
 use File::Spec;
 use File::Basename;
 use Path::Class::File;
@@ -123,6 +124,7 @@ sub _filter_tir_gff {
     }
     close $out;
 
+    move $outfile, $gff or die "ERROR: move failed: $!";
     return $outfile;
 }
 
