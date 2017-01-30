@@ -88,10 +88,13 @@ sub make_hscan_outfiles {
     my $self = shift;
     my ($helitrons) = @_;
     my $gff    = $self->gff; 
-    my $fasta  = $self->fasta;
     my $genome = $self->genome->absolute->resolve;
+
     my ($full, $exte, $flank, $head, $tail, $paired) = 
 	@{$helitrons}{qw(full_helitrons extended_seqs flanking_seqs head tail paired)};
+
+    my ($gname, $gpath, $gsuffix) = fileparse($gff, qr/\.[^.]*/); 
+    my $fasta = $self->fasta // File::Spec->catfile($gpath, $gname.'.fasta');
 
     open my $outg, '>', $gff or die "\nERROR: Could not open file: $gff\n";
     open my $outf, '>', $fasta or die "\nERROR: Could not open file: $fasta\n";
