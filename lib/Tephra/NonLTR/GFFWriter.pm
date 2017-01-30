@@ -31,6 +31,7 @@ has genome      => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
 has fastadir    => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
 has outdir      => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
 has n_threshold => ( is => 'ro', isa => 'Num', required => 0, default => 0.30 );
+has gff         => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
 
 sub write_gff {
     my $self = shift;
@@ -65,17 +66,19 @@ sub write_gff {
 
 sub _fasta_to_gff {
     my $self = shift;
+    my ($seqs) = @_;
     my $outdir = $self->outdir;
     my $genome = $self->genome;
-    my ($seqs) = @_;
+    my $outgff = $self->gff;
 
     my $index = $self->index_ref($genome);
     my $clade_map = $self->_build_clade_map;
 
-    my $name = basename($outdir);
-    my $outfile = File::Spec->catfile( abs_path($outdir), $name.'_tephra_nonltr.gff3' );
-    my $fas     = File::Spec->catfile( abs_path($outdir), $name.'_tephra_nonltr.fasta' );
-    open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    #my $name = basename($outdir);
+    my ($name, $path, $suffix) = fileparse($outgff, qr/\.[^.]*/);
+    #my $outfile = File::Spec->catfile( abs_path($outdir), $name.'_tephra_nonltr.gff3' );
+    my $fas = File::Spec->catfile($path, $name.'.fasta' );
+    open my $out, '>', $outgff or die "\nERROR: Could not open file: $outgff\n";
     open my $faout, '>', $fas or die "\nERROR: Could not open file: $fas\n";
     my ($lens, $combined) = $self->_get_seq_region;
 
