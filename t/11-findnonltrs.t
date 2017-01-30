@@ -21,25 +21,26 @@ if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
 my $cmd     = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir = File::Spec->catdir('t', 'test_data');
 my $genome  = File::Spec->catfile($testdir, 'Ha1.fa');
-my $outdir  = File::Spec->catdir($testdir, 'Ha1_nonLTRs');
+my $gff     = File::Spec->catfile($testdir, 'Ha1_nonLTRs.gff3');
+my $fas     = File::Spec->catfile($testdir, 'Ha1_nonLTRs.fasta');
+my $outdir  = File::Spec->catdir($testdir,  'Ha1_nonLTRs');
 
 my @results = capture { system([0..5], "$cmd findnonltrs -h") };
 ok( @results, 'Can execute findnonltrs subcommand' );
 
 SKIP: {
     skip 'skip lengthy tests', 1 unless $devtests;
-    my $find_cmd = "$cmd findnonltrs -g $genome";
+    my $find_cmd = "$cmd findnonltrs -g $genome -o $gff";
     #say STDERR $find_cmd;
 
     #my ($stdout, $stderr, @ret) = capture { system([0..5], $find_cmd) };
     system([0..5], $find_cmd);
 
-    my @files;
-    find( sub { push @files, $File::Find::name if /\.gff3$/ }, $outdir);
-    ok( @files == 1, 'Can find some non-LTRs' );
+    ok( -e $gff, 'Can find some non-LTRs' );
+    ok( -e $fas, 'Can find some non-LTRs' );
 
     ## clean up
-    unlink @files;
+    unlink $gff, $fas;
     remove_tree( $outdir, { safe => 1 } );
 }
     
