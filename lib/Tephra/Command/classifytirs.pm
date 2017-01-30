@@ -10,7 +10,7 @@ use Tephra::Classify::TIRSfams;
 sub opt_spec {
     return (    
 	[ "genome|g=s",   "The genome sequences in FASTA format to search for TIRs "   ],
-	[ "gff|f=s",      "The GFF3 file of TIR TEs in <genome> "                      ],
+	[ "gff|i=s",      "The GFF3 file of TIR TEs in <genome> "                      ],
 	[ "outfile|o=s",  "The final combined and filtered GFF3 file of TIRs "         ],
 	[ "help|h",       "Display the usage menu and exit. "                          ],
         [ "man|m",        "Display the full manual. "                                  ],
@@ -100,7 +100,7 @@ USAGE: tephra classifytirs [-h] [-m]
 
 Required:
     -g|genome     :   The genome sequences in FASTA format to search for TIR TEs. 
-    -f|gff        :   The GFF3 file of LTR-RTs in <--genome>.
+    -i|gff        :   The GFF3 file of LTR-RTs in <--genome>.
     -o|outfile    :   The final combined and filtered GFF3 file of TIRs.
 
 END
@@ -118,7 +118,7 @@ __END__
 
 =head1 SYNOPSIS    
 
- tephra findltrs -g ref.fas -f ref_tephra_tirs.gff3 -o ref_tephra_tirs_classified.gff3
+ tephra findltrs -g ref.fas -i ref_tephra_tirs.gff3 -o ref_tephra_tirs_classified.gff3
 
 =head1 DESCRIPTION
  
@@ -137,7 +137,7 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
  The genome sequences in FASTA format used to search for LTR-RTs.
 
-=item -f, --gff
+=item -i, --gff
 
  The GFF3 file of LTR-RTs in <--genome> as output by the 'tephra findtirs' command.
 
