@@ -14,6 +14,8 @@ use Test::More tests => 2;
 my $cmd     = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir = File::Spec->catdir('t', 'test_data');
 my $genome  = File::Spec->catfile($testdir, 'ref.fas');
+my $gff     = File::Spec->catfile($testdir, 'ref_tirs.gff3');
+my $fas     = File::Spec->catfile($testdir, 'ref_tirs.fasta');
 ## these are subsets for testing
 #my $model   = File::Spec->catfile($testdir, 'te.hmm');
 
@@ -22,18 +24,19 @@ my @results = capture { system([0..5], "$cmd findtirs -h") };
 ok(@results, 'Can execute findtirs subcommand');
 
 #my $find_cmd = "$cmd findtirs -g $genome -d $model --clean";
-my $find_cmd = "$cmd findtirs -g $genome --clean";
+my $find_cmd = "$cmd findtirs -g $genome -o $gff --clean";
 #say STDERR $find_cmd;
 
 my @ret = capture { system([0..5], $find_cmd) };
 
 my @files;
 find( sub { push @files, $File::Find::name if /tirs_?(?:filtered)?.gff3$/ }, $testdir);
-ok( @files == 2, 'Can find some tirs' ); # original + filtered gff3
+ok( @files == 1, 'Can find some tirs' ); # only 1 after rename
 
 ## clean up
-my @outfiles;
-find( sub { push @outfiles, $File::Find::name if /^ref_tirs/ && ! /filtered.gff3$/ }, $testdir);
-unlink @outfiles;
+#my @outfiles;
+#find( sub { push @outfiles, $File::Find::name if /^ref_tirs/ && ! /$gff/ }, $testdir);
+#unlink @outfiles;
+unlink $fas;
     
 done_testing();
