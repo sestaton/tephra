@@ -37,9 +37,21 @@ sub validate_args {
         $self->help;
         exit(0);
     }
-    elsif (!$opt->{genome} || !$opt->{repeatdb} || !$opt->{gff}) {
+    elsif (!$opt->{genome} || !$opt->{repeatdb} || !$opt->{gff} || !$opt->{outdir}) {
 	say STDERR "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
+    }
+    elsif (! -e $opt->{genome}) {
+        say STDERR "\nERROR: The genome file does not exist. Check arguments.";
+        $self->help and exit(0);
+    }
+    elsif (! -e $opt->{repeatdb}) {
+        say STDERR "\nERROR: The repeat database file does not exist. Check arguments.";
+        $self->help and exit(0);
+    }
+    elsif (! -e $opt->{gff}) {
+        say STDERR "\nERROR: The input GFF3 file does not exist. Check arguments.";
+        $self->help and exit(0);
     }
 } 
 
@@ -116,7 +128,7 @@ sub _classify_ltr_families {
     );
 
     my ($outfiles, $annot_ids) = $classify_fams_obj->make_ltr_families($gffs);
-    $classify_fams_obj->combine_families($outfiles);
+    $classify_fams_obj->combine_families($outfiles, $gff);
     $classify_fams_obj->annotate_gff($annot_ids, $gff);
     unlink $gyp_gff, $cop_gff, $unc_gff;
 }
