@@ -12,7 +12,6 @@ use Bio::DB::HTS::Faidx;
 use List::Util  qw(min max);
 use Time::HiRes qw(gettimeofday);
 use File::Path  qw(make_path);
-#use File::Copy  qw(move);
 use Cwd         qw(abs_path);         
 use Parallel::ForkManager;
 use Carp 'croak';
@@ -78,6 +77,12 @@ has threads => (
     default   => 1,
 );
 
+has gff => (
+      is       => 'ro',
+      isa      => 'Path::Class::File',
+      required => 1,
+      coerce   => 1,
+);
 #
 # methods
 #
@@ -421,12 +426,13 @@ sub write_families {
 
 sub combine_families {
     my ($self) = shift;
-    my ($outfiles, $gff) = @_;
+    my ($outfiles) = @_;
     my $genome = $self->genome->absolute->resolve;
     my $outdir = $self->outdir->absolute->resolve;
+    my $outgff = $self->gff;
     
-    my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $outfile = File::Spec->catfile($outdir, $name.'_classified_families.fasta');
+    my ($name, $path, $suffix) = fileparse($outgff, qr/\.[^.]*/);
+    my $outfile = File::Spec->catfile($path, $name.'.fasta');
 
     open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
@@ -449,13 +455,12 @@ sub combine_families {
 
 sub annotate_gff {
     my $self = shift;
-    my ($annot_ids, $gff) = @_;
+    my ($annot_ids, $ingff) = @_;
     my $outdir = $self->outdir->absolute->resolve;
+    my $outgff = $self->gff;
 
-    my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $outfile = File::Spec->catfile($outdir, $name.'_classified_families.gff3');
-    open my $in, '<', $gff or die "\nERROR: Could not open file: $gff\n";
-    open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    open my $in, '<', $ingff or die "\nERROR: Could not open file: $ingff\n";
+    open my $out, '>', $outgff or die "\nERROR: Could not open file: $outgff\n";
 
     while (my $line = <$in>) {
 	chomp $line;
@@ -483,8 +488,6 @@ sub annotate_gff {
     }
     close $in;
     close $out;
-
-    #move $outfile, $gff or die "ERROR: move failed: $!";
 
     return;
 }
