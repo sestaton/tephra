@@ -24,7 +24,7 @@ my $cmd      = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir  = File::Spec->catdir('t', 'test_data');
 my $outdir   = File::Spec->catfile($testdir, 't_family_domains');
 my $genome   = File::Spec->catfile($testdir, 'ref.fas');
-my $gff      = File::Spec->catfile($testdir, 'ref_ltrdigest85_combined_filtered.gff3');
+my $gff      = File::Spec->catfile($testdir, 'ref_tephra_ltrs_combined_filtered.gff3');
 my $repeatdb = File::Spec->catfile($testdir, 'repdb.fas');
 
 SKIP: {
@@ -48,7 +48,7 @@ SKIP: {
     
     my @all;
     find( sub {
-	push @all, $File::Find::name if /ref_combined_LTR_families.fasta/ },
+	push @all, $File::Find::name if /ref_tephra_ltrs_combined_filtered_classified_families.fasta/ },
 	  $outdir );
     
     my $combined = shift @all;
@@ -59,6 +59,8 @@ SKIP: {
     
     ok( $ct == 6, 'Correct number of classified elements in combined family file' );
     say "$ct total combined elements";
+
+    unlink @all;
 
 };
 
