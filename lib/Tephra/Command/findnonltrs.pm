@@ -13,7 +13,8 @@ sub opt_spec {
     return (    
 	[ "genome|g=s",  "The genome sequences in FASTA format to search for non-LTR-RTs " ],
 	[ "pdir|d=s",    "The directory to search for HMMs (configured automatically) "    ],
-	[ "outdir|o=s",  "The location to place the results "                              ],
+	[ "outdir|d=s",  "The location to place the results "                              ],
+	[ "gff|o=s",     "The GFF3 outfile to place the non-LTRs found in <genome> "       ],
 	[ "verbose|v",   "Display progress for each chromosome (Default: no) "             ],
 	[ "help|h",      "Display the usage menu and exit. "                               ],
         [ "man|m",       "Display the full manual. "                                       ],
@@ -32,9 +33,13 @@ sub validate_args {
         $self->help;
         exit(0);
     }
-    elsif (!$opt->{genome}) {
+    elsif (!$opt->{genome} || !$opt->{gff}) {
 	say STDERR "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
+    }
+    elsif (! -e $opt->{genome}) {
+        say STDERR "\nERROR: The genome file does not exist. Check arguments.";
+        $self->help and exit(0);
     }
 } 
 
@@ -49,6 +54,7 @@ sub _run_nonltr_search {
     
     my $genome  = $opt->{genome};
     my $outdir  = $opt->{outdir};
+    my $gff     = $opt->{gff};
     my $pdir    = $opt->{pdir} // $ENV{TEPHRA_DIR} // File::Spec->catdir($ENV{HOME}, '.tephra');
     my $verbose = $opt->{verbose} // 0;
 
@@ -63,7 +69,8 @@ sub _run_nonltr_search {
     my $gff_obj = Tephra::NonLTR::GFFWriter->new(
 	genome   => $genome,
         fastadir => $genomedir,
-	outdir   => $outputdir );
+	outdir   => $outputdir,
+	gff      => $gff );
 
     $gff_obj->write_gff;
 }
@@ -77,9 +84,10 @@ USAGE: tephra findnonltrs [-h] [-m]
 
 Required:
     -g|genome     :   The genome sequences in FASTA format to search for non-LTR-RTs. 
+    -o|gff        :   The GFF3 outfile to place the non-LTRs found in <genome>.
 
 Options:
-    -o|outdir     :   The location to place the results.
+    -d|outdir     :   The location to place the results.
     -p|pdir       :   Location of the HMM models (Default: configured automatically).
 
 END
@@ -97,7 +105,7 @@ __END__
 
 =head1 SYNOPSIS    
 
- tephra findnonltrs -g genome.fas -o ref_nonltrs_results
+ tephra findnonltrs -g genome.fas -d ref_nonltrs_results -o genome_nonltrs.gff3
 
 =head1 DESCRIPTION
  
@@ -115,6 +123,10 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =item -g, --genome
 
 The genome sequences in FASTA format to search for non-LTR-RTs.
+
+=item o, --gff
+
+ The GFF3 outfile to place the non-LTRs found in <genome>.
 
 =back
 
