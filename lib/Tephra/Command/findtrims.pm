@@ -72,7 +72,7 @@ sub _refine_trim_predictions {
     $refine_obj->sort_features({ gff               => $relaxed_gff, 
 				 combined_features => $combined_features });
 
-    unlink $relaxed_gff, $strict_gff;
+    #unlink $relaxed_gff, $strict_gff;
 }
 
 sub _run_trim_search {
