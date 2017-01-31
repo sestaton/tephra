@@ -98,7 +98,7 @@ char codon_table(char *temp){
       pep = 'X';
     }else{
       pep = 'X';
-      printf("nonsense character %s in fasta file\n",temp);
+      /* printf("nonsense character %s in fasta file\n",temp); */
     }
   }
   return pep;
