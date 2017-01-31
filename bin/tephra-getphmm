@@ -32,8 +32,8 @@ if (!$seq || !$phmm_file || !$out_dir) {
     exit(1);
 }
 
-my $seq_file = File::Spec->catfile($out_dir, "nucleotide_orfs.fas");       
-my $pep_file = File::Spec->catfile($out_dir, "translated_orfs.faa");
+my $seq_file = File::Spec->catfile($out_dir, 'nucleotide_orfs.fas');       
+my $pep_file = File::Spec->catfile($out_dir, 'translated_orfs.faa');
 open my $out, '>', $seq_file or die "\nERROR: Could not open file: $seq_file";
 say $out $seq;
 close $out;
@@ -43,7 +43,7 @@ my ($hmmbin, $transeq) = @{$config}{qw(hmmer2bin transeq)};
 my $hmmsearch = File::Spec->catfile($hmmbin, 'hmmsearch');
 
 try {
-    system($transeq, "-frame=f", $seq_file, "-outseq=$pep_file", "-auto");
+    system($transeq, "-frame=f", $seq_file, "-outseq=$pep_file", "-auto", "-trim", "yes", "-warning", "no");
 }
 catch {
     print "\nERROR: transeq failed. Here is the exception: $_\n";
@@ -61,7 +61,7 @@ sub parse_hmmsearch {
     my ($hmm_results, $pep_file) = @_;
 
     my ($name, $path, $suffix) = fileparse($pep_file, qr/\.[^.]*/);
-    my $hmmout = File::Spec->catfile($path, $name."_hmmsearch.txt");
+    my $hmmout = File::Spec->catfile($path, $name.'_hmmsearch.txt');
     open my $o, '>', $hmmout or die "\nERROR: Could not open file: $hmmout";;
     print $o @$hmm_results;
     close $o;
