@@ -590,7 +590,7 @@ sub sort_features {
 			$elem =~ s/\d+.*/$count/;
 
 			my $id = join "_", $elem, $chromosome, $start, $end;
-			$id =~ s/LTR_/TRIM_/g
+			$id =~ s/LTR_/RLT_TRIM_/g
 			    if $self->is_trim;
 
 			$self->_get_ltr_range($index, $id, $chromosome, $start, $end, $ofas);
@@ -633,7 +633,7 @@ sub sort_features {
 		my $elem = $feature->{attributes}{ID}[0];
 		$elem =~ s/\d+.*//;
 		$elem .= $count;
-		$elem =~ s/LTR_/TRIM_/g 
+		$elem =~ s/LTR_/RLT_TRIM_/g 
 		    if $self->is_trim;
 
 		my $id = join "_", $elem, $chromosome, $start, $end;
