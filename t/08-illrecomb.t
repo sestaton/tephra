@@ -66,13 +66,13 @@ SKIP: {
     
     unlink $allstfile, $illstfile, $seqfile;
 
-    ## clean up
-    my @outfiles;
-    find( sub { 
-        push @outfiles, $File::Find::name 
-            if /\.log$|RLG_family9/ }, $testdir);
+    ## clean up (this is done automatically now in v0.06.0)
+    #my @outfiles;
+    #find( sub { 
+    #    push @outfiles, $File::Find::name 
+    #        if /\.log$|RLG_family9/ }, $testdir);
     
-    unlink @outfiles;
+    #unlink @outfiles;
 };
 
 done_testing();
