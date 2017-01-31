@@ -656,6 +656,8 @@ sub _get_ltr_range {
     my $location = "$chromosome:$start-$end";
     my ($seq, $length) = $index->get_sequence($location);
 
+    chomp $seq;
+    $seq =~ s/^\s+|\s+$//g
     $seq =~ s/.{60}\K/\n/g;
     say $ofh join "\n", ">".$id, $seq;
 }
