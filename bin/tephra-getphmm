@@ -43,7 +43,7 @@ my ($hmmbin, $transeq) = @{$config}{qw(hmmer2bin transeq)};
 my $hmmsearch = File::Spec->catfile($hmmbin, 'hmmsearch');
 
 try {
-    system($transeq, "-frame=f", $seq_file, "-outseq=$pep_file", "-auto", "-trim", "yes", "-warning", "no");
+    system($transeq, "-frame=f", $seq_file, "-outseq=$pep_file", "-auto", "-trim", "yes");
 }
 catch {
     print "\nERROR: transeq failed. Here is the exception: $_\n";
