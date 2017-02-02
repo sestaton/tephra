@@ -18,8 +18,8 @@ make
 #cover -test -blib -ignore "blib/lib/Tephra/Command.pm" -report coveralls
 #prove -bv t/04-findtirs.t
 #prove -bv t/0[45]*t
-#make test
-prove -bv t/01-findltrs.t
-ls -l t/test_data
-perl -Mblib blib/bin/tephra findltrs -c t/test_data/tephra_ltr_config.yml -g t/test_data/ref.fas -t t/test_data/trnas.fas -d t/test_data/te.hmm --clean --debug
+make test
+#prove -bv t/01-findltrs.t
+#ls -l t/test_data
+#perl -Mblib blib/bin/tephra findltrs -c t/test_data/tephra_ltr_config.yml -g t/test_data/ref.fas -t t/test_data/trnas.fas -d t/test_data/te.hmm --clean --debug
 
