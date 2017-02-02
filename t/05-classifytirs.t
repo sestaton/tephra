@@ -24,7 +24,7 @@ my @assemb_results = capture { system([0..5], "$cmd classifyltrs -h") };
 
 ok(@assemb_results, 'Can execute classifytirs subcommand');
 
-my $find_cmd = "$cmd classifytirs -g $genome -f $gff -o $outgff";
+my $find_cmd = "$cmd classifytirs -g $genome -i $gff -o $outgff";
 #say STDERR $find_cmd;
 
 my @ret = capture { system([0..5], $find_cmd) };
