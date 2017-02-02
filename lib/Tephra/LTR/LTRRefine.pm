@@ -657,7 +657,7 @@ sub _get_ltr_range {
     my ($seq, $length) = $index->get_sequence($location);
 
     chomp $seq;
-    $seq =~ s/^\s+|\s+$//g
+    $seq =~ s/^\s+|\s+$//g;
     $seq =~ s/.{60}\K/\n/g;
     say $ofh join "\n", ">".$id, $seq;
 }
