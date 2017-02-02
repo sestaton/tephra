@@ -75,9 +75,7 @@ sub _fasta_to_gff {
     my $index = $self->index_ref($genome);
     my $clade_map = $self->_build_clade_map;
 
-    #my $name = basename($outdir);
     my ($name, $path, $suffix) = fileparse($outgff, qr/\.[^.]*/);
-    #my $outfile = File::Spec->catfile( abs_path($outdir), $name.'_tephra_nonltr.gff3' );
     my $fas = File::Spec->catfile($path, $name.'.fasta' );
     open my $out, '>', $outgff or die "\nERROR: Could not open file: $outgff\n";
     open my $faout, '>', $fas or die "\nERROR: Could not open file: $fas\n";
@@ -85,7 +83,6 @@ sub _fasta_to_gff {
 
     my %regions;
     for my $file (@$seqs) {
-	#next if $file =~ /tephra/;
 	my ($name, $path, $suffix) = fileparse($file, qr/\.[^.]*/);
 	open my $in, '<', $file or die "\nERROR: Could not open file: $file\n";
 	while (my $line = <$in>) {
@@ -157,9 +154,8 @@ sub _get_seq_region {
     find( sub { push @seqs, $File::Find::name if -f and /\.fa.*$/ }, $fasdir );
     my $combined = File::Spec->catfile( abs_path($fasdir), 'tephra_all_genome_seqs.fas' );
     open my $out, '>', $combined or die "\nERROR: Could not open file: $combined\n";
-
+    
     for my $seq (nsort @seqs) {
-	next if $seq =~ /tephra/;
 	$self->_collate($seq, $out);
 	my $kseq = Bio::DB::HTS::Kseq->new($seq);
 	my $iter = $kseq->iterator();
