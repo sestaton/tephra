@@ -301,6 +301,7 @@ sub get_masking_results {
 	# (S) = in Subject
 	# (Q) = in Query
 	$firstline = <$in>;
+	redo line unless defined $firstline;
 	chomp $firstline;
 	$firstline =~ s/^\s+//;
 	my @f = split /\s+/, $firstline;
