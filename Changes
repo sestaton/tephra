@@ -25,6 +25,7 @@ Version	Date	Location
 - Add correct 3-letter code to FASTA output of 'findtrims' command for getting the type
   when generating masking report.
 - Fix bug that was causing chromosomes to not be indexed with 'findnonltrs' command.
+- Fix bug that was causing warnings from 'maskref' command due to alignments not being reported.
 
 0.05.0	1/12/17	Vancouver, BC
 
