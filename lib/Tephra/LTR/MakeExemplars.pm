@@ -8,7 +8,7 @@ use File::Basename;
 use Bio::GFF3::LowLevel qw(gff3_parse_feature);
 use Cwd                 qw(abs_path);
 use Carp 'croak';
-#use Data::Dump::Color;
+use Data::Dump::Color;
 use namespace::autoclean;
 
 with 'Tephra::Role::GFF',
@@ -75,6 +75,7 @@ sub make_exemplars {
    
     my $index = $self->index_ref($fasta);
     my $exemplars = $self->process_vmatch_args($dir);
+    dd $exemplars;
 
     my ($sf) = ($dir =~ /_(\w+)$/);
     my $exemcomp = File::Spec->catfile($dir, $sf.'_exemplar_complete.fasta');
@@ -228,11 +229,12 @@ sub parse_vmatch {
     my ($vmerSearchOut) = @_;
 
     my %matches;
-    open my $in, '<', $vmerSearchOut;
-    while (<$in>) {
-	chomp;
-	next if /^#/;
-	my @f = split;
+    open my $in, '<', $vmerSearchOut or die "\nERROR: Could not open file: $vmerSearchOut\n";
+    while (my $line = <$in>) {
+	chomp $line;
+	next if $line =~ /^#/;
+	$line =~ s/^\s+//;
+	my @f = split /\s+/, $line;
 	$matches{$f[1]}++;
     }
     close $in;

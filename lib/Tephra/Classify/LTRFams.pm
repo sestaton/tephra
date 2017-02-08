@@ -17,7 +17,7 @@ use Parallel::ForkManager;
 use Carp 'croak';
 use Try::Tiny;
 use Tephra::LTR::MakeExemplars;
-#use Data::Dump::Color;
+use Data::Dump::Color;
 use namespace::autoclean;
 
 with 'Tephra::Role::Util',
