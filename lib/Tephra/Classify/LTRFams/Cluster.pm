@@ -55,7 +55,7 @@ sub extract_features {
 
     my ($name, $path, $suffix) = fileparse($infile, qr/\.[^.]*/);
     my $type = ($name =~ /(?:gypsy|copia|unclassified)$/i);
-    die "\nERROR: Unexpected input. Should match /gypsy|copia|unclassified$/i. Exiting."
+    croak "\nERROR: Unexpected input. Should match /gypsy|copia|unclassified$/i. Exiting."
         unless defined $type;
 
     my $resdir = File::Spec->catdir($dir, $name);
