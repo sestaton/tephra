@@ -8,7 +8,7 @@ use File::Basename;
 use Bio::GFF3::LowLevel qw(gff3_parse_feature);
 use Cwd                 qw(abs_path);
 use Carp 'croak';
-use Data::Dump::Color;
+#use Data::Dump::Color;
 use namespace::autoclean;
 
 with 'Tephra::Role::GFF',
@@ -75,7 +75,6 @@ sub make_exemplars {
    
     my $index = $self->index_ref($fasta);
     my $exemplars = $self->process_vmatch_args($dir);
-    dd $exemplars;
 
     my ($sf) = ($dir =~ /_(\w+)$/);
     my $exemcomp = File::Spec->catfile($dir, $sf.'_exemplar_complete.fasta');
@@ -125,7 +124,7 @@ sub make_exemplars {
 	}
     }
     close $gffio;
- 
+
     my %pdoms;
     my $ltrct = 0;
     for my $ltr (sort keys %ltrs) {
@@ -180,7 +179,7 @@ sub process_vmatch_args {
     my $wanted  = sub { push @fams, $File::Find::name if -f and /(?:family\d+).fasta$/ };
     my $process = sub { grep ! -d, @_ };
     find({ wanted => $wanted, preprocess => $process }, $dir);
- 
+
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			      my ($exemplar, $family) = @{$data_ref}{qw(exemplar family)};
 			      $exemplars{$exemplar} = $family;
@@ -218,8 +217,8 @@ sub calculate_exemplars {
     my ($family) = ($exemplar =~ /(^RL[CGX]_family\d+)/);
     $exemplar =~ s/${family}_//;
     $self->clean_index_files($index);
-    #unlink $vmerSearchOut;
-    #unlink $db;
+    unlink $vmerSearchOut;
+    unlink $db;
 
     return ($exemplar, $family);
 }
