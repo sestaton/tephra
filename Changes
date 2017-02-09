@@ -1,6 +1,15 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.06.1	2/09/17	Vancouver, BC
+
+- Add method to evaluate whether the BLAST-merging step increases the number of elements
+  in families for 'classifyltrs' command over the domain-based clustering method. 
+  For plants, the BLAST-merging step is routinely used for family-level designations and leads
+  to fewer singletons. For animals, or species with divergent LTR elements, the BLAST-merging
+  step will create all singletons and no elements in families, so evaluating both procedures
+  is the current best general approach to classification of LTR families.
+
 0.06.0	1/25/17	Vancouver, BC
 
 - Clean up file paths across in all classes to use absolute paths instead
