@@ -17,7 +17,7 @@ use Parallel::ForkManager;
 use Carp 'croak';
 use Try::Tiny;
 use Tephra::LTR::MakeExemplars;
-use Data::Dump::Color;
+#use Data::Dump::Color;
 use namespace::autoclean;
 
 with 'Tephra::Role::Util',
@@ -106,21 +106,28 @@ sub make_ltr_families {
     my (%reports, @family_fastas, @annotated_ids);
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			      for my $type (keys %$data_ref) {
-				  my ($unmerged_stats, $merged_stats) =
-				      ($data_ref->{$type}{unmerged_stats}, $data_ref->{$type}{merged_stats});
-				  my ($um_sf, $um_elemct, $um_famct, $um_famtot, $um_singct) =
-				      @{$unmerged_stats}{qw(superfamily total_elements families total_in_families singletons)};
-				  my ($m_sf, $m_elemct, $m_famct, $m_famtot, $m_singct) =
-				      @{$merged_stats}{qw(superfamily total_elements families total_in_families singletons)};
+				  #my ($unmerged_stats, $merged_stats) =
+				      #($data_ref->{$type}{unmerged_stats}, $data_ref->{$type}{merged_stats});
+				  my $family_stats = $data_ref->{$type}{family_stats};
+				  #my ($um_sf, $um_elemct, $um_famct, $um_famtot, $um_singct) =
+				      #@{$unmerged_stats}{qw(superfamily total_elements families total_in_families singletons)};
+				  #my ($m_sf, $m_elemct, $m_famct, $m_famtot, $m_singct) =
+				      #@{$merged_stats}{qw(superfamily total_elements families total_in_families singletons)};
+				  my ($sf, $elemct, $famct, $famtot, $singct) =
+                                      @{$family_stats}{qw(superfamily total_elements families total_in_families singletons)};
 
-				  say "=====> Family-level statistics for $um_sf before BLAST merging:";
-				  say join "\t", $um_sf."_total_elements", $um_sf."_families", 
-				      $um_sf."_total_in_families", $um_sf."_singletons";
-				  say join "\t", $um_elemct, $um_famct, $um_famtot, $um_singct;
-				  say "=====> Family-level statistics for $m_sf after BLAST merging:";
-				  say join "\t", $m_sf."_total_elements", $m_sf."_families", 
-				      $m_sf."_total_in_families", $m_sf."_singletons";
-				  say join "\t", $m_elemct, $m_famct, $m_famtot, $m_singct;
+				  #say "=====> Family-level statistics for $um_sf before BLAST merging:";
+				  #say join "\t", $um_sf."_total_elements", $um_sf."_families", 
+				      #$um_sf."_total_in_families", $um_sf."_singletons";
+				  #say join "\t", $um_elemct, $um_famct, $um_famtot, $um_singct;
+				  #say "=====> Family-level statistics for $m_sf after BLAST merging:";
+				  #say join "\t", $m_sf."_total_elements", $m_sf."_families", 
+				      #$m_sf."_total_in_families", $m_sf."_singletons";
+				  #say join "\t", $m_elemct, $m_famct, $m_famtot, $m_singct;
+				  say "=====> Family-level statistics for $sf:";
+                                  say join "\t", $sf."_total_elements", $sf."_families",
+				      $sf."_total_in_families", $sf."_singletons";
+                                  say join "\t", $elemct, $famct, $famtot, $singct;
 
 				  push @family_fastas, $data_ref->{$type}{family_fasta};
 				  push @annotated_ids, $data_ref->{$type}{annotated_ids};
@@ -135,13 +142,12 @@ sub make_ltr_families {
 	$pm->start($type) and next;
 	$SIG{INT} = sub { $pm->finish };
 
-	my ($fams, $ids, $unmerged_stats, $merged_stats) = 
+	my ($fams, $ids, $family_stats) = 
 	    $self->run_ltr_classification($gff_obj->{$type});
 
 	$reports{$type} = { family_fasta   => $fams, 
 			    annotated_ids  => $ids, 
-			    unmerged_stats => $unmerged_stats,
-	                    merged_stats   => $merged_stats };
+	                    family_stats   => $family_stats };
 
 	$pm->finish(0, \%reports);
     }
@@ -172,11 +178,13 @@ sub run_ltr_classification {
     my $dir      = $self->extract_features($gff);
     my $clusters = $self->cluster_features($dir);
     my $dom_orgs = $self->parse_clusters($clusters);
-    my ($fas_obj, $unmerged_stats) = $self->make_fasta_from_dom_orgs($dom_orgs, $clusters);
+    my ($dom_fam_map, $fas_obj, $unmerged_stats) = 
+	$self->make_fasta_from_dom_orgs($dom_orgs, $clusters);
     my $blastout = $self->process_blast_args($fas_obj);
     my $matches  = $self->parse_blast($blastout);
 
-    my ($fams, $ids, $merged_stats) = $self->write_families($matches, $clusters);
+    my ($fams, $ids, $merged_stats) = 
+	$self->write_families($dom_fam_map, $unmerged_stats, $matches, $clusters);
 
     my $exm_obj = Tephra::LTR::MakeExemplars->new(
         genome  => $genome,
@@ -193,7 +201,7 @@ sub run_ltr_classification {
 	$fas_obj->{singleton_fasta} => 1,
     );
 
-    return (\%families, $ids, $unmerged_stats, $merged_stats);
+    return (\%families, $ids, $merged_stats);
 }
 
 sub make_fasta_from_dom_orgs {
@@ -218,8 +226,10 @@ sub make_fasta_from_dom_orgs {
     my $foutfile = File::Spec->catfile($cpath, $famfile);
     open my $out, '>>', $foutfile or die "\nERROR: Could not open file: $foutfile\n";
 
+    my %fam_map;
     my ($idx, $famtot) = (0, 0);
     for my $str (reverse sort { @{$dom_orgs->{$a}} <=> @{$dom_orgs->{$b}} } keys %$dom_orgs) {  
+	my $famnum = $sfname."_family$idx";
         for my $elem (@{$dom_orgs->{$str}}) {
             if (exists $seqstore->{$elem}) {
                 $famtot++;
@@ -228,9 +238,10 @@ sub make_fasta_from_dom_orgs {
                 $seqstore->{$elem}{$coords} =~ s/.{60}\K/\n/g;
                 say $out join "\n", ">$sfname"."_family$idx"."_$elem"."_$coords", $seqstore->{$elem}{$coords};
                 delete $seqstore->{$elem};
+		push @{$fam_map{$famnum}}, $elem;
             }
             else {
-                die "\nERROR: $elem not found in store. Exiting.";
+                croak "\nERROR: $elem not found in store. Exiting.";
             }
         }
         $idx++;
@@ -257,12 +268,8 @@ sub make_fasta_from_dom_orgs {
     my $singct = $idx;
     undef $seqstore;
 
-    # need to store this
-    #say "Before BLAST merging...";
-    #say join "\t", $sf."_total_elements", $sf."_families", $sf."_total_in_families", $sf."_singletons";
-    #say join "\t", $elemct, $famct, $famtot, $singct;
-
-    return ({ family_fasta      => $foutfile, 
+    return (\%fam_map,
+	    { family_fasta      => $foutfile, 
 	      singleton_fasta   => $soutfile, 
 	      family_count      => $famct, 
 	      total_in_families => $famtot, 
@@ -346,7 +353,7 @@ sub parse_blast {
 
 sub write_families {
     my $self = shift;
-    my ($matches, $clsfile) = @_;
+    my ($dom_fam_map, $unmerged_stats, $matches, $clsfile) = @_;
 
     my ($cname, $cpath, $csuffix) = fileparse($clsfile, qr/\.[^.]*/);
     my $dir  = basename($cpath);
@@ -362,38 +369,41 @@ sub write_families {
     my $seqstore = $self->_store_seq($ltrfas);
     my $elemct = (keys %$seqstore);
 	
-    my ($idx, $famtot) = (0, 0);
+    my ($idx, $famtot, $tomerge) = (0, 0, 0);
     my (%fastas, %annot_ids);
 
+    my $fam_id_map;
     if (defined $matches) {
-	for my $str (reverse sort { @{$matches->{$a}} <=> @{$matches->{$b}} } keys %$matches) {
-	    my $famfile = $sf."_family$idx".".fasta";
-	    my $outfile = File::Spec->catfile( abs_path($cpath), $famfile );
-	    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-	    for my $elem (@{$matches->{$str}}) {
-		my $query = $elem;
-		$query =~ s/RL[CGX]_singleton_family\d+_//;
-		if (exists $seqstore->{$query}) {
-		    $famtot++;
-		    my $coordsh = $seqstore->{$query};
-		    my $coords  = (keys %$coordsh)[0];
-		    $seqstore->{$query}{$coords} =~ s/.{60}\K/\n/g;
-		    say $out join "\n", ">$sfname"."_family$idx"."_$query"."_$coords", $seqstore->{$query}{$coords};
-		    delete $seqstore->{$query};
-		    $annot_ids{$query} = $sfname."_family$idx";
-		}
-		else {
-		    die "\nERROR: $query not found in store. Exiting.";
-		}
+	my $tomerge = $self->_compare_merged_nonmerged($matches, $seqstore, $unmerged_stats);
+	$fam_id_map = $tomerge == 1 ? $matches : $dom_fam_map;
+    }
+
+    for my $str (reverse sort { @{$fam_id_map->{$a}} <=> @{$fam_id_map->{$b}} } keys %$fam_id_map) {
+	my $famfile = $sf."_family$idx".".fasta";
+	my $outfile = File::Spec->catfile( abs_path($cpath), $famfile );
+	open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+	for my $elem (@{$fam_id_map->{$str}}) {
+	    my $query = $elem =~ s/RL[CGX]_singleton_family\d+_//r;
+	    if (exists $seqstore->{$query}) {
+		$famtot++;
+		my $coordsh = $seqstore->{$query};
+		my $coords  = (keys %$coordsh)[0];
+		$seqstore->{$query}{$coords} =~ s/.{60}\K/\n/g;
+		say $out join "\n", ">$sfname"."_family$idx"."_$query"."_$coords", $seqstore->{$query}{$coords};
+		delete $seqstore->{$query};
+		$annot_ids{$query} = $sfname."_family$idx";
 	    }
-	    close $out;
-	    $idx++;
-	    $fastas{$outfile} = 1;
+	    else {
+		croak "\nERROR: $query not found in store. Exiting.";
+	    }
 	}
+	close $out;
+	$idx++;
+	$fastas{$outfile} = 1;
     }
     my $famct = $idx;
     $idx = 0;
-
+	
     if (%$seqstore) {
 	my $famxfile = $sf.'_singleton_families.fasta';
 	my $xoutfile = File::Spec->catfile( abs_path($cpath), $famxfile );
@@ -410,18 +420,13 @@ sub write_families {
 	$fastas{$xoutfile} = 1;
     }
     my $singct = $idx;
-
-    # need to store this
-    #say "After BLAST merging...";
-    #say join "\t", $sf."_total_elements", $sf."_families", $sf."_total_in_families", $sf."_singletons";
-    #say join "\t", $elemct, $famct, $famtot, $singct;
-
+    
     return (\%fastas, \%annot_ids,
-	{ superfamily       => $sf,
-	  total_elements    => $elemct,
-	  families          => $famct,
-	  total_in_families => $famtot,
-	  singletons        => $singct });
+	    { superfamily       => $sf,
+	      total_elements    => $elemct,
+	      families          => $famct,
+	      total_in_families => $famtot,
+	      singletons        => $singct });
 }
 
 sub combine_families {
@@ -490,6 +495,30 @@ sub annotate_gff {
     close $out;
 
     return;
+}
+
+sub _compare_merged_nonmerged {
+    my $self = shift;
+    my ($matches, $seqstore, $unmerged_stats) = @_;
+
+    my $famtot = 0;
+
+    for my $str (keys %$matches) {
+	for my $elem (@{$matches->{$str}}) {
+	    my $query = $elem =~ s/RL[CGX]_singleton_family\d+_//r;
+	    if (exists $seqstore->{$query}) {
+		$famtot++;
+	    }
+	    else {
+		croak "\nERROR: $query not found in store. Exiting.";
+	    }
+	    
+	}
+    }
+
+    my $tomerge = $unmerged_stats->{total_in_families} < $famtot ? 1 : 0;
+
+    return $tomerge;
 }
 
 sub _store_seq {
