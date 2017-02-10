@@ -50,6 +50,13 @@ sub execute {
     if ($relaxed_gff && $strict_gff) {
 	my $some = _refine_trim_predictions($relaxed_gff, $strict_gff, $opt->{genome}, $opt->{outfile});
     }
+    elsif ($relaxed_gff && !$strict_gff) {
+	_write_unrefined_trims($opt, $relaxed_gff);
+    }
+    elsif (!$relaxed_gff && !$strict_gff) {
+	say STDERR "\nWARNING: No TRIMs were found, so there will be no output.\n";
+	exit(1);
+    }
 }
 
 sub _refine_trim_predictions {
@@ -72,7 +79,7 @@ sub _refine_trim_predictions {
     $refine_obj->sort_features({ gff               => $relaxed_gff, 
 				 combined_features => $combined_features });
 
-    #unlink $relaxed_gff, $strict_gff;
+    unlink $relaxed_gff, $strict_gff;
 }
 
 sub _run_trim_search {
@@ -106,6 +113,15 @@ sub _run_trim_search {
     my $relaxed_gff = $trim_search->trim_search_relaxed($index);
 
     return ($relaxed_gff, $strict_gff);
+}
+
+sub _write_unrefined_trims {
+    my ($opt, $relaxed_gff) = @_;
+
+    my $refine_obj = Tephra::LTR::LTRRefine->new( genome => $opt->{genome}, outfile => $opt->{outfile}, is_trim => 1 );
+
+    $refine_obj->sort_features({ gff               => $relaxed_gff,
+                                 combined_features => undef });
 }
 
 sub help {
