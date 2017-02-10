@@ -9,6 +9,8 @@ Version	Date	Location
   to fewer singletons. For animals, or species with divergent LTR elements, the BLAST-merging
   step will create all singletons and no elements in families, so evaluating both procedures
   is the current best general approach to classification of LTR families.
+- Bug fix for 'findtrims' command that was exiting when no elements were found under strict 
+  conditions. Now this is handled correctly and output will be written.
 
 0.06.0	1/25/17	Vancouver, BC
 
