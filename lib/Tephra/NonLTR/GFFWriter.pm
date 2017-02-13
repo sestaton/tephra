@@ -104,10 +104,12 @@ sub _fasta_to_gff {
     my @ids = map { nsort keys %{$regions{$_}} } keys %regions;
     say $out '##gff-version 3';
 
+    my %seen;
     for my $seqid (@ids) {
 	my ($name, $path, $suffix) = fileparse($seqid, qr/\.[^.]*/);
-	if (exists $lens->{$name}) {
+	if (exists $lens->{$name} && ! exists $seen{$name}) {
 	    say $out join q{ }, '##sequence-region', $name, '1', $lens->{$name};
+	    $seen{$name};
 	}
 	else {
 	    say STDERR "\nERROR: Could not find $name in map.\n";
