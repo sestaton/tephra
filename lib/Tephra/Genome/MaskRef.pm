@@ -461,7 +461,8 @@ sub write_masking_results {
 
     my $closing_brace = '==================';
     my $len = sprintf("%.0f", $final_time);
-    my $tr = '=' x length($len)-1;
+    my $slen = length($len) - 1;
+    my $tr = '=' x $slen;
     $closing_brace =~ s/$tr// if length($len) > 1;
 
     say "=================== 'Tephra maskref' finished in $final_time minutes $closing_brace";
