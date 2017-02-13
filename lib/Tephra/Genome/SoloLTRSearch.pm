@@ -314,10 +314,10 @@ sub write_sololtr_gff {
 	if (exists $seqlen->{$hit_name}) {
 	    $ct++;
 	    say $out join "\t", $hit_name, 'Tephra', 'solo_LTR', $hsp_hit_start, $hsp_hit_end, 
-	        '.', '?', '.', "ID=solo_LTR$ct;Parent=$query;Name=solo_LTR;Ontology_term=SO:0001003";
+	        '.', '?', '.', "ID=solo_LTR$ct;match_id=$query;Name=solo_LTR;Ontology_term=SO:0001003";
 	}
 	else {
-	    die "\nERROR: $hit_name not found in $genome. This should not happen. Exiting.\n";
+	    croak "\nERROR: $hit_name not found in $genome. This should not happen. Exiting.\n";
 	}
     }
     close $in;
