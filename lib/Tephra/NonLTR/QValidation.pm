@@ -354,6 +354,7 @@ sub vote_hmmsearch {
 		    my $hend   = $hsp->end('hit');
 		    my $e_val  = $hsp->evalue;
 		    
+		    next unless defined $e_val;
 		    #say "debug3 hmmermatch qvalidation: $1";
 		    #Ha1.fa_79699679_3    1/1     668   899 ..     1   260 []   185.0  4.4e-55
 		    #my @temp = split /\s+/, $1;
