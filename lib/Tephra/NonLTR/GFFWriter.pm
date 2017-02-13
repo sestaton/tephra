@@ -107,9 +107,11 @@ sub _fasta_to_gff {
     my %seen;
     for my $seqid (@ids) {
 	my ($name, $path, $suffix) = fileparse($seqid, qr/\.[^.]*/);
-	if (exists $lens->{$name} && ! exists $seen{$name}) {
-	    say $out join q{ }, '##sequence-region', $name, '1', $lens->{$name};
-	    $seen{$name} = 1;
+	if (exists $lens->{$name}) {
+	    unless (exists $seen{$name}) {
+		say $out join q{ }, '##sequence-region', $name, '1', $lens->{$name};
+		$seen{$name} = 1;
+	    }
 	}
 	else {
 	    say STDERR "\nERROR: Could not find $name in map.\n";
