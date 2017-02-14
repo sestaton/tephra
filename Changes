@@ -11,6 +11,14 @@ Version	Date	Location
   is the current best general approach to classification of LTR families.
 - Bug fix for 'findtrims' command that was exiting when no elements were found under strict 
   conditions. Now this is handled correctly and output will be written.
+- Bug fix that was creating duplicate sequence region declarations in GFF3 for 'findnonltrs' command
+  on some genomes.
+- Add tests to see if hmmsearch report was parsed correctly and all fields defined with 'findnonltrs'
+  command.
+- Modify processing of input with 'findnonltrs' command to return generated files directly.
+- Bug fix for 'sololtr' command to use SO compliant terms in GFF3 output.
+- Adjust output of 'maskref' command to account for different run lengths when formatting results
+  table.
 
 0.06.0	1/25/17	Vancouver, BC
 
