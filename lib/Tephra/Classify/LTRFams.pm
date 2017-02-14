@@ -173,7 +173,7 @@ sub run_ltr_classification {
     my ($gff) = @_;
     my $genome  = $self->genome->absolute->resolve;
     my $threads = $self->threads;
-    my $debug   = $self->debug,
+    my $debug   = $self->debug;
 
     my $dir      = $self->extract_features($gff);
     my $clusters = $self->cluster_features($dir);
