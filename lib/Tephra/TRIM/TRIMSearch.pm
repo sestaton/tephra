@@ -66,6 +66,7 @@ sub trim_search_strict {
 	return $ltrg_gff;
     }
     else {
+	unlink $ltrh_gff;
 	return 0;
     }
 }
