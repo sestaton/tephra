@@ -138,9 +138,10 @@ sub find_soloLTRs {
     my @sfs;
     find( sub { push @sfs, $File::Find::name if /_copia\z|_gypsy\z/ }, $anno_dir);
     croak "\nERROR: Could not find the expected sub-directories ending in 'copia' and 'gypsy' please ".
-	"check input. Exiting.\n" unless @sfs == 2;
+	"check input. Exiting.\n" unless @sfs; #== 2;
 
-    my $pm = Parallel::ForkManager->new(2);
+    my $forks = @sfs;
+    my $pm = Parallel::ForkManager->new($forks);
     local $SIG{INT} = sub {
         warn "Caught SIGINT; Waiting for child processes to finish.";
         $pm->wait_all_children;
