@@ -63,8 +63,6 @@ sub find_nonltrs {
 
     # Forward strand
     my $fasfiles = $self->_split_genome($genome, $genome_dir);
-    #my @fasfiles;
-    #find( sub { push @fasfiles, $File::Find::name if -f and /\.fa.*?$/ }, $genome_dir );
     die "\nERROR: No FASTA files found in genome directory. Sequences must be over 50kb and less than 50% gaps. Exiting.\n" 
 	if @$fasfiles == 0;
 
@@ -92,8 +90,6 @@ sub find_nonltrs {
     my $revfasfiles = $sequtils->invert_seq($genome_dir, $minus_dna_dir);
     die "\nERROR: No FASTA files found in genome directory. Sequences must be over 50kb and less than 50% gaps. Exiting.\n"
         if @$revfasfiles == 0;
-    #my @revfasfiles;
-    #find( sub { push @revfasfiles, $File::Find::name if -f and /\.fa.*$/ }, $minus_dna_dir );
     
     for my $file (sort @$revfasfiles) {
 	my $run_rev_hmm = Tephra::NonLTR::RunHMM->new( 
