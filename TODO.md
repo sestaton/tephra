@@ -49,7 +49,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] add options for LTR size parameters
  - [ ] add LTR_Finder
  - [x] add config file to handle the multitude of LTR-RT constraints
- - [ ] clean up ltrharvest and ltrdigest intermediate files
+ - [x] clean up ltrharvest and ltrdigest intermediate files
 
  - Domain matches 
    - [ ] adjust duplicate domain filtering to consider strand and range of matches
@@ -66,7 +66,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Find all non-overlapping TRIMs under strict and relaxed conditions
  - [x] Filter elements by quality score, retaining the best elements
  - [x] Generate combined GFF3 of high-quality TRIMs
- - [ ] Create a feature type called 'TRIM_retrotransposon' to distinguish these elements from other LTR-RTs
+ - [x] Create a feature type called 'TRIM_retrotransposon' to distinguish these elements from other LTR-RTs
  - [ ] create developer tests to operate on a larger data set to positively identify elements rather than just
        operation of the command
 
@@ -79,11 +79,10 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] run domain searches in parallel
  - [ ] use multiple CPUs (make option) for domain searches
  - [x] write GFF of results
- - [ ] add verbose option so as to not print progress when there are 5k scaffolds
+ - [x] add verbose option so as to not print progress when there are 5k scaffolds
  - [x] write combined file of all elements
  - [x] take a multifasta as input and create directories for input/output to methods
  - [ ] use complete elements to find truncated nonLTRs after masking
- - [ ] identify	fragmented elements with refined full-length elements
 
 ## Command `tephra ltrage`
  - [x] Calculate age for each LTR-RT
@@ -123,3 +122,4 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] add verbose option for quickly debugging the installation of dependencies
  - [x] add command to get TIR ages
  - [x] investigate why tests fail with Perl version 5.12 or lower (Bio::DB::HTS needs 5.14.2, so that's why)
+ - [ ] add subcommand to run/log all methods as a pipeline
