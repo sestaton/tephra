@@ -97,12 +97,12 @@ sub _classify_ltr_superfamilies {
     }
 
     if (%$copia) {
-        $cop_gff = $classify_obj->write_gypsy($copia, $header);
+        $cop_gff = $classify_obj->write_copia($copia, $header);
 	$gffs{'copia'} = $cop_gff;
     }
 
     if (%$features) {
-        $unc_gff = $classify_obj->write_gypsy($features, $header);
+        $unc_gff = $classify_obj->write_unclassified($features, $header);
 	$gffs{'unclassified'} = $unc_gff;
     }
 
