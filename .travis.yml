@@ -22,5 +22,5 @@ after_failure: cat /home/travis/.cpanm/build.log
 
 branches:
   only:
-#    - master
-    - topic/fix_sololtr_input
+    - master
+#    - topic/fix_sololtr_input
