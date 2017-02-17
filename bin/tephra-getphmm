@@ -2,6 +2,7 @@
 
 ## NB: This is used internally by Tephra, do not use it directly
 
+use 5.014;
 use strict; 
 use warnings;
 use Bio::SearchIO;
