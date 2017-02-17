@@ -456,6 +456,12 @@ sub write_masking_results {
     my $total_elapsed = $t2 - $t0;
     my $final_time = sprintf("%.2f",$total_elapsed/60);
 
+    unless (defined $classlen && defined $orderlen && defined $namelen) {
+	say STDERR "\nERROR: Could not get classification for masking results, which likely means an issue with the input.\n".
+	    "       Please check input genome and database. If this issue persists please report it. Exiting.\n";
+	exit(1);
+    }
+
     ($classlen,$orderlen, $namelen) = ($classlen+10, $orderlen+10, $namelen+15);
     my $masked_total = 0;
 
