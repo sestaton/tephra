@@ -11,6 +11,7 @@ use File::Find;
 use File::Spec;
 use File::Basename;
 use Carp 'croak';
+#use Data::Dump::Color;
 use namespace::autoclean;
 
 with 'Tephra::NonLTR::Role::PathUtils';
@@ -21,11 +22,11 @@ Tephra::NonLTR::QValidation - Valid non-LTR search (adapted from MGEScan-nonLTR)
 
 =head1 VERSION
 
-Version 0.06.0
+Version 0.06.1
 
 =cut
 
-our $VERSION = '0.06.0';
+our $VERSION = '0.06.1';
 $VERSION = eval $VERSION;
 
 has fasta   => ( is => 'ro', isa => 'Path::Class::File', required => 1, coerce => 1 );
@@ -358,6 +359,9 @@ sub vote_hmmsearch {
 		    #Ha1.fa_79699679_3    1/1     668   899 ..     1   260 []   185.0  4.4e-55
 		    #my @temp = split /\s+/, $1;
 		    my $uniq_key = substr($hitid, 0, length($hitid));	    
+		    next unless (defined $uniq_key && defined $e_val && defined $clade && defined $save_evalue{$uniq_key});
+		    # instead of a regex (as in mgescan), we check if variables are defined
+
 		    $save_evalue{$uniq_key} = join "\t", $save_evalue{$uniq_key}, $clade, $e_val;
 		    
 		    if ($evalue{$uniq_key} > $e_val) {

@@ -114,17 +114,17 @@ sub help {
      -o|outfile       :    The GFF file to write the solo-LTRs to.
 
  Options:
-     -p|percentident  :    Percent identity threshold for matches. (default 0.39).
+     -p|percentident  :    Percent identity threshold for matches. (Default 0.39).
                            NB: For a threshold of 80 percent say 0.80.
-     -f|percentcov    :    Percent coverage threshold for matches. (default 0.80).
+     -f|percentcov    :    Percent coverage threshold for matches. (Default 0.80).
                            NB: For a threshold of 80 percent say 0.80.
-     -l|matchlen      :    Length threshold for matches. (default 80).
+     -l|matchlen      :    Length threshold for matches. (Default 80).
                            NB: For a threshold of 80 percent say 0.80.
      -r|report        :    Parse hmmsearch of each sequence and produce a summary of align statistics.
      -s|seq           :    Extract query sequence from domain alignment.
      -n|numfamilies   :    The number of families to analyze (Default: the top 20).
      -a|allfamilies   :    Analyze all LTR-RT families for solo-LTRs (Default: no).      
-     -t|threads       :    The number of threads to use for clustering coding domains.
+     -t|threads       :    The number of threads to use for clustering coding domains (Default: 1).
      --clean          :    Clean up the intermediate alignment and HMMER files (Default: yes).
 
 END

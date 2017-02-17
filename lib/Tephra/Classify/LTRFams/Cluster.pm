@@ -30,11 +30,11 @@ with 'Tephra::Role::GFF',
 
 =head1 VERSION
 
-Version 0.06.0
+Version 0.06.1
 
 =cut
 
-our $VERSION = '0.06.0';
+our $VERSION = '0.06.1';
 $VERSION = eval $VERSION;
 
 has debug => (
@@ -55,7 +55,7 @@ sub extract_features {
 
     my ($name, $path, $suffix) = fileparse($infile, qr/\.[^.]*/);
     my $type = ($name =~ /(?:gypsy|copia|unclassified)$/i);
-    die "\nERROR: Unexpected input. Should match /gypsy|copia|unclassified$/i. Exiting."
+    croak "\nERROR: Unexpected input. Should match /gypsy|copia|unclassified$/i. Exiting."
         unless defined $type;
 
     my $resdir = File::Spec->catdir($dir, $name);

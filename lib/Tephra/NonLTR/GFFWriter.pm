@@ -21,11 +21,11 @@ Tephra::NonLTR::GFFWriter - Take results from non-LTR search and make an annotat
 
 =head1 VERSION
 
-Version 0.06.0
+Version 0.06.1
 
 =cut
 
-our $VERSION = '0.06.0';
+our $VERSION = '0.06.1';
 $VERSION = eval $VERSION;
 
 has genome      => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
@@ -104,10 +104,14 @@ sub _fasta_to_gff {
     my @ids = map { nsort keys %{$regions{$_}} } keys %regions;
     say $out '##gff-version 3';
 
+    my %seen;
     for my $seqid (@ids) {
 	my ($name, $path, $suffix) = fileparse($seqid, qr/\.[^.]*/);
 	if (exists $lens->{$name}) {
-	    say $out join q{ }, '##sequence-region', $name, '1', $lens->{$name};
+	    unless (exists $seen{$name}) {
+		say $out join q{ }, '##sequence-region', $name, '1', $lens->{$name};
+		$seen{$name} = 1;
+	    }
 	}
 	else {
 	    say STDERR "\nERROR: Could not find $name in map.\n";

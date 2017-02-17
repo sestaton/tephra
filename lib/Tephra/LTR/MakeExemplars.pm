@@ -21,11 +21,11 @@ Tephra::LTR::MakeExemplars - Make exemplars from a LTR retrotransposon family
 
 =head1 VERSION
 
-Version 0.06.0
+Version 0.06.1
 
 =cut
 
-our $VERSION = '0.06.0';
+our $VERSION = '0.06.1';
 $VERSION = eval $VERSION;
 
 has dir => (
@@ -124,7 +124,7 @@ sub make_exemplars {
 	}
     }
     close $gffio;
- 
+
     my %pdoms;
     my $ltrct = 0;
     for my $ltr (sort keys %ltrs) {
@@ -179,7 +179,7 @@ sub process_vmatch_args {
     my $wanted  = sub { push @fams, $File::Find::name if -f and /(?:family\d+).fasta$/ };
     my $process = sub { grep ! -d, @_ };
     find({ wanted => $wanted, preprocess => $process }, $dir);
- 
+
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			      my ($exemplar, $family) = @{$data_ref}{qw(exemplar family)};
 			      $exemplars{$exemplar} = $family;
@@ -217,8 +217,8 @@ sub calculate_exemplars {
     my ($family) = ($exemplar =~ /(^RL[CGX]_family\d+)/);
     $exemplar =~ s/${family}_//;
     $self->clean_index_files($index);
-    #unlink $vmerSearchOut;
-    #unlink $db;
+    unlink $vmerSearchOut;
+    unlink $db;
 
     return ($exemplar, $family);
 }
@@ -228,11 +228,12 @@ sub parse_vmatch {
     my ($vmerSearchOut) = @_;
 
     my %matches;
-    open my $in, '<', $vmerSearchOut;
-    while (<$in>) {
-	chomp;
-	next if /^#/;
-	my @f = split;
+    open my $in, '<', $vmerSearchOut or die "\nERROR: Could not open file: $vmerSearchOut\n";
+    while (my $line = <$in>) {
+	chomp $line;
+	next if $line =~ /^#/;
+	$line =~ s/^\s+//;
+	my @f = split /\s+/, $line;
 	$matches{$f[1]}++;
     }
     close $in;

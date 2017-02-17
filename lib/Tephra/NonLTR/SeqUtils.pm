@@ -13,11 +13,11 @@ Tephra::NonLTR::SeqUtils - Minor sequence utilities for non-LTR finding
 
 =head1 VERSION
 
-Version 0.06.0
+Version 0.06.1
 
 =cut
 
-our $VERSION = '0.06.0';
+our $VERSION = '0.06.1';
 $VERSION = eval $VERSION;
 
 sub invert_seq {
@@ -31,6 +31,7 @@ sub invert_seq {
     my @fasfiles;
     find( sub { push @fasfiles, $File::Find::name if -f }, $plus_dna_dir );
 
+    my @revfasfiles;
     for my $file (@fasfiles) {
 	my ($name, $path, $suffix) = fileparse($file, qr/\.[^.]*/);
 
@@ -48,7 +49,10 @@ sub invert_seq {
         open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile";;
 	say $out join "\n", ">".$file, $revseq;
 	close $out;
+	push @revfasfiles, $outfile;
     }
+
+    return \@revfasfiles;
 }
 
 =head1 AUTHOR

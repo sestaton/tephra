@@ -1,6 +1,28 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.06.1	2/09/17	Vancouver, BC
+
+- Add method to evaluate whether the BLAST-merging step increases the number of elements
+  in families for 'classifyltrs' command over the domain-based clustering method. 
+  For plants, the BLAST-merging step is routinely used for family-level designations and leads
+  to fewer singletons. For animals, or species with divergent LTR elements, the BLAST-merging
+  step will create all singletons and no elements in families, so evaluating both procedures
+  is the current best general approach to classification of LTR families.
+- Bug fix for 'findtrims' command that was exiting when no elements were found under strict 
+  conditions. Now this is handled correctly and output will be written.
+- Bug fix that was creating duplicate sequence region declarations in GFF3 for 'findnonltrs' command
+  on some genomes.
+- Add tests to see if hmmsearch report was parsed correctly and all fields defined with 'findnonltrs'
+  command.
+- Modify processing of input with 'findnonltrs' command to return generated files directly.
+- Bug fix for 'sololtr' command to use SO compliant terms in GFF3 output.
+- Adjust output of 'maskref' command to account for different run lengths when formatting results
+  table.
+- Add some error handling for 'maskref' command when there is an issue with the input (or no input genome
+  file can be found). Now it should die with a message instead of throwing warnings and generating an 
+  empty table.
+
 0.06.0	1/25/17	Vancouver, BC
 
 - Clean up file paths across in all classes to use absolute paths instead

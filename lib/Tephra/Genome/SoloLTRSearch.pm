@@ -31,11 +31,11 @@ Tephra::Genome::SoloLTRSearch - Find solo-LTRs in a refence genome
 
 =head1 VERSION
 
-Version 0.06.0
+Version 0.06.1
 
 =cut
 
-our $VERSION = '0.06.0';
+our $VERSION = '0.06.1';
 $VERSION = eval $VERSION;
 
 has dir => (
@@ -138,9 +138,10 @@ sub find_soloLTRs {
     my @sfs;
     find( sub { push @sfs, $File::Find::name if /_copia\z|_gypsy\z/ }, $anno_dir);
     croak "\nERROR: Could not find the expected sub-directories ending in 'copia' and 'gypsy' please ".
-	"check input. Exiting.\n" unless @sfs == 2;
+	"check input. Exiting.\n" unless @sfs; #== 2;
 
-    my $pm = Parallel::ForkManager->new(2);
+    my $forks = @sfs;
+    my $pm = Parallel::ForkManager->new($forks);
     local $SIG{INT} = sub {
         warn "Caught SIGINT; Waiting for child processes to finish.";
         $pm->wait_all_children;
@@ -314,10 +315,10 @@ sub write_sololtr_gff {
 	if (exists $seqlen->{$hit_name}) {
 	    $ct++;
 	    say $out join "\t", $hit_name, 'Tephra', 'solo_LTR', $hsp_hit_start, $hsp_hit_end, 
-	        '.', '?', '.', "ID=solo_LTR$ct;Parent=$query;Name=solo_LTR;Ontology_term=SO:0001003";
+	        '.', '?', '.', "ID=solo_LTR$ct;match_id=$query;Name=solo_LTR;Ontology_term=SO:0001003";
 	}
 	else {
-	    die "\nERROR: $hit_name not found in $genome. This should not happen. Exiting.\n";
+	    croak "\nERROR: $hit_name not found in $genome. This should not happen. Exiting.\n";
 	}
     }
     close $in;

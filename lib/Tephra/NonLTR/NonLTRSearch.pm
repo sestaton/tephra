@@ -21,11 +21,11 @@ Tephra::NonLTR::NonLTRSearch - Search a genome for non-LTR retrotransposons
 
 =head1 VERSION
 
-Version 0.06.0
+Version 0.06.1
 
 =cut
 
-our $VERSION = '0.06.0';
+our $VERSION = '0.06.1';
 $VERSION = eval $VERSION;
 
 has genome  => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
@@ -62,13 +62,12 @@ sub find_nonltrs {
     }
 
     # Forward strand
-    $self->_split_genome($genome, $genome_dir);
-    my @fasfiles;
-    find( sub { push @fasfiles, $File::Find::name if -f and /\.fa.*?$/ }, $genome_dir );
-    die "\nERROR: No FASTA files found in genome directory. Exiting.\n" if @fasfiles == 0;
+    my $fasfiles = $self->_split_genome($genome, $genome_dir);
+    die "\nERROR: No FASTA files found in genome directory. Sequences must be over 50kb and less than 50% gaps. Exiting.\n" 
+	if @$fasfiles == 0;
 
     printf STDERR "Running forward...\n" if $self->verbose;
-    for my $file (sort @fasfiles) {    
+    for my $file (sort @$fasfiles) {    
 	my $run_hmm = Tephra::NonLTR::RunHMM->new( 
 	    fasta   => $file, 
 	    outdir  => $plus_out_dir, 
@@ -88,12 +87,11 @@ sub find_nonltrs {
     printf "Running backward...\n" if $self->verbose;
 
     my $sequtils = Tephra::NonLTR::SeqUtils->new;
-    $sequtils->invert_seq($genome_dir, $minus_dna_dir);
-
-    my @revfasfiles;
-    find( sub { push @revfasfiles, $File::Find::name if -f and /\.fa.*$/ }, $minus_dna_dir );
+    my $revfasfiles = $sequtils->invert_seq($genome_dir, $minus_dna_dir);
+    die "\nERROR: No FASTA files found in genome directory. Sequences must be over 50kb and less than 50% gaps. Exiting.\n"
+        if @$revfasfiles == 0;
     
-    for my $file (sort @revfasfiles) {
+    for my $file (sort @$revfasfiles) {
 	my $run_rev_hmm = Tephra::NonLTR::RunHMM->new( 
 	    fasta   => $file, 
 	    outdir  => $minus_out_dir, 
@@ -125,15 +123,31 @@ sub _split_genome {
     my $self = shift;
     my ($genome, $genome_dir) = @_;
 
+    my $length_thresh = 1e4; # 10kb
+    my $nperc_thresh  = 50;  # 50%
+
+    my @fasfiles;
     my $kseq = Bio::DB::HTS::Kseq->new($genome);
     my $iter = $kseq->iterator;
+
     while (my $seqobj = $iter->next_seq) {
 	my $id = $seqobj->name;
-	my $outfile = File::Spec->catfile($genome_dir, $id.'.fasta');
-	open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-	say $out join "\n", ">".$id, $seqobj->seq;
-	close $out;
+	my $seq = $seqobj->seq;
+	# filter by length (over 10kb) and N-percent (reject over 50%) to speed up search
+	# and reduce spurious matches
+	my $seqlength = length($seq);
+	my $n_count = ($seq =~ tr/Nn//);
+	my $n_perc = sprintf("%.2f",($n_count/$seqlength)*100);
+	if ($seqlength >= $length_thresh && $n_perc <= $nperc_thresh) {
+	    my $outfile = File::Spec->catfile($genome_dir, $id.'.fasta');
+	    open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+	    say $out join "\n", ">".$id, $seq;
+	    close $out;
+	    push @fasfiles, $outfile;
+	}
     }
+
+    return \@fasfiles;
 }
 
 =head1 AUTHOR

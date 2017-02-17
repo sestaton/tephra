@@ -90,11 +90,27 @@ sub _classify_ltr_superfamilies {
     my $blast_out = $classify_obj->search_unclassified($unc_fas);
     $classify_obj->annotate_unclassified($blast_out, $gypsy, $copia, $features, $ltr_rregion_map);
 
-    my $gyp_gff = $classify_obj->write_gypsy($gypsy, $header);
-    my $cop_gff = $classify_obj->write_copia($copia, $header);
-    my $unc_gff = $classify_obj->write_unclassified($features, $header);
+    my ($gyp_gff, $cop_gff, $unc_gff, %gffs);
+    if (%$gypsy) {
+	$gyp_gff = $classify_obj->write_gypsy($gypsy, $header);
+	$gffs{'gypsy'} = $gyp_gff;
+    }
+
+    if (%$copia) {
+        $cop_gff = $classify_obj->write_copia($copia, $header);
+	$gffs{'copia'} = $cop_gff;
+    }
+
+    if (%$features) {
+        $unc_gff = $classify_obj->write_unclassified($features, $header);
+	$gffs{'unclassified'} = $unc_gff;
+    }
+
+    #my $cop_gff = $classify_obj->write_copia($copia, $header);
+    #my $unc_gff = $classify_obj->write_unclassified($features, $header);
     
-    return ({ gypsy => $gyp_gff, copia => $cop_gff, unclassified => $unc_gff });
+    return \%gffs;
+    #return ({ gypsy => $gyp_gff, copia => $cop_gff, unclassified => $unc_gff });
 }
 
 sub _classify_ltr_families {
@@ -111,13 +127,13 @@ sub _classify_ltr_families {
     my $hlen     = $opt->{hitlen} // 80;
     my $debug    = $opt->{debug} // 0;
 
-    my ($cop_gff, $gyp_gff, $unc_gff) = @{$gffs}{qw(copia gypsy unclassified)};
+    #my ($cop_gff, $gyp_gff, $unc_gff) = @{$gffs}{qw(copia gypsy unclassified)};
 
-    for my $file ($cop_gff, $gyp_gff, $unc_gff) {
-	unless (defined $file && -e $file) {
-	    say STDERR "\nERROR: There was an error generating GFF3 for family level classification. Exiting.\n";
-	}
-    }
+    #for my $file ($cop_gff, $gyp_gff, $unc_gff) {
+	#unless (defined $file && -e $file) {
+	    #say STDERR "\nERROR: There was an error generating GFF3 for family level classification. Exiting.\n";
+	#}
+    #}
 
     my $classify_fams_obj = Tephra::Classify::LTRFams->new(
 	genome        => $genome,
@@ -133,7 +149,9 @@ sub _classify_ltr_families {
     my ($outfiles, $annot_ids) = $classify_fams_obj->make_ltr_families($gffs);
     $classify_fams_obj->combine_families($outfiles);
     $classify_fams_obj->annotate_gff($annot_ids, $ingff);
-    unlink $gyp_gff, $cop_gff, $unc_gff;
+    #unlink $gyp_gff, $cop_gff, $unc_gff;
+    
+    unlink $_ for values %$gffs;
 }
 
 sub help {

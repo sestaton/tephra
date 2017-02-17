@@ -25,11 +25,11 @@ Tephra::Genome::MaskRef - Mask a reference with repeats to reduce false positive
 
 =head1 VERSION
 
-Version 0.06.0
+Version 0.06.1
 
 =cut
 
-our $VERSION = '0.06.0';
+our $VERSION = '0.06.1';
 $VERSION = eval $VERSION;
 
 has genome => (
@@ -456,9 +456,22 @@ sub write_masking_results {
     my $total_elapsed = $t2 - $t0;
     my $final_time = sprintf("%.2f",$total_elapsed/60);
 
+    unless (defined $classlen && defined $orderlen && defined $namelen) {
+	say STDERR "\nERROR: Could not get classification for masking results, which likely means an issue with the input.\n".
+	    "       Please check input genome and database. If this issue persists please report it. Exiting.\n";
+	exit(1);
+    }
+
     ($classlen,$orderlen, $namelen) = ($classlen+10, $orderlen+10, $namelen+15);
     my $masked_total = 0;
-    say "=================== 'Tephra maskref' finished in $final_time minutes ==================";
+
+    my $closing_brace = '==================';
+    my $len = sprintf("%.0f", $final_time);
+    my $slen = length($len) - 1;
+    my $tr = '=' x $slen;
+    $closing_brace =~ s/$tr// if length($len) > 1;
+
+    say "=================== 'Tephra maskref' finished in $final_time minutes $closing_brace";
     printf "%-${classlen}s %-${classlen}s %-${orderlen}s %-${namelen}s\n", "Class", "Order", "Superfamily", "Percent Masked";
 
     say "-" x 80;
