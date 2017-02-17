@@ -41,6 +41,10 @@ sub validate_args {
 	say STDERR "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
+    elsif (! -e $opt->{genome}) {
+        say STDERR "\nERROR: The genome file does not exist. Check arguments.";
+        $self->help and exit(0);
+    }
 } 
 
 sub execute {
