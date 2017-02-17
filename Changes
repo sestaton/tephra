@@ -19,8 +19,9 @@ Version	Date	Location
 - Bug fix for 'sololtr' command to use SO compliant terms in GFF3 output.
 - Adjust output of 'maskref' command to account for different run lengths when formatting results
   table.
-- Add some error handling for 'maskref' command when there is an issue with the input. Now it should
-  die with a message instead of throwing warnings and generating an empty table.
+- Add some error handling for 'maskref' command when there is an issue with the input (or no input genome
+  file can be found). Now it should die with a message instead of throwing warnings and generating an 
+  empty table.
 
 0.06.0	1/25/17	Vancouver, BC
 
