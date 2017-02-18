@@ -376,9 +376,10 @@ sub get_masking_results {
 sub write_masking_results {
     my $self = shift;
     my ($reports, $seqs, $out, $outfile, $t0) = @_;
-    my $genome = $self->genome;
+    my $genome     = $self->genome;
     my $split_size = $self->splitsize;
-    my $overlap = $self->overlap;
+    my $overlap    = $self->overlap;
+    my $repeatdb   = $self->repeatdb;
 
     # first write out the masked reference
     my ($seqct, $genome_length) = (0, 0);
@@ -490,6 +491,7 @@ sub write_masking_results {
     say "=" x 80;
     say "Input file:          $genome";
     say "Output file:         $outfile";
+    say "Database file:       $repeatdb";
     say "Masking window size: $split_size";
     say "Window overlap size: $overlap";
     say "Total genome length: $genome_length";
