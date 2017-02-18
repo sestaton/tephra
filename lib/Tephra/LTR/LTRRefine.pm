@@ -554,19 +554,25 @@ sub sort_features {
 
 	my ($header, %features);
 	open my $in, '<', $gff or die "\nERROR: Could not open file: $gff\n";
-	while (<$in>) {
-	    chomp;
-	    if (/^#/) {
-		$header .= $_."\n";
+	while (my $line = <$in>) {
+	    chomp $line;
+	    if ($line =~ /^##\w+/) {
+		$header .= $line."\n";
 	    }
 	    else {
 		last;
 	    }
 	}
 	close $in;
-	chomp $header;
-	say $ogff $header;
-	
+
+	if (not defined $header) {
+	    say STDERR "\nWARNING: Could not get sequence region from $gff.\n";
+	}
+	else {
+	    chomp $header;
+	    say $ogff $header;
+	}
+
 	for my $chromosome (nsort keys %$combined_features) {
 	    for my $ltr (nsort_by { m/repeat_region\d+\_\d+\|\|(\d+)\|\|\d+\|\|\d+/ and $1 }
 			 keys %{$combined_features->{$chromosome}}) {
