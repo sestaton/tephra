@@ -68,10 +68,8 @@ sub _refine_trim_predictions {
 
     my $refine_obj = Tephra::LTR::LTRRefine->new( genome => $fasta, outfile => $outfile, is_trim => 1 );
 	
-    my $relaxed_features
-	= $refine_obj->collect_features({ gff => $relaxed_gff, pid_threshold => 85 });
-    my $strict_features
-	= $refine_obj->collect_features({ gff => $strict_gff,  pid_threshold => 99 });
+    my $relaxed_features = $refine_obj->collect_features({ gff => $relaxed_gff, pid_threshold => 85 });
+    my $strict_features  = $refine_obj->collect_features({ gff => $strict_gff,  pid_threshold => 99 });
 
     my $best_elements = $refine_obj->get_overlaps({ relaxed_features => $relaxed_features, 
 						    strict_features  => $strict_features });
