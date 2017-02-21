@@ -15,7 +15,7 @@ sub opt_spec {
 	[ "indir|i=s",        "The directory of LTR families in FASTA format. "                             ],
 	[ "genome|g=s",       "The genome sequences in FASTA format to search for solo-LTRs "               ],
 	[ "percentid|p=i",    "Percent identity threshold for matches. (Default 39)."                       ], 
-	[ "percentcov|c=f",   "Percent coverage threshold for matches. (Default 0.80)."                     ],
+	[ "percentcov|c=i",   "Percent coverage threshold for matches. (Default 80)."                       ],
 	[ "matchlen|l=f",     "Length threshold for matches. (Default 80)."                                 ],
 	[ "outfile|o=s",      "The GFF file to save results to. "                                           ],
 	[ "report|r=s",       "Parse hmmsearch of each sequence and produce a summary of align statistics." ],
@@ -69,7 +69,7 @@ sub _calculate_soloLTR_abund {
     my $report  = $opt->{report};
     my $outfile = $opt->{outfile};
     my $pid     = $opt->{percentid} // 39;
-    my $pcov    = $opt->{percentcov} // 0.80;
+    my $pcov    = $opt->{percentcov} // 80;
     my $len     = $opt->{matchlen} // 80;
     my $seq     = $opt->{seq} // 0;
     my $famnum  = $opt->{numfamilies} // 20;
@@ -116,8 +116,8 @@ sub help {
  Options:
      -p|percentid     :    Percent identity threshold for matches. (Default 39).
                            NB: For a threshold of 80% say 80.
-     -f|percentcov    :    Percent coverage threshold for matches. (Default 0.80).
-                           NB: For a threshold of 80% say 0.80.
+     -f|percentcov    :    Percent coverage threshold for matches. (Default 80).
+                           NB: For a threshold of 80% say 80.
      -l|matchlen      :    Length threshold for matches. (Default 80).
                            NB: For a threshold of 80 bp say 80.
      -r|report        :    Parse hmmsearch of each sequence and produce a summary of align statistics.
@@ -141,7 +141,7 @@ __END__
 
 =head1 SYNOPSIS    
 
- tephra sololtr sololtr -i ref_tephra_gypsy_dir -g ref_masked.fas -r sololtr_report.tsv -l 80 -p -c 0.09 -s
+ tephra sololtr sololtr -i ref_tephra_gypsy_dir -g ref_masked.fas -r sololtr_report.tsv -l 80 -p 39 -f 90 -s
 
 =head1 DESCRIPTION
 
@@ -182,7 +182,7 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =item -f, --percentcov
 
  Percent coverage threshold for matches. (default 0.80).
- NB: For a threshold of 80 percent say 0.80.
+ NB: For a threshold of 80 percent say 80.
 
 =item -l, --matchlen
 

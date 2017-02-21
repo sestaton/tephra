@@ -86,7 +86,7 @@ has percentcov => (
     isa       => 'Num',
     predicate => 'has_percentcov',
     lazy      => 1,
-    default   => 0.80,
+    default   => 80,
 );
 
 has matchlen => (
@@ -413,7 +413,7 @@ sub write_hmmsearch_report {
 		    my $percent_coverage = sprintf("%.2f",$hsplen/$aln_stats->{$query});
 		    $positions++ for @ident_pos;
 		    my $pid = sprintf("%.2f", $positions/$aln_stats->{$query} * 100);
-		    if ( $hsplen >= $match_len && $hsplen >= $aln_stats->{$query} * $match_pcov ) {
+		    if ( $hsplen >= $match_len && $hsplen >= $aln_stats->{$query} * ($match_pcov/100) ) {
 			my $qid = $query =~ s/_ltrseqs_muscle-out//r; # non-destructive substitution in v5.14+
 			if ($pid >= $match_pid) {
 			    $matches++;
