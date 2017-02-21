@@ -73,12 +73,12 @@ has seqfile => (
     coerce   => 1,
 );
 
-has percentident => (
+has percentid => (
     is        => 'ro',
     isa       => 'Num',
-    predicate => 'has_percentident',
+    predicate => 'has_percentid',
     lazy      => 1,
-    default   => 0.39,
+    default   => 39,
 );
 
 has percentcov => (
@@ -365,7 +365,7 @@ sub write_hmmsearch_report {
     my $self = shift;
     my ($aln_stats, $search_report) = @_;
     my $genome     = $self->genome->absolute->resolve;
-    my $match_pid  = $self->percentident;
+    my $match_pid  = $self->percentid;
     my $match_len  = $self->matchlen;
     my $match_pcov = $self->percentcov;
 

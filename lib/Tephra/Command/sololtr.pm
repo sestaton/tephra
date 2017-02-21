@@ -14,7 +14,7 @@ sub opt_spec {
     return (
 	[ "indir|i=s",        "The directory of LTR families in FASTA format. "                             ],
 	[ "genome|g=s",       "The genome sequences in FASTA format to search for solo-LTRs "               ],
-	[ "percentident|p=f", "Percent identity threshold for matches. (Default 0.39)."                     ], 
+	[ "percentid|p=i",    "Percent identity threshold for matches. (Default 39)."                       ], 
 	[ "percentcov|c=f",   "Percent coverage threshold for matches. (Default 0.80)."                     ],
 	[ "matchlen|l=f",     "Length threshold for matches. (Default 80)."                                 ],
 	[ "outfile|o=s",      "The GFF file to save results to. "                                           ],
@@ -68,7 +68,7 @@ sub _calculate_soloLTR_abund {
     my $genome  = $opt->{genome};
     my $report  = $opt->{report};
     my $outfile = $opt->{outfile};
-    my $pid     = $opt->{percentident} // 0.39;
+    my $pid     = $opt->{percentid} // 39;
     my $pcov    = $opt->{percentcov} // 0.80;
     my $len     = $opt->{matchlen} // 80;
     my $seq     = $opt->{seq} // 0;
@@ -82,7 +82,7 @@ sub _calculate_soloLTR_abund {
 	genome       => $genome,
 	report       => $report,
 	outfile      => $outfile,
-	percentident => $pid,
+	percentid    => $pid,
 	percentcov   => $pcov,
 	matchlen     => $len,
 	numfamilies  => $famnum,
@@ -114,12 +114,12 @@ sub help {
      -o|outfile       :    The GFF file to write the solo-LTRs to.
 
  Options:
-     -p|percentident  :    Percent identity threshold for matches. (Default 0.39).
-                           NB: For a threshold of 80 percent say 0.80.
+     -p|percentid     :    Percent identity threshold for matches. (Default 39).
+                           NB: For a threshold of 80% say 80.
      -f|percentcov    :    Percent coverage threshold for matches. (Default 0.80).
-                           NB: For a threshold of 80 percent say 0.80.
+                           NB: For a threshold of 80% say 0.80.
      -l|matchlen      :    Length threshold for matches. (Default 80).
-                           NB: For a threshold of 80 percent say 0.80.
+                           NB: For a threshold of 80 bp say 80.
      -r|report        :    Parse hmmsearch of each sequence and produce a summary of align statistics.
      -s|seq           :    Extract query sequence from domain alignment.
      -n|numfamilies   :    The number of families to analyze (Default: the top 20).
@@ -174,10 +174,10 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =over 2
 
-=item -p, --percentident
+=item -p, --percentid
 
- Percent identity threshold for matches. (default 0.39).
- NB: For a threshold of 80 percent say 0.80.
+ Percent identity threshold for matches. (default 39).
+ NB: For a threshold of 80 percent say 80.
 
 =item -f, --percentcov
 
@@ -187,7 +187,7 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =item -l, --matchlen
 
  Length threshold for matches. (default 80).
- NB: For a threshold of 80 percent say 0.80.
+ NB: For a threshold of 80 bp say 80.
 
 =item -r, --report
 
