@@ -112,6 +112,7 @@ sub find_tc1_mariner {
 		    = @{$tir_feature}{qw(seq_id source start end strand)};
 		my $seq = $self->subseq($index, $seq_id, $elem_id, $start, $end, undef);
 		my $id = join "_", 'DTT', $elem_id, $seq_id, $start, $end;
+		$tir_feature->{attributes}{ID}[0] =~ s/(.*)/DTT_$1/;
 
 		$lines .= join "\n", ">".$id, $seq;
 		$len = $end - $start + 1;
@@ -218,6 +219,7 @@ sub find_hat {
                     = @{$tir_feature}{qw(seq_id source start end strand)};
                 my $seq = $self->subseq($index, $seq_id, $elem_id, $start, $end, undef);
                 $id = join "_", 'DTA', $elem_id, $seq_id, $start, $end;
+		$tir_feature->{attributes}{ID}[0] =~ s/(.*)/DTA_$1/;
 
                 $lines .= join "\n", ">".$id, $seq;
                 $len = $end - $start + 1;
@@ -327,6 +329,7 @@ sub find_mutator {
                     = @{$tir_feature}{qw(seq_id source start end strand)};
                 my $seq = $self->subseq($index, $seq_id, $elem_id, $start, $end, undef);
                 my $id = join "_", 'DTM', $elem_id, $seq_id, $start, $end;
+		$tir_feature->{attributes}{ID}[0] =~ s/(.*)/DTM_$1/;
 
                 $lines .= join "\n", ">".$id, $seq;
                 $len = $end - $start + 1;
@@ -439,6 +442,7 @@ sub find_cacta {
 		}
 		
                 my $id = join "_", 'DTC', $elem_id, $seq_id, $start, $end;
+		$tir_feature->{attributes}{ID}[0] =~ s/(.*)/DTC_$1/;
 
                 $lines .= join "\n", ">".$id, $seq;
                 $len = $end - $start + 1;
@@ -540,7 +544,8 @@ sub write_unclassified_tirs {
                     = @{$tir_feature}{qw(seq_id source start end strand)};
                 my $seq = $self->subseq($index, $seq_id, $elem_id, $start, $end, undef);
                 my $id = join "_", 'DTX', $elem_id, $seq_id, $start, $end;
-
+		$tir_feature->{attributes}{ID}[0] =~ s/(.*)/DTX_$1/;
+		
                 $lines .= join "\n", ">".$id, $seq;
                 $len = $end - $start + 1;
             }
