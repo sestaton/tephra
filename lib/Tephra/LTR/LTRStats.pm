@@ -96,7 +96,7 @@ has all => (
 sub calculate_ltr_ages {
     my $self = shift;
     my $threads = $self->threads;
-    my $outfile = $self->outfile;;
+    my $outfile = $self->outfile;
 
     my $args = $self->collect_feature_args;
     
