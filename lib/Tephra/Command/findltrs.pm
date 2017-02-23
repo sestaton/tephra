@@ -8,6 +8,7 @@ use File::Find;
 use File::Basename;
 use Tephra -command;
 use Tephra::Config::Exe;
+use Tephra::Config::Reader;
 use Tephra::LTR::LTRSearch;
 use Tephra::LTR::LTRRefine;
 #use Data::Dump::Color;
@@ -125,7 +126,7 @@ sub _run_ltr_search {
     my ($tephra_hmmdb, $tephra_trnadb) = @{$config}{qw(hmmdb trnadb)};
     
     my $genome  = $opt->{genome};
-    my $ltrconf = $opt->{config};
+    #my $ltrconf = $opt->{config};
     my $hmmdb   = $opt->{hmmdb} // $tephra_hmmdb;
     my $trnadb  = $opt->{trnadb} // $tephra_trnadb;
 
@@ -133,14 +134,14 @@ sub _run_ltr_search {
 	genome   => $genome, 
 	hmmdb    => $hmmdb,
 	trnadb   => $trnadb,
-	config   => $ltrconf,
     );
 
     $search_opts{clean} = $opt->{clean} // 0;
     $search_opts{debug} = $opt->{debug} // 0;
 
     my $ltr_search    = Tephra::LTR::LTRSearch->new(%search_opts);
-    my $search_config = $ltr_search->get_configuration;
+    #my $search_config = $ltr_search->get_configuration;
+    my $search_config = Tephra::Config::Reader->new( config => $opt->{config} )->get_configuration;
 
     unless (defined $opt->{index} && @indexfiles == 7) {
 	my ($name, $path, $suffix) = fileparse($opt->{genome}, qr/\.[^.]*/);
