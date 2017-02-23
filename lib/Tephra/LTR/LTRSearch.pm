@@ -13,8 +13,7 @@ use YAML::Tiny;
 use namespace::autoclean;
 #use Data::Dump;
 
-with 'Tephra::LTR::Role::Config',
-     'Tephra::Role::Run::GT';
+with 'Tephra::Role::Run::GT';
 
 =head1 NAME
 
@@ -46,14 +45,14 @@ sub ltr_search_strict {
 
     ## LTRharvest constraints
     my ($overlaps, $mintsd, $maxtsd, $minlenltr, $maxlenltr, $mindistltr, $maxdistltr, $pdomcutoff, $pdomevalue) = 
-	@{$config}{qw(overlaps mintsd maxtsd minlenltr maxlenltr mindistltr maxdistltr pdomcutoff pdomevalue)};
+	@{$config->{findltrs}}{qw(overlaps mintsd maxtsd minlenltr maxlenltr mindistltr maxdistltr pdomcutoff pdomevalue)};
 
     my ($seedlength, $tsdradius, $xdrop, $swmat, $swmis, $swins, $swdel) = 
-	@{$config}{qw(seedlength tsdradius xdrop swmat swmis swins swdel)};
+	@{$config->{findltrs}}{qw(seedlength tsdradius xdrop swmat swmis swins swdel)};
 
     ## LTRdigest constraints
     my ($pptradius, $pptlen, $pptagpr, $uboxlen, $uboxutpr, $pbsradius, $pbslen, $pbsoffset, $pbstrnaoffset, $pbsmaxeditdist, $maxgaplen) = 
-	@{$config}{qw(pptradius pptlen pptagpr uboxlen uboxutpr pbsradius pbslen pbsoffset pbstrnaoffset pbsmaxeditdist maxgaplen)};
+	@{$config->{findltrs}}{qw(pptradius pptlen pptagpr uboxlen uboxutpr pbsradius pbslen pbsoffset pbstrnaoffset pbsmaxeditdist maxgaplen)};
 
     my (%suf_args, %ltrh_cmd, %ltrd_cmd);
     
@@ -108,14 +107,14 @@ sub ltr_search_relaxed {
 
     ## LTRharvest constraints
     my ($overlaps, $mintsd, $maxtsd, $minlenltr, $maxlenltr, $mindistltr, $maxdistltr, $pdomcutoff, $pdomevalue) = 
-	@{$config}{qw(overlaps mintsd maxtsd minlenltr maxlenltr mindistltr maxdistltr pdomcutoff pdomevalue)};
+	@{$config->{findltrs}}{qw(overlaps mintsd maxtsd minlenltr maxlenltr mindistltr maxdistltr pdomcutoff pdomevalue)};
 
     my ($seedlength, $tsdradius, $xdrop, $swmat, $swmis, $swins, $swdel) = 
-	@{$config}{qw(seedlength tsdradius xdrop swmat swmis swins swdel)};
+	@{$config->{findltrs}}{qw(seedlength tsdradius xdrop swmat swmis swins swdel)};
 
     ## LTRdigest constraints
     my ($pptradius, $pptlen, $pptagpr, $uboxlen, $uboxutpr, $pbsradius, $pbslen, $pbsoffset, $pbstrnaoffset, $pbsmaxeditdist, $maxgaplen) = 
-	@{$config}{qw(pptradius pptlen pptagpr uboxlen uboxutpr pbsradius pbslen pbsoffset pbstrnaoffset pbsmaxeditdist maxgaplen)};
+	@{$config->{findltrs}}{qw(pptradius pptlen pptagpr uboxlen uboxutpr pbsradius pbslen pbsoffset pbstrnaoffset pbsmaxeditdist maxgaplen)};
 
     my (%suf_args, %ltrh_cmd, %ltrd_cmd);
     
@@ -153,13 +152,6 @@ sub ltr_search_relaxed {
     unlink $gffh_sort;
 
     return $ltrg_gff;
-}
-
-sub get_configuration {
-    my $self = shift;
-    my $configfile   = YAML::Tiny->read( $self->config );
-    my $valid_config = $self->parse_configuration( $configfile );
-    return $valid_config;
 }
 
 =head1 AUTHOR
