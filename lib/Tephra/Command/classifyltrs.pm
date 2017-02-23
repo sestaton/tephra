@@ -173,6 +173,7 @@ Options:
     -c|percentcov :   The percent coverage cutoff for the shorter element in pairwise matches (Default: 50).
     -p|percentid  :   The percent identity cutoff for classification of pairwise matches (Default: 80).
     -l|hitlen     :   The minimum length for classifying pairwise BLAST hits (Default: 80).
+    --debug       :   Show external commands for debugging (Default: no).
 
 END
 }
@@ -252,6 +253,10 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
  The percent identity cutoff for classification of pairwise matches (Default: 80). This option is used for family-level
  classifications. Increase for stringency and smaller families, decrease for reduced stringency               
  and larger families. It is recommended to leave this value unchanged and only change the percent coverage cutoff.
+
+=item --debug
+
+ Show external commands for debugging (Default: no).
 
 =item -h, --help
 
