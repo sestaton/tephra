@@ -105,6 +105,7 @@ Options:
     -t|threads    :   The number of threads to use for masking (Default: 1).
     -s|splitsize  :   The chunk size to process at a time (Default: 50kb).
     -v|overlap    :   The overlap between the chunks of the chromosomes (Default: 100 bp).
+    -c|clean      :   Clean up the index files (Default: yes).
 
 END
 }
@@ -182,6 +183,10 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
  The overlap between the chunks of the chromosomes (Default: 100 bp). Increasing this value will slow down 
  processing. The goal is to reduce artifacts by spliting up the chromosomes.
+
+=item -c, --clean
+
+ Clean up the index files (Default: yes).
 
 =item -h, --help
 
