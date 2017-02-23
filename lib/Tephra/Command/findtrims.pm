@@ -14,7 +14,7 @@ use Tephra::LTR::LTRRefine;
 
 sub opt_spec {
     return (    
-	[ "genome|g=s",  "The genome sequences in FASTA format to search for LTR-RTs "   ],
+	[ "genome|g=s",  "The genome sequences in FASTA format to search for TRIMs "   ],
 	[ "trnadb|t=s",  "The file of tRNA sequences in FASTA format to search for PBS " ], 
 	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains "    ],
 	[ "outfile|o=s", "The final combined and filtered GFF3 file of TRIMs "           ],
@@ -129,7 +129,7 @@ sub _write_unrefined_trims {
 sub help {
     print STDERR<<END
 
-USAGE: tephra findltrs [-h] [-m]
+USAGE: tephra findtrims [-h] [-m]
     -m --man      :   Get the manual entry for a command.
     -h --help     :   Print the command usage.
 
