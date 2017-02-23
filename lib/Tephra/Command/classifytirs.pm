@@ -100,7 +100,7 @@ USAGE: tephra classifytirs [-h] [-m]
 
 Required:
     -g|genome     :   The genome sequences in FASTA format to search for TIR TEs. 
-    -i|gff        :   The GFF3 file of LTR-RTs in <--genome>.
+    -i|gff        :   The GFF3 file of TIRs in <--genome>.
     -o|outfile    :   The final combined and filtered GFF3 file of TIRs.
 
 END
@@ -139,7 +139,7 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =item -i, --gff
 
- The GFF3 file of LTR-RTs in <--genome> as output by the 'tephra findtirs' command.
+ The GFF3 file of TIRs in <--genome> as output by the 'tephra findtirs' command.
 
 =item -o, --outfile
 
