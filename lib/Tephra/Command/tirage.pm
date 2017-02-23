@@ -35,7 +35,7 @@ sub validate_args {
         exit(0);
     }
     elsif (! $opt->{genome} || ! -e $opt->{genome}) {
-        say STDERR "\nERROR: The '--genome' file does not appear to exist. Check input.";
+        say STDERR "\nERROR: The '--genome' argument was not given or the file does not exist. Check input.";
         $self->help and exit(0);
     }
     elsif (! $opt->{outfile}) {
