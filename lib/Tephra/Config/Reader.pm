@@ -246,6 +246,66 @@ sub _validate_params {
     
     return $config;
 }
+
+sub get_all_opts {
+    my $self = shift;
+    my ($config) = @_;
+
+    my ($logfile, $genome, $repeatdb, $hmmdb, $trnadb, $outfile, $clean, $debug, $threads, $subs_rate);
+    my ($name, $path, $suffix); # genome file specs
+    #dd $config->{all};
+
+    if (defined $config->{all}{genome} && -e $config->{all}{genome}) {
+        $genome = $config->{all}{genome};
+    }
+    else {
+        #dd $config->{all};
+        say STDERR "\nERROR: genome file was not defined in configuration or does not exist. Check input. Exiting.\n";
+        exit(1);
+    }
+
+    if (defined $config->{all}{repeatdb} && -e $config->{all}{repeatdb}) {
+        $repeatdb = $config->{all}{repeatdb};
+    }   
+    else {
+        say STDERR "\nERROR: repeatdb file was not defined in configuration or does not exist. Check input. Exiting.\n";
+        exit(1);
+    }
+
+    if (defined $config->{all}{outfile}) {
+        $outfile = $config->{all}{outfile};
+    }
+    else {
+        ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
+        $outfile = File::Spec->catfile( abs_path($path), $name.'_tephra_transposons.gff3' );
+        $logfile = $config->{all}{logfile} // File::Spec->catfile( abs_path($path), $name.'_tephra_full.log' );
+    }
+
+    my $execonfig = Tephra::Config::Exe->new->get_config_paths;
+    my ($tephra_hmmdb, $tephra_trnadb) = @{$execonfig}{qw(hmmdb trnadb)};
+    
+    $hmmdb  = defined $config->{all}{hmmdb}  && $config->{all}{hmmdb} =~ /tephradb/i ? 
+        $tephra_hmmdb : $config->{all}{hmmdb};
+    $trnadb = defined $config->{all}{trnadb} && $config->{all}{trnadb} =~ /tephradb/i ? 
+        $tephra_trnadb : $config->{all}{trnadb};
+
+    $clean = defined $config->{all}{clean} && $config->{all}{clean} =~ /yes/i ? 1 : 0;
+    $debug = defined $config->{all}{debug} && $config->{all}{debug} =~ /yes/i ? 1 : 0;
+    $threads = $config->{all}{threads} // 1;
+    $subs_rate = $config->{all}{subs_rate} // 1e-8;
+    $logfile = $config->{all}{logfile} // File::Spec->catfile( abs_path($path), $name.'_tephra_full.log' );
+
+    return { logfile   => $logfile,
+             genome    => $genome, 
+             repeatdb  => $repeatdb, 
+             hmmdb     => $hmmdb, 
+             trnadb    => $trnadb, 
+             outfile   => $outfile, 
+             clean     => $clean, 
+             debug     => $debug, 
+             threads   => $threads, 
+             subs_rate => $subs_rate };
+}
     
 =head1 AUTHOR
 
