@@ -16,15 +16,8 @@ use Tephra::LTR::LTRRefine;
 sub opt_spec {
     return (    
 	[ "config|c=s",  "The Tephra LTR option configuration file "                      ],
-	[ "genome|g=s",  "The genome sequences in FASTA format to search for LTR-RTs "    ],
-	[ "trnadb|t=s",  "The file of tRNA sequences in FASTA format to search for PBS "  ], 
-	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains "     ],
 	[ "outfile|o=s", "The final combined and filtered GFF3 file of LTR-RTs "          ],
 	[ "index|i=s",   "The suffixerator index to use for the LTR search "              ],
-	[ "dedup|r",     "Discard elements with duplicate coding domains (Default: no) "  ],
-	[ "tnpfilter",   "Discard elements containing transposase domains (Default: no) " ],
-	[ "clean",       "Clean up the index files (Default: yes) "                       ],
-	[ "debug",       "Show external command for debugging (Default: no) "             ],
 	[ "help|h",      "Display the usage menu and exit. "                              ],
         [ "man|m",       "Display the full manual. "                                      ],
     );
@@ -42,7 +35,7 @@ sub validate_args {
         $self->help;
         exit(0);
     }
-    elsif (!$opt->{config} || !$opt->{genome}) {
+    elsif (!$opt->{config}) {
 	say STDERR "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
@@ -50,28 +43,28 @@ sub validate_args {
 	say STDERR "\nERROR: '--config' file given but does not appear to exist. Check input.";
 	$self->help and exit(0);
     }
-    elsif (! -e $opt->{genome}) { 
-	say STDERR "\nERROR: '--genome' file given but does not appear to exist. Check input.";
-	$self->help and exit(0);
-    }
+    #elsif (! -e $opt->{genome}) { 
+	#say STDERR "\nERROR: '--genome' file given but does not appear to exist. Check input.";
+	#$self->help and exit(0);
+    #}
 } 
 
 sub execute {
     my ($self, $opt, $args) = @_;
 
-    my ($relaxed_gff, $strict_gff) = _run_ltr_search($opt);
-    my $some = _refine_ltr_predictions($relaxed_gff, $strict_gff, $opt);
+    my ($global_opts, $search_config, $relaxed_gff, $strict_gff) = _run_ltr_search($opt);
+    my $some = _refine_ltr_predictions($global_opts, $search_config, $relaxed_gff, $strict_gff, $opt);
 }
 
 sub _refine_ltr_predictions {
-    my ($relaxed_gff, $strict_gff, $opt) = @_;
+    my ($global_opts, $search_config, $relaxed_gff, $strict_gff, $opt) = @_;
 
     my %refine_opts = (
-	genome => $opt->{genome}, 
+	genome => $global_opts->{genome}, 
     );
 
-    $refine_opts{remove_dup_domains} = $opt->{dedup} // 0;
-    $refine_opts{remove_tnp_domains} = $opt->{tnpfilter} // 0;
+    $refine_opts{remove_dup_domains} = $search_config->{findltrs}{dedup} =~ /yes/i ? 1 : 0;
+    $refine_opts{remove_tnp_domains} = $search_config->{findltrs}{tnpfilter} =~ /yes/i ? 1 : 0;
     $refine_opts{outfile} = $opt->{outfile} if $opt->{outfile};
 
     my $refine_obj = Tephra::LTR::LTRRefine->new(%refine_opts);
@@ -125,36 +118,48 @@ sub _run_ltr_search {
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($tephra_hmmdb, $tephra_trnadb) = @{$config}{qw(hmmdb trnadb)};
     
-    my $genome  = $opt->{genome};
+    my $config_obj    = Tephra::Config::Reader->new( config => $opt->{config} );
+    my $search_config = $config_obj->get_configuration;
+    my $global_opts   = $config_obj->get_all_opts($search_config);
+
+    #my $genome  = $opt->{genome};
     #my $ltrconf = $opt->{config};
-    my $hmmdb   = $opt->{hmmdb} // $tephra_hmmdb;
-    my $trnadb  = $opt->{trnadb} // $tephra_trnadb;
+    #my $hmmdb   = $opt->{hmmdb} // $tephra_hmmdb;
+    #my $trnadb  = $opt->{trnadb} // $tephra_trnadb;
 
-    my %search_opts = ( 
-	genome   => $genome, 
-	hmmdb    => $hmmdb,
-	trnadb   => $trnadb,
-    );
+    #my %search_opts = ( 
+	#genome   => $global_opts->{genome}, 
+	#hmmdb    => $global_opts->{hmmdb},
+	#trnadb   => $global_opts->{trnadb},
+    #);
 
-    $search_opts{clean} = $opt->{clean} // 0;
-    $search_opts{debug} = $opt->{debug} // 0;
+    #$search_opts{clean} = defined $opt->{clean} && $opt->{clean} != 0 ? 1 : 0;
+    #$search_opts{debug} = $opt->{debug} // 0;
 
-    my $ltr_search    = Tephra::LTR::LTRSearch->new(%search_opts);
+    #my $ltr_search    = Tephra::LTR::LTRSearch->new(%search_opts);
+    my $ltr_search = Tephra::LTR::LTRSearch->new( genome   => $global_opts->{genome},
+						  hmmdb    => $global_opts->{hmmdb},
+						  trnadb   => $global_opts->{trnadb}, 
+						  clean    => $global_opts->{clean},
+						  debug    => $global_opts->{debug} );
     #my $search_config = $ltr_search->get_configuration;
-    my $search_config = Tephra::Config::Reader->new( config => $opt->{config} )->get_configuration;
+    #my $search_config = Tephra::Config::Reader->new( config => $opt->{config} )->get_configuration;
 
     unless (defined $opt->{index} && @indexfiles == 7) {
-	my ($name, $path, $suffix) = fileparse($opt->{genome}, qr/\.[^.]*/);
-	$opt->{index} = $opt->{genome}.".index";
+	my ($name, $path, $suffix) = fileparse($global_opts->{genome}, qr/\.[^.]*/);
+	$opt->{index} = $global_opts->{genome}.'.index';
     
-	my @suff_args = qq(-db $opt->{genome} -indexname $opt->{index} -tis -suf -lcp -ssp -sds -des -dna);
+	my @suff_args = qq(-db $global_opts->{genome} -indexname $opt->{index} -tis -suf -lcp -ssp -sds -des -dna);
 	$ltr_search->create_index(\@suff_args);
     }
-    
-    my $strict_gff  = $ltr_search->ltr_search_strict($search_config,  $opt->{index});
-    my $relaxed_gff = $ltr_search->ltr_search_relaxed($search_config, $opt->{index});
+    #exit;
 
-    return ($relaxed_gff, $strict_gff);
+    my $strict_gff  = $ltr_search->ltr_search_strict($search_config,  $opt->{index});
+    #exit;
+    my $relaxed_gff = $ltr_search->ltr_search_relaxed($search_config, $opt->{index});
+    exit;
+
+    return ($global_opts, $search_config, $relaxed_gff, $strict_gff);
 }
 
 sub help {
@@ -166,17 +171,10 @@ USAGE: tephra findltrs [-h] [-m]
 
 Required:
     -c|config     :   The Tephra LTR option configuration file.
-    -g|genome     :   The genome sequences in FASTA format to search for LTR-RTs.
 
 Options:
     -o|outfile    :   The final combined and filtered GFF3 file of LTR-RTs.
     -i|index      :   The suffixerator index to use for the LTR search.
-    -t|trnadb     :   The file of tRNA sequences in FASTA format to search for PBS.
-    -d|hmmdb      :   The HMM db in HMMERv3 format to search for coding domains.
-    -r|dedup      :   Discard elements with duplicate coding domains (Default: no).
-    --tnpfilter   :   Discard elements containing transposase domains (Default: no).
-    --clean       :   Clean up the index files (Default: yes).
-    --debug       :   Show external commands for debugging (Default: no).
 
 END
 }
@@ -192,7 +190,7 @@ __END__
 
 =head1 SYNOPSIS    
 
- tephra findltrs -g ref.fas -t trnadb.fas -d te_models.hmm --config tephra_ltrs_conf.yml
+ tephra findltrs --config tephra_ltrs_conf.yml
 
 =head1 DESCRIPTION
  
