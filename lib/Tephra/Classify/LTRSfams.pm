@@ -12,6 +12,7 @@ use IPC::System::Simple qw(capture);
 use List::UtilsBy       qw(nsort_by);
 use Cwd                 qw(getcwd abs_path);
 use Path::Class         qw(file);
+use Log::Any            qw($log);
 use Try::Tiny;
 use Tephra::Config::Exe;
 #use Data::Dump::Color;
@@ -336,14 +337,19 @@ sub write_gypsy {
     }
     close $domf;
     
-    say STDERR join "\t", "gypsy_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
+    #say STDERR join "\t", "gypsy_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
     my $stat = Statistics::Descriptive::Full->new;
     $stat->add_data(@lengths);
     my $min   = $stat->min;
     my $max   = $stat->max;
-    my $mean  = $stat->mean;
+    my $mean  = sprintf("%.2f",$stat->mean);
     my $count = $stat->count;
-    say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+    $log->info("Results - Total number of Gypsy elements:                $count");
+    $log->info("Results - Minimum length of Gypsy elements:              $min");
+    $log->info("Results - Maximum length of Gypsy elements:              $max");
+    $log->info("Results - Mean length of Gypsy elements:                 $mean");
+    $log->info("Results - Number of Gypsy elements with protein matches: $pdoms");
+    #say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
     
     return $outfile;
 }
@@ -420,12 +426,17 @@ sub write_copia {
     $stat->add_data(@lengths);
     my $min   = $stat->min;
     my $max   = $stat->max;
-    my $mean  = $stat->mean;
+    my $mean  = sprintf("%.2f", $stat->mean);
     my $count = $stat->count;
     if (defined $count && defined $min && defined $max && defined $mean) {
-	say STDERR join "\t", "copia_count", "min_length", "max_length", "mean_length", 
-	    "elements_with_protein_matches";
-	say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+	#say STDERR join "\t", "copia_count", "min_length", "max_length", "mean_length", 
+	    #"elements_with_protein_matches";
+	#say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+	$log->info("Results - Total number of Copia elements:                $count");
+	$log->info("Results - Minimum length of Copia elements:              $min");
+	$log->info("Results - Maximum length of Copia elements:              $max");
+	$log->info("Results - Mean length of Copia elements:                 $mean");
+	$log->info("Results - Number of Copia elements with protein matches: $pdoms");
     }
 
     return $outfile;
@@ -501,14 +512,19 @@ sub write_unclassified {
     }
     close $domf;
     
-    say STDERR join "\t", "unclassified_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
+    #say STDERR join "\t", "unclassified_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
     my $stat = Statistics::Descriptive::Full->new;
     $stat->add_data(@lengths);
     my $min   = $stat->min;
     my $max   = $stat->max;
-    my $mean  = $stat->mean;
+    my $mean  = sprintf("%.2f", $stat->mean);
     my $count = $stat->count;
-    say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+    #say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+    $log->info("Results - Total number of unclassified LTR-RT elements:                $count");
+    $log->info("Results - Minimum length of unclassified LTR-RT elements:              $min");
+    $log->info("Results - Maximum length of unclassified LTR-RT elements:              $max");
+    $log->info("Results - Mean length of unclassified LTR-RT elements:                 $mean");
+    $log->info("Results - Number of unclassified LTR-RT elements with protein matches: $pdoms");
 
     return $outfile;
 }

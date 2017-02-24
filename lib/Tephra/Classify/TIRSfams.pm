@@ -14,6 +14,7 @@ use List::Util          qw(sum max);
 use Cwd                 qw(getcwd abs_path);
 use IPC::System::Simple qw(system);
 use Capture::Tiny       qw(capture);
+use Log::Any            qw($log);
 use Path::Class::File;
 use Try::Tiny;
 use Carp 'croak';
@@ -158,12 +159,18 @@ sub find_tc1_mariner {
     $stat->add_data(@lengths);
     my $min   = $stat->min;
     my $max   = $stat->max;
-    my $mean  = $stat->mean;
+    my $mean  = sprintf("%.2f", $stat->mean);
     my $count = $stat->count;
 
     if ($count > 0) {
-	say STDERR join "\t", "mariner_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
-	say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+	#say STDERR join "\t", "mariner_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
+	#say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+	$log->info("Results - Total number of Tc1-Mariner elements:           $count");
+	$log->info("Results - Minimum length of Tc1-Mariner elements:         $min");
+	$log->info("Results - Maximum length of Tc1-Mariner elements:         $max");
+	$log->info("Results - Mean length of Tc1-Mariner elements:            $mean");
+	$log->info("Results - Number of Tc1-Mariner elements protein matches: $pdoms");
+
 	return ($outfile, $fas);
     }
     else {
@@ -270,8 +277,13 @@ sub find_hat {
     my $count = $stat->count;
 
     if ($count > 0) {
-	say STDERR join "\t", "hat_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
-	say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+	#say STDERR join "\t", "hat_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
+	#say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+	$log->info("Results - Total number of hAT elements:           $count");
+        $log->info("Results - Minimum length of hAT elements:         $min");
+        $log->info("Results - Maximum length of hAT elements:         $max");
+        $log->info("Results - Mean length of hAT elements:            $mean");
+	$log->info("Results - Number of hAT elements protein matches: $pdoms");
 	return ($outfile, $fas);
     }
     else {
@@ -380,8 +392,13 @@ sub find_mutator {
     my $count = $stat->count;
 
     if ($count > 0) {
-	say STDERR join "\t", "mutator_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";	
-	say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+	#say STDERR join "\t", "mutator_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";	
+	#say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+	$log->info("Results - Total number of Mutator elements:           $count");
+        $log->info("Results - Minimum length of Mutator elements:         $min");
+        $log->info("Results - Maximum length of Mutator elements:         $max");
+        $log->info("Results - Mean length of Mutator elements:            $mean");
+	$log->info("Results - Number of Mutator elements protein matches: $pdoms");
 	return ($outfile, $fas);
     }
     else {
@@ -493,8 +510,13 @@ sub find_cacta {
     my $count = $stat->count;
 
     if ($count > 0) {
-	say STDERR join "\t", "cacta_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
-	say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+	#say STDERR join "\t", "cacta_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
+	#say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+	$log->info("Results - Total number of CACTA elements:                 $count");
+        $log->info("Results - Minimum length of CACTA elements:               $min");
+        $log->info("Results - Maximum length of CACTA elements:               $max");
+        $log->info("Results - Mean length of CACTA elements:                  $mean");
+	$log->info("Results - Number of CACTA elements protein matches:       $pdoms");
 	return ($outfile, $fas);
     }
     else {
@@ -590,8 +612,13 @@ sub write_unclassified_tirs {
     my $count = $stat->count;
 
     if ($count > 0) {
-	say STDERR join "\t", "unclassified_tir_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
-	say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+	#say STDERR join "\t", "unclassified_tir_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
+	#say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+	$log->info("Results - Total number of unclassified TIR elements:      $count");
+        $log->info("Results - Minimum length of unclassified TIR elements:    $min");
+        $log->info("Results - Maximum length of unclassified TIR elements:    $max");
+        $log->info("Results - Mean length of unclassified TIR elements:       $mean");
+	$log->info("Results - Number of unclas. TIR elements protein matches: $pdoms");
 	return ($outfile, $fas);
     }
     else {
