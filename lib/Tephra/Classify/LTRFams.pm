@@ -13,6 +13,7 @@ use List::Util  qw(min max);
 use Time::HiRes qw(gettimeofday);
 use File::Path  qw(make_path);
 use Cwd         qw(abs_path);         
+use Log::Any    qw($log);
 use Parallel::ForkManager;
 use Carp 'croak';
 use Try::Tiny;
@@ -124,10 +125,15 @@ sub make_ltr_families {
 				  #say join "\t", $m_sf."_total_elements", $m_sf."_families", 
 				      #$m_sf."_total_in_families", $m_sf."_singletons";
 				  #say join "\t", $m_elemct, $m_famct, $m_famtot, $m_singct;
-				  say "=====> Family-level statistics for $sf:";
-                                  say join "\t", $sf."_total_elements", $sf."_families",
-				      $sf."_total_in_families", $sf."_singletons";
-                                  say join "\t", $elemct, $famct, $famtot, $singct;
+				  #say "=====> Family-level statistics for $sf:";
+                                  #say join "\t", $sf."_total_elements", $sf."_families",
+				      #$sf."_total_in_families", $sf."_singletons";
+                                  #say join "\t", $elemct, $famct, $famtot, $singct;
+				  my ($sfam) = ($sf =~ /_?(\w+)\z/);
+				  $log->info("Results - Number of $sfam families:                      $famct");
+				  $log->info("Results - Number of $sfam elements in families:          $famtot");
+				  $log->info("Results - Number of $sfam singleton families/elements:   $singct");
+				  $log->info("Results - Number of $sfam elements (for debugging):      $elemct");
 
 				  push @family_fastas, $data_ref->{$type}{family_fasta};
 				  push @annotated_ids, $data_ref->{$type}{annotated_ids};
