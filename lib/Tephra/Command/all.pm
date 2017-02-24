@@ -44,7 +44,7 @@ sub validate_args {
         $self->help;
         exit(0);
     }
-    elsif (!$opt->{config}) {
+    elsif (! $opt->{config}) {
 	say STDERR "\nERROR: Required arguments not given.";
 	$self->help and exit(0);
     }
@@ -64,13 +64,12 @@ sub _run_all_commands {
     my ($opt) = @_;
 
     my (@mask_files, @fas_files, @gff_files);
-    my $config = Tephra::Config::Reader->new( config => $opt->{config} )->get_configuration;
+    my $config_obj  = Tephra::Config::Reader->new( config => $opt->{config} );
+    my $config      = $config_obj->get_configuration;
+    my $global_opts = $config_obj->get_all_opts($config);
     #dd $config and exit;
 
     ## set global options
-    #my ($genome, $repeatdb, $hmmdb, $trnadb, $outfile, $clean, $debug, $threads, $subs_rate); # =
-    my $global_opts = _get_all_opts($config);
-    #dd $global_opts and exit;
     my ($tzero, $log) = _init_tephra($global_opts);
 
     my ($name, $path, $suffix) = fileparse($global_opts->{genome}, qr/\.[^.]*/);   
@@ -83,7 +82,7 @@ sub _run_all_commands {
     my $findltrs_opts = ['-g', $global_opts->{genome}, '-o', $ltr_gff, '-c', $opt->{config}];
     push @$findltrs_opts, '--debug'
 	if $global_opts->{debug};
-    #_run_tephra_cmd('findltrs', $findltrs_opts, $global_opts->{debug});
+    _run_tephra_cmd('findltrs', $findltrs_opts, $global_opts->{debug});
 
     my $t1 = gettimeofday();
     my $total_elapsed = $t1 - $t0;
@@ -99,7 +98,7 @@ sub _run_all_commands {
     my $ltrc_gff = File::Spec->catfile( abs_path($path), $name.'_tephra_ltrs_classified.gff3' );
     my $ltrc_fas = File::Spec->catfile( abs_path($path), $name.'_tephra_ltrs_classified.fasta' );
     my $ltrc_dir = File::Spec->catdir(  abs_path($path), $name.'_tephra_ltrs_classified_results' );
-    say STDERR $ltrc_dir and exit;
+    #say STDERR $ltrc_dir and exit;
     push @fas_files, $ltrc_fas;
     push @gff_files, $ltrc_gff;
 
@@ -109,7 +108,7 @@ sub _run_all_commands {
      push @$classifyltrs_opts, '--debug'
 	if $global_opts->{debug};
 
-    #_run_tephra_cmd('classifyltrs', $classifyltrs_opts, $global_opts->{debug}); 
+    _run_tephra_cmd('classifyltrs', $classifyltrs_opts, $global_opts->{debug}); 
     #say STDERR "=====> Done running 'classifyltrs' command.";
     my $t3 = gettimeofday();
     $total_elapsed = $t3 - $t2;
@@ -129,7 +128,7 @@ sub _run_all_commands {
 		      '-s', $config->{maskref}{splitsize}, '-v', $config->{maskref}{overlap}, 
 		      '-t', $global_opts->{threads}];
 
-    #_capture_tephra_cmd('maskref', $mask1_opts, $global_opts->{debug});
+    _capture_tephra_cmd('maskref', $mask1_opts, $global_opts->{debug});
 
     #say STDERR "=====> Done running 'maskref' command.";
     my $t5 = gettimeofday();
@@ -156,7 +155,7 @@ sub _run_all_commands {
     push @$solo_opts, '--allfamilies'
 	if $config->{sololtr}{allfamilies} =~ /yes/i;
 
-    #_capture_tephra_cmd('sololtr', $solo_opts, $global_opts->{debug});
+    _capture_tephra_cmd('sololtr', $solo_opts, $global_opts->{debug});
 
     my $t7 = gettimeofday();
     $total_elapsed = $t7 - $t6;
@@ -199,7 +198,7 @@ sub _run_all_commands {
     my $illrec_opts = ['-i', $ltrc_fas, '-o', $illrec_fas, '-r', $illrec_rep,
 		       '-s', $illrec_stats, '-t', $global_opts->{threads}];
 
-    #_capture_tephra_cmd('illrecomb', $illrec_opts, $global_opts->{debug});
+    _capture_tephra_cmd('illrecomb', $illrec_opts, $global_opts->{debug});
     #say STDERR "=====> Done running 'illrecomb' command.";
     my $t11 = gettimeofday();
     $total_elapsed = $t11 - $t10;
@@ -218,7 +217,7 @@ sub _run_all_commands {
     push @gff_files, $trims_gff;
 
     my $findtrims_opts = ['-g', $genome_mask1, '-o', $trims_gff];
-    #_run_tephra_cmd('findtrims', $findtrims_opts, $global_opts->{debug});
+    _run_tephra_cmd('findtrims', $findtrims_opts, $global_opts->{debug});
     #say STDERR "=====> Done running 'findtrims' command.";
     my $t13 = gettimeofday();
     $total_elapsed = $t13 - $t12;
@@ -237,7 +236,7 @@ sub _run_all_commands {
     my $mask2_opts = ['-g', $genome_mask1, '-d', $trims_fas, '-o', $genome_mask2,
 		      '-s', $config->{maskref}{splitsize}, '-v', $config->{maskref}{overlap},
 		      '-t', $global_opts->{threads}];
-    #_capture_tephra_cmd('maskref', $mask2_opts, $global_opts->{debug});
+    _capture_tephra_cmd('maskref', $mask2_opts, $global_opts->{debug});
     #say STDERR "=====> Done running 'maskref' command.";
     my $t15 = gettimeofday();
     $total_elapsed = $t15 - $t14;
@@ -259,7 +258,7 @@ sub _run_all_commands {
     push @$findhels_opts, '--debug'
 	if $global_opts->{debug};
 
-    #_capture_tephra_cmd('findhelitrons', $findhels_opts, $global_opts->{debug});
+    _capture_tephra_cmd('findhelitrons', $findhels_opts, $global_opts->{debug});
     my $t17 = gettimeofday();
     $total_elapsed = $t17 - $t16;
     $final_time = sprintf("%.2f",$total_elapsed/60);
@@ -278,7 +277,7 @@ sub _run_all_commands {
     my $mask3_opts = ['-g', $genome_mask2, '-d', $hel_fas, '-o', $genome_mask3,
 		      '-s', $config->{maskref}{splitsize}, '-v', $config->{maskref}{overlap},
 		      '-t', $global_opts->{threads}];
-    #_capture_tephra_cmd('maskref', $mask3_opts, $global_opts->{debug});
+    _capture_tephra_cmd('maskref', $mask3_opts, $global_opts->{debug});
 
     #say STDERR "=====> Done running 'maskref' command.";
     my $t19 = gettimeofday();
@@ -297,7 +296,7 @@ sub _run_all_commands {
     my $findtirs_opts = ['-g', $genome_mask3, '-o', $tir_gff];
     push @$findtirs_opts, '--debug'
         if $global_opts->{debug};
-    #_capture_tephra_cmd('findtirs', $findtirs_opts, $global_opts->{debug});
+    _capture_tephra_cmd('findtirs', $findtirs_opts, $global_opts->{debug});
 
     #say STDERR "=====> Done running 'findtirs' command.";
     my $t21 = gettimeofday();
@@ -317,7 +316,7 @@ sub _run_all_commands {
     push @fas_files, $tirc_fas;
 
     my $classifytirs_opts = ['-g', $genome_mask3, '-i', $tir_gff, '-o', $tirc_gff];
-    #_run_tephra_cmd('classifytirs', $classifytirs_opts, $global_opts->{debug});
+    _run_tephra_cmd('classifytirs', $classifytirs_opts, $global_opts->{debug});
     my $t23 = gettimeofday();
     $total_elapsed = $t23 - $t22;
     $final_time = sprintf("%.2f",$total_elapsed/60);
@@ -336,7 +335,7 @@ sub _run_all_commands {
     my $mask4_opts = ['-g', $genome_mask3, '-d', $tirc_fas, '-o', $genome_mask4,
 		      '-s', $config->{maskref}{splitsize}, '-v', $config->{maskref}{overlap},
 		      '-t', $global_opts->{threads}];
-     #_capture_tephra_cmd('maskref', $mask4_opts, $global_opts->{debug});
+    _capture_tephra_cmd('maskref', $mask4_opts, $global_opts->{debug});
     #say STDERR "=====> Done running 'maskref' command.";
     my $t25 = gettimeofday();
     $total_elapsed = $t25 - $t24;
@@ -355,7 +354,7 @@ sub _run_all_commands {
     push @gff_files, $nonltr_gff;
 
     my $findnonltrs_opts = ['-g', $genome_mask4, '-o', $nonltr_gff];
-    #_capture_tephra_cmd('findnonltrs', $findnonltrs_opts, $global_opts->{debug});
+    _capture_tephra_cmd('findnonltrs', $findnonltrs_opts, $global_opts->{debug});
     #say STDERR "=====> Done running 'findnonltrs' command.";
     my $t27 = gettimeofday();
     $total_elapsed = $t27 - $t26;
@@ -404,7 +403,7 @@ sub _run_all_commands {
     my $finalmask_opts = ['-g', $genome_mask3, '-d', $customRepDB, '-o', $final_mask,
 			  '-s', $config->{maskref}{splitsize}, '-v', $config->{maskref}{overlap},
 			  '-t', $global_opts->{threads}];
-     #_run_tephra_cmd('maskref', $finalmask_opts, $global_opts->{debug});
+    _run_tephra_cmd('maskref', $finalmask_opts, $global_opts->{debug});
 
     my $t31 = gettimeofday();
     $total_elapsed = $t31 - $t30;
