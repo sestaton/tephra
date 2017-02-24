@@ -9,6 +9,7 @@ use File::Copy          qw(move);
 use Sort::Naturally     qw(nsort);
 use List::UtilsBy       qw(nsort_by);
 use List::Util          qw(sum max);
+use Log::Any            qw($log);
 use Cwd                 qw(abs_path);
 use Bio::GFF3::LowLevel qw(gff3_parse_feature gff3_format_feature);
 use Bio::DB::HTS::Kseq;
@@ -16,6 +17,7 @@ use Bio::DB::HTS::Faidx;
 use Set::IntervalTree;
 use Path::Class::File;
 use Carp 'croak';
+
 #use Data::Dump::Color;
 use namespace::autoclean;
 
@@ -514,13 +516,18 @@ sub reduce_features {
 
     $best_stats{n_perc_filtered} = $n_perc_filtered;
 
-    print STDERR join q{ }, "Number of elements filtered by type:";
+    #print STDERR join q{ }, "Number of elements filtered by type:";
     for my $s (keys %best_stats) {
-	print STDERR " $s=$best_stats{$s}";
+	#print STDERR " $s=$best_stats{$s}";
+	$log->info("Results - Number of elements filtered by '$s': $best_stats{$s}");
     }
 
-    say STDERR join q{ }, "\nNumber of elements found under what constraints:", 
-        "Relaxed=$all", "Strict=$part", "Best=$best", "Combined=$comb";
+    #say STDERR join q{ }, "\nNumber of elements found under what constraints:", 
+        #"Relaxed=$all", "Strict=$part", "Best=$best", "Combined=$comb";
+    $log->info("Results - Number of elements found with 'relaxed' constraints:                        $all");
+    $log->info("Results - Number of elements found with 'strict' constraints:                         $part");
+    $log->info("Results - Number of 'best' elements that were overlapping in these two data sets:     $best");
+    $log->info("Results - Number of 'combined' non-overlapping elements:                              $comb");
 
     return \%best_features;
 }
@@ -623,7 +630,8 @@ sub sort_features {
 	}
 	close $ogff;
 	
-	say STDERR "\nTotal elements written: $elem_tot";
+	#say STDERR "\nTotal elements written: $elem_tot";
+	$log->info("Results - Total elements written:               $elem_tot");
     }
     else {
 	open my $in, '<', $gff, or die "\nERROR: Could not open file: $gff\n";
@@ -649,7 +657,8 @@ sub sort_features {
 	close $in;
 
 	move $gff, $outfile or die "Move failed: $!";
-	say STDERR "\nTotal elements written: $elem_tot";
+	#say STDERR "\nTotal elements written: $elem_tot";
+	$log->info("Results - Total elements written:               $elem_tot");
     }
     close $ofas;
 
