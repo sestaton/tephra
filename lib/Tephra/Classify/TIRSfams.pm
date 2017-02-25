@@ -64,7 +64,7 @@ has outfile => (
 #
 sub find_tc1_mariner {
     my $self = shift;
-    my ($feature, $header) = @_;
+    my ($feature, $header, $index) = @_;
     my $fasta = $self->genome->absolute->resolve;
     my $gff   = $self->gff->absolute->resolve;
 
@@ -76,8 +76,6 @@ sub find_tc1_mariner {
     my %pdom_index;
     my $pdom_org;
     my @all_pdoms;
-
-    my $index = $self->index_ref($fasta);
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name.'_tc1-mariner.gff3');
@@ -118,6 +116,8 @@ sub find_tc1_mariner {
 		$lines .= join "\n", ">".$id, $seq;
 		$len = $end - $start + 1;
             }
+	    $tir_feature->{attributes}{Parent}[0] =~ s/(.*)/DTT_$1/
+		if $tir_feature->{attributes}{Parent}[0] =~ /terminal_inverted_repeat_element/;
 	    my $gff3_str = gff3_format_feature($tir_feature);
 	    $mar_feats .= $gff3_str;
 	}
@@ -180,7 +180,7 @@ sub find_tc1_mariner {
 
 sub find_hat {
     my $self = shift;
-    my ($feature, $header) = @_;
+    my ($feature, $header, $index) = @_;
     my $gff   = $self->gff->absolute->resolve;
     my $fasta = $self->genome->absolute->resolve;
     
@@ -192,8 +192,6 @@ sub find_hat {
     my %pdom_index;
     my $pdom_org;
     my @all_pdoms;
-
-    my $index = $self->index_ref($fasta);
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name.'_hAT.gff3');
@@ -231,6 +229,8 @@ sub find_hat {
                 $lines .= join "\n", ">".$id, $seq;
                 $len = $end - $start + 1;
             }
+	    $tir_feature->{attributes}{Parent}[0] =~ s/(.*)/DTA_$1/
+		if $tir_feature->{attributes}{Parent}[0] =~/terminal_inverted_repeat_element/;
             my $gff3_str = gff3_format_feature($tir_feature);
             $hat_feats .= $gff3_str;
 	}
@@ -293,7 +293,7 @@ sub find_hat {
 
 sub find_mutator {
     my $self = shift;
-    my ($feature, $header) = @_;
+    my ($feature, $header, $index) = @_;
     my $gff   = $self->gff->absolute->resolve;
     my $fasta = $self->genome->absolute->resolve;
 
@@ -305,8 +305,6 @@ sub find_mutator {
     my %pdom_index;
     my $pdom_org;
     my @all_pdoms;
-
-    my $index = $self->index_ref($fasta);
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name.'_mutator.gff3');
@@ -346,6 +344,8 @@ sub find_mutator {
                 $lines .= join "\n", ">".$id, $seq;
                 $len = $end - $start + 1;
             }
+	    $tir_feature->{attributes}{Parent}[0] =~ s/(.*)/DTM_$1/
+		if $tir_feature->{attributes}{Parent}[0] =~/terminal_inverted_repeat_element/;
             my $gff3_str = gff3_format_feature($tir_feature);
             $mut_feats .= $gff3_str;
         }
@@ -408,7 +408,7 @@ sub find_mutator {
 
 sub find_cacta {
     my $self = shift;
-    my ($feature, $header) = @_;
+    my ($feature, $header, $index) = @_;
     my $fasta = $self->genome->absolute->resolve;
     my $gff   = $self->gff->absolute->resolve;
 
@@ -421,8 +421,6 @@ sub find_cacta {
     my $pdom_org;
     my @all_pdoms;
     
-    my $index = $self->index_ref($fasta);
-
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name.'_cacta.gff3');
     my $fas     = File::Spec->catfile($path, $name.'_cacta.fasta');
@@ -464,6 +462,8 @@ sub find_cacta {
                 $lines .= join "\n", ">".$id, $seq;
                 $len = $end - $start + 1;
             }
+	    $tir_feature->{attributes}{Parent}[0] =~ s/(.*)/DTC_$1/
+		if $tir_feature->{attributes}{Parent}[0] =~/terminal_inverted_repeat_element/;
             my $gff3_str = gff3_format_feature($tir_feature);
             $cac_feats .= $gff3_str;
         }
@@ -526,7 +526,7 @@ sub find_cacta {
 
 sub write_unclassified_tirs {
     my $self = shift;
-    my ($feature, $header) = @_;
+    my ($feature, $header, $index) = @_;
     my $gff   = $self->gff->absolute->resolve;
     my $fasta = $self->genome->absolute->resolve;
 
@@ -538,8 +538,6 @@ sub write_unclassified_tirs {
     my %pdom_index;
     my $pdom_org;
     my @all_pdoms;
-
-    my $index = $self->index_ref($fasta);
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name.'_unclassified.gff3');
@@ -571,6 +569,8 @@ sub write_unclassified_tirs {
                 $lines .= join "\n", ">".$id, $seq;
                 $len = $end - $start + 1;
             }
+	    $tir_feature->{attributes}{Parent}[0] =~ s/(.*)/DTX_$1/
+		if $tir_feature->{attributes}{Parent}[0] =~/terminal_inverted_repeat_element/;
             my $gff3_str = gff3_format_feature($tir_feature);
             $unc_feats .= $gff3_str;
 	}
