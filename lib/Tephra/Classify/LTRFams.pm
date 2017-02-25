@@ -95,7 +95,7 @@ sub make_ltr_families {
     my $threads = $self->threads;    
     my $t0 = gettimeofday();
     my $logfile = File::Spec->catfile($outdir, 'ltr_superfamilies_thread_report.log');
-    open my $log, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
+    open my $fmlog, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
 
     my $pm = Parallel::ForkManager->new(3);
     local $SIG{INT} = sub {
@@ -141,7 +141,7 @@ sub make_ltr_families {
 			      my $t1 = gettimeofday();
 			      my $elapsed = $t1 - $t0;
 			      my $time = sprintf("%.2f",$elapsed/60);
-			      say $log "$ident just finished with PID $pid and exit code: $exit_code in $time minutes";
+			      say $fmlog "$ident just finished with PID $pid and exit code: $exit_code in $time minutes";
 			} );
 
     for my $type (keys %$gff_obj) {
@@ -168,8 +168,9 @@ sub make_ltr_families {
     my $total_elapsed = $t2 - $t0;
     my $final_time = sprintf("%.2f",$total_elapsed/60);
 
-    say $log "\n========> Finished classifying LTR families in $final_time minutes";
-    close $log;
+    say $fmlog "\n========> Finished classifying LTR families in $final_time minutes";
+    $log->info("Finished classifying LTR families in $final_time minutes");
+    close $fmlog;
 
     return (\%outfiles, \%annot_ids);
 }
