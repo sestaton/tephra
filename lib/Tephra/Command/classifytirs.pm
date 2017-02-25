@@ -6,6 +6,8 @@ use strict;
 use warnings;
 use Tephra -command;
 use Tephra::Classify::TIRSfams;
+use Log::Any qw($log);
+#use Data::Dump::Color;
 
 sub opt_spec {
     return (    
@@ -54,22 +56,19 @@ sub _classify_tir_predictions {
 	outfile  => $opt->{outfile}
     );
 
-    my $index = $opt->{genome}.'.fai';
-    unless (-e $index) {
-	$classify_obj->index_ref;
-    }
+    my $index = $classify_obj->index_ref($opt->{genome});
     my ($header, $features) = $classify_obj->collect_gff_features($opt->{gff});
 
     my $all_ct = (keys %$features);
-    my ($tcmoutfile, $tcmfas) = $classify_obj->find_tc1_mariner($features, $header);
+    my ($tcmoutfile, $tcmfas) = $classify_obj->find_tc1_mariner($features, $header, $index);
     my $tc1_ct = (keys %$features);
-    my ($hatoutfile, $hatfas) = $classify_obj->find_hat($features, $header);
+    my ($hatoutfile, $hatfas) = $classify_obj->find_hat($features, $header, $index);
     my $hat_ct = (keys %$features);
-    my ($mutoutfile, $mutfas) = $classify_obj->find_mutator($features, $header);
+    my ($mutoutfile, $mutfas) = $classify_obj->find_mutator($features, $header, $index);
     my $mut_ct = (keys %$features);
-    my ($cacoutfile, $cacfas) = $classify_obj->find_cacta($features, $header);
+    my ($cacoutfile, $cacfas) = $classify_obj->find_cacta($features, $header, $index);
     my $cacta_ct = (keys %$features);
-    my ($uncoutfile, $uncfas) = $classify_obj->write_unclassified_tirs($features, $header);
+    my ($uncoutfile, $uncfas) = $classify_obj->write_unclassified_tirs($features, $header, $index);
     my $rem_ct = (keys %$features);
 
     my @fastas = grep { defined && /\.fasta$/ } ($tcmfas, $hatfas, $mutfas, $cacfas, $uncfas);
@@ -83,8 +82,14 @@ sub _classify_tir_predictions {
 
 	$classify_obj->write_combined_output(\%outfiles);
 	
-	say STDERR join "\t", "all", "after_tc1", "after_hat", "after_mut", "after_cacta", "after_rem";
-	say STDERR join "\t", $all_ct, $tc1_ct, $hat_ct, $mut_ct, $cacta_ct, $rem_ct;
+	#say STDERR join "\t", "all", "after_tc1", "after_hat", "after_mut", "after_cacta", "after_rem";
+	#say STDERR join "\t", $all_ct, $tc1_ct, $hat_ct, $mut_ct, $cacta_ct, $rem_ct;
+	$log->info("Results - Total number of TIR elements:   $all_ct");
+	$log->info("Results - Number of Tc1-Mariner elements: $tc1_ct");
+	$log->info("Results - Number of hAT elements:         $hat_ct");
+	$log->info("Results - Number of Mutator elements:     $mut_ct");
+	$log->info("Results - Number of CACTA elements:       $cacta_ct");
+	$log->info("Results - Number of remaining elements:   $rem_ct");
     }
     else {
 	say STDERR "\nWARNING: No TIR elements were classified. Check input.\n";
