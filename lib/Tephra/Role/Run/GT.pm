@@ -12,6 +12,7 @@ use File::Spec;
 use File::Find;
 use File::Basename;
 use Tephra::Config::Exe;
+#use Data::Dump::Color;
 use namespace::autoclean;
 
 =head1 NAME
@@ -208,9 +209,11 @@ sub clean_indexes {
     my ($dir) = @_;
 
     my @files;
-    find( sub { push @files, $File::Find::name
-		    if /\.llv|\.md5|\.prf|\.tis|\.suf|\.lcp|\.ssp|\.sds|\.des|\.dna|\.esq|\.prj|\.ois/
-	  }, $dir);
+    my $wanted  = sub { push @files, $File::Find::name
+			    if -f && /\.llv|\.md5|\.prf|\.tis|\.suf|\.lcp|\.ssp|\.sds|\.des|\.dna|\.esq|\.prj|\.ois/ };
+    my $process = sub { grep ! -d, @_ };
+    find({ wanted => $wanted, preprocess => $process }, $dir);
+
     unlink @files;
 }
 
