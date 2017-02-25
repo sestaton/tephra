@@ -83,22 +83,21 @@ sub _run_all_commands {
     push @$findltrs_opts, '--debug'
 	if $global_opts->{debug};
     _run_tephra_cmd('findltrs', $findltrs_opts, $global_opts->{debug});
-
+    
     my $t1 = gettimeofday();
     my $total_elapsed = $t1 - $t0;
     my $final_time = sprintf("%.2f",$total_elapsed/60);
     my $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - 'tephra findltrs' completed at: $ft. Final output file is:\nOutput files - $ltr_gff.");
+    $log->info("Command - 'tephra findltrs' completed at: $ft. Final output file is:");
+    $log->info("Output files - $ltr_gff.");
 
     ## classifyltrs
     my $t2 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra classifyltrs' started at:   $st.");
-    #say STDERR "=====> Running 'classifyltrs' command.";
     my $ltrc_gff = File::Spec->catfile( abs_path($path), $name.'_tephra_ltrs_classified.gff3' );
     my $ltrc_fas = File::Spec->catfile( abs_path($path), $name.'_tephra_ltrs_classified.fasta' );
     my $ltrc_dir = File::Spec->catdir(  abs_path($path), $name.'_tephra_ltrs_classified_results' );
-    #say STDERR $ltrc_dir and exit;
     push @fas_files, $ltrc_fas;
     push @gff_files, $ltrc_gff;
 
@@ -107,17 +106,17 @@ sub _run_all_commands {
 			      '-r', $ltrc_dir, '-t', $global_opts->{threads}];
      push @$classifyltrs_opts, '--debug'
 	if $global_opts->{debug};
-
     _run_tephra_cmd('classifyltrs', $classifyltrs_opts, $global_opts->{debug}); 
-    #say STDERR "=====> Done running 'classifyltrs' command.";
+
     my $t3 = gettimeofday();
     $total_elapsed = $t3 - $t2;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - 'tephra classifyltrs' completed at: $ft. Final output files:\nOutput files - $ltrc_gff\nOutput files - $ltrc_fas.");
+    $log->info("Command - 'tephra classifyltrs' completed at: $ft. Final output files:");
+    $log->info("Output files - $ltrc_gff");
+    $log->info("Output files - $ltrc_fas.");
 
     ## maskref on LTRs
-    #say STDERR "=====> Running 'maskref' command.";
     my $t4 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra maskref' for LTRs started at:   $st.");
@@ -127,18 +126,16 @@ sub _run_all_commands {
     my $mask1_opts = ['-g', $global_opts->{genome}, '-d', $ltrc_fas, '-o', $genome_mask1,
 		      '-s', $config->{maskref}{splitsize}, '-v', $config->{maskref}{overlap}, 
 		      '-t', $global_opts->{threads}];
-
     _capture_tephra_cmd('maskref', $mask1_opts, $global_opts->{debug});
 
-    #say STDERR "=====> Done running 'maskref' command.";
     my $t5 = gettimeofday();
     $total_elapsed = $t5 - $t4;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - 'tephra maskref' completed at: $ft. Final output file:\nOutput files - $genome_mask1.");
+    $log->info("Command - 'tephra maskref' completed at: $ft. Final output file:");
+    $log->info("Output files - $genome_mask1.");
 
     ## sololtr
-    #say STDERR "=====> Running 'sololtr' command.";
     my $t6 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra sololtr' started at:   $st.");
@@ -154,18 +151,18 @@ sub _run_all_commands {
 		     '-t', $global_opts->{threads}];
     push @$solo_opts, '--allfamilies'
 	if $config->{sololtr}{allfamilies} =~ /yes/i;
-
     _capture_tephra_cmd('sololtr', $solo_opts, $global_opts->{debug});
 
     my $t7 = gettimeofday();
     $total_elapsed = $t7 - $t6;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - 'tephra sololtr' completed at: $ft. Final output files:\nOutput files - $sololtr_gff\nOutput files - $sololtr_rep\nOutput files - $sololtr_fas.");
-    #say STDERR "=====> Done running 'sololtr' command.";
+    $log->info("Command - 'tephra sololtr' completed at: $ft. Final output files:");
+    $log->info("Output files - $sololtr_gff");
+    $log->info("Output files - $sololtr_rep");
+    $log->info("Output files - $sololtr_fas.");
 	
     ## ltrage
-    #say STDERR "=====> Running 'ltrage' command.";
     my $t8 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra ltrage' started at:   $st.");
@@ -174,20 +171,20 @@ sub _run_all_commands {
 		       '-o', $ltrage_out, '-f', $ltrc_gff];
     push @$ltrage_opts, '--all'
 	if $config->{ltrage}{all} =~ /yes/i;
-    push @$ltrage_opts, "-i $ltrc_dir"
-	if $config->{ltrage}{all} =~ /no/i;
-
+    if ($config->{ltrage}{all} =~ /no/i) {
+	push @$ltrage_opts, '-i';
+	push @$ltrage_opts, $ltrc_dir;
+    }
     _capture_tephra_cmd('ltrage', $ltrage_opts, $global_opts->{debug});
     
     my $t9 = gettimeofday();
     $total_elapsed = $t9 - $t8;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - 'tephra ltrage' completed at: $ft. Final output file:\nOutput files - $ltrage_out.");
-    #say STDERR "=====> Done running 'ltrage' command.";
+    $log->info("Command - 'tephra ltrage' completed at: $ft. Final output file:");
+    $log->info("Output files - $ltrage_out.");
 
     ## illrecomb
-    #say STDERR "=====> Running 'illrecomb' command.";
     my $t10 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra illrecomb' started at:   $st.");
@@ -197,17 +194,18 @@ sub _run_all_commands {
 
     my $illrec_opts = ['-i', $ltrc_fas, '-o', $illrec_fas, '-r', $illrec_rep,
 		       '-s', $illrec_stats, '-t', $global_opts->{threads}];
-
     _capture_tephra_cmd('illrecomb', $illrec_opts, $global_opts->{debug});
-    #say STDERR "=====> Done running 'illrecomb' command.";
+
     my $t11 = gettimeofday();
     $total_elapsed = $t11 - $t10;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - 'tephra illrecomb' completed at: $ft. Final output files:\nOutput files - $illrec_fas\nOutput files - $illrec_rep\nOutput files - $illrec_stats.");
+    $log->info("Command - 'tephra illrecomb' completed at: $ft. Final output files:");
+    $log->info("Output files - $illrec_fas");
+    $log->info("Output files - $illrec_rep");
+    $log->info("Output files - $illrec_stats.");
 
     ## TRIMs
-    #say STDERR "=====> Running 'findtrims' command.";
     my $t12 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findtrims' started at:   $st.");
@@ -218,15 +216,16 @@ sub _run_all_commands {
 
     my $findtrims_opts = ['-g', $genome_mask1, '-o', $trims_gff];
     _run_tephra_cmd('findtrims', $findtrims_opts, $global_opts->{debug});
-    #say STDERR "=====> Done running 'findtrims' command.";
+
     my $t13 = gettimeofday();
     $total_elapsed = $t13 - $t12;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - 'tephra findtrims' completed at: $ft. Final output files:\nOutput files - $trims_gff\nOutput files - $trims_fas.");
+    $log->info("Command - 'tephra findtrims' completed at: $ft. Final output files:");
+    $log->info("Output files - $trims_gff");
+    $log->info("Output files - $trims_fas.");
 
     ## maskref for TRIMs
-    #say STDERR "=====> Running 'maskref' command.";
     my $t14 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra maskref' on TRIMs started at:   $st.");
@@ -237,15 +236,15 @@ sub _run_all_commands {
 		      '-s', $config->{maskref}{splitsize}, '-v', $config->{maskref}{overlap},
 		      '-t', $global_opts->{threads}];
     _capture_tephra_cmd('maskref', $mask2_opts, $global_opts->{debug});
-    #say STDERR "=====> Done running 'maskref' command.";
+
     my $t15 = gettimeofday();
     $total_elapsed = $t15 - $t14;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - 'tephra maskref' on TRIMs completed at: $ft. Final output file:\nOutput files - $genome_mask2.");
+    $log->info("Command - 'tephra maskref' on TRIMs completed at: $ft. Final output file:");
+    $log->info("Output files - $genome_mask2.");
 
     ## findhelitrons
-    #say STDERR "=====> Running 'findhelitrons' command.";
     my $t16 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findhelitrons' started at:   $st.");
@@ -257,17 +256,17 @@ sub _run_all_commands {
     my $findhels_opts = ['-g', $genome_mask2, '-o', $hel_gff];
     push @$findhels_opts, '--debug'
 	if $global_opts->{debug};
-
     _capture_tephra_cmd('findhelitrons', $findhels_opts, $global_opts->{debug});
+
     my $t17 = gettimeofday();
     $total_elapsed = $t17 - $t16;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - 'tephra findhelitrons' completed at: $ft. Final output files:\nOutput files - $hel_gff\nOutput files - $hel_fas.");
-    #say STDERR "=====> Done running 'findhelitrons' command.";
+    $log->info("Command - 'tephra findhelitrons' completed at: $ft. Final output files:");
+    $log->info("Output files - $hel_gff");
+    $log->info("Output files - $hel_fas.");
 
     ## maskref on Helitrons
-    #say STDERR "=====> Running 'maskref' command.";
     my $t18 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra maskref' on Helitrons started at:   $st.");
@@ -279,15 +278,14 @@ sub _run_all_commands {
 		      '-t', $global_opts->{threads}];
     _capture_tephra_cmd('maskref', $mask3_opts, $global_opts->{debug});
 
-    #say STDERR "=====> Done running 'maskref' command.";
     my $t19 = gettimeofday();
     $total_elapsed = $t19 - $t18;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - 'tephra maskref' on Helitrons completed at: $ft. Final output file:\nOutput files - $genome_mask3.");
+    $log->info("Command - 'tephra maskref' on Helitrons completed at: $ft. Final output file:");
+    $log->info("Output files - $genome_mask3.");
 
     ## findtirs
-    #say STDERR "=====> Running 'findtirs' command.";
     my $t20 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findtirs' started at:   $st.");
@@ -298,15 +296,14 @@ sub _run_all_commands {
         if $global_opts->{debug};
     _capture_tephra_cmd('findtirs', $findtirs_opts, $global_opts->{debug});
 
-    #say STDERR "=====> Done running 'findtirs' command.";
     my $t21 = gettimeofday();
     $total_elapsed = $t21 - $t20;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - 'tephra findtirs' completed at: $ft. Final output file:\nOutput files - $tir_gff.");
+    $log->info("Command - 'tephra findtirs' completed at: $ft. Final output file:");
+    $log->info("Output files - $tir_gff.");
 
     ## classifytirs
-    #say STDERR "=====> Running 'classifytirs' command.";
     my $t22 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra classifytirs' started at:   $st.");
@@ -317,15 +314,16 @@ sub _run_all_commands {
 
     my $classifytirs_opts = ['-g', $genome_mask3, '-i', $tir_gff, '-o', $tirc_gff];
     _run_tephra_cmd('classifytirs', $classifytirs_opts, $global_opts->{debug});
+
     my $t23 = gettimeofday();
     $total_elapsed = $t23 - $t22;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - 'tephra classifytirs' completed at: $ft. Final output files:\nOutput files - $tirc_gff\nOutput files - $tirc_fas.");
-    #say STDERR "=====> Done running 'classifytirs' command.";
+    $log->info("Command - 'tephra classifytirs' completed at: $ft. Final output files:");
+    $log->info("Output files - $tirc_gff");
+    $log->info("Output files - $tirc_fas.");
 
     ## maskref on TIRs
-    #say STDERR "=====> Running 'maskref' command.";
     my $t24 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra maskref' on TIRs started at:   $st.");
@@ -336,15 +334,15 @@ sub _run_all_commands {
 		      '-s', $config->{maskref}{splitsize}, '-v', $config->{maskref}{overlap},
 		      '-t', $global_opts->{threads}];
     _capture_tephra_cmd('maskref', $mask4_opts, $global_opts->{debug});
-    #say STDERR "=====> Done running 'maskref' command.";
+
     my $t25 = gettimeofday();
     $total_elapsed = $t25 - $t24;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - 'tephra maskref' on TIRs completed at: $ft. Final output file:\nOutput files - $genome_mask4.");
+    $log->info("Command - 'tephra maskref' on TIRs completed at: $ft. Final output file:");
+    $log->info("Output files - $genome_mask4.");
 
     ## findnonltrs
-    #say STDERR "=====> Running 'findnonltrs' command.";
     my $t26 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findnonltrs' started at:   $st.");
@@ -355,21 +353,21 @@ sub _run_all_commands {
 
     my $findnonltrs_opts = ['-g', $genome_mask4, '-o', $nonltr_gff];
     _capture_tephra_cmd('findnonltrs', $findnonltrs_opts, $global_opts->{debug});
-    #say STDERR "=====> Done running 'findnonltrs' command.";
+    
     my $t27 = gettimeofday();
     $total_elapsed = $t27 - $t26;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - 'tephra findnonltrs' completed at: $ft. Final output files:\nOutput files - $nonltr_gff\nOutput files - $nonltr_fas.");
+    $log->info("Command - 'tephra findnonltrs' completed at: $ft. Final output files:");
+    $log->info("Output files - $nonltr_gff");
+    $log->info("Output files - $nonltr_fas.");
 
     ## combine results
-    #say STDERR "=====> Combining all FASTA results.";
     my $t28 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - Generating combined FASTA and GFF3 files at:   $st.");
     my $customRepDB  = File::Spec->catfile( abs_path($path), $name.'_tephra_transposons.fasta' );
     my $customRepGFF = File::Spec->catfile( abs_path($path), $name.'_tephra_transposons.gff3' );
-    #say STDERR "=====> Combining all FASTA results to: $customRepDB.";
 
     open my $out, '>', $customRepDB or die "\nERROR: Could not open file: $customRepDB\n";
     for my $file (@fas_files) {
@@ -385,17 +383,20 @@ sub _run_all_commands {
     my $exe_conf = Tephra::Config::Exe->new->get_config_paths;
     my $gt = $exe_conf->{gt};
     my $gff_cmd = "$gt gff3 -sort @gff_files";
-    $gff_cmd .= " | perl -ne 'print unless /^#\\w+\\d+?$/' > $customRepGFF";
+    $gff_cmd .= " | perl -ne 'print unless /^#\\w+\\d+?\$/' > $customRepGFF";
+    #say STDERR "debug: $gff_cmd";
+
     my @gtsort_out = capture([0..5], $gff_cmd);
 
     my $t29 = gettimeofday();
     $total_elapsed = $t29 - $t28;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Results - Finished generating combined FASTA and GFF3 files at:   $ft. Final output files:\nOutput files - $customRepGFF\nOutput files - $customRepDB.");
+    $log->info("Results - Finished generating combined FASTA and GFF3 files at:   $ft. Final output files:");
+    $log->info("Output files - $customRepGFF");
+    $log->info("Output files - $customRepDB.");
 
     my $final_mask = File::Spec->catfile( abs_path($path), $name.'_tephra_transposons_masked.fasta' );
-    #say STDERR "=====> Generating final masked genome: $final_mask";
     my $t30 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra maskref' on full transposon database started at:   $st.");
@@ -409,9 +410,9 @@ sub _run_all_commands {
     $total_elapsed = $t31 - $t30;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Results - 'tephra maskref' on full transposon database finished at:   $ft. Final output file:\nOutput files - $final_mask.");
+    $log->info("Results - 'tephra maskref' on full transposon database finished at:   $ft. Final output file:");
+    $log->info("Output files - $final_mask.");
     
-    #say STDERR "=====> Cleaning up any databases or indexes....";
     ## clean up
     #my $clean_vmidx;
     #my $has_vmatch = 0;
@@ -430,7 +431,6 @@ sub _run_all_commands {
     my @fais = glob "*.fai";
     unlink @fais;
     unlink @mask_files;
-    #say STDERR "=====> Tephra complete.";
 
     # Log summary of results
     _log_interval( $tzero, $log );
