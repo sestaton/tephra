@@ -43,10 +43,6 @@ sub validate_args {
 	say STDERR "\nERROR: '--config' file given but does not appear to exist. Check input.";
 	$self->help and exit(0);
     }
-    #elsif (! -e $opt->{genome}) { 
-	#say STDERR "\nERROR: '--genome' file given but does not appear to exist. Check input.";
-	#$self->help and exit(0);
-    #}
 } 
 
 sub execute {
@@ -122,28 +118,11 @@ sub _run_ltr_search {
     my $search_config = $config_obj->get_configuration;
     my $global_opts   = $config_obj->get_all_opts($search_config);
 
-    #my $genome  = $opt->{genome};
-    #my $ltrconf = $opt->{config};
-    #my $hmmdb   = $opt->{hmmdb} // $tephra_hmmdb;
-    #my $trnadb  = $opt->{trnadb} // $tephra_trnadb;
-
-    #my %search_opts = ( 
-	#genome   => $global_opts->{genome}, 
-	#hmmdb    => $global_opts->{hmmdb},
-	#trnadb   => $global_opts->{trnadb},
-    #);
-
-    #$search_opts{clean} = defined $opt->{clean} && $opt->{clean} != 0 ? 1 : 0;
-    #$search_opts{debug} = $opt->{debug} // 0;
-
-    #my $ltr_search    = Tephra::LTR::LTRSearch->new(%search_opts);
-    my $ltr_search = Tephra::LTR::LTRSearch->new( genome   => $global_opts->{genome},
-						  hmmdb    => $global_opts->{hmmdb},
-						  trnadb   => $global_opts->{trnadb}, 
-						  clean    => $global_opts->{clean},
-						  debug    => $global_opts->{debug} );
-    #my $search_config = $ltr_search->get_configuration;
-    #my $search_config = Tephra::Config::Reader->new( config => $opt->{config} )->get_configuration;
+    my $ltr_search = Tephra::LTR::LTRSearch->new( genome => $global_opts->{genome},
+						  hmmdb  => $global_opts->{hmmdb},
+						  trnadb => $global_opts->{trnadb}, 
+						  clean  => $global_opts->{clean},
+						  debug  => $global_opts->{debug} );
 
     unless (defined $opt->{index} && @indexfiles == 7) {
 	my ($name, $path, $suffix) = fileparse($global_opts->{genome}, qr/\.[^.]*/);
@@ -152,12 +131,9 @@ sub _run_ltr_search {
 	my @suff_args = qq(-db $global_opts->{genome} -indexname $opt->{index} -tis -suf -lcp -ssp -sds -des -dna);
 	$ltr_search->create_index(\@suff_args);
     }
-    #exit;
 
     my $strict_gff  = $ltr_search->ltr_search_strict($search_config,  $opt->{index});
-    #exit;
     my $relaxed_gff = $ltr_search->ltr_search_relaxed($search_config, $opt->{index});
-    exit;
 
     return ($global_opts, $search_config, $relaxed_gff, $strict_gff);
 }
