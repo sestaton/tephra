@@ -182,10 +182,8 @@ sub collect_feature_args {
         $aln_args{resdir} = $wdir;
     }
     else {
-	my $dir = $self->dir->absolute->resolve; 
-	#my $wanted  = sub { push @ltrs, $File::Find::name if -f && /exemplar_ltrs.fasta$/ };
-	#my $process = sub { grep ! -d, @_ };
-	#find({ wanted => $wanted, preprocess => $process }, $dir);
+	my $dir = $self->dir;
+	#my $dir = $self->dir->absolute->resolve; 
 	my $ltrseqs = $self->_get_exemplar_ltrs($dir);
 
 	if (@ltrs > 0) {
