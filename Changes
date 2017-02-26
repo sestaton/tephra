@@ -1,6 +1,29 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.07.0
+
+- Add 'all' command to run all commands and generate combined FASTA and GFF3 output
+  files.
+- Modify configuration for 'findltrs' command and add configuration class (Teprha::Config::Reader)
+  for running all methods.
+- Bug fix for 'classifytirs' command to add 3-letter superfamily code to GFF3 file.
+- Add logger for all methods.
+- Bug fix for cleaning GT index files (method was incorrectly searching subdirectories).
+- Simplify setting HTS index for 'classifytirs' method. Now the index is created once and passed
+  to individual classification methods instead of recreating indexes for each method.
+- Simplify running 'findltrs' command by setting all options in configuration file instead of having
+  a mix of command line options and configuration file.
+- Document --clean option for 'maskref' command.
+- Document --debug option for 'classifyltrs' command.
+- Correct documentation for 'findtrims' and 'tirage' commands by removing mention of LTR files.
+- Change 'percentcov' option for 'sololtr' command to be an integer instead of a fraction to be
+  consistent with other class options.
+- Fix description of 'matchlen' option for 'sololtr' command to reflect proper usage (requires
+  an integer not a fraction).
+- Add repeat database file to output of 'maskref' command for better logging. 
+- Add better regex for getting GFF3 sequence declarations so as to not capture section dividers.
+
 0.06.1	2/09/17	Vancouver, BC
 
 - Add method to evaluate whether the BLAST-merging step increases the number of elements
