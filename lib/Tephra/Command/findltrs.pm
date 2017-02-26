@@ -17,6 +17,7 @@ sub opt_spec {
     return (    
 	[ "config|c=s",  "The Tephra LTR option configuration file "                      ],
 	[ "outfile|o=s", "The final combined and filtered GFF3 file of LTR-RTs "          ],
+	[ "logfile=s",   "The file to use for logigng results in addition to the screen " ],
 	[ "index|i=s",   "The suffixerator index to use for the LTR search "              ],
 	[ "help|h",      "Display the usage menu and exit. "                              ],
         [ "man|m",       "Display the full manual. "                                      ],
@@ -62,6 +63,7 @@ sub _refine_ltr_predictions {
     $refine_opts{remove_dup_domains} = $search_config->{findltrs}{dedup} =~ /yes/i ? 1 : 0;
     $refine_opts{remove_tnp_domains} = $search_config->{findltrs}{tnpfilter} =~ /yes/i ? 1 : 0;
     $refine_opts{outfile} = $opt->{outfile} if $opt->{outfile};
+    $refine_opts{logfile} = $opt->{logfile} if $opt->{logfile};
 
     my $refine_obj = Tephra::LTR::LTRRefine->new(%refine_opts);
 

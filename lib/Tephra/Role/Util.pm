@@ -6,6 +6,8 @@ use Bio::DB::HTS::Faidx;
 use IPC::System::Simple qw(system);
 use Capture::Tiny       qw(capture);
 use Try::Tiny;
+use Log::Log4perl;
+use Log::Any::Adapter;
 use namespace::autoclean;
 
 =head1 NAME
@@ -57,6 +59,27 @@ sub index_ref {
     return $index;
 }
 
+sub get_logger {
+    my $self = shift;
+    my ($logfile) = @_;
+
+    my $conf = qq{
+    log4perl.category.Tephra      = INFO, Logfile, Screen
+    log4perl.appender.Logfile          = Log::Log4perl::Appender::File
+    log4perl.appender.Logfile.filename = $logfile
+    log4perl.appender.Logfile.layout   = Log::Log4perl::Layout::PatternLayout
+    log4perl.appender.Logfile.layout.ConversionPattern = %m%n
+    log4perl.appender.Screen         = Log::Log4perl::Appender::Screen
+    log4perl.appender.Screen.stderr  = 1
+    log4perl.appender.Screen.layout  = Log::Log4perl::Layout::SimpleLayout
+    };
+
+    Log::Log4perl::init( \$conf );
+    Log::Any::Adapter->set('Log4perl');
+    my $log = Log::Any->get_logger( category => "Tephra" );
+
+    return $log;
+}
 sub get_SO_terms {
     my $self = shift;
 

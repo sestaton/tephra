@@ -9,7 +9,7 @@ use File::Copy          qw(move);
 use Sort::Naturally     qw(nsort);
 use List::UtilsBy       qw(nsort_by);
 use List::Util          qw(sum max);
-use Log::Any            qw($log);
+#use Log::Any            qw($log);
 use Cwd                 qw(abs_path);
 use Bio::GFF3::LowLevel qw(gff3_parse_feature gff3_format_feature);
 use Bio::DB::HTS::Kseq;
@@ -17,7 +17,6 @@ use Bio::DB::HTS::Faidx;
 use Set::IntervalTree;
 use Path::Class::File;
 use Carp 'croak';
-
 #use Data::Dump::Color;
 use namespace::autoclean;
 
@@ -47,6 +46,12 @@ has outfile => (
       is        => 'ro',
       isa       => 'Str',
       predicate => 'has_outfile',
+);
+
+has logfile => (
+      is        => 'ro',
+      isa       => 'Str',
+      predicate => 'has_logfile',
 );
 
 has n_threshold => (
@@ -440,8 +445,11 @@ sub get_ltr_score_dups {
 sub reduce_features {
     my $self = shift;
     my ($feature_ref) = @_;
-    my $fasta = $self->genome->absolute->resolve;
-    my $index = $self->index_ref($fasta);
+
+    my $logfile = $self->logfile;
+    my $fasta   = $self->genome->absolute->resolve;
+    my $index   = $self->index_ref($fasta);
+    my $log     = $self->get_logger($logfile);
 
     my ($relaxed_features, $strict_features, $best_elements)
 	= @{$feature_ref}{qw(relaxed_features strict_features best_elements)};
@@ -535,11 +543,14 @@ sub reduce_features {
 sub sort_features {
     my $self = shift;
     my ($feature_ref) = @_;
+
     my ($gff, $combined_features) = @{$feature_ref}{qw(gff combined_features)};
-    my $fasta = $self->genome->absolute->resolve;
-    my $index = $self->index_ref($fasta);
+    my $fasta   = $self->genome->absolute->resolve;
+    my $index   = $self->index_ref($fasta);
+    my $logfile = $self->logfile;
+    my $log     = $self->get_logger($logfile);
+
     my ($outfile, $outfasta);
- 
     if ($self->has_outfile) {
 	$outfile = $self->outfile;
 	my ($name, $path, $suffix) = fileparse($outfile, qr/\.[^.]*/);
