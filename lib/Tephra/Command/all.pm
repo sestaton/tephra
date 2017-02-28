@@ -22,7 +22,7 @@ use Try::Tiny;
 use Cwd;
 use Data::Dump::Color;
 
-our $VERSION = '0.06.1';
+our $VERSION = '0.07.0';
 
 sub opt_spec {
     return (    

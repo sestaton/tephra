@@ -15,11 +15,11 @@ Tephra::Config::Exe - Class for setting up PATHs for Tephra dependencies
 
 =head1 VERSION
 
-Version 0.06.1
+Version 0.07.0
 
 =cut
 
-our $VERSION = '0.06.1';
+our $VERSION = '0.07.0';
 
 has basedir => (
     is       => 'ro',
