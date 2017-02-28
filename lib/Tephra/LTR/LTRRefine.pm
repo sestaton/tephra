@@ -541,8 +541,6 @@ sub reduce_features {
 
     }
 
-    two data sets:     8
-                       
     $log->info("Results - Number of elements found with 'relaxed' constraints:                       $all");
     $log->info("Results - Number of elements found with 'strict' constraints:                        $part");
     $log->info("Results - Number of 'best' elements that were overlapping in these two data sets:    $best");
@@ -667,7 +665,7 @@ sub sort_features {
 
 	#"Number of 'combined' non-overlapping elements:                              439"
 	#say STDERR "\nTotal elements written: $elem_tot";
-	my $pad = ' ' x 53;	       
+	my $pad = ' ' x 51;	       
 	$log->info("Results - Total elements written:$pad",$elem_tot);
     }
     else {
@@ -696,7 +694,7 @@ sub sort_features {
 	move $gff, $outfile or die "Move failed: $!";
 	#say STDERR "\nTotal elements written: $elem_tot";
 	#$log->info("Results - Total elements written: $elem_tot");
-	my $pad = ' ' x 53;
+	my $pad = ' ' x 51;
         $log->info("Results - Total elements written:$pad",$elem_tot);
     }
     close $ofas;
