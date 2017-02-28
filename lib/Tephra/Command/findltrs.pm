@@ -64,7 +64,7 @@ sub _refine_ltr_predictions {
     $refine_opts{remove_tnp_domains} = $search_config->{findltrs}{tnpfilter} =~ /yes/i ? 1 : 0;
     $refine_opts{outfile} = $opt->{outfile} if $opt->{outfile};
     $refine_opts{logfile} = $opt->{logfile} if $opt->{logfile};
-
+    
     my $refine_obj = Tephra::LTR::LTRRefine->new(%refine_opts);
 
     if (defined $relaxed_gff && defined $strict_gff) {
