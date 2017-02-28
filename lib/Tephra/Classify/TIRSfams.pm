@@ -14,7 +14,7 @@ use List::Util          qw(sum max);
 use Cwd                 qw(getcwd abs_path);
 use IPC::System::Simple qw(system);
 use Capture::Tiny       qw(capture);
-use Log::Any            qw($log);
+#use Log::Any            qw($log);
 use Path::Class::File;
 use Try::Tiny;
 use Carp 'croak';
@@ -64,7 +64,7 @@ has outfile => (
 #
 sub find_tc1_mariner {
     my $self = shift;
-    my ($feature, $header, $index) = @_;
+    my ($feature, $header, $index, $log) = @_;
     my $fasta = $self->genome->absolute->resolve;
     my $gff   = $self->gff->absolute->resolve;
 
@@ -180,7 +180,7 @@ sub find_tc1_mariner {
 
 sub find_hat {
     my $self = shift;
-    my ($feature, $header, $index) = @_;
+    my ($feature, $header, $index, $log) = @_;
     my $gff   = $self->gff->absolute->resolve;
     my $fasta = $self->genome->absolute->resolve;
     
@@ -279,11 +279,11 @@ sub find_hat {
     if ($count > 0) {
 	#say STDERR join "\t", "hat_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
 	#say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
-	$log->info("Results - Total number of hAT elements:           $count");
-        $log->info("Results - Minimum length of hAT elements:         $min");
-        $log->info("Results - Maximum length of hAT elements:         $max");
-        $log->info("Results - Mean length of hAT elements:            $mean");
-	$log->info("Results - Number of hAT elements protein matches: $pdoms");
+	$log->info("Results - Total number of hAT elements:                   $count");
+        $log->info("Results - Minimum length of hAT elements:                 $min");
+        $log->info("Results - Maximum length of hAT elements:                 $max");
+        $log->info("Results - Mean length of hAT elements:                    $mean");
+	$log->info("Results - Number of hAT elements protein matches:         $pdoms");
 	return ($outfile, $fas);
     }
     else {
@@ -293,7 +293,7 @@ sub find_hat {
 
 sub find_mutator {
     my $self = shift;
-    my ($feature, $header, $index) = @_;
+    my ($feature, $header, $index, $log) = @_;
     my $gff   = $self->gff->absolute->resolve;
     my $fasta = $self->genome->absolute->resolve;
 
@@ -394,11 +394,11 @@ sub find_mutator {
     if ($count > 0) {
 	#say STDERR join "\t", "mutator_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";	
 	#say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
-	$log->info("Results - Total number of Mutator elements:           $count");
-        $log->info("Results - Minimum length of Mutator elements:         $min");
-        $log->info("Results - Maximum length of Mutator elements:         $max");
-        $log->info("Results - Mean length of Mutator elements:            $mean");
-	$log->info("Results - Number of Mutator elements protein matches: $pdoms");
+	$log->info("Results - Total number of Mutator elements:               $count");
+        $log->info("Results - Minimum length of Mutator elements:             $min");
+        $log->info("Results - Maximum length of Mutator elements:             $max");
+        $log->info("Results - Mean length of Mutator elements:                $mean");
+	$log->info("Results - Number of Mutator elements protein matches:     $pdoms");
 	return ($outfile, $fas);
     }
     else {
@@ -408,7 +408,7 @@ sub find_mutator {
 
 sub find_cacta {
     my $self = shift;
-    my ($feature, $header, $index) = @_;
+    my ($feature, $header, $index, $log) = @_;
     my $fasta = $self->genome->absolute->resolve;
     my $gff   = $self->gff->absolute->resolve;
 
@@ -526,7 +526,7 @@ sub find_cacta {
 
 sub write_unclassified_tirs {
     my $self = shift;
-    my ($feature, $header, $index) = @_;
+    my ($feature, $header, $index, $log) = @_;
     my $gff   = $self->gff->absolute->resolve;
     my $fasta = $self->genome->absolute->resolve;
 

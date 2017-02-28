@@ -13,7 +13,7 @@ use List::Util  qw(min max);
 use Time::HiRes qw(gettimeofday);
 use File::Path  qw(make_path);
 use Cwd         qw(abs_path);         
-use Log::Any    qw($log);
+#use Log::Any    qw($log);
 use Parallel::ForkManager;
 use Carp 'croak';
 use Try::Tiny;
@@ -89,10 +89,12 @@ has gff => (
 #
 sub make_ltr_families {
     my $self = shift;
-    my ($gff_obj) = @_;
-    my $outdir = $self->outdir->absolute->resolve;
+    my ($gff_obj, $log) = @_;
 
+    my $outdir  = $self->outdir->absolute->resolve;
     my $threads = $self->threads;    
+    #my $log     = $self->get_logger($logfile);
+
     my $t0 = gettimeofday();
     my $logfile = File::Spec->catfile($outdir, 'ltr_superfamilies_thread_report.log');
     open my $fmlog, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
@@ -107,33 +109,16 @@ sub make_ltr_families {
     my (%reports, @family_fastas, @annotated_ids);
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			      for my $type (keys %$data_ref) {
-				  #my ($unmerged_stats, $merged_stats) =
-				      #($data_ref->{$type}{unmerged_stats}, $data_ref->{$type}{merged_stats});
 				  my $family_stats = $data_ref->{$type}{family_stats};
-				  #my ($um_sf, $um_elemct, $um_famct, $um_famtot, $um_singct) =
-				      #@{$unmerged_stats}{qw(superfamily total_elements families total_in_families singletons)};
-				  #my ($m_sf, $m_elemct, $m_famct, $m_famtot, $m_singct) =
-				      #@{$merged_stats}{qw(superfamily total_elements families total_in_families singletons)};
 				  my ($sf, $elemct, $famct, $famtot, $singct) =
                                       @{$family_stats}{qw(superfamily total_elements families total_in_families singletons)};
-
-				  #say "=====> Family-level statistics for $um_sf before BLAST merging:";
-				  #say join "\t", $um_sf."_total_elements", $um_sf."_families", 
-				      #$um_sf."_total_in_families", $um_sf."_singletons";
-				  #say join "\t", $um_elemct, $um_famct, $um_famtot, $um_singct;
-				  #say "=====> Family-level statistics for $m_sf after BLAST merging:";
-				  #say join "\t", $m_sf."_total_elements", $m_sf."_families", 
-				      #$m_sf."_total_in_families", $m_sf."_singletons";
-				  #say join "\t", $m_elemct, $m_famct, $m_famtot, $m_singct;
-				  #say "=====> Family-level statistics for $sf:";
-                                  #say join "\t", $sf."_total_elements", $sf."_families",
-				      #$sf."_total_in_families", $sf."_singletons";
-                                  #say join "\t", $elemct, $famct, $famtot, $singct;
 				  my ($sfam) = ($sf =~ /_?(\w+)\z/);
-				  $log->info("Results - Number of $sfam families:                      $famct");
-				  $log->info("Results - Number of $sfam elements in families:          $famtot");
-				  $log->info("Results - Number of $sfam singleton families/elements:   $singct");
-				  $log->info("Results - Number of $sfam elements (for debugging):      $elemct");
+				  my $pad = $sfam =~ /unclassified/i ? 0 : 8;
+				  my $lpad = ' ' x $pad;
+				  $log->info("Results - Number of $sfam families:$lpad                      $famct");
+				  $log->info("Results - Number of $sfam elements in families:$lpad          $famtot");
+				  $log->info("Results - Number of $sfam singleton families/elements:$lpad   $singct");
+				  $log->info("Results - Number of $sfam elements (for debugging):$lpad      $elemct");
 
 				  push @family_fastas, $data_ref->{$type}{family_fasta};
 				  push @annotated_ids, $data_ref->{$type}{annotated_ids};
@@ -169,7 +154,7 @@ sub make_ltr_families {
     my $final_time = sprintf("%.2f",$total_elapsed/60);
 
     say $fmlog "\n========> Finished classifying LTR families in $final_time minutes";
-    $log->info("Finished classifying LTR families in $final_time minutes");
+    $log->info("Finished classifying LTR families in $final_time minutes.");
     close $fmlog;
 
     return (\%outfiles, \%annot_ids);
