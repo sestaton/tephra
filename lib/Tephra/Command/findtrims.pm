@@ -60,6 +60,8 @@ sub execute {
     }
     elsif (!$relaxed_gff && !$strict_gff) {
 	say STDERR "\nWARNING: No TRIMs were found, so there will be no output.\n";
+	unlink $relaxed_gff if -e $relaxed_gff;
+	unlink $strict_gff if -e $strict_gff;
 	exit(1);
     }
 }
