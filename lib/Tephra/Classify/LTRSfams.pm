@@ -342,8 +342,9 @@ sub write_gypsy {
     $stat->add_data(@lengths);
     my $min   = $stat->min;
     my $max   = $stat->max;
-    my $mean  = sprintf("%.2f",$stat->mean);
+    my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
     my $count = $stat->count;
+
     $log->info("Results - Total number of Gypsy elements:                              $count");
     $log->info("Results - Minimum length of Gypsy elements:                            $min");
     $log->info("Results - Maximum length of Gypsy elements:                            $max");
@@ -426,8 +427,9 @@ sub write_copia {
     $stat->add_data(@lengths);
     my $min   = $stat->min;
     my $max   = $stat->max;
-    my $mean  = sprintf("%.2f", $stat->mean);
+    my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
     my $count = $stat->count;
+
     if (defined $count && defined $min && defined $max && defined $mean) {
 	#say STDERR join "\t", "copia_count", "min_length", "max_length", "mean_length", 
 	    #"elements_with_protein_matches";
@@ -517,7 +519,7 @@ sub write_unclassified {
     $stat->add_data(@lengths);
     my $min   = $stat->min;
     my $max   = $stat->max;
-    my $mean  = sprintf("%.2f", $stat->mean);
+    my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
     my $count = $stat->count;
     #say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
     $log->info("Results - Total number of unclassified LTR-RT elements:                $count");

@@ -159,7 +159,7 @@ sub find_tc1_mariner {
     $stat->add_data(@lengths);
     my $min   = $stat->min;
     my $max   = $stat->max;
-    my $mean  = sprintf("%.2f", $stat->mean);
+    my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
     my $count = $stat->count;
 
     if ($count > 0) {
@@ -273,7 +273,7 @@ sub find_hat {
     $stat->add_data(@lengths);
     my $min   = $stat->min;
     my $max   = $stat->max;
-    my $mean  = $stat->mean;
+    my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
     my $count = $stat->count;
 
     if ($count > 0) {
@@ -388,7 +388,7 @@ sub find_mutator {
     $stat->add_data(@lengths);
     my $min   = $stat->min;
     my $max   = $stat->max;
-    my $mean  = $stat->mean;
+    my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
     my $count = $stat->count;
 
     if ($count > 0) {
@@ -506,7 +506,7 @@ sub find_cacta {
     $stat->add_data(@lengths);
     my $min   = $stat->min;
     my $max   = $stat->max;
-    my $mean  = $stat->mean;
+    my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
     my $count = $stat->count;
 
     if ($count > 0) {
@@ -608,7 +608,7 @@ sub write_unclassified_tirs {
     $stat->add_data(@lengths);
     my $min   = $stat->min;
     my $max   = $stat->max;
-    my $mean  = $stat->mean;
+    my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
     my $count = $stat->count;
 
     if ($count > 0) {
