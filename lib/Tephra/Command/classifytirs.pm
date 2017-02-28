@@ -4,18 +4,20 @@ package Tephra::Command::classifytirs;
 use 5.014;
 use strict;
 use warnings;
+use Cwd qw(abs_path);
 use Tephra -command;
 use Tephra::Classify::TIRSfams;
-use Log::Any qw($log);
+#use Log::Any qw($log);
 #use Data::Dump::Color;
 
 sub opt_spec {
     return (    
-	[ "genome|g=s",   "The genome sequences in FASTA format to search for TIRs "   ],
-	[ "gff|i=s",      "The GFF3 file of TIR TEs in <genome> "                      ],
-	[ "outfile|o=s",  "The final combined and filtered GFF3 file of TIRs "         ],
-	[ "help|h",       "Display the usage menu and exit. "                          ],
-        [ "man|m",        "Display the full manual. "                                  ],
+	[ "genome|g=s",   "The genome sequences in FASTA format to search for TIRs "       ],
+	[ "gff|i=s",      "The GFF3 file of TIR TEs in <genome> "                          ],
+	[ "outfile|o=s",  "The final combined and filtered GFF3 file of TIRs "             ],
+	[ "logfile=s",    "The file to use for logigng results in addition to the screen " ],
+	[ "help|h",       "Display the usage menu and exit. "                              ],
+        [ "man|m",        "Display the full manual. "                                      ],
     );
 }
 
@@ -50,29 +52,43 @@ sub execute {
 sub _classify_tir_predictions {
     my ($opt) = @_;
 
-    my $classify_obj = Tephra::Classify::TIRSfams->new( 
-	genome   => $opt->{genome}, 
-	gff      => $opt->{gff},
-	outfile  => $opt->{outfile}
+    my %classify_opts = (
+	genome   => $opt->{genome},
+        gff      => $opt->{gff},
+        outfile  => $opt->{outfile}
     );
+
+    $classify_opts{logfile} = $opt->{logfile} if $opt->{logfile};
+    my $classify_obj = Tephra::Classify::TIRSfams->new(%classify_opts);
+    
+    my ($logfile, $log);
+    if ($opt->{logfile}) {
+        $log = $classify_obj->get_tephra_logger($opt->{logfile});
+    }
+    else {
+        my ($name, $path, $suffix) = fileparse($opt->{genome}, qr/\.[^.]*/);
+        $logfile = File::Spec->catfile( abs_path($path), $name.'_tephra_classifytirs.log' );
+        $log = $classify_obj->get_tephra_logger($logfile);
+        say STDERR "\nWARNING: '--logfile' option not given so results will be appended to: $logfile.";
+    }
 
     my $index = $classify_obj->index_ref($opt->{genome});
     my ($header, $features) = $classify_obj->collect_gff_features($opt->{gff});
 
     my $all_ct = (keys %$features);
-    my ($tcmoutfile, $tcmfas) = $classify_obj->find_tc1_mariner($features, $header, $index);
+    my ($tcmoutfile, $tcmfas) = $classify_obj->find_tc1_mariner($features, $header, $index, $log);
     my $tc1_ct = (keys %$features);
-    my ($hatoutfile, $hatfas) = $classify_obj->find_hat($features, $header, $index);
+    my ($hatoutfile, $hatfas) = $classify_obj->find_hat($features, $header, $index, $log);
     my $hat_ct = (keys %$features);
-    my ($mutoutfile, $mutfas) = $classify_obj->find_mutator($features, $header, $index);
+    my ($mutoutfile, $mutfas) = $classify_obj->find_mutator($features, $header, $index, $log);
     my $mut_ct = (keys %$features);
-    my ($cacoutfile, $cacfas) = $classify_obj->find_cacta($features, $header, $index);
+    my ($cacoutfile, $cacfas) = $classify_obj->find_cacta($features, $header, $index, $log);
     my $cacta_ct = (keys %$features);
-    my ($uncoutfile, $uncfas) = $classify_obj->write_unclassified_tirs($features, $header, $index);
+    my ($uncoutfile, $uncfas) = $classify_obj->write_unclassified_tirs($features, $header, $index, $log);
     my $rem_ct = (keys %$features);
 
     my @fastas = grep { defined && /\.fasta$/ } ($tcmfas, $hatfas, $mutfas, $cacfas, $uncfas);
-    my @gffs = grep { defined && /\.gff3$/ } ($tcmoutfile, $hatoutfile, $mutoutfile, $cacoutfile, $uncoutfile);
+    my @gffs   = grep { defined && /\.gff3$/ } ($tcmoutfile, $hatoutfile, $mutoutfile, $cacoutfile, $uncoutfile);
 
     if (@fastas && @gffs) {
 	my %outfiles = (
@@ -84,12 +100,12 @@ sub _classify_tir_predictions {
 	
 	#say STDERR join "\t", "all", "after_tc1", "after_hat", "after_mut", "after_cacta", "after_rem";
 	#say STDERR join "\t", $all_ct, $tc1_ct, $hat_ct, $mut_ct, $cacta_ct, $rem_ct;
-	$log->info("Results - Total number of TIR elements:   $all_ct");
-	$log->info("Results - Number of Tc1-Mariner elements: $tc1_ct");
-	$log->info("Results - Number of hAT elements:         $hat_ct");
-	$log->info("Results - Number of Mutator elements:     $mut_ct");
-	$log->info("Results - Number of CACTA elements:       $cacta_ct");
-	$log->info("Results - Number of remaining elements:   $rem_ct");
+	$log->info("Results - Total number of TIR elements:                   $all_ct");
+	$log->info("Results - Number of Tc1-Mariner elements:                 $tc1_ct");
+	$log->info("Results - Number of hAT elements:                         $hat_ct");
+	$log->info("Results - Number of Mutator elements:                     $mut_ct");
+	$log->info("Results - Number of CACTA elements:                       $cacta_ct");
+	$log->info("Results - Number of remaining elements:                   $rem_ct");
     }
     else {
 	say STDERR "\nWARNING: No TIR elements were classified. Check input.\n";

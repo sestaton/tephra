@@ -12,6 +12,7 @@ use Tephra::Classify::LTRFams;
 sub opt_spec {
     return (    
 	[ "genome|g=s",     "The genome sequences in FASTA format used to search for LTR-RTs "                       ],
+	[ "logfile=s",      "The file to use for logigng results in addition to the screen "                         ],
 	[ "repeatdb|d=s",   "The file of repeat sequences in FASTA format to use for classification "                ], 
 	[ "hitlength|l=i",  "The alignment length cutoff for BLAST hits to the repeat database (Default: 80) "       ],
 	[ "percentid|p=i",  "The percent identity cutoff for BLAST hits to the repeat database (Default: 80) "       ],
@@ -59,31 +60,47 @@ sub validate_args {
 sub execute {
     my ($self, $opt, $args) = @_;
 
-    my $gffs = _classify_ltr_superfamilies($opt);
-    my $somb = _classify_ltr_families($opt, $gffs);
+    my ($gffs, $log) = _classify_ltr_superfamilies($opt);
+    my $somb = _classify_ltr_families($opt, $gffs, $log);
 }
 
 sub _classify_ltr_superfamilies {
     my ($opt) = @_;
 
-    my $genome   = $opt->{genome};
-    my $repeatdb = $opt->{repeatdb};
-    my $ingff    = $opt->{ingff};
+    #my $genome   = $opt->{genome};
+    #my $repeatdb = $opt->{repeatdb};
+    #my $ingff    = $opt->{ingff};
     my $outdir   = $opt->{outdir};
-    my $threads  = $opt->{threads} // 1;
+    my $threads = $opt->{threads} // 1;
 
     unless ( -d $outdir ) {
 	make_path( $outdir, {verbose => 0, mode => 0771,} );
     }
     
-    my $classify_obj = Tephra::Classify::LTRSfams->new( 
-	genome   => $genome, 
-	repeatdb => $repeatdb, 
-	gff      => $ingff,
-	threads  => $threads,
+    my %classify_opts = (
+	genome   => $opt->{genome},
+        repeatdb => $opt->{repeatdb},
+        gff      => $opt->{ingff},
+        threads  => $threads,
     );
 
-    my ($header, $features) = $classify_obj->collect_gff_features($ingff);
+    $classify_opts{logfile} = $opt->{logfile} if $opt->{logfile};
+    my $classify_obj = Tephra::Classify::LTRSfams->new(%classify_opts);
+
+    my ($logfile, $log);
+    if ($opt->{logfile}) {
+        #$logfile = $self->logfile;
+        $log = $classify_obj->get_tephra_logger($opt->{logfile});
+    }
+    else {
+        my ($name, $path, $suffix) = fileparse($opt->{genome}, qr/\.[^.]*/);
+        #my $lname = $self->is_trim ? 'tephra_findtrims.log' : 'tephra_findltrs.log';
+        $logfile = File::Spec->catfile( abs_path($path), $name.'_tephra_classifyltrs.log' );
+        $log = $classify_obj->get_tephra_logger($logfile);
+        say STDERR "\nWARNING: '--logfile' option not given so results will be appended to: $logfile.";
+    }
+
+    my ($header, $features) = $classify_obj->collect_gff_features($opt->{ingff});
     my ($gypsy, $copia) = $classify_obj->find_gypsy_copia($features);
 
     my ($unc_fas, $ltr_rregion_map) = $classify_obj->find_unclassified($features);
@@ -92,29 +109,29 @@ sub _classify_ltr_superfamilies {
 
     my ($gyp_gff, $cop_gff, $unc_gff, %gffs);
     if (%$gypsy) {
-	$gyp_gff = $classify_obj->write_gypsy($gypsy, $header);
+	$gyp_gff = $classify_obj->write_gypsy($gypsy, $header, $log);
 	$gffs{'gypsy'} = $gyp_gff;
     }
 
     if (%$copia) {
-        $cop_gff = $classify_obj->write_copia($copia, $header);
+        $cop_gff = $classify_obj->write_copia($copia, $header, $log);
 	$gffs{'copia'} = $cop_gff;
     }
 
     if (%$features) {
-        $unc_gff = $classify_obj->write_unclassified($features, $header);
+        $unc_gff = $classify_obj->write_unclassified($features, $header, $log);
 	$gffs{'unclassified'} = $unc_gff;
     }
 
     #my $cop_gff = $classify_obj->write_copia($copia, $header);
     #my $unc_gff = $classify_obj->write_unclassified($features, $header);
     
-    return \%gffs;
+    return (\%gffs, $log);
     #return ({ gypsy => $gyp_gff, copia => $cop_gff, unclassified => $unc_gff });
 }
 
 sub _classify_ltr_families {
-    my ($opt, $gffs) = @_;
+    my ($opt, $gffs, $log) = @_;
 
     my $genome   = $opt->{genome};
     my $repeatdb = $opt->{repeatdb};
@@ -146,7 +163,7 @@ sub _classify_ltr_families {
 	debug         => $debug,
     );
 
-    my ($outfiles, $annot_ids) = $classify_fams_obj->make_ltr_families($gffs);
+    my ($outfiles, $annot_ids) = $classify_fams_obj->make_ltr_families($gffs, $log);
     $classify_fams_obj->combine_families($outfiles);
     $classify_fams_obj->annotate_gff($annot_ids, $ingff);
     #unlink $gyp_gff, $cop_gff, $unc_gff;
