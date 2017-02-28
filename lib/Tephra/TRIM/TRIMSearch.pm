@@ -110,6 +110,7 @@ sub trim_search_relaxed {
 	return $ltrg_gff;
     }
     else {
+	unlink $ltrh_gff;
 	$self->clean_indexes($path) if $self->clean;
 	return 0;
     }

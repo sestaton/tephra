@@ -60,8 +60,6 @@ sub execute {
     }
     elsif (!$relaxed_gff && !$strict_gff) {
 	say STDERR "\nWARNING: No TRIMs were found, so there will be no output.\n";
-	unlink $relaxed_gff if -e $relaxed_gff;
-	unlink $strict_gff if -e $strict_gff;
 	exit(1);
     }
 }
@@ -128,7 +126,6 @@ sub _write_unrefined_trims {
     my %refine_opts = ( genome => $opt->{fasta}, outfile => $opt->{outfile}, is_trim => 1 );
     $refine_opts{logfile} = $opt->{logfile} if $opt->{logfile};
     my $refine_obj = Tephra::LTR::LTRRefine->new(%refine_opts);
-    #my $refine_obj = Tephra::LTR::LTRRefine->new( genome => $opt->{genome}, outfile => $opt->{outfile}, is_trim => 1 );
 
     $refine_obj->sort_features({ gff               => $relaxed_gff,
                                  combined_features => undef });
