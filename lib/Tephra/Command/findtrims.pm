@@ -14,14 +14,15 @@ use Tephra::LTR::LTRRefine;
 
 sub opt_spec {
     return (    
-	[ "genome|g=s",  "The genome sequences in FASTA format to search for TRIMs "   ],
-	[ "trnadb|t=s",  "The file of tRNA sequences in FASTA format to search for PBS " ], 
-	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains "    ],
-	[ "outfile|o=s", "The final combined and filtered GFF3 file of TRIMs "           ],
-	[ "clean",       "Clean up the index files (Default: yes) "                      ],
-	[ "debug",       "Show external command for debugging (Default: no) "            ],
-	[ "help|h",      "Display the usage menu and exit. "                             ],
-        [ "man|m",       "Display the full manual. "                                     ],
+	[ "genome|g=s",  "The genome sequences in FASTA format to search for TRIMs "      ],
+	[ "trnadb|t=s",  "The file of tRNA sequences in FASTA format to search for PBS "  ], 
+	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains "     ],
+	[ "outfile|o=s", "The final combined and filtered GFF3 file of TRIMs "            ],
+	[ "logfile=s",   "The file to use for logigng results in addition to the screen " ],
+	[ "clean",       "Clean up the index files (Default: yes) "                       ],
+	[ "debug",       "Show external command for debugging (Default: no) "             ],
+	[ "help|h",      "Display the usage menu and exit. "                              ],
+        [ "man|m",       "Display the full manual. "                                      ],
     );
 }
 
@@ -52,7 +53,7 @@ sub execute {
 
     my ($relaxed_gff, $strict_gff) = _run_trim_search($opt);
     if ($relaxed_gff && $strict_gff) {
-	my $some = _refine_trim_predictions($relaxed_gff, $strict_gff, $opt->{genome}, $opt->{outfile});
+	my $some = _refine_trim_predictions($relaxed_gff, $strict_gff, $opt->{genome}, $opt->{outfile}, $opt->{logfile});
     }
     elsif ($relaxed_gff && !$strict_gff) {
 	_write_unrefined_trims($opt, $relaxed_gff);
@@ -64,9 +65,11 @@ sub execute {
 }
 
 sub _refine_trim_predictions {
-    my ($relaxed_gff, $strict_gff, $fasta, $outfile) = @_;
+    my ($relaxed_gff, $strict_gff, $fasta, $outfile, $logfile) = @_;
 
-    my $refine_obj = Tephra::LTR::LTRRefine->new( genome => $fasta, outfile => $outfile, is_trim => 1 );
+    my %refine_opts = ( genome => $fasta, outfile => $outfile, is_trim => 1 );
+    $refine_opts{logfile} = $logfile if $logfile;
+    my $refine_obj = Tephra::LTR::LTRRefine->new(%refine_opts);
 	
     my $relaxed_features = $refine_obj->collect_features({ gff => $relaxed_gff, pid_threshold => 85 });
     my $strict_features  = $refine_obj->collect_features({ gff => $strict_gff,  pid_threshold => 99 });
@@ -120,7 +123,10 @@ sub _run_trim_search {
 sub _write_unrefined_trims {
     my ($opt, $relaxed_gff) = @_;
 
-    my $refine_obj = Tephra::LTR::LTRRefine->new( genome => $opt->{genome}, outfile => $opt->{outfile}, is_trim => 1 );
+    my %refine_opts = ( genome => $opt->{fasta}, outfile => $opt->{outfile}, is_trim => 1 );
+    $refine_opts{logfile} = $opt->{logfile} if $opt->{logfile};
+    my $refine_obj = Tephra::LTR::LTRRefine->new(%refine_opts);
+    #my $refine_obj = Tephra::LTR::LTRRefine->new( genome => $opt->{genome}, outfile => $opt->{outfile}, is_trim => 1 );
 
     $refine_obj->sort_features({ gff               => $relaxed_gff,
                                  combined_features => undef });
