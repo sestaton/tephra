@@ -9,7 +9,6 @@ use File::Copy          qw(move);
 use Sort::Naturally     qw(nsort);
 use List::UtilsBy       qw(nsort_by);
 use List::Util          qw(sum max);
-#use Log::Any            qw($log);
 use Cwd                 qw(abs_path);
 use Bio::GFF3::LowLevel qw(gff3_parse_feature gff3_format_feature);
 use Bio::DB::HTS::Kseq;
@@ -446,10 +445,21 @@ sub reduce_features {
     my $self = shift;
     my ($feature_ref) = @_;
 
-    my $logfile = $self->logfile;
-    my $fasta   = $self->genome->absolute->resolve;
-    my $index   = $self->index_ref($fasta);
-    my $log     = $self->get_logger($logfile);
+    my $fasta = $self->genome->absolute->resolve;
+    my $index = $self->index_ref($fasta);
+
+    my ($logfile, $log);
+    if (defined $self->logfile) {
+	$logfile = $self->logfile;
+	$log = $self->get_tephra_logger($logfile);
+    }
+    else {
+	my ($name, $path, $suffix) = fileparse($fasta, qr/\.[^.]*/);
+	my $lname = $self->is_trim ? 'tephra_findtrims.log' : 'tephra_findltrs.log';
+	$logfile = File::Spec->catfile( abs_path($path), $name.'_'.$lname );
+	$log = $self->get_tephra_logger($logfile);
+	say STDERR "\nWARNING: '--logfile' option not given so results will be appended to: $logfile.";
+    }
 
     my ($relaxed_features, $strict_features, $best_elements)
 	= @{$feature_ref}{qw(relaxed_features strict_features best_elements)};
@@ -524,20 +534,21 @@ sub reduce_features {
 
     $best_stats{n_perc_filtered} = $n_perc_filtered;
 
-    #print STDERR join q{ }, "Number of elements filtered by type:";
     for my $s (keys %best_stats) {
-	#print STDERR " $s=$best_stats{$s}";
-	$log->info("Results - Number of elements filtered by '$s': $best_stats{$s}");
+	my $l = 40 - length($s);
+	my $pad = ' ' x $l;
+	$log->info("Results - Number of elements filtered by '$s':$pad",$best_stats{$s});
+
     }
 
-    #say STDERR join q{ }, "\nNumber of elements found under what constraints:", 
-        #"Relaxed=$all", "Strict=$part", "Best=$best", "Combined=$comb";
-    $log->info("Results - Number of elements found with 'relaxed' constraints:                        $all");
-    $log->info("Results - Number of elements found with 'strict' constraints:                         $part");
-    $log->info("Results - Number of 'best' elements that were overlapping in these two data sets:     $best");
-    $log->info("Results - Number of 'combined' non-overlapping elements:                              $comb");
+    two data sets:     8
+                       
+    $log->info("Results - Number of elements found with 'relaxed' constraints:                       $all");
+    $log->info("Results - Number of elements found with 'strict' constraints:                        $part");
+    $log->info("Results - Number of 'best' elements that were overlapping in these two data sets:    $best");
+    $log->info("Results - Number of 'combined' non-overlapping elements:                             $comb");
 
-    return \%best_features;
+    return (\%best_features);
 }
 
 sub sort_features {
@@ -545,10 +556,10 @@ sub sort_features {
     my ($feature_ref) = @_;
 
     my ($gff, $combined_features) = @{$feature_ref}{qw(gff combined_features)};
-    my $fasta   = $self->genome->absolute->resolve;
-    my $index   = $self->index_ref($fasta);
-    my $logfile = $self->logfile;
-    my $log     = $self->get_logger($logfile);
+    my $fasta = $self->genome->absolute->resolve;
+    my $index = $self->index_ref($fasta);
+    #my $logfile = $self->logfile;
+    #my $log     = $self->get_logger($logfile);
 
     my ($outfile, $outfasta);
     if ($self->has_outfile) {
@@ -562,6 +573,19 @@ sub sort_features {
 	$name =~ s/ltrdigest85/$label/;
 	$outfasta = File::Spec->catfile( abs_path($path), $name.'_combined_filtered.fasta' );
 	$outfile  = File::Spec->catfile( abs_path($path), $name.'_combined_filtered.gff3' );
+    }
+
+    my ($logfile, $log);
+    if (defined $self->logfile) {
+        $logfile = $self->logfile;
+        $log = $self->get_tephra_logger($logfile);
+    }
+    else {
+        my ($name, $path, $suffix) = fileparse($fasta, qr/\.[^.]*/);
+        my $lname = $self->is_trim ? 'tephra_findtrims.log' : 'tephra_findltrs.log';
+        $logfile = File::Spec->catfile( abs_path($path), $name.'_'.$lname );
+        $log = $self->get_tephra_logger($logfile);
+        say STDERR "\nWARNING: '--logfile' option not given so results will be appended to: $logfile.";
     }
 
     open my $ofas, '>>', $outfasta or die "\nERROR: Could not open file: $outfasta\n";
@@ -640,9 +664,11 @@ sub sort_features {
 	    }
 	}
 	close $ogff;
-	
+
+	#"Number of 'combined' non-overlapping elements:                              439"
 	#say STDERR "\nTotal elements written: $elem_tot";
-	$log->info("Results - Total elements written:               $elem_tot");
+	my $pad = ' ' x 53;	       
+	$log->info("Results - Total elements written:$pad",$elem_tot);
     }
     else {
 	open my $in, '<', $gff, or die "\nERROR: Could not open file: $gff\n";
@@ -669,7 +695,9 @@ sub sort_features {
 
 	move $gff, $outfile or die "Move failed: $!";
 	#say STDERR "\nTotal elements written: $elem_tot";
-	$log->info("Results - Total elements written:               $elem_tot");
+	#$log->info("Results - Total elements written: $elem_tot");
+	my $pad = ' ' x 53;
+        $log->info("Results - Total elements written:$pad",$elem_tot);
     }
     close $ofas;
 
