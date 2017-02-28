@@ -79,7 +79,8 @@ sub _run_all_commands {
     my $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findltrs' started at:   $st.");
     my $ltr_gff = File::Spec->catfile( abs_path($path), $name.'_tephra_ltrs.gff3' );
-    my $findltrs_opts = ['-g', $global_opts->{genome}, '-o', $ltr_gff, '-c', $opt->{config}];
+    my $findltrs_opts = ['-g', $global_opts->{genome}, '-o', $ltr_gff, 
+			 '-c', $opt->{config}, '--logfile', $global_opts->{logfile}];
     push @$findltrs_opts, '--debug'
 	if $global_opts->{debug};
     _run_tephra_cmd('findltrs', $findltrs_opts, $global_opts->{debug});
@@ -101,10 +102,10 @@ sub _run_all_commands {
     push @fas_files, $ltrc_fas;
     push @gff_files, $ltrc_gff;
 
-     my $classifyltrs_opts = ['-g', $global_opts->{genome}, '-d', $global_opts->{repeatdb}, 
-			      '-i', $ltr_gff, '-o', $ltrc_gff,
-			      '-r', $ltrc_dir, '-t', $global_opts->{threads}];
-     push @$classifyltrs_opts, '--debug'
+    my $classifyltrs_opts = ['-g', $global_opts->{genome}, '-d', $global_opts->{repeatdb}, 
+			     '-i', $ltr_gff, '-o', $ltrc_gff,
+			     '-r', $ltrc_dir, '-t', $global_opts->{threads}, '--logfile', $global_opts->{logfile}];
+    push @$classifyltrs_opts, '--debug'
 	if $global_opts->{debug};
     _run_tephra_cmd('classifyltrs', $classifyltrs_opts, $global_opts->{debug}); 
 
@@ -214,7 +215,7 @@ sub _run_all_commands {
     push @fas_files, $trims_fas;
     push @gff_files, $trims_gff;
 
-    my $findtrims_opts = ['-g', $genome_mask1, '-o', $trims_gff];
+    my $findtrims_opts = ['-g', $genome_mask1, '-o', $trims_gff, '--logfile', $global_opts->{logfile}];
     _run_tephra_cmd('findtrims', $findtrims_opts, $global_opts->{debug});
 
     my $t13 = gettimeofday();
@@ -312,7 +313,7 @@ sub _run_all_commands {
     push @gff_files, $tirc_gff;
     push @fas_files, $tirc_fas;
 
-    my $classifytirs_opts = ['-g', $genome_mask3, '-i', $tir_gff, '-o', $tirc_gff];
+    my $classifytirs_opts = ['-g', $genome_mask3, '-i', $tir_gff, '-o', $tirc_gff, '--logfile', $global_opts->{logfile}];
     _run_tephra_cmd('classifytirs', $classifytirs_opts, $global_opts->{debug});
 
     my $t23 = gettimeofday();
@@ -414,19 +415,19 @@ sub _run_all_commands {
     $log->info("Output files - $final_mask.");
     
     ## clean up
-    #my $clean_vmidx;
-    #my $has_vmatch = 0;
-    #my @path = split /:|;/, $ENV{PATH};
-    #for my $p (@path) {
-	#my $exe = File::Spec->catfile($p, 'cleanpp.sh');
+    my $clean_vmidx;
+    my $has_vmatch = 0;
+    my @path = split /:|;/, $ENV{PATH};
+    for my $p (@path) {
+	my $exe = File::Spec->catfile($p, 'cleanpp.sh');
 
-	#if (-e $exe && -x $exe) {
-	    #$clean_vmidx = $exe;
-	    #$has_vmatch = 1;
-	#}
-    #}
+	if (-e $exe && -x $exe) {
+	    $clean_vmidx = $exe;
+	    $has_vmatch = 1;
+	}
+    }
 
-    #capture([0..5], $clean_vmidx) if $has_vmatch;
+    capture([0..5], $clean_vmidx) if $has_vmatch;
     capture([0..5], $gt, 'clean');
     my @fais = glob "*.fai";
     unlink @fais;
