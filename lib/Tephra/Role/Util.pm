@@ -59,7 +59,7 @@ sub index_ref {
     return $index;
 }
 
-sub get_logger {
+sub get_tephra_logger {
     my $self = shift;
     my ($logfile) = @_;
 
