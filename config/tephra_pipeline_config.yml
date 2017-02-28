@@ -9,7 +9,7 @@ all:
   - hmmdb:            TephraDB
   - threads:          24
   - clean:            YES
-  - debug:            YES
+  - debug:            NO
   - subs_rate:        1e-8
 findltrs:
   - dedup:            NO
