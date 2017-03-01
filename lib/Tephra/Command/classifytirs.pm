@@ -16,7 +16,7 @@ sub opt_spec {
 	[ "genome|g=s",   "The genome sequences in FASTA format to search for TIRs "       ],
 	[ "gff|i=s",      "The GFF3 file of TIR TEs in <genome> "                          ],
 	[ "outfile|o=s",  "The final combined and filtered GFF3 file of TIRs "             ],
-	[ "logfile=s",    "The file to use for logigng results in addition to the screen " ],
+	[ "logfile=s",    "The file to use for logging results in addition to the screen " ],
 	[ "help|h",       "Display the usage menu and exit. "                              ],
         [ "man|m",        "Display the full manual. "                                      ],
     );

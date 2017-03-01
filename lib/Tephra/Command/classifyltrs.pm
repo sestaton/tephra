@@ -4,7 +4,9 @@ package Tephra::Command::classifyltrs;
 use 5.014;
 use strict;
 use warnings;
+use Cwd        qw(abs_path);
 use File::Path qw(make_path remove_tree);
+use File::Basename;
 use Tephra -command;
 use Tephra::Classify::LTRSfams;
 use Tephra::Classify::LTRFams;
@@ -12,7 +14,7 @@ use Tephra::Classify::LTRFams;
 sub opt_spec {
     return (    
 	[ "genome|g=s",     "The genome sequences in FASTA format used to search for LTR-RTs "                       ],
-	[ "logfile=s",      "The file to use for logigng results in addition to the screen "                         ],
+	[ "logfile=s",      "The file to use for logging results in addition to the screen "                         ],
 	[ "repeatdb|d=s",   "The file of repeat sequences in FASTA format to use for classification "                ], 
 	[ "hitlength|l=i",  "The alignment length cutoff for BLAST hits to the repeat database (Default: 80) "       ],
 	[ "percentid|p=i",  "The percent identity cutoff for BLAST hits to the repeat database (Default: 80) "       ],

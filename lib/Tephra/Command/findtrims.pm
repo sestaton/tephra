@@ -18,7 +18,7 @@ sub opt_spec {
 	[ "trnadb|t=s",  "The file of tRNA sequences in FASTA format to search for PBS "  ], 
 	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains "     ],
 	[ "outfile|o=s", "The final combined and filtered GFF3 file of TRIMs "            ],
-	[ "logfile=s",   "The file to use for logigng results in addition to the screen " ],
+	[ "logfile=s",   "The file to use for logging results in addition to the screen " ],
 	[ "clean",       "Clean up the index files (Default: yes) "                       ],
 	[ "debug",       "Show external command for debugging (Default: no) "             ],
 	[ "help|h",      "Display the usage menu and exit. "                              ],
@@ -143,6 +143,7 @@ Required:
     -o|outfile    :   The final combined and filtered GFF3 file of TRIMs. 
 
 Options:
+    --logfile     :   The file to use for logging results in addition to the screen.
     -t|trnadb     :   The file of tRNA sequences in FASTA format to search for PBS. 
     -d|hmmdb      :   The HMM db in HMMERv3 format to search for coding domains.
     -c|clean      :   Clean up the index files (Default: yes).
@@ -191,6 +192,10 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =head1 OPTIONS
 
 =over 2
+
+=item --logfile
+
+ The file to use for logging results in addition to the screen.
 
 =item -t, --trnadb
 

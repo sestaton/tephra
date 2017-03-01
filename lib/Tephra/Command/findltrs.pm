@@ -17,7 +17,7 @@ sub opt_spec {
     return (    
 	[ "config|c=s",  "The Tephra LTR option configuration file "                      ],
 	[ "outfile|o=s", "The final combined and filtered GFF3 file of LTR-RTs "          ],
-	[ "logfile=s",   "The file to use for logigng results in addition to the screen " ],
+	[ "logfile=s",   "The file to use for logging results in addition to the screen " ],
 	[ "index|i=s",   "The suffixerator index to use for the LTR search "              ],
 	[ "help|h",      "Display the usage menu and exit. "                              ],
         [ "man|m",       "Display the full manual. "                                      ],
