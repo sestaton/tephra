@@ -16,7 +16,7 @@ sub opt_spec {
 	[ "genome|g=s",       "The genome sequences in FASTA format to search for solo-LTRs "               ],
 	[ "percentid|p=i",    "Percent identity threshold for matches. (Default 39)."                       ], 
 	[ "percentcov|c=i",   "Percent coverage threshold for matches. (Default 80)."                       ],
-	[ "matchlen|l=f",     "Length threshold for matches. (Default 80)."                                 ],
+	[ "matchlen|l=i",     "Length threshold for matches. (Default 80)."                                 ],
 	[ "outfile|o=s",      "The GFF file to save results to. "                                           ],
 	[ "report|r=s",       "Parse hmmsearch of each sequence and produce a summary of align statistics." ],
 	[ "numfamilies|n=i",  "The number of families to analyze (Default: the top 20)."                    ],
@@ -83,7 +83,6 @@ sub _calculate_soloLTR_abund {
 	report       => $report,
 	outfile      => $outfile,
 	percentid    => $pid,
-	percentcov   => $pcov,
 	matchlen     => $len,
 	numfamilies  => $famnum,
 	seqfile      => $seq,
@@ -116,8 +115,8 @@ sub help {
  Options:
      -p|percentid     :    Percent identity threshold for matches. (Default 39).
                            NB: For a threshold of 80% say 80.
-     -f|percentcov    :    Percent coverage threshold for matches. (Default 80).
-                           NB: For a threshold of 80% say 80.
+     -c|percentcov    :    Percent coverage threshold for matches. (Default 80).
+                           NB: DEPRECATED Option will be ignored in v0.07.0+.
      -l|matchlen      :    Length threshold for matches. (Default 80).
                            NB: For a threshold of 80 bp say 80.
      -r|report        :    Parse hmmsearch of each sequence and produce a summary of align statistics.
@@ -182,7 +181,8 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =item -f, --percentcov
 
  Percent coverage threshold for matches. (default 0.80).
- NB: For a threshold of 80 percent say 80.
+ NB: For a threshold of 80 percent say 80. This option has
+ been deprecated.
 
 =item -l, --matchlen
 
