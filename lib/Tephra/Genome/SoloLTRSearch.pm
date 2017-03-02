@@ -367,7 +367,7 @@ sub write_hmmsearch_report {
     my $genome     = $self->genome->absolute->resolve;
     my $match_pid  = $self->percentid;
     my $match_len  = $self->matchlen;
-    my $match_pcov = $self->percentcov;
+    #my $match_pcov = $self->percentcov;
 
     my $parsed = $search_report;
     $parsed =~ s/\.hmmer$/\_hmmer_parsed.txt/;
@@ -399,37 +399,31 @@ sub write_hmmsearch_report {
 	    my $hitid = $hit->name();
 	    while ( my $hsp = $hit->next_hsp() ) {
 		my $percent_q_coverage = sprintf("%.2f", $hsp->length('query')/$qlen * 100);
-		my @ident_pos = $hsp->seq_inds('query','identical');
-		my $hspgaps   = $hsp->gaps;
-		my $hsplen    = $hsp->length('total');
-		my $hstart    = $hsp->start('hit');
-		my $hstop     = $hsp->end('hit');
-		my $qstart    = $hsp->start('query');
-		my $qstop     = $hsp->end('query');
-		my $qstring   = $hsp->query_string;
-		my $qhsplen   = $hsp->length('query');
-		
-		if (exists $aln_stats->{$query}) {
-		    my $percent_coverage = sprintf("%.2f",$hsplen/$aln_stats->{$query});
-		    $positions++ for @ident_pos;
-		    my $pid = sprintf("%.2f", $positions/$aln_stats->{$query} * 100);
-		    if ( $hsplen >= $match_len && $hsplen >= $aln_stats->{$query} * ($match_pcov/100) ) {
-			my $qid = $query =~ s/_ltrseqs_muscle-out//r; # non-destructive substitution in v5.14+
-			if ($pid >= $match_pid) {
-			    $matches++;
-			    say $out join "\t", $qid, $aln_stats->{$query}, $num_hits, $hitid, 
-			        $percent_q_coverage, $hsplen, $pid, $qstart, $qstop, $hstart, $hstop, $model_type;
+		my $hspgaps = $hsp->gaps;
+		my $hsplen  = $hsp->length('total');
+		my $hstart  = $hsp->start('hit');
+		my $hstop   = $hsp->end('hit');
+		my $qstart  = $hsp->start('query');
+		my $qstop   = $hsp->end('query');
+		my $qstring = $hsp->query_string;
+		my $qhsplen = $hsp->length('query');
+		my $pid     = $hsp->percent_identity;
 
-			    if ($self->seqfile) {
-				my $seqid = join '_', '>'.$qid, $hitid, $hstart, $hstop; 
-				## It makes more sense to show the location of the hit
-				## Also, this would pave the way for creating a gff of solo-LTRs
-				## my $seqid = ">".$query."|".$hitid."_".$hstart."-".$hstop
-				say $seq join "\n", $seqid, $qstring;
-			    }
+		if (exists $aln_stats->{$query}) {
+		    if ($hsplen >= $match_len && $pid >= $match_pid) { #$hsplen >= $aln_stats->{$query} * ($match_pcov/100) ) {
+			my $qid = $query =~ s/_ltrseqs_muscle-out//r; # non-destructive substitution in v5.14+
+			$matches++;
+			say $out join "\t", $qid, $aln_stats->{$query}, $num_hits, $hitid, 
+			$percent_q_coverage, $hsplen, $pid, $qstart, $qstop, $hstart, $hstop, $model_type;
+			
+			if ($self->seqfile) {
+			    my $seqid = join '_', '>'.$qid, $hitid, $hstart, $hstop; 
+			    ## It makes more sense to show the location of the hit
+			    ## Also, this would pave the way for creating a gff of solo-LTRs
+			    ## my $seqid = ">".$query."|".$hitid."_".$hstart."-".$hstop
+			    say $seq join "\n", $seqid, $qstring;
 			}
 		    }
-		    $positions = 0;
 		}
 	    }
 	}
