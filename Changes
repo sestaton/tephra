@@ -9,6 +9,7 @@ Version	Date	Location
   for running all methods.
 - Bug fix for 'classifytirs' command to add 3-letter superfamily code to GFF3 file.
 - Add logger for all methods.
+- Add new tests for all command and logging methods.
 - Bug fix for cleaning GT index files (method was incorrectly searching subdirectories).
 - Simplify setting HTS index for 'classifytirs' method. Now the index is created once and passed
   to individual classification methods instead of recreating indexes for each method.
@@ -23,7 +24,13 @@ Version	Date	Location
   an integer not a fraction).
 - Add repeat database file to output of 'maskref' command for better logging. 
 - Add better regex for getting GFF3 sequence declarations so as to not capture section dividers.
-
+- Add check and clean up of empty files with 'findtrims' command when no elements are discovered.
+- Add check for count of elements with 'classifyltrs' and 'classifytirs' command so as to not
+  trigger warnings when trying to calculate statistics and format the output.
+- Deprecated the percent coverage threshold option for 'sololtr' command. The match length and
+  percent identity are sufficient to filter weak matches and the coverage option added complexity
+  to the usage and implementation.
+ 
 0.06.1	2/09/17	Vancouver, BC
 
 - Add method to evaluate whether the BLAST-merging step increases the number of elements
