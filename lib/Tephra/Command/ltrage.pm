@@ -15,7 +15,7 @@ sub opt_spec {
 	[ "outfile|o=s",   "The output file containing the age of each element "                        ],
 	[ "subs_rate|r=f", "The nucleotide substitution rate to use (Default: 1e-8) "                   ],
 	[ "threads|t=i",   "The number of threads to use for clustering coding domains "                ],
-	[ "indir|i=s",     "The input directory of superfamily exemplars "                              ],
+	[ "indir|i=s",     "The input directory of classifed LTR elements "                             ],
 	[ "all|a",         "Calculate age of all LTR-RTs in <gff> instead of exemplars in <indir> "     ],
 	[ "clean|c",       "Clean up all the intermediate files from PAML and clustalw (Default: yes) " ],
 	[ "help|h",        "Display the usage menu and exit. "                                          ],
@@ -90,9 +90,9 @@ sub help {
       -g|genome     :   The genome sequences in FASTA format used to search for LTR-RTs.
       -f|gff        :   The GFF3 file of LTR-RTs in <--genome>.
       -o|outfile    :   The output file containing the age of each element.
-      -i|indir      :   The input directory of superfamily exemplars.
 
   Options:
+      -i|indir      :   The input directory of classified LTR elements.
       -r|subs_rate  :   The nucleotide substitution rate to use (Default: 1e-8).
       -t|threads    :   The number of threads to use for clustering coding domains (Default: 1).
       -c|clean      :   Clean up all the intermediate files from PAML and clustalw (Default: yes).
@@ -113,7 +113,7 @@ __END__
 
 =head1 SYNOPSIS    
 
- tephra ltrage -g ref.fas -f ref_tephra_gypsy.gff3 -o ref_classified_ltrs -t 12 --clean
+ tephra ltrage -g ref.fas -f ref_tephra_gypsy.gff3 -o ref_classified_ltrs -t 12 --clean --all
 
 =head1 DESCRIPTION
 
@@ -145,6 +145,10 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =head1 OPTIONS
 
 =over 2
+
+=item -i|indir
+
+ The input directory of classified LTR elements.
 
 =item -r, --subs_rate
 

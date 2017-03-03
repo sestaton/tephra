@@ -175,7 +175,7 @@ sub calculate_ltr_ages {
 sub collect_feature_args {
     my $self = shift;
 
-    my (@ltrs, %aln_args);
+    my %aln_args;
     if ($self->all || ! $self->dir) {
 	my ($files, $wdir) = $self->extract_ltr_features;
         $aln_args{ltrs} = { seqs => $files };
@@ -186,7 +186,7 @@ sub collect_feature_args {
 	#my $dir = $self->dir->absolute->resolve; 
 	my $ltrseqs = $self->_get_exemplar_ltrs($dir);
 
-	if (@ltrs > 0) {
+	if (@$ltrseqs > 0) {
 	    $aln_args{ltrs} = { seqs => $ltrseqs };
 	    $aln_args{resdir} = $dir;
 	}
@@ -415,34 +415,42 @@ sub _get_exemplar_ltrs {
     my $self = shift;
     my ($dir) = @_;
 
-    my ($ltrfile, @ltrseqs, %ltrfams);
-    find( sub { $ltrfile = $File::Find::name if -f and /exemplar_ltrs.fasta$/ }, $dir);
-    unless (defined $ltrfile) {
-	say STDERR "\nERROR: No exemplar LTR file was found, likely because there were no families identified by the 'classifyltrs' command.";
-	say "       Try the 'ltrage' command again with the --all flag. Please report any issues. Exiting.\n";
-	exit(1);
-    }
+    my (@dirs, @ltrseqs);
+    find( sub { push @dirs, $File::Find::name if -d && /_copia\z|_gypsy\z|_unclassified\z/ }, $dir);
+    croak "\nERROR: Could not find the expected sub-directories ending in 'copia', 'gypsy' and 'unclassified'. Please ".
+        "check input. Exiting.\n" unless @dirs;
 
-    my $kseq = Bio::DB::HTS::Kseq->new($ltrfile);
-    my $iter = $kseq->iterator();
+    for my $sfdir (@dirs) {
+	my ($ltrfile, %ltrfams);
+	find( sub { $ltrfile = $File::Find::name if -f and /exemplar_ltrs.fasta$/ }, $sfdir);
+	unless (defined $ltrfile) {
+	    say STDERR "\nWARNING: No exemplar LTR file was found in: $sfdir.";
+	    say STDERR "This is likely because there were no families identified by the 'classifyltrs' command for this superfamily.";
+	    say STDERR "You can try the 'ltrage' command again with the --all flag to process all LTR-RTs.\n";
+	    next;
+	}
 
-    while ( my $seq = $iter->next_seq() ) {
-        my $id  = $seq->name;
-        my $seq = $seq->seq;
-        if ($id =~ /^[35]prime_(RL[CGX]_family\d+)_LTR_retrotransposon.*/) {
-            my $family = $1;
-            push @{$ltrfams{$family}}, { id => $id, seq => $seq };
-        }
-    }
-
-    for my $family (keys %ltrfams) {
-        my $outfile = File::Spec->catfile($dir, $family.'_exemplar_ltrseqs.fasta');
-        open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-        for my $pair (@{$ltrfams{$family}}) {
-            say $out join "\n", ">".$pair->{id}, $pair->{seq};
-        }
-        close $out;
-        push @ltrseqs, $outfile;
+	my $kseq = Bio::DB::HTS::Kseq->new($ltrfile);
+	my $iter = $kseq->iterator();
+	
+	while ( my $seq = $iter->next_seq() ) {
+	    my $id  = $seq->name;
+	    my $seq = $seq->seq;
+	    if ($id =~ /^[35]prime_(RL[CGX]_family\d+)_LTR_retrotransposon.*/) {
+		my $family = $1;
+		push @{$ltrfams{$family}}, { id => $id, seq => $seq };
+	    }
+	}
+	
+	for my $family (keys %ltrfams) {
+	    my $outfile = File::Spec->catfile($dir, $family.'_exemplar_ltrseqs.fasta');
+	    open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+	    for my $pair (@{$ltrfams{$family}}) {
+		say $out join "\n", ">".$pair->{id}, $pair->{seq};
+	    }
+	    close $out;
+	    push @ltrseqs, $outfile;
+	}
     }
 
     return \@ltrseqs;
