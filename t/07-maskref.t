@@ -13,6 +13,8 @@ use File::Spec;
 
 use Test::More tests => 3;
 
+$| = 1;
+
 my $devtests = 0;
 if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
     $devtests = 1;
