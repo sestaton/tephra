@@ -11,7 +11,9 @@ use File::Find;
 use File::Spec;
 #use Data::Dump;
 
-use Test::More tests => 2;
+use Test::More tests => 3;
+
+$| = 1;
 
 my $devtests = 0;
 if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
@@ -29,7 +31,7 @@ my @results = capture { system([0..5], "$cmd findnonltrs -h") };
 ok( @results, 'Can execute findnonltrs subcommand' );
 
 SKIP: {
-    skip 'skip lengthy tests', 1 unless $devtests;
+    skip 'skip lengthy tests', 2 unless $devtests;
     my $find_cmd = "$cmd findnonltrs -g $genome -o $gff";
     #say STDERR $find_cmd;
 
