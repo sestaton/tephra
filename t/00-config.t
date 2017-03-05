@@ -14,6 +14,8 @@ use Tephra::Config::Exe;
 
 use Test::More tests => 16;
 
+$| = 1;
+
 BEGIN {
     use_ok( 'Tephra' ) || print "Bail out!\n";
     use_ok( 'Tephra::Config::Exe' ) || print "Bail out!\n"
