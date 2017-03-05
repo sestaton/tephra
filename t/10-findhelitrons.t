@@ -13,6 +13,8 @@ use File::Spec;
 
 use Test::More tests => 2;
 
+$| = 1;
+
 my $cmd       = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir   = File::Spec->catdir('t', 'test_data');
 my $outdir    = File::Spec->catdir($testdir, 't_family_domains');
