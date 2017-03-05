@@ -14,6 +14,8 @@ use File::Copy;
 
 use Test::More tests => 8;
 
+$| = 1;
+
 my $devtests = 0;
 if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
     $devtests = 1;
@@ -41,7 +43,7 @@ SKIP: {
     
     ok(@results, 'Can execute sololtr subcommand');
 
-    my $find_cmd = "$cmd sololtr -i $outdir -g $masked -r $allstfile -o $outfile -l 80 -c 0.09 -s $seqfile";
+    my $find_cmd = "$cmd sololtr -i $outdir -g $masked -r $allstfile -o $outfile -l 100 -p 50 -s $seqfile";
     #say STDERR $find_cmd;
     
     my @ret = capture { system([0..5], $find_cmd) };
