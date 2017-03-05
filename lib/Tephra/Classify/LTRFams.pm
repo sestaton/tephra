@@ -113,7 +113,7 @@ sub make_ltr_families {
 				  my ($sf, $elemct, $famct, $famtot, $singct) =
                                       @{$family_stats}{qw(superfamily total_elements families total_in_families singletons)};
 				  my ($sfam) = ($sf =~ /_?(\w+)\z/);
-				  my $pad = $sfam =~ /unclassified/i ? 0 : 8;
+				  my $pad = $sfam =~ /unclassified/i ? 0 : 7;
 				  my $lpad = ' ' x $pad;
 				  $log->info("Results - Number of $sfam families:$lpad                      $famct");
 				  $log->info("Results - Number of $sfam elements in families:$lpad          $famtot");
