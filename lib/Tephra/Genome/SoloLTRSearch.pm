@@ -136,7 +136,7 @@ sub find_soloLTRs {
     my $hmmsearch_summary = $self->report // File::Spec->catfile($path, $name.'_tephra_soloLTRs.tsv'); 
 
     my @sfs;
-    find( sub { push @sfs, $File::Find::name if /_copia\z|_gypsy\z/ }, $anno_dir);
+    find( sub { push @sfs, $File::Find::name if -d && /_copia\z|_gypsy\z/ }, $anno_dir);
     croak "\nERROR: Could not find the expected sub-directories ending in 'copia' and 'gypsy' please ".
 	"check input. Exiting.\n" unless @sfs; #== 2;
 
