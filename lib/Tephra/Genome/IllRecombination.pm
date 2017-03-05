@@ -158,7 +158,7 @@ sub align_features {
 
     say $log "\n========> Finished running MUSCLE on $doms families in $final_time minutes";
     close $log;
-    #unlink $logfile if $self->clean;
+    unlink $logfile if $self->clean;
 
     my @aligns;
     for my $k (keys %$args) {
