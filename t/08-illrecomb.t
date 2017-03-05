@@ -14,6 +14,8 @@ use File::Copy;
 
 use Test::More tests => 8;
 
+$| = 1;
+
 my $devtests = 0;
 if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
     $devtests = 1;
@@ -27,6 +29,7 @@ my $illstfile = File::Spec->catfile($testdir, 'gypsy_illrecomb_illrecstats.tsv')
 my $seqfile   = File::Spec->catfile($testdir, 'gypsy_illrecomb_seqs.fasta');
 my $genome    = File::Spec->catfile($testdir, 'ref.fas');
 my $testfile  = File::Spec->catfile($testdir, 'tephra_ltrs_gypsy_family9.fasta');
+my $log       = File::Spec->catfile($testdir, 'all_illrecomb_muscle_reports.log');
 
 SKIP: {
     skip 'skip development tests', 8 unless $devtests;
@@ -64,7 +67,7 @@ SKIP: {
     ok( $hmatch == 18, 'Correct number of illigetimate recombination events detected downstream of gap' );
     ok( $seqct == $qmatch+$hmatch, 'Correct number of illigetimate recombination events detected' );
     
-    unlink $allstfile, $illstfile, $seqfile;
+    unlink $allstfile, $illstfile, $seqfile, $log;
 
     ## clean up (this is done automatically now in v0.06.0)
     #my @outfiles;
