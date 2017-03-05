@@ -12,6 +12,8 @@ use File::Spec;
 
 use Test::More tests => 4;
 
+$| = 1;
+
 my $devtests = 0;
 if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
     $devtests = 1;
@@ -20,14 +22,14 @@ if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
 my $cmd     = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir = File::Spec->catdir('t', 'test_data');
 my $genome  = File::Spec->catfile($testdir, 'ref.fas');
-my $gff     = File::Spec->catfile($testdir, 'ref_tirs_filtered_classified.gff3');
-my $outdir  = File::Spec->catdir($testdir,  'ref_tirs_filtered_classified_tirages');
+my $gff     = File::Spec->catfile($testdir, 'ref_tirs_classified.gff3');
+my $outdir  = File::Spec->catdir($testdir,  'ref_tirs_classified_tirages');
 
 SKIP: {
     skip 'skip development tests', 4 unless $devtests;
     my @results = capture { system([0..5], "$cmd tirage -h") };
 
-    ok(@results, 'Can execute ltrage subcommand');
+    ok(@results, 'Can execute tirage subcommand');
     
     my $outfile = $gff;
     $outfile =~ s/\.gff3/_tirages.tsv/;
