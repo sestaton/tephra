@@ -57,7 +57,7 @@ sub _calculate_ill_recomb {
     my $allstatsfile = $opt->{statsfile};
     my $illrecstats  = $opt->{recombstats};
     my $threads      = $opt->{threads} // 1;
-    my $clean        = $opt->{clean} // 0;
+    my $clean        = $opt->{clean} // 1;
 
     my $ill_obj = Tephra::Genome::IllRecombination->new(
 	infile          => $infile,
