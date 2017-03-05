@@ -14,7 +14,6 @@ use List::Util          qw(sum max);
 use Cwd                 qw(getcwd abs_path);
 use IPC::System::Simple qw(system);
 use Capture::Tiny       qw(capture);
-#use Log::Any            qw($log);
 use Path::Class::File;
 use Try::Tiny;
 use Carp 'croak';
@@ -78,65 +77,60 @@ sub find_tc1_mariner {
     my @all_pdoms;
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $outfile = File::Spec->catfile($path, $name.'_tc1-mariner.gff3');
-    my $fas     = File::Spec->catfile($path, $name.'_tc1-mariner.fasta');
+    my $outfile    = File::Spec->catfile($path, $name.'_tc1-mariner.gff3');
+    my $fas        = File::Spec->catfile($path, $name.'_tc1-mariner.fasta');
     my $domoutfile = File::Spec->catfile($path, $name.'_tc1-mariner_domain_org.tsv');
     open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     open my $faout, '>>', $fas or die "\nERROR: Could not open file: $fas\n";
     open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";;
     say $out $header;
 
-    my ($len, $lines, $seq_id, $source, $start, $end, $strand);
+    my ($len, $lines, $seq_id, $source, $start, $end, $strand, @tirs);
     for my $rep_region (nsort_by { m/repeat_region\d+\|\|(\d+)\|\|\d+/ and $1 } keys %$feature) {
 	my ($rreg_id, $s, $e) = split /\|\|/, $rep_region;
 	for my $tir_feature (@{$feature->{$rep_region}}) {
 	    if ($tir_feature->{type} eq 'protein_match') {
 		$has_pdoms = 1;
-		my $pdom_name = $tir_feature->{attributes}{name}[0];
-		push @all_pdoms, $pdom_name;
+		push @all_pdoms, $tir_feature->{attributes}{name}[0];
 	    }
 
 	    if ($tir_feature->{type} eq 'target_site_duplication') {
-		my ($seq_id, $tsd_start, $tsd_end) = @{$tir_feature}{qw(seq_id start end)};
-		my $tsd_len = $tsd_end - $tsd_start + 1;
+		($seq_id, $source, $start, $end, $strand) = @{$tir_feature}{qw(seq_id source start end strand)};
+		my $tsd_len = $end - $start + 1;
 		if ($tsd_len == 2) {
-		    my $seq = $self->subseq($index, $seq_id, undef, $tsd_start, $tsd_end, undef);
+		    my $seq = $self->subseq($index, $seq_id, undef, $start, $end, undef);
 		    $is_mariner = 1 if $seq =~ /ta/i;
 		}
 	    }
-
-	    if ($tir_feature->{type} eq 'terminal_inverted_repeat_element') {
-		my $elem_id = $tir_feature->{attributes}{ID}[0];
-		($seq_id, $source, $start, $end, $strand) 
-		    = @{$tir_feature}{qw(seq_id source start end strand)};
-		my $seq = $self->subseq($index, $seq_id, $elem_id, $start, $end, undef);
-		my $id = join "_", 'DTT', $elem_id, $seq_id, $start, $end;
-		$tir_feature->{attributes}{ID}[0] =~ s/(.*)/DTT_$1/;
-
-		$lines .= join "\n", ">".$id, $seq;
-		$len = $end - $start + 1;
-            }
-	    $tir_feature->{attributes}{Parent}[0] =~ s/(.*)/DTT_$1/
-		if $tir_feature->{attributes}{Parent}[0] =~ /terminal_inverted_repeat_element/;
-	    my $gff3_str = gff3_format_feature($tir_feature);
-	    $mar_feats .= $gff3_str;
 	}
-
+	    
 	if ($is_mariner) {
-	    chomp $mar_feats;
-	    say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
-	    say $out $mar_feats;
-	    delete $feature->{$rep_region};
+	    push @tirs, $rep_region;
+	    say $out join "\t", $feature->{$rep_region}[0]{seq_id}, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
+
+	    for my $tir_feature (@{$feature->{$rep_region}}) {
+		if ($tir_feature->{type} eq 'terminal_inverted_repeat_element') {
+		    my $elem_id = $tir_feature->{attributes}{ID}[0];
+		    ($seq_id, $source, $start, $end, $strand) = 
+			@{$tir_feature}{qw(seq_id source start end strand)};
+		    my $seq = $self->subseq($index, $seq_id, $elem_id, $start, $end, undef);
+		    my $id = join "_", 'DTT', $elem_id, $seq_id, $start, $end;
+		    say $faout join "\n", ">".$id, $seq;
+
+		    $tir_feature->{attributes}{superfamily} = 'DTT';
+		    $len = $end - $start + 1;
+		}
+		my $gff3_str = gff3_format_feature($tir_feature);
+		chomp $gff3_str;
+		say $out $gff3_str;
+	    }
+
 	    push @lengths, $len;
 	    $pdom_org = join ",", @all_pdoms;
 	    $pdom_index{$strand}{$pdom_org}++ if $pdom_org;
 	    $pdoms++ if $has_pdoms;
-
-	    say $faout $lines;
 	}	    
-	undef $mar_feats;
 	undef $pdom_org;
-	undef $lines;
 
 	@all_pdoms  = ();
 	$is_mariner = 0;
@@ -154,27 +148,28 @@ sub find_tc1_mariner {
     }
     close $domf;
     unlink $domoutfile unless -s $domoutfile;
-    
-    my $stat = Statistics::Descriptive::Full->new;
-    $stat->add_data(@lengths);
-    my $min   = $stat->min;
-    my $max   = $stat->max;
-    my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
-    my $count = $stat->count;
 
-    if ($count > 0) {
-	#say STDERR join "\t", "mariner_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
-	#say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+    if (@lengths) { 
+	delete $feature->{$_} for @tirs; 
+
+	my $stat = Statistics::Descriptive::Full->new;
+	$stat->add_data(@lengths);
+	my $min   = $stat->min;
+	my $max   = $stat->max;
+	my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
+	my $count = $stat->count;
+
 	$log->info("Results - Total number of Tc1-Mariner elements:           $count");
 	$log->info("Results - Minimum length of Tc1-Mariner elements:         $min");
 	$log->info("Results - Maximum length of Tc1-Mariner elements:         $max");
 	$log->info("Results - Mean length of Tc1-Mariner elements:            $mean");
 	$log->info("Results - Number of Tc1-Mariner elements protein matches: $pdoms");
 
-	return ($outfile, $fas);
+	return ($outfile, $fas, $count);
     }
     else {
 	unlink $outfile, $fas;	
+	return (undef, undef, 0);
     }
 }
 
@@ -194,62 +189,58 @@ sub find_hat {
     my @all_pdoms;
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $outfile = File::Spec->catfile($path, $name.'_hAT.gff3');
-    my $fas     = File::Spec->catfile($path, $name.'_hAT.fasta');
+    my $outfile    = File::Spec->catfile($path, $name.'_hAT.gff3');
+    my $fas        = File::Spec->catfile($path, $name.'_hAT.fasta');
     my $domoutfile = File::Spec->catfile($path, $name.'_hAT_domain_org.tsv');
     open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     open my $faout, '>>', $fas or die "\nERROR: Could not open file: $fas\n";
     open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";
     say $out $header;
 
-    my ($len, $lines, $id, $seq_id, $source, $start, $end, $strand);
+    my ($len, $lines, $seq_id, $source, $start, $end, $strand, @tirs);
     for my $rep_region (nsort_by { m/repeat_region\d+\|\|(\d+)\|\|\d+/ and $1 } keys %$feature) {
         my ($rreg_id, $s, $e) = split /\|\|/, $rep_region;
         for my $tir_feature (@{$feature->{$rep_region}}) {
             if ($tir_feature->{type} eq 'protein_match') {
                 $has_pdoms = 1;
-                my $pdom_name = $tir_feature->{attributes}{name}[0];
-                push @all_pdoms, $pdom_name;
+                push @all_pdoms, $tir_feature->{attributes}{name}[0];
             }
 
             if ($tir_feature->{type} eq 'target_site_duplication') {
-                my ($seq_id, $tsd_start, $tsd_end) = @{$tir_feature}{qw(seq_id start end)};
-                my $tsd_len = $tsd_end - $tsd_start + 1;
+                ($seq_id, $start, $end, $source, $strand) = 
+		    @{$tir_feature}{qw(seq_id start end source strand)};
+                my $tsd_len = $end - $start + 1;
 		$is_hat = 1 if $tsd_len == 8;
             }
-
-	    if ($tir_feature->{type} eq 'terminal_inverted_repeat_element') {
-		my $elem_id = $tir_feature->{attributes}{ID}[0];
-                ($seq_id, $source, $start, $end, $strand) 
-                    = @{$tir_feature}{qw(seq_id source start end strand)};
-                my $seq = $self->subseq($index, $seq_id, $elem_id, $start, $end, undef);
-                $id = join "_", 'DTA', $elem_id, $seq_id, $start, $end;
-		$tir_feature->{attributes}{ID}[0] =~ s/(.*)/DTA_$1/;
-
-                $lines .= join "\n", ">".$id, $seq;
-                $len = $end - $start + 1;
-            }
-	    $tir_feature->{attributes}{Parent}[0] =~ s/(.*)/DTA_$1/
-		if $tir_feature->{attributes}{Parent}[0] =~/terminal_inverted_repeat_element/;
-            my $gff3_str = gff3_format_feature($tir_feature);
-            $hat_feats .= $gff3_str;
 	}
 
 	if ($is_hat) {
-	    chomp $hat_feats;
-	    say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
-            say $out $hat_feats;
-            delete $feature->{$rep_region};
+	    push @tirs, $rep_region;
+	    say $out join "\t", $feature->{$rep_region}[0]{seq_id}, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
+
+	    for my $tir_feature (@{$feature->{$rep_region}}) {
+                if ($tir_feature->{type} eq 'terminal_inverted_repeat_element') {
+		    my $elem_id = $tir_feature->{attributes}{ID}[0];
+		    ($seq_id, $source, $start, $end, $strand) = 
+			@{$tir_feature}{qw(seq_id source start end strand)};
+		    my $seq = $self->subseq($index, $seq_id, $elem_id, $start, $end, undef);
+		    my $id = join "_", 'DTA', $elem_id, $seq_id, $start, $end;
+		    say $faout join "\n", ">".$id, $seq;
+
+		    $tir_feature->{attributes}{superfamily} = 'DTA';
+		    $len = $end - $start + 1;
+		}
+		my $gff3_str = gff3_format_feature($tir_feature);
+		chomp $gff3_str;
+		say $out $gff3_str;
+	    }
 	    push @lengths, $len;
+
 	    $pdom_org = join ",", @all_pdoms;
 	    $pdom_index{$strand}{$pdom_org}++ if $pdom_org;
 	    $pdoms++ if $has_pdoms;
-	    
-	    say $faout $lines;
 	}
-	undef $hat_feats;
 	undef $pdom_org;
-	undef $lines;
 
 	@all_pdoms = ();
 	$is_hat    = 0;
@@ -269,25 +260,27 @@ sub find_hat {
     close $domf;
     unlink $domoutfile unless -s $domoutfile;    
 
-    my $stat = Statistics::Descriptive::Full->new;
-    $stat->add_data(@lengths);
-    my $min   = $stat->min;
-    my $max   = $stat->max;
-    my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
-    my $count = $stat->count;
+    if (@lengths) { 
+	delete $feature->{$_} for @tirs; 
 
-    if ($count > 0) {
-	#say STDERR join "\t", "hat_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
-	#say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+	my $stat = Statistics::Descriptive::Full->new;
+	$stat->add_data(@lengths);
+	my $min   = $stat->min;
+	my $max   = $stat->max;
+	my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
+	my $count = $stat->count;
+
 	$log->info("Results - Total number of hAT elements:                   $count");
         $log->info("Results - Minimum length of hAT elements:                 $min");
         $log->info("Results - Maximum length of hAT elements:                 $max");
         $log->info("Results - Mean length of hAT elements:                    $mean");
 	$log->info("Results - Number of hAT elements protein matches:         $pdoms");
-	return ($outfile, $fas);
+
+	return ($outfile, $fas, $count);
     }
     else {
 	unlink $outfile, $fas;
+	return (undef, undef, 0);
     }
 }
 
@@ -307,22 +300,21 @@ sub find_mutator {
     my @all_pdoms;
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $outfile = File::Spec->catfile($path, $name.'_mutator.gff3');
-    my $fas     = File::Spec->catfile($path, $name.'_mutator.fasta');
+    my $outfile    = File::Spec->catfile($path, $name.'_mutator.gff3');
+    my $fas        = File::Spec->catfile($path, $name.'_mutator.fasta');
     my $domoutfile = File::Spec->catfile($path, $name.'_mutator_domain_org.tsv');
     open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     open my $faout, '>>', $fas or die "\nERROR: Could not open file: $fas\n";
     open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";
     say $out $header;
 
-    my ($len, $lines, $id, $seq_id, $source, $start, $end, $strand);
+    my ($len, $lines, $seq_id, $source, $start, $end, $strand, @tirs);
     for my $rep_region (nsort_by { m/repeat_region\d+\|\|(\d+)\|\|\d+/ and $1 } keys %$feature) {
         my ($rreg_id, $s, $e) = split /\|\|/, $rep_region;
         for my $tir_feature (@{$feature->{$rep_region}}) {
             if ($tir_feature->{type} eq 'protein_match') {
                 $has_pdoms = 1;
-                my $pdom_name = $tir_feature->{attributes}{name}[0];
-                push @all_pdoms, $pdom_name;
+                push @all_pdoms, $tir_feature->{attributes}{name}[0];
             }
 
             if ($tir_feature->{type} eq 'target_site_duplication') {
@@ -330,41 +322,39 @@ sub find_mutator {
                 my $tsd_len = $tsd_end - $tsd_start + 1;
 		if ($tsd_len >= 8 && $tsd_len <= 11) {
 		    $is_mutator = 1;
+		    ($seq_id, $source, $start, $end, $strand) = 
+			@{$tir_feature}{qw(seq_id source start end strand)};    
 		}
 	    }
-
-	    if ($tir_feature->{type} eq 'terminal_inverted_repeat_element') {
-                my $elem_id = $tir_feature->{attributes}{ID}[0];
-                ($seq_id, $source, $start, $end, $strand) 
-                    = @{$tir_feature}{qw(seq_id source start end strand)};
-                my $seq = $self->subseq($index, $seq_id, $elem_id, $start, $end, undef);
-                my $id = join "_", 'DTM', $elem_id, $seq_id, $start, $end;
-		$tir_feature->{attributes}{ID}[0] =~ s/(.*)/DTM_$1/;
-
-                $lines .= join "\n", ">".$id, $seq;
-                $len = $end - $start + 1;
-            }
-	    $tir_feature->{attributes}{Parent}[0] =~ s/(.*)/DTM_$1/
-		if $tir_feature->{attributes}{Parent}[0] =~/terminal_inverted_repeat_element/;
-            my $gff3_str = gff3_format_feature($tir_feature);
-            $mut_feats .= $gff3_str;
-        }
+	}
 
         if ($is_mutator) {
-            chomp $mut_feats;
-            say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
-            say $out $mut_feats;
-            delete $feature->{$rep_region};
+	    push @tirs, $rep_region;
+            say $out join "\t", $feature->{$rep_region}[0]{seq_id}, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
+
+	    for my $tir_feature (@{$feature->{$rep_region}}) {
+		if ($tir_feature->{type} eq 'terminal_inverted_repeat_element') {
+		    my $elem_id = $tir_feature->{attributes}{ID}[0];
+		    ($seq_id, $source, $start, $end, $strand) = 
+			@{$tir_feature}{qw(seq_id source start end strand)};
+		    my $seq = $self->subseq($index, $seq_id, $elem_id, $start, $end, undef);
+		    my $id = join "_", 'DTM', $elem_id, $seq_id, $start, $end;
+		    say $faout join "\n", ">".$id, $seq;
+
+		    $tir_feature->{attributes}{superfamily} = 'DTM';
+		    $len = $end - $start + 1;
+		}
+		my $gff3_str = gff3_format_feature($tir_feature);
+		chomp $gff3_str;
+		say $out $gff3_str;
+	    }
 	    push @lengths, $len;
+
 	    $pdom_org = join ",", @all_pdoms;
 	    $pdom_index{$strand}{$pdom_org}++ if $pdom_org;
 	    $pdoms++ if $has_pdoms;
-
-	    say $faout $lines;
 	}
-	undef $mut_feats;
 	undef $pdom_org;
-	undef $lines;
 
 	@all_pdoms  = ();
 	$is_mutator = 0;
@@ -383,26 +373,28 @@ sub find_mutator {
     }
     close $domf;
     unlink $domoutfile unless -s $domoutfile;
-    
-    my $stat = Statistics::Descriptive::Full->new;
-    $stat->add_data(@lengths);
-    my $min   = $stat->min;
-    my $max   = $stat->max;
-    my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
-    my $count = $stat->count;
 
-    if ($count > 0) {
-	#say STDERR join "\t", "mutator_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";	
-	#say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+    if (@lengths) { 
+	delete $feature->{$_} for @tirs; 
+
+	my $stat = Statistics::Descriptive::Full->new;
+	$stat->add_data(@lengths);
+	my $min   = $stat->min;
+	my $max   = $stat->max;
+	my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
+	my $count = $stat->count;
+
 	$log->info("Results - Total number of Mutator elements:               $count");
         $log->info("Results - Minimum length of Mutator elements:             $min");
         $log->info("Results - Maximum length of Mutator elements:             $max");
         $log->info("Results - Mean length of Mutator elements:                $mean");
 	$log->info("Results - Number of Mutator elements protein matches:     $pdoms");
-	return ($outfile, $fas);
+
+	return ($outfile, $fas, $count);
     }
     else {
 	unlink $outfile, $fas;
+	return (undef, undef, 0);
     }
 }
 
@@ -422,22 +414,21 @@ sub find_cacta {
     my @all_pdoms;
     
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $outfile = File::Spec->catfile($path, $name.'_cacta.gff3');
-    my $fas     = File::Spec->catfile($path, $name.'_cacta.fasta');
+    my $outfile    = File::Spec->catfile($path, $name.'_cacta.gff3');
+    my $fas        = File::Spec->catfile($path, $name.'_cacta.fasta');
     my $domoutfile = File::Spec->catfile($path, $name.'_cacta_domain_org.tsv');
     open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     open my $faout, '>>', $fas or die "\nERROR: Could not open file: $fas\n";
     open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";
     say $out $header;
 
-    my ($len, $lines, $seq_id, $source, $start, $end, $strand, $tir_len);
+    my ($len, $lines, $seq_id, $source, $start, $end, $strand, $tir_len, @tirs);
     for my $rep_region (nsort_by { m/repeat_region\d+\|\|(\d+)\|\|\d+/ and $1 } keys %$feature) {
         my ($rreg_id, $s, $e) = split /\|\|/, $rep_region;
         for my $tir_feature (@{$feature->{$rep_region}}) {
             if ($tir_feature->{type} eq 'protein_match') {
                 $has_pdoms = 1;
-                my $pdom_name = $tir_feature->{attributes}{name}[0];
-                push @all_pdoms, $pdom_name;
+                push @all_pdoms, $tir_feature->{attributes}{name}[0];
             }
 
 	    if ($tir_feature->{type} eq 'terminal_inverted_repeat') {
@@ -447,42 +438,44 @@ sub find_cacta {
 
 	    if ($tir_feature->{type} eq 'terminal_inverted_repeat_element') {
                 my $elem_id = $tir_feature->{attributes}{ID}[0];
-                ($seq_id, $source, $start, $end, $strand) 
-                    = @{$tir_feature}{qw(seq_id source start end strand)};
+                ($seq_id, $source, $start, $end, $strand) = 
+		    @{$tir_feature}{qw(seq_id source start end strand)};
                 my $seq = $self->subseq($index, $seq_id, $elem_id, $start, $end, undef);
 		if ($seq =~ /^cact(?:a|g)?|cact(?:a|g)?$/i) {
 		    # Lewin, 1997 http://www.plantphysiol.org/content/132/1/52.full
 		    # provides this TIR length definition, but it seems to remove all predictions
 		    $is_cacta = 1; # if $tir_len >= 10 && $tir_len <= 28;
-		}
-		
-                my $id = join "_", 'DTC', $elem_id, $seq_id, $start, $end;
-		$tir_feature->{attributes}{ID}[0] =~ s/(.*)/DTC_$1/;
-
-                $lines .= join "\n", ">".$id, $seq;
-                $len = $end - $start + 1;
+		}		
             }
-	    $tir_feature->{attributes}{Parent}[0] =~ s/(.*)/DTC_$1/
-		if $tir_feature->{attributes}{Parent}[0] =~/terminal_inverted_repeat_element/;
-            my $gff3_str = gff3_format_feature($tir_feature);
-            $cac_feats .= $gff3_str;
         }
 
         if ($is_cacta) {
-            chomp $cac_feats;
-            say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
-            say $out $cac_feats;
-            delete $feature->{$rep_region};
+	    push @tirs, $rep_region;
+            say $out join "\t", $feature->{$rep_region}[0]{seq_id}, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
+
+	    for my $tir_feature (@{$feature->{$rep_region}}) {
+		if ($tir_feature->{type} eq 'terminal_inverted_repeat_element') {
+		    my $elem_id = $tir_feature->{attributes}{ID}[0];
+		    ($seq_id, $source, $start, $end, $strand) = 
+			@{$tir_feature}{qw(seq_id source start end strand)};
+		    my $seq = $self->subseq($index, $seq_id, $elem_id, $start, $end, undef);
+		    my $id = join "_", 'DTC', $elem_id, $seq_id, $start, $end;
+		    say $faout join "\n", ">".$id, $seq;
+
+		    $tir_feature->{attributes}{superfamily} = 'DTC';
+		    $len = $end - $start + 1;
+		}
+		my $gff3_str = gff3_format_feature($tir_feature);
+		chomp $gff3_str;
+		say $out $gff3_str;
+	    }
 	    push @lengths, $len;
+
 	    $pdom_org = join ",", @all_pdoms;
 	    $pdom_index{$strand}{$pdom_org}++ if $pdom_org;
 	    $pdoms++ if $has_pdoms;
-
-	    say $faout $lines;
 	}
-	undef $cac_feats;
 	undef $pdom_org;
-	undef $lines;
 
 	@all_pdoms = ();
 	$is_cacta  = 0;
@@ -501,26 +494,28 @@ sub find_cacta {
     }
     close $domf;
     unlink $domoutfile unless -s $domoutfile;
-    
-    my $stat = Statistics::Descriptive::Full->new;
-    $stat->add_data(@lengths);
-    my $min   = $stat->min;
-    my $max   = $stat->max;
-    my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
-    my $count = $stat->count;
 
-    if ($count > 0) {
-	#say STDERR join "\t", "cacta_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
-	#say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
+    if (@lengths) {
+	delete $feature->{$_} for @tirs; 
+
+	my $stat = Statistics::Descriptive::Full->new;
+	$stat->add_data(@lengths);
+	my $min   = $stat->min;
+	my $max   = $stat->max;
+	my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
+	my $count = $stat->count;
+	
 	$log->info("Results - Total number of CACTA elements:                 $count");
         $log->info("Results - Minimum length of CACTA elements:               $min");
         $log->info("Results - Maximum length of CACTA elements:               $max");
         $log->info("Results - Mean length of CACTA elements:                  $mean");
 	$log->info("Results - Number of CACTA elements protein matches:       $pdoms");
-	return ($outfile, $fas);
+
+	return ($outfile, $fas, $count);
     }
     else {
 	unlink $outfile, $fas;
+	return (undef, undef, 0);
     }
 }
 
@@ -540,8 +535,8 @@ sub write_unclassified_tirs {
     my @all_pdoms;
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $outfile = File::Spec->catfile($path, $name.'_unclassified.gff3');
-    my $fas     = File::Spec->catfile($path, $name.'_unclassified.fasta');
+    my $outfile    = File::Spec->catfile($path, $name.'_unclassified.gff3');
+    my $fas        = File::Spec->catfile($path, $name.'_unclassified.fasta');
     my $domoutfile = File::Spec->catfile($path, $name.'_unclassified_domain_org.tsv');
     open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     open my $faout, '>>', $fas or die "\nERROR: Could not open file: $fas\n";
@@ -554,23 +549,20 @@ sub write_unclassified_tirs {
         for my $tir_feature (@{$feature->{$rep_region}}) {
             if ($tir_feature->{type} eq 'protein_match') {
                 $has_pdoms = 1;
-                my $pdom_name = $tir_feature->{attributes}{name}[0];
-                push @all_pdoms, $pdom_name;
+                push @all_pdoms, $tir_feature->{attributes}{name}[0];
             }
 
             if ($tir_feature->{type} eq 'terminal_inverted_repeat_element') {
                 my $elem_id = $tir_feature->{attributes}{ID}[0];
-                ($seq_id, $source, $start, $end, $strand) 
-                    = @{$tir_feature}{qw(seq_id source start end strand)};
+                ($seq_id, $source, $start, $end, $strand) = 
+		    @{$tir_feature}{qw(seq_id source start end strand)};
                 my $seq = $self->subseq($index, $seq_id, $elem_id, $start, $end, undef);
                 my $id = join "_", 'DTX', $elem_id, $seq_id, $start, $end;
-		$tir_feature->{attributes}{ID}[0] =~ s/(.*)/DTX_$1/;
-		
+		$tir_feature->{attributes}{superfamily} = 'DTX';
+
                 $lines .= join "\n", ">".$id, $seq;
                 $len = $end - $start + 1;
             }
-	    $tir_feature->{attributes}{Parent}[0] =~ s/(.*)/DTX_$1/
-		if $tir_feature->{attributes}{Parent}[0] =~/terminal_inverted_repeat_element/;
             my $gff3_str = gff3_format_feature($tir_feature);
             $unc_feats .= $gff3_str;
 	}
@@ -604,25 +596,25 @@ sub write_unclassified_tirs {
     close $domf;
     unlink $domoutfile unless -s $domoutfile;
     
-    my $stat = Statistics::Descriptive::Full->new;
-    $stat->add_data(@lengths);
-    my $min   = $stat->min;
-    my $max   = $stat->max;
-    my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
-    my $count = $stat->count;
+    if (@lengths) { 
+	my $stat = Statistics::Descriptive::Full->new;
+	$stat->add_data(@lengths);
+	my $min   = $stat->min;
+	my $max   = $stat->max;
+	my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
+	my $count = $stat->count;
 
-    if ($count > 0) {
-	#say STDERR join "\t", "unclassified_tir_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
-	#say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
 	$log->info("Results - Total number of unclassified TIR elements:      $count");
         $log->info("Results - Minimum length of unclassified TIR elements:    $min");
         $log->info("Results - Maximum length of unclassified TIR elements:    $max");
         $log->info("Results - Mean length of unclassified TIR elements:       $mean");
 	$log->info("Results - Number of unclas. TIR elements protein matches: $pdoms");
-	return ($outfile, $fas);
+
+	return ($outfile, $fas, $count);
     }
     else {
 	unlink $outfile, $fas;
+	return (undef, undef, 0);
     }
 }
 
@@ -647,7 +639,7 @@ sub write_combined_output {
 
     my $gt  = $self->get_gt_exec;
     my $cmd = "$gt gff3 -sort @{$outfiles->{gffs}} > $outfile";
-    #say STDERR $cmd;
+    #say STDERR "debug: $cmd";
     my @out = capture { system([0..5], $cmd) };
     unlink @{$outfiles->{fastas}}, @{$outfiles->{gffs}};
 
