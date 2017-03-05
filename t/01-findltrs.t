@@ -13,6 +13,8 @@ use File::Spec;
 
 use Test::More tests => 16;
 
+$| = 1;
+
 my $cmd     = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir = File::Spec->catdir('t', 'test_data');
 my $genome  = File::Spec->catfile($testdir, 'ref.fas');
@@ -30,66 +32,69 @@ ok( -e $config, 'Can create config file for testing' );
 my @results = capture { system([0..5], "$cmd findltrs -h") };
 ok(@results, 'Can execute findltrs subcommand');
 
-#my $find_cmd = "$cmd findltrs -c $config -g $genome -t $trnas -d $model --clean";
-my $find_cmd = "$cmd findltrs -c $config -g $genome --clean";
-#say STDERR $find_cmd;
+my $retry = 1;
+findltrs : {
+    #my $find_cmd = "$cmd findltrs -c $config -g $genome -t $trnas -d $model --clean";
+    my $find_cmd = "$cmd findltrs -c $config -g $genome --clean";
+    #say STDERR $find_cmd;
+    #sleep 5;
 
-my ($stdout, $stderr, @ret) = capture { system([0..5], $find_cmd) };
+    my ($stdout, $stderr, @ret) = capture { system([0..5], $find_cmd) };
       
-#my @files;
-#find( sub { push @files, $File::Find::name if /\.gff3$/ }, $testdir);
+    ok( -e $outgff, 'Can find some LTRs' );
 
-#dd \@files;
-ok( -e $outgff, 'Can find some LTRs' );
-
-#say STDERR $stderr;
-#my ($combined, @sum);
-for my $line (split /^/, $stderr) {
-    if ($line =~ /length_filtered/) {
-	my ($l_filt) = $line =~ /(\d)$/;
-	#say STDERR "l_filt: $l_filt";
-	ok( $l_filt == 0, 'Correct number of elements filtered by length' );
-    }
-    if ($line =~ /compound_gyp_cop_filtered/) {
-	my ($gc_filt) = $line =~ /(\d)$/;
-	#say STDERR "gc_filt: $gc_filt";
-	ok( $gc_filt == 0, 'Correct number of elements filtered compound gypsy/copia' );
-    }
-    if ($line =~ /n_perc_filtered/) {
-	my ($n_filt) = $line =~ /(\d)$/;
-	#say STDERR "n_filt: $n_filt";
-	ok( $n_filt == 0, 'Correct number of elements filtered by N-percentage' );
-    }
-    elsif ($line =~ /\'relaxed\' constraints/) {
-	my ($r_ct) = $line =~ /(\d)$/;
-	#say STDERR "r_ct: $r_ct";
-	ok( $r_ct == 4, 'Correct number of combined elements found by relaxed constraints' );
-    }
-    elsif ($line =~ /\'strict\' constraints/) {
-	my ($s_ct) = $line =~ /(\d)$/;
-	#say STDERR "s_ct: $s_ct";
-	ok( $s_ct == 1, 'Correct number of total elements found by strict constraints' );
-    }
-    elsif ($line =~ /\'best\'/) {
-        my ($b_ct) = $line =~ /(\d)$/;
-	#say STDERR "b_ct: $b_ct";
-        ok( $b_ct == 1, 'Correct number of best elements found' );
-    }
-    elsif ($line =~ /\'combined\'/) {
-        my ($c_ct) = $line =~ /(\d)$/;
-	#say STDERR "c_ct: $c_ct";
-        ok( $c_ct == 6, 'Correct number of combined elements found' );
-    }
-    elsif ($line =~ /Total elements written/) {
-        my ($t_ct) = $line =~ /(\d)$/;
-	#say STDERR "t_ct: $t_ct";
-        ok( $t_ct == 6, 'Correct number of total elements found' );
+    for my $line (split /^/, $stderr) {
+	if ($line =~ /length_filtered/) {
+	    my ($l_filt) = $line =~ /(\d+)$/;
+	    #say STDERR "l_filt: $l_filt";
+	    ok( $l_filt == 0, 'Correct number of elements filtered by length' );
+	}
+	if ($line =~ /compound_gyp_cop_filtered/) {
+	    my ($gc_filt) = $line =~ /(\d+)$/;
+	    #say STDERR "gc_filt: $gc_filt";
+	    ok( $gc_filt == 0, 'Correct number of elements filtered compound gypsy/copia' );
+	}
+	if ($line =~ /n_perc_filtered/) {
+	    my ($n_filt) = $line =~ /(\d+)$/;
+	    #say STDERR "n_filt: $n_filt";
+	    ok( $n_filt == 0, 'Correct number of elements filtered by N-percentage' );
+	}
+	elsif ($line =~ /\'relaxed\' constraints/) {
+	    my ($r_ct) = $line =~ /(\d+)$/;
+	    unless ($r_ct == 4) {
+		say STDERR "r_ct: $r_ct exp: 4"; 
+                redo findltrs if $retry;
+                $retry--;
+            }
+	    #say STDERR "r_ct: $r_ct";
+	    ok( $r_ct == 4, 'Correct number of combined elements found by relaxed constraints' );
+	}
+	elsif ($line =~ /\'strict\' constraints/) {
+	    my ($s_ct) = $line =~ /(\d+)$/;
+	    #say STDERR "s_ct: $s_ct";
+	    ok( $s_ct == 1, 'Correct number of total elements found by strict constraints' );
+	}
+	elsif ($line =~ /\'best\'/) {
+	    my ($b_ct) = $line =~ /(\d+)$/;
+	    #say STDERR "b_ct: $b_ct";
+	    ok( $b_ct == 1, 'Correct number of best elements found' );
+	}
+	elsif ($line =~ /\'combined\'/) {
+	    my ($c_ct) = $line =~ /(\d+)$/;
+	    #say STDERR "c_ct: $c_ct";
+	    ok( $c_ct == 6, 'Correct number of combined elements found' );
+	}
+	elsif ($line =~ /Total elements written/) {
+	    my ($t_ct) = $line =~ /(\d+)$/;
+	    #say STDERR "t_ct: $t_ct";
+	    ok( $t_ct == 6, 'Correct number of total elements found' );
+	}
     }
 }
 
 ok( -e $outgff, 'Correctly classified LTRs' );
 ok( -e $outfas, 'Correctly classified LTRs' );
-
+    
 my $seqct = 0;
 open my $in, '<', $outfas;
 while (<$in>) { $seqct++ if /^>/; }
@@ -111,7 +116,7 @@ ok( -e $log,     'Logfile of results generated'      );
 
 ## clean up
 my @outfiles;
-find( sub { push @outfiles, $File::Find::name if /^ref_/ && ! /combined_filtered.gff3$/ }, $testdir);
+find( sub { push @outfiles, $File::Find::name if /^ref_/ && ! /combined_filtered.gff3/ }, $testdir);
 unlink @outfiles;
 unlink $config;
     
