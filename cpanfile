@@ -11,7 +11,7 @@ requires 'Statistics::Descriptive';
 requires 'App::Cmd';
 requires 'Log::Any';
 requires 'Log::Log4perl';
-requires 'Log::Any::Adapter';
+requires 'Log::Any::Adapter::Log4perl';
 requires 'Try::Tiny';
 requires 'Capture::Tiny';
 requires 'HTTP::Tiny';
