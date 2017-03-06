@@ -34,6 +34,8 @@ Version	Date	Location
   instead of taking individual superfamily directories as input.
 - Fix bug in 'ltrage' command for getting LTR exemplar seqs. A variable that was not being initialized
   was tested against for how to process exemplars.
+- Bug fix with trying to resolve the configuration directory if it is not set at installation.
+- Bug fix with setting BLAST+ directory by removing version from local directory name.
 
 0.06.1	2/09/17	Vancouver, BC
 
