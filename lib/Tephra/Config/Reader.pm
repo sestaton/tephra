@@ -3,9 +3,8 @@ package Tephra::Config::Reader;
 use 5.014;
 use Moose;
 use YAML::Tiny;
-use Data::Dump::Color;
+#use Data::Dump::Color;
 use namespace::autoclean;
-use Data::Printer;
 
 =head1 NAME
 
@@ -224,8 +223,6 @@ sub _validate_params {
     my $self = shift;
     my ($config) = @_;
     
-    #dd $config;
-    
     for my $cmd (keys %$config) {
 	for my $opt (keys %{$config->{$cmd}}) {
 	    my $v = $config->{$cmd}{$opt};
@@ -253,13 +250,11 @@ sub get_all_opts {
 
     my ($logfile, $genome, $repeatdb, $hmmdb, $trnadb, $outfile, $clean, $debug, $threads, $subs_rate);
     my ($name, $path, $suffix); # genome file specs
-    #dd $config->{all};
 
     if (defined $config->{all}{genome} && -e $config->{all}{genome}) {
         $genome = $config->{all}{genome};
     }
     else {
-        #dd $config->{all};
         say STDERR "\nERROR: genome file was not defined in configuration or does not exist. Check input. Exiting.\n";
         exit(1);
     }
