@@ -231,9 +231,11 @@ sub fetch_blast {
 	unless $rsize == $lsize;
 
     my $ldir = $file =~ s/-x64-linux.tar.gz//r;
+    my $bdir = 'ncbi-blast+';
+    move $ldir, $bdir or die "Move failed: $!";
     system("tar xzf $file 2>&1 > /dev/null") == 0 or die $!;
     unlink $file if -e $file;
-    chdir $ldir or die $!;
+    chdir $bdir or die $!;
 
     my $cwd = getcwd();
     my $blastpath = File::Spec->catfile($cwd, 'bin');
