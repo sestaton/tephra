@@ -35,7 +35,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Classify 'best' TIR elements into superfamilies based on domain content, TSD, and/or motif
  - [ ] Group TIR elements into families based on TIR similarity and/or cluster-based method used for LTR-RT classification 
  - [x] in tests, skip if empty output (none found). This is not a good test honestly, need a new reference
- - [ ] write fasta of each superfamily, and combined library
+ - [x] write fasta of each superfamily, and combined library
  - [ ] identify	fragmented elements with refined full-length elements
 
 ## Command `tephra findltrs` 
@@ -67,7 +67,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Filter elements by quality score, retaining the best elements
  - [x] Generate combined GFF3 of high-quality TRIMs
  - [x] Create a feature type called 'TRIM_retrotransposon' to distinguish these elements from other LTR-RTs
- - [ ] create developer tests to operate on a larger data set to positively identify elements rather than just
+ - [x] create developer tests to operate on a larger data set to positively identify elements rather than just
        operation of the command
 
 ## Command `tephra findnonltrs`
@@ -106,15 +106,15 @@ This file is for logging feature requests and bugs during development. Hopefully
 *** 
 
 ## Meta
- - [ ] logging results/progress (need to log progress and errors to the correct location)
- - [ ] add debug options for seeing commands (done for LTR search)
+ - [x] logging results/progress (need to log progress and errors to the correct location)
+ - [x] add debug options for seeing commands (done for LTR search)
  - [ ] documentation of algorithms, in addition to usage
  - [ ] reduce LTRs/TRIMs....perhaps when combining all GFFs
  - [ ] save tnp matching ltr-rts and search for cacta tes..or just add as putative classII
  - [ ] add kmer mapping command (see tallymer2gff.pl)
  - [x] create config role for setting paths
  - [x] change config module to be an Install namespace
- - [ ] add subcommand to merge all GFFs (can be done with `gt gff3 sort`, though we want to be careful
+ - [x] add subcommand to merge all GFFs (can be done with `gt gff3 sort`, though we want to be careful
        not to bake in too many subcommands for things that are easily done at the command line already,
        as this will make the package harder to use and maintain).
  - [ ] handle compressed input/output
@@ -122,4 +122,4 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] add verbose option for quickly debugging the installation of dependencies
  - [x] add command to get TIR ages
  - [x] investigate why tests fail with Perl version 5.12 or lower (Bio::DB::HTS needs 5.14.2, so that's why)
- - [ ] add subcommand to run/log all methods as a pipeline
+ - [x] add subcommand to run/log all methods as a pipeline
