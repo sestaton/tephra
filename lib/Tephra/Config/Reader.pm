@@ -198,7 +198,6 @@ sub parse_configuration {
     #dd \%config and exit;
     my $valid_config = $self->_validate_params(\%config);
 
-    #return \%config;
     return $valid_config;
 }
 
@@ -233,7 +232,6 @@ sub _validate_params {
 	    elsif (not defined $v) {
 	    #if ($cmd ne 'all' && ! defined $v) {
 		#elsif (not defined $v && $cmd ne 'all') {
-		#dd $config->{$cmd};
 		die "[ERROR]: '$opt' under '$cmd' is not defined after parsing configuration file.\n".
 		    "         This indicates there may be a blank line in your configuration file.\n".
 		    "         Please check your configuration file and try again. Exiting.\n";
