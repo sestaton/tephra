@@ -485,7 +485,7 @@ sub _run_all_commands {
     $total_elapsed = $t31 - $t30;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Results - 'tephra maskref' on full transposon database finished at:   $ft. Final output file:");
+    $log->info("Results - 'tephra maskref' on full transposon database finished at:  $ft. Final output file:");
     $log->info("Output files - $final_mask.");
     
     ## clean up

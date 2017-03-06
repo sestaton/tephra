@@ -30,6 +30,10 @@ Version	Date	Location
 - Deprecated the percent coverage threshold option for 'sololtr' command. The match length and
   percent identity are sufficient to filter weak matches and the coverage option added complexity
   to the usage and implementation.
+- Change 'ltrage' command to take classified LTRs directory as input and process all superfamilies
+  instead of taking individual superfamily directories as input.
+- Fix bug in 'ltrage' command for getting LTR exemplar seqs. A variable that was not being initialized
+  was tested against for how to process exemplars.
  
 0.06.1	2/09/17	Vancouver, BC
 
