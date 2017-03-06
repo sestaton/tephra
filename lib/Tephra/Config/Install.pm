@@ -232,9 +232,9 @@ sub fetch_blast {
 
     my $ldir = $file =~ s/-x64-linux.tar.gz//r;
     my $bdir = 'ncbi-blast+';
-    move $ldir, $bdir or die "Move failed: $!";
     system("tar xzf $file 2>&1 > /dev/null") == 0 or die $!;
     unlink $file if -e $file;
+    move $ldir, $bdir or die "Move failed: $!";
     chdir $bdir or die $!;
 
     my $cwd = getcwd();
