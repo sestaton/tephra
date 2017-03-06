@@ -21,5 +21,5 @@ make
 #make test
 prove -bv t/01-findltrs.t
 #ls -l t/test_data
-perl -Mblib blib/bin/tephra findltrs -c t/test_data/tephra_ltr_config.yml -g t/test_data/ref.fas -t t/test_data/trnas.fas -d t/test_data/te.hmm --clean --debug
+perl -Mblib blib/bin/tephra findltrs -c t/test_data/tephra_ltr_config.yml -g t/test_data/ref.fas --debug
 
