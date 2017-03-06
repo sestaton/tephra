@@ -33,7 +33,7 @@ has basedir => (
 
 sub get_config_paths {
     my $self = shift;
-    my $root = $self->basedir->absolute->resolve;
+    my $root = $self->basedir; #->absolute->resolve;
 
     unless (-e $root) {
         make_path($root, {verbose => 0, mode => 0711,});

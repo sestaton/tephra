@@ -50,7 +50,7 @@ has workingdir => (
 
 sub configure_root {
     my $self = shift;
-    my $basedir = $self->basedir->absolute->resolve;
+    my $basedir = $self->basedir; #->absolute->resolve;
 
     my $config = Tephra::Config::Exe->new( basedir => $basedir )->get_config_paths;
 
