@@ -230,7 +230,7 @@ sub fetch_blast {
     die "Failed to fetch complete file: $file (local size: $lsize, remote size: $rsize)"
 	unless $rsize == $lsize;
 
-    my $ldir = 'ncbi-blast+';
+    my $ldir = $file =~ s/-x64-linux.tar.gz//r;
     system("tar xzf $file 2>&1 > /dev/null") == 0 or die $!;
     unlink $file if -e $file;
     chdir $ldir or die $!;
