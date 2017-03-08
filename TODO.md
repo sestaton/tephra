@@ -103,6 +103,10 @@ This file is for logging feature requests and bugs during development. Hopefully
 
  - [x] Add correct sequence IDs to report
 
+## Command `tephra all`
+
+ - [ ] All the user to pass a genome and repeat database, along with a species name instead of configuration file.
+
 *** 
 
 ## Meta
@@ -123,3 +127,4 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] add command to get TIR ages
  - [x] investigate why tests fail with Perl version 5.12 or lower (Bio::DB::HTS needs 5.14.2, so that's why)
  - [x] add subcommand to run/log all methods as a pipeline
+ - [ ] document the configuration file format and usage
