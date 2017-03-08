@@ -80,12 +80,13 @@ Tephra is a command-line program only for now. The command `tephra` itself contr
 
     $ tephra <command> [-?h] [long options...]
         -? -h --help  show help
-    
+
     Available commands:
     
            commands: list the application's commands
                help: display a command's help screen
     
+                all: Run all subcommands and generate annotations for all transposon types.
        classifyltrs: Classify LTR retrotransposons into superfamilies and families.
        classifytirs: Classify TIR transposons into superfamilies.
       findhelitrons: Find Helitons in a genome assembly.
@@ -100,6 +101,7 @@ Tephra is a command-line program only for now. The command `tephra` itself contr
             sololtr: Find solo-LTRs in a genome assembly.
              tirage: Calculate the age distribution of TIR transposons.
             version: display an app's version
+
 
 Typing a subcommand will show the usage of that command, for example:
 
