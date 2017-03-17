@@ -1,6 +1,10 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.07.1
+
+- Add bug fix for genome attribute not being defined when refining TRIM elements.
+
 0.07.0	03/06/2017	Vancouver, BC
 
 - Add 'all' command to run all commands and generate combined FASTA and GFF3 output
