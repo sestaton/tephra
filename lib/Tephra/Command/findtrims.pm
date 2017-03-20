@@ -65,9 +65,9 @@ sub execute {
 }
 
 sub _refine_trim_predictions {
-    my ($relaxed_gff, $strict_gff, $fasta, $outfile, $logfile) = @_;
+    my ($relaxed_gff, $strict_gff, $genome, $outfile, $logfile) = @_;
 
-    my %refine_opts = ( genome => $fasta, outfile => $outfile, is_trim => 1 );
+    my %refine_opts = ( genome => $genome, outfile => $outfile, is_trim => 1 );
     $refine_opts{logfile} = $logfile if $logfile;
     my $refine_obj = Tephra::LTR::LTRRefine->new(%refine_opts);
 	
@@ -123,7 +123,7 @@ sub _run_trim_search {
 sub _write_unrefined_trims {
     my ($opt, $relaxed_gff) = @_;
 
-    my %refine_opts = ( genome => $opt->{fasta}, outfile => $opt->{outfile}, is_trim => 1 );
+    my %refine_opts = ( genome => $opt->{genome}, outfile => $opt->{outfile}, is_trim => 1 );
     $refine_opts{logfile} = $opt->{logfile} if $opt->{logfile};
     my $refine_obj = Tephra::LTR::LTRRefine->new(%refine_opts);
 
