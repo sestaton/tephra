@@ -131,6 +131,7 @@ sub merge_thmm {
 	while (my $each_line = <$in>){
 	    chomp $each_line;
 	    my @temp = split /\s+/, $each_line;
+	    next if !defined $temp[1] || $temp[1] eq '';
 	    if ($te == $temp[1] + 1 && $temp[1] != 0) {
 		$start = $temp[0];
 		$te    = $temp[1];
