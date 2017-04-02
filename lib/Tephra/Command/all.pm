@@ -21,7 +21,7 @@ use Try::Tiny;
 use Cwd;
 #use Data::Dump::Color;
 
-our $VERSION = '0.07.0';
+our $VERSION = '0.07.1';
 
 sub opt_spec {
     return (    
@@ -258,7 +258,7 @@ sub _run_all_commands {
 
     ## maskref for TRIMs
     my $genome_mask2;
-    if (-e $trims_fas && -s $trims_fas > 0) {
+    if (-e $trims_fas && -s $trims_fas) {
 	$genome_mask2 = File::Spec->catfile( abs_path($path), $name.'_masked2.fasta' );
 
 	my $t14 = gettimeofday();

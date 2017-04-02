@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Tephra;
 
-our $VERSION = '0.07.0';
+our $VERSION = '0.07.1';
 
 my $cmd = Tephra->new({ show_version_cmd => 1, }); #no_help_plugin => 1 });
 $cmd->run;

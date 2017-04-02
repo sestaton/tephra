@@ -31,11 +31,11 @@ Tephra::Classify::TIRSams - Classify TIR transposons into superfamilies
 
 =head1 VERSION
 
-Version 0.07.0
+Version 0.07.1
 
 =cut
 
-our $VERSION = '0.07.0';
+our $VERSION = '0.07.1';
 $VERSION = eval $VERSION;
 
 has genome => (
