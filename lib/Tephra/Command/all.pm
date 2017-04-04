@@ -95,7 +95,7 @@ sub _run_all_commands {
 
     ## classifyltrs
     my ($ltrc_gff, $ltrc_fas, $ltrc_dir);
-    if (-e $ltr_gff && -s $ltr_gff > 0) {
+    if (-e $ltr_gff && -s $ltr_gff) {
 	$ltrc_gff = File::Spec->catfile( abs_path($path), $name.'_tephra_ltrs_classified.gff3' );
 	$ltrc_fas = File::Spec->catfile( abs_path($path), $name.'_tephra_ltrs_classified.fasta' );
 	$ltrc_dir = File::Spec->catdir(  abs_path($path), $name.'_tephra_ltrs_classified_results' );
@@ -126,7 +126,7 @@ sub _run_all_commands {
 
     ## maskref on LTRs
     my $genome_mask1;
-    if (-e $ltrc_fas && -s $ltrc_fas > 0) {
+    if (-e $ltrc_fas && -s $ltrc_fas) {
 	$genome_mask1 = File::Spec->catfile( abs_path($path), $name.'_masked.fasta' );
 
 	my $t4 = gettimeofday();
@@ -181,7 +181,7 @@ sub _run_all_commands {
     }
 
     ## ltrage
-    if (-e $ltrc_gff && -s $ltrc_gff > 0) {
+    if (-e $ltrc_gff && -s $ltrc_gff) {
 	my $ltrage_out  = File::Spec->catfile( abs_path($path), $name.'_ltrages.tsv' );
 
 	my $t8 = gettimeofday();
@@ -208,7 +208,7 @@ sub _run_all_commands {
 
     ## illrecomb
     my ($illrec_fas, $illrec_rep, $illrec_stats);
-    if (-e $ltrc_fas && -s $ltrc_fas > 0) {
+    if (-e $ltrc_fas && -s $ltrc_fas) {
 	my $illrec_fas   = File::Spec->catfile( abs_path($path), $name.'_illrecomb.fasta' ); 
 	my $illrec_rep   = File::Spec->catfile( abs_path($path), $name.'_illrecomb_rep.tsv' );
 	my $illrec_stats = File::Spec->catfile( abs_path($path), $name.'_illrecomb_stats.tsv' );
@@ -232,7 +232,7 @@ sub _run_all_commands {
     }
 
     ## TRIMs
-    my $trim_ref = (-e $genome_mask1 && -s $genome_mask1 > 0) ? $genome_mask1 : $global_opts->{genome};
+    my $trim_ref = (-e $genome_mask1 && -s $genome_mask1) ? $genome_mask1 : $global_opts->{genome};
 
     my $trims_gff = File::Spec->catfile( abs_path($path), $name.'_trims.gff3' );
     my $trims_fas = File::Spec->catfile( abs_path($path), $name.'_trims.fasta' );
@@ -281,8 +281,8 @@ sub _run_all_commands {
     }
 
     ## findhelitrons
-    my $hel_ref = (defined $genome_mask2 && -s $genome_mask2 > 0) ? $genome_mask2 
-	        : (defined $genome_mask1 && -s $genome_mask1 > 0) ? $genome_mask1 
+    my $hel_ref = (defined $genome_mask2 && -s $genome_mask2) ? $genome_mask2 
+	        : (defined $genome_mask1 && -s $genome_mask1) ? $genome_mask1 
 	        : $global_opts->{genome};
 
     my $hel_gff = File::Spec->catfile( abs_path($path), $name.'_helitrons.gff3' );
@@ -311,7 +311,7 @@ sub _run_all_commands {
 
     ## maskref on Helitrons
     my $genome_mask3;
-    if (-e $hel_fas && -s $hel_fas > 0) {
+    if (-e $hel_fas && -s $hel_fas) {
 	$genome_mask3 = File::Spec->catfile( abs_path($path), $name.'_masked3.fasta' );
 
 	my $t18 = gettimeofday();
@@ -335,9 +335,9 @@ sub _run_all_commands {
     }
 
     ## findtirs
-    my $tir_ref = (defined $genome_mask3 && -s $genome_mask3 > 0) ? $genome_mask3
-	        : (defined $genome_mask2 && -s $genome_mask2 > 0) ? $genome_mask2 
-	        : (defined $genome_mask1 && -s $genome_mask1 > 0) ? $genome_mask1 
+    my $tir_ref = (defined $genome_mask3 && -s $genome_mask3) ? $genome_mask3
+	        : (defined $genome_mask2 && -s $genome_mask2) ? $genome_mask2 
+	        : (defined $genome_mask1 && -s $genome_mask1) ? $genome_mask1 
 	        : $global_opts->{genome};
 
     my $t20 = gettimeofday();
@@ -359,7 +359,7 @@ sub _run_all_commands {
 
     ## classifytirs
     my ($tirc_gff, $tirc_fas);
-    if (-e $tir_gff && -s $tir_gff > 0) {
+    if (-e $tir_gff && -s $tir_gff) {
 	$tirc_gff = File::Spec->catfile( abs_path($path), $name.'_tirs_classified.gff3' );
 	$tirc_fas = File::Spec->catfile( abs_path($path), $name.'_tirs_classified.fasta' );
 
@@ -385,7 +385,7 @@ sub _run_all_commands {
 
     ## maskref on TIRs
     my $genome_mask4;
-    if (-e $tirc_fas && -s $tirc_fas > 0) {
+    if (-e $tirc_fas && -s $tirc_fas) {
 	$genome_mask4 = File::Spec->catfile( abs_path($path), $name.'_masked4.fasta' );
 
 	my $t24 = gettimeofday();
@@ -408,10 +408,10 @@ sub _run_all_commands {
     }
 
     ## findnonltrs
-    my $nonltr_ref = (defined $genome_mask4 && -s $genome_mask4 > 0) ? $genome_mask4
-	           : (defined $genome_mask3 && -s $genome_mask3 > 0) ? $genome_mask3
-	           : (defined $genome_mask2 && -s $genome_mask2 > 0) ? $genome_mask2 
-	           : (defined $genome_mask1 && -s $genome_mask1 > 0) ? $genome_mask1 
+    my $nonltr_ref = (defined $genome_mask4 && -s $genome_mask4) ? $genome_mask4
+	           : (defined $genome_mask3 && -s $genome_mask3) ? $genome_mask3
+	           : (defined $genome_mask2 && -s $genome_mask2) ? $genome_mask2 
+	           : (defined $genome_mask1 && -s $genome_mask1) ? $genome_mask1 
 	           : $global_opts->{genome};
 
     my $t26 = gettimeofday();
