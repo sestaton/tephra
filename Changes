@@ -4,6 +4,7 @@ Version	Date	Location
 0.07.1	04/03/2017	Vancouver, BC
 
 - Add bug fix for genome attribute not being defined when refining TRIM elements.
+- Check if domain matches are defined prior to evaluation in Tephra::NonLTR::Postprocess.
 
 0.07.0	03/06/2017	Vancouver, BC
 
