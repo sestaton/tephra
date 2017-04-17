@@ -106,7 +106,8 @@ This file is for logging feature requests and bugs during development. Hopefully
 ## Command `tephra all`
 
  - [ ] All the user to pass a genome and repeat database, along with a species name instead of configuration file.
-
+ - [ ] Generate summary statistics for TE types (domain content, length distribution, diversity, etc.) See
+       (sesbio/transposon_annotation/count_families.pl) for starters.
 *** 
 
 ## Meta
