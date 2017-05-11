@@ -89,6 +89,7 @@ sub write_config {
 findltrs:
   - dedup:            NO
   - tnpfilter:        NO
+  - domains_required: NO
     ltrharvest:
       - mintsd: 4
       - maxtsd: 6
