@@ -62,6 +62,7 @@ sub _refine_ltr_predictions {
 
     $refine_opts{remove_dup_domains} = $search_config->{findltrs}{dedup} =~ /yes/i ? 1 : 0;
     $refine_opts{remove_tnp_domains} = $search_config->{findltrs}{tnpfilter} =~ /yes/i ? 1 : 0;
+    $refine_opts{domains_required}   = $search_config->{findltrs}{domains_required} =~ /yes/i ? 1 : 0;
     $refine_opts{outfile} = $opt->{outfile} if $opt->{outfile};
     $refine_opts{logfile} = $opt->{logfile} if $opt->{logfile};
     
@@ -148,7 +149,7 @@ USAGE: tephra findltrs [-h] [-m]
     -h --help     :   Print the command usage.
 
 Required:
-    -c|config     :   The Tephra LTR option configuration file.
+    -c|config     :   The Tephra configuration file.
 
 Options:
     -o|outfile    :   The final combined and filtered GFF3 file of LTR-RTs.
@@ -190,7 +191,7 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =item -c, --config
 
- The Tephra LTR option configuration file.
+ The Tephra configuration file.
 
 =back
 
