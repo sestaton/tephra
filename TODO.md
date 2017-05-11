@@ -21,6 +21,8 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Find all non-overlapping TIR elements passing thresholds
  - [x] Generate combined GFF3 of high-quality TIRs
  - [x] Check for index (if given)
+ - [ ] Add optional test for the presence of coding domains to 'LTRRefine' class. This should reduce the
+       number of RLX elements.
 
 ## Command `tephra sololtr`
  - [x] Create HMM of LTRs for each LTR-RT
