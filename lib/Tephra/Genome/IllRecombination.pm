@@ -31,11 +31,11 @@ Tephra::Genome::IllRecombination - Calculate illegitimate recombination in a gen
 
 =head1 VERSION
 
-Version 0.07.1
+Version 0.07.2
 
 =cut
 
-our $VERSION = '0.07.1';
+our $VERSION = '0.07.2';
 $VERSION = eval $VERSION;
 
 has infile => (

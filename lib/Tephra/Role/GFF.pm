@@ -13,11 +13,11 @@ Tephra::Role::GFF - Utility methods for working with GFF files
 
 =head1 VERSION
 
-Version 0.07.1
+Version 0.07.2
 
 =cut
 
-our $VERSION = '0.07.1';
+our $VERSION = '0.07.2';
 $VERSION = eval $VERSION;
 
 #
