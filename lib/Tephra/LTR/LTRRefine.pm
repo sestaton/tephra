@@ -76,6 +76,14 @@ has remove_tnp_domains => (
     default   => 0,
 );
 
+has domains_required => (
+    is        => 'ro',
+    isa       => 'Bool',
+    predicate => 'has_domains_required',
+    lazy      => 1,
+    default   => 0,
+);
+
 has is_trim => (
     is        => 'ro',
     isa       => 'Bool',
@@ -143,7 +151,7 @@ sub filter_compound_elements {
 
     my ($allct, $curct) = (0, 0);
     my ($gyp_cop_filtered, $dup_pdoms_filtered, $len_filtered, 
-	$n_perc_filtered, $classII_filtered) = (0, 0, 0, 0, 0);
+	$n_perc_filtered, $classII_filtered, $pdom_filtered) = (0, 0, 0, 0, 0, 0);
     
     for my $source (keys %$features) {
 	for my $ltr (keys %{$features->{$source}}) {
@@ -202,6 +210,11 @@ sub filter_compound_elements {
 		$len_filtered++;
 	    }
 
+	    if ($self->domains_required && !$has_pdoms) {
+		delete $features->{$source}{$ltr};
+		$pdom_filtered++;
+	    }
+
 	    @pdoms = ();
 	    $is_gypsy  = 0;
 	    $is_copia  = 0;
@@ -218,6 +231,9 @@ sub filter_compound_elements {
     }
     if ($self->remove_tnp_domains) {
 	$stats{class_II_filtered} = $classII_filtered;
+    }
+    if ($self->domains_required) {
+        $stats{coding_domain_filtered} = $pdom_filtered;
     }
     
     return $features, \%stats;
@@ -538,7 +554,6 @@ sub reduce_features {
 	my $l = 40 - length($s);
 	my $pad = ' ' x $l;
 	$log->info("Results - Number of elements filtered by '$s':$pad",$best_stats{$s});
-
     }
 
     $log->info("Results - Number of elements found with 'relaxed' constraints:                       $all");
@@ -583,7 +598,8 @@ sub sort_features {
         my $lname = $self->is_trim ? 'tephra_findtrims.log' : 'tephra_findltrs.log';
         $logfile = File::Spec->catfile( abs_path($path), $name.'_'.$lname );
         $log = $self->get_tephra_logger($logfile);
-        say STDERR "\nWARNING: '--logfile' option not given so results will be appended to: $logfile.";
+	#no need to print warning twice
+        #say STDERR "\nWARNING: '--logfile' option not given so results will be appended to: $logfile.";
     }
 
     open my $ofas, '>>', $outfasta or die "\nERROR: Could not open file: $outfasta\n";
