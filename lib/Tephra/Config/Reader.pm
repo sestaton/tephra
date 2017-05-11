@@ -98,6 +98,8 @@ sub parse_configuration {
     $config{findltrs}{dedup}      = $yaml->[0]{findltrs}[$index]{dedup};
     $index++;
     $config{findltrs}{tnpfilter}  = $yaml->[0]{findltrs}[$index]{tnpfilter};
+    $index++;
+    $config{findltrs}{domains_required} = $yaml->[0]{findltrs}[$index]{domains_required};
     $config{findltrs}{mintsd}     = $yaml->[0]{findltrs}[$index]{ltrharvest}[$ltrh_index]{mintsd};
     $ltrh_index++;
     $config{findltrs}{maxtsd}     = $yaml->[0]{findltrs}[$index]{ltrharvest}[$ltrh_index]{maxtsd};
@@ -125,7 +127,7 @@ sub parse_configuration {
     $config{findltrs}{swdel}      = $yaml->[0]{findltrs}[$index]{ltrharvest}[$ltrh_index]{swdel};
     $ltrh_index++;
     $config{findltrs}{overlaps}   = $yaml->[0]{findltrs}[$index]{ltrharvest}[$ltrh_index]{overlaps};
-    $config{findltrs}{tnpfilter}  = $yaml->[0]{findltrs}[$index]{tnpfilter};
+    #$config{findltrs}{tnpfilter}  = $yaml->[0]{findltrs}[$index]{tnpfilter};
 
     # ltrdigest options from config
     my $ltrd_index = 0;

@@ -12,8 +12,9 @@ all:
   - debug:            NO
   - subs_rate:        1e-8
 findltrs:
-  - dedup:            NO
-  - tnpfilter:        NO
+  - dedup:             NO
+  - tnpfilter:         NO
+  - domains_requred:   NO
     ltrharvest:
       - mintsd:         4
       - maxtsd:         20
