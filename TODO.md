@@ -15,6 +15,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] mark unclassified elements with no protein domains as LARDs
  - [x] combine exemplars for efficiently comparing to a reference set
  - [ ] identify fragmented elements with refined full-length elements
+ - [ ] include measure of similarity within/between families
  
 ## Command `tephra findtirs`
  - [x] Find all non-overlapping TIR elements passing thresholds
@@ -109,6 +110,8 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] All the user to pass a genome and repeat database, along with a species name instead of configuration file.
  - [ ] Generate summary statistics for TE types (domain content, length distribution, diversity, etc.) See
        (sesbio/transposon_annotation/count_families.pl) for starters.
+ - [ ] Generate HTML output for all command. Will need to store JSON data for graphs and tables.
+
 *** 
 
 ## Meta
