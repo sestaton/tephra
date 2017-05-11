@@ -30,8 +30,8 @@ The next two commands install BioPerl, and these can be skipped if BioPerl is in
 
 Finally, download the [latest release](https://github.com/sestaton/tephra/releases/latest) and run the following commands:
 
-    wget https://github.com/sestaton/tephra/archive/v0.07.0.tar.gz
-    tar xzf v0.07.0.tar.gz && cd tephra-0.07.0
+    wget https://github.com/sestaton/tephra/archive/v0.07.2.tar.gz
+    tar xzf v0.07.2.tar.gz && cd tephra-0.07.2
     cpanm --installdeps .
     perl Makefile.PL
     make test
