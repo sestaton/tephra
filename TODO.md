@@ -86,7 +86,11 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] add verbose option so as to not print progress when there are 5k scaffolds
  - [x] write combined file of all elements
  - [x] take a multifasta as input and create directories for input/output to methods
- - [ ] use complete elements to find truncated nonLTRs after masking
+ - [ ] use complete elements to find truncated nonLTRs after masking (do this with complete file at the end
+       on masked genome to get fragments for all types)
+ - [ ] use domain/blast based method for classifying elements into families
+ - [ ] investigate issues related to why most elements reported on negative strand and contain
+       many gaps
 
 ## Command `tephra ltrage`
  - [x] Calculate age for each LTR-RT
