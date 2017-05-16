@@ -139,3 +139,4 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] investigate why tests fail with Perl version 5.12 or lower (Bio::DB::HTS needs 5.14.2, so that's why)
  - [x] add subcommand to run/log all methods as a pipeline
  - [ ] document the configuration file format and usage
+ - [ ] add 'getfragments' subcommand to be run after final masking prior to complete GFF generation
