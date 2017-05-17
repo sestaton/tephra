@@ -457,7 +457,7 @@ sub _run_all_commands {
 
     my $exe_conf = Tephra::Config::Exe->new->get_config_paths;
     my $gt = $exe_conf->{gt};
-    my $gff_cmd = "$gt gff3 -sort @gff_files";
+    my $gff_cmd = "$gt gff3 -sort -retainids @gff_files";
     $gff_cmd .= " | perl -ne 'print unless /^#\\w+\\d+?\$/' > $customRepGFF";
     #say STDERR "debug: $gff_cmd";
 
