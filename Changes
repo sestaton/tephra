@@ -1,7 +1,18 @@
 Revision history for Tephra
 
 Version	Date	Location
-0.07.2	05/11/2017	Vancouver, Bc
+0.07.3
+
+- Bug fix for Helitron IDs getting dropped in final GFF3 file.
+- Bug fix for sorting unclassified matches in LTRFams class. Hits are now sorted
+  and scored as expected.
+- Modify behavior of 'run_blast' method in Tephra::Role::Run::Blast role. The sort
+  attribute now takes a string to specify how to sort: either by coordinate or bit score.
+  Also, the option to set the e-value threshold was added.
+- Add 'getfragments' command (and Tephra::Genome::FragmentSearch class with associated 
+  methods) for identifying truncated or fragmented elements.
+
+0.07.2	05/11/2017	Vancouver, BC
 
 - Add configuration option for 'findltrs' command to filter elements based on the 
   lack of coding domains. This reduces the number of unclassifed elements.
