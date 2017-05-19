@@ -6,6 +6,8 @@ Version	Date	Location
 - Bug fix for Helitron IDs getting dropped in final GFF3 file.
 - Bug fix for sorting unclassified matches in LTRFams class. Hits are now sorted
   and scored as expected.
+- Bug fix for not using output filename from the configuration file. A custom name was
+  being generated for the GFF3 and the configuration option was previously ignored.
 - Modify behavior of 'run_blast' method in Tephra::Role::Run::Blast role. The sort
   attribute now takes a string to specify how to sort: either by coordinate or bit score.
   Also, the option to set the e-value threshold was added.
