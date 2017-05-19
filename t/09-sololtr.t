@@ -77,7 +77,7 @@ SKIP: {
     # clean up
     unlink $allstfile, $outfile;
     remove_tree( $outdir, { safe => 1 } );
-    unlink $masked;
+    #unlink $masked;
 };
 
 done_testing();

@@ -29,9 +29,9 @@ my $log      = File::Spec->catfile($testdir, 'ref_masked.fas.log');
 
 SKIP: {
     skip 'skip development tests', 3 unless $devtests;
-    my @assemb_results = capture { system([0..5], "$cmd maskref -h") };
+    my @results = capture { system([0..5], "$cmd maskref -h") };
 
-    ok(@assemb_results, 'Can execute maskref subcommand');
+    ok(@results, 'Can execute maskref subcommand');
     
     my $mask_cmd = "$cmd maskref -g $genome -d $repeatdb -o $masked > $log";
     #say STDERR $mask_cmd;

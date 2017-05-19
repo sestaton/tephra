@@ -23,9 +23,9 @@ my $outgff  = File::Spec->catfile($testdir, 'ref_tirs_classified.gff3');
 my $outfas  = File::Spec->catfile($testdir, 'ref_tirs_classified.fasta');
 my $log     = File::Spec->catfile($testdir, 'ref_tephra_classifytirs.log');
 
-my @assemb_results = capture { system([0..5], "$cmd classifyltrs -h") };
+my @results = capture { system([0..5], "$cmd classifyltrs -h") };
 
-ok(@assemb_results, 'Can execute classifytirs subcommand');
+ok(@results, 'Can execute classifytirs subcommand');
 
 my $find_cmd = "$cmd classifytirs -g $genome -i $gff -o $outgff";
 #say STDERR $find_cmd;

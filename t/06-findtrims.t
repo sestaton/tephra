@@ -29,8 +29,8 @@ my $log     = File::Spec->catfile($testdir, 'Ha1_tephra_findtrims.log');
 #my $model   = File::Spec->catfile($testdir, 'te.hmm');
 #my $trnas   = File::Spec->catfile($testdir, 'trnas.fas');
 
-my @assemb_results = capture { system([0..5], "$cmd findtrims -h") };
-ok(@assemb_results, 'Can execute findtrims subcommand');
+my @results = capture { system([0..5], "$cmd findtrims -h") };
+ok(@results, 'Can execute findtrims subcommand');
 
 SKIP: {
     skip 'skip development tests', 13 unless $devtests;
