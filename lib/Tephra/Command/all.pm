@@ -439,8 +439,9 @@ sub _run_all_commands {
     my $t28 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - Generating combined FASTA file at:             $st.");
-    my $customRepDB  = File::Spec->catfile( abs_path($path), $name.'_tephra_transposons.fasta' );
-    my $customRepGFF = File::Spec->catfile( abs_path($path), $name.'_tephra_transposons.gff3' );
+    my $customRepDB = $global_opts->{outfile} =~ s/\.gff*?/.fasta/r;
+    #my $customRepDB  = File::Spec->catfile( abs_path($path), $name.'_tephra_transposons.fasta' );
+    #my $customRepGFF = File::Spec->catfile( abs_path($path), $name.'_tephra_transposons.gff3' );
 
     open my $out, '>', $customRepDB or die "\nERROR: Could not open file: $customRepDB\n";
     for my $file (@fas_files) {
@@ -518,7 +519,7 @@ sub _run_all_commands {
     my $exe_conf = Tephra::Config::Exe->new->get_config_paths;
     my $gt = $exe_conf->{gt};
     my $gff_cmd = "$gt gff3 -sort -retainids @gff_files";
-    $gff_cmd .= " | perl -ne 'print unless /^#\\w+\\d+?\$/' > $customRepGFF";
+    $gff_cmd .= " | perl -ne 'print unless /^#\\w+\\d+?\$/' > $global_opts->{outfile}";
     #say STDERR "debug: $gff_cmd";
 
     my @gtsort_out = capture([0..5], $gff_cmd);
@@ -528,7 +529,7 @@ sub _run_all_commands {
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Results - Finished generating combined GFF3 file at:              $ft. Final output files:");
-    $log->info("Output files - $customRepGFF");
+    $log->info("Output files - $global_opts->{outfile}");
 
     ## clean up
     my $clean_vmidx;
