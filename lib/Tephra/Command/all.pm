@@ -438,7 +438,7 @@ sub _run_all_commands {
     ## combine results
     my $t28 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - Generating combined FASTA and GFF3 files at:   $st.");
+    $log->info("Command - Generating combined FASTA file at:             $st.");
     my $customRepDB  = File::Spec->catfile( abs_path($path), $name.'_tephra_transposons.fasta' );
     my $customRepGFF = File::Spec->catfile( abs_path($path), $name.'_tephra_transposons.gff3' );
 
@@ -455,23 +455,23 @@ sub _run_all_commands {
     }
     close $out;
 
-    my $exe_conf = Tephra::Config::Exe->new->get_config_paths;
-    my $gt = $exe_conf->{gt};
-    my $gff_cmd = "$gt gff3 -sort -retainids @gff_files";
-    $gff_cmd .= " | perl -ne 'print unless /^#\\w+\\d+?\$/' > $customRepGFF";
+    #my $exe_conf = Tephra::Config::Exe->new->get_config_paths;
+    #my $gt = $exe_conf->{gt};
+    #my $gff_cmd = "$gt gff3 -sort -retainids @gff_files";
+    #$gff_cmd .= " | perl -ne 'print unless /^#\\w+\\d+?\$/' > $customRepGFF";
     #say STDERR "debug: $gff_cmd";
-
-    my @gtsort_out = capture([0..5], $gff_cmd);
+    #my @gtsort_out = capture([0..5], $gff_cmd);
 
     my $t29 = gettimeofday();
     $total_elapsed = $t29 - $t28;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Results - Finished generating combined FASTA and GFF3 files at:   $ft. Final output files:");
-    $log->info("Output files - $customRepGFF");
+    $log->info("Results - Finished generating combined FASTA file at:             $ft. Final output files:");
+    #$log->info("Output files - $customRepGFF");
     $log->info("Output files - $customRepDB.");
-
-    my $final_mask = File::Spec->catfile( abs_path($path), $name.'_tephra_transposons_masked.fasta' );
+    
+    ## maskref on customRepDB
+    my $final_mask = File::Spec->catfile( abs_path($path), $name.'_tephra_genome_masked.fasta' );
     my $t30 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra maskref' on full transposon database started at:   $st.");
@@ -487,7 +487,49 @@ sub _run_all_commands {
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Results - 'tephra maskref' on full transposon database finished at:  $ft. Final output file:");
     $log->info("Output files - $final_mask.");
+
+    ## findfragments
+    my $t32 = gettimeofday();
+    $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
+    $log->info("Command - 'tephra findfragments' started at:   $st.");
+    my $fragments_gff = File::Spec->catfile( abs_path($path), $name.'_transposon_fragments.gff3' );
+
+    my $findfragments_opts = ['-g', $final_mask, '-d', $customRepDB, '-o', $fragments_gff];
+    _capture_tephra_cmd('findfragments', $findfragments_opts, $global_opts->{debug});
     
+    my $t33 = gettimeofday();
+    $total_elapsed = $t33 - $t32;
+    $final_time = sprintf("%.2f",$total_elapsed/60);
+    $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
+    $log->info("Command - 'tephra findfragments' completed at: $ft. Final output files:");
+    $log->info("Output files - $fragments_gff");
+    #$log->info("Output files - $nonltr_fas.");
+    #push @fas_files, $nonltr_fas
+	#if -e $nonltr_fas;
+    push @gff_files, $fragments_gff
+	if -e $fragments_gff;
+
+    ## combine GFF3
+    my $t34 = gettimeofday();
+    $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
+    $log->info("Command - Generating combined GFF3 file at:              $st.");
+    #my $frag_cmd = "$cmd findfragments -g $masked -d $repeatdb -o $outfile > $log";
+
+    my $exe_conf = Tephra::Config::Exe->new->get_config_paths;
+    my $gt = $exe_conf->{gt};
+    my $gff_cmd = "$gt gff3 -sort -retainids @gff_files";
+    $gff_cmd .= " | perl -ne 'print unless /^#\\w+\\d+?\$/' > $customRepGFF";
+    #say STDERR "debug: $gff_cmd";
+
+    my @gtsort_out = capture([0..5], $gff_cmd);
+
+    my $t35 = gettimeofday();
+    $total_elapsed = $t35 - $t34;
+    $final_time = sprintf("%.2f",$total_elapsed/60);
+    $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
+    $log->info("Results - Finished generating combined GFF3 file at:              $ft. Final output files:");
+    $log->info("Output files - $customRepGFF");
+
     ## clean up
     my $clean_vmidx;
     my $has_vmatch = 0;
