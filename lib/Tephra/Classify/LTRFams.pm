@@ -298,7 +298,11 @@ sub process_blast_args {
     }
 
     my $blastdb = $self->make_blastdb($db);
-    my $blast_report = $self->run_blast({ query => $query, db => $blastdb, threads => $thr, sort => 1 });
+    my ($dbname, $dbpath, $dbsuffix) = fileparse($blastdb, qr/\.[^.]*/);
+    my ($qname, $qpath, $qsuffix) = fileparse($query, qr/\.[^.]*/);
+    my $report = File::Spec->catfile( abs_path($qpath), $qname."_$dbname".'.bln' );
+
+    my $blast_report = $self->run_blast({ query => $query, db => $blastdb, threads => $thr, outfile => $report, sort => 'bitscore' });
     my @dbfiles = glob "$blastdb*";
     unlink @dbfiles;
     #unlink $query, $db;

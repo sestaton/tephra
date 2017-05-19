@@ -75,18 +75,27 @@ sub make_blastdb {
 sub run_blast {
     my $self = shift;
     my ($args) = @_;
-    my ($query, $db, $threads, $sort) = @{$args}{qw(query db threads sort)};
-    my ($dbname, $dbpath, $dbsuffix) = fileparse($db, qr/\.[^.]*/);
-    my ($qname, $qpath, $qsuffix) = fileparse($query, qr/\.[^.]*/);
-    my $blast_report = File::Spec->catfile( abs_path($qpath), $qname."_$dbname".'.bln' );
+    my ($query, $db, $threads, $sort, $outfile, $evalue) = @{$args}{qw(query db threads sort outfile evalue)};
+    $evalue //= 10;
+    #my ($dbname, $dbpath, $dbsuffix) = fileparse($db, qr/\.[^.]*/);
+    #my ($qname, $qpath, $qsuffix) = fileparse($query, qr/\.[^.]*/);
+    #my $blast_report = File::Spec->catfile( abs_path($qpath), $qname."_$dbname".'.bln' );
 
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($blastbin) = @{$config}{qw(blastpath)};
     my $blastn = File::Spec->catfile($blastbin, 'blastn');
     
-    my $cmd = "$blastn -query $query -db $db -out $blast_report -outfmt 6 -num_threads $threads";
+    my $cmd = "$blastn -query $query -db $db -evalue $evalue -outfmt 6 -num_threads $threads";
     if (defined $sort) {
-	$cmd .= " | sort -nrk12,12";
+	if ($sort eq 'bitscore') {
+	    $cmd .= " | sort -nrk12,12 >$outfile";
+	}
+	elsif ($sort eq 'coordinate') {
+	    $cmd .= " | sort -nk9,9 >$outfile";
+	}
+    }
+    else {
+	$cmd .= " -out $outfile";
     }
 
     try {
@@ -97,7 +106,7 @@ sub run_blast {
 	exit(1);
     };
 
-    return $blast_report;
+    return $outfile;
 }
 
 
