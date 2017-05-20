@@ -304,8 +304,8 @@ sub _run_all_commands {
     $log->info("Command - 'tephra findhelitrons' completed at: $ft. Final output files:");
     $log->info("Output files - $hel_gff");
     $log->info("Output files - $hel_fas.");
-    push @gff_files, $hel_gff
-	if -e $hel_gff;
+    #push @gff_files, $hel_gff
+     # if -e $hel_gff;
     push @fas_files, $hel_fas
 	if -e $hel_fas;
 
@@ -441,7 +441,7 @@ sub _run_all_commands {
     $log->info("Command - Generating combined FASTA file at:             $st.");
     my $customRepDB = $global_opts->{outfile} =~ s/\.gff*?/.fasta/r;
     #my $customRepDB  = File::Spec->catfile( abs_path($path), $name.'_tephra_transposons.fasta' );
-    #my $customRepGFF = File::Spec->catfile( abs_path($path), $name.'_tephra_transposons.gff3' );
+    my $customRepGFF = File::Spec->catfile( abs_path($path), $name.'_tephra_transposons.gff3' );
 
     open my $out, '>', $customRepDB or die "\nERROR: Could not open file: $customRepDB\n";
     for my $file (@fas_files) {
@@ -518,11 +518,14 @@ sub _run_all_commands {
 
     my $exe_conf = Tephra::Config::Exe->new->get_config_paths;
     my $gt = $exe_conf->{gt};
-    my $gff_cmd = "$gt gff3 -sort -retainids @gff_files";
-    $gff_cmd .= " | perl -ne 'print unless /^#\\w+\\d+?\$/' > $global_opts->{outfile}";
+    my $gff_cmd = "$gt gff3 -sort @gff_files";
+    $gff_cmd .= " | perl -ne 'print unless /^#\\w+\\d+?\$/' > $customRepGFF";
     #say STDERR "debug: $gff_cmd";
 
     my @gtsort_out = capture([0..5], $gff_cmd);
+    $gff_cmd = "$gt gff3 -sort -retainids $customRepGFF $hel_gff > $global_opts->{outfile}";
+    @gtsort_out = capture([0..5], $gff_cmd);
+    unlink $customRepGFF;
 
     my $t35 = gettimeofday();
     $total_elapsed = $t35 - $t34;
