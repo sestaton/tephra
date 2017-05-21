@@ -130,7 +130,8 @@ has threads => (
 sub find_soloLTRs {
     my $self = shift;
     my $anno_dir = $self->dir->absolute->resolve;
-    my $genome = $self->genome->absolute->resolve;
+    my $genome   = $self->genome->absolute->resolve;
+    my $seqfile  = $self->seqfile;
 
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);                                                                
     my $hmmsearch_summary = $self->report // File::Spec->catfile($path, $name.'_tephra_soloLTRs.tsv'); 
@@ -167,8 +168,14 @@ sub find_soloLTRs {
     }
     $pm->wait_all_children;
 
-    if (-s $hmmsearch_summary) {
+    my $soloct = $self->_check_report_summary($hmmsearch_summary);
+
+    if ($soloct > 0) {
 	$self->write_sololtr_gff($hmmsearch_summary);
+    }
+    else {
+	say STDERR "\nWARNING: No solo-LTRs were found so none will be reported.";
+	unlink $hmmsearch_summary, $seqfile;
     }
 
     return;
@@ -378,12 +385,12 @@ sub write_hmmsearch_report {
     my ($gname, $gpath, $gsuffix) = fileparse($genome, qr/\.[^.]*/);
     my ($name, $path, $suffix)    = fileparse($search_report, qr/\.[^.]*/);
     $element =~ s/_$gname*//;
-    open my $out, ">>$parsed" or die "\nERROR: Could not open file: $parsed\n";
+    open my $out, '>>', $parsed or die "\nERROR: Could not open file: $parsed\n";
 
     my ($seq, $seqfile);
     if ($self->seqfile) {
 	$seqfile = $self->seqfile;
-	open $seq, ">>$seqfile" or die "\nERROR: Could not open file: $seqfile";
+	open $seq, '>>', $seqfile or die "\nERROR: Could not open file: $seqfile";
     }
 
     my $hmmerin = Bio::SearchIO->new(-file => $search_report, -format => 'hmmer');
@@ -414,9 +421,9 @@ sub write_hmmsearch_report {
 			my $qid = $query =~ s/_ltrseqs_muscle-out//r; # non-destructive substitution in v5.14+
 			$matches++;
 			say $out join "\t", $qid, $aln_stats->{$query}, $num_hits, $hitid, 
-			$percent_q_coverage, $hsplen, $pid, $qstart, $qstop, $hstart, $hstop, $model_type;
+			    $percent_q_coverage, $hsplen, $pid, $qstart, $qstop, $hstart, $hstop, $model_type;
 			
-			if ($self->seqfile) {
+			if ($seqfile) {
 			    my $seqid = join '_', '>'.$qid, $hitid, $hstart, $hstop; 
 			    ## It makes more sense to show the location of the hit
 			    ## Also, this would pave the way for creating a gff of solo-LTRs
@@ -560,6 +567,22 @@ sub _collate {
     return;
 }
 
+sub _check_report_summary {
+    my $self = shift;
+    my ($hmmsearch_summary) = @_;
+
+    open my $in, '<', $hmmsearch_summary or die "\nERROR: Could not open file: $hmmsearch_summary\n";
+    my $ct = 0;
+
+    while (my $line = <$in>) {
+	chomp $line;
+	next if $line =~ /^#/;
+	$ct++;
+    }
+
+    return $ct;
+}
+    
 sub _find_hmmer {
     my $self = shift; 
 
