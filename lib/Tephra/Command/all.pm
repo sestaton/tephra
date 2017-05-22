@@ -6,6 +6,7 @@ use strict;
 use warnings;
 use File::Spec;
 use File::Basename;
+use File::Temp;
 use Tephra -command;
 use Tephra::Config::Reader;
 use Tephra::Config::Exe;
@@ -172,12 +173,15 @@ sub _run_all_commands {
 	$total_elapsed = $t7 - $t6;
 	$final_time = sprintf("%.2f",$total_elapsed/60);
 	$ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-	$log->info("Command - 'tephra sololtr' completed at: $ft. Final output files:");
-	$log->info("Output files - $sololtr_gff");
-	$log->info("Output files - $sololtr_rep");
-	$log->info("Output files - $sololtr_fas.");
-	push @gff_files, $sololtr_gff
-	    if -e $sololtr_gff;
+	$log->info("Command - 'tephra sololtr' completed at: $ft.");
+	
+	if (-e $sololtr_gff && -e $sololtr_rep && -e $sololtr_fas) {
+	    $log->info("Final output files:");
+	    $log->info("Output files - $sololtr_gff");
+	    $log->info("Output files - $sololtr_rep");
+	    $log->info("Output files - $sololtr_fas.");
+	    push @gff_files, $sololtr_gff;
+	}
     }
 
     ## ltrage
@@ -304,8 +308,6 @@ sub _run_all_commands {
     $log->info("Command - 'tephra findhelitrons' completed at: $ft. Final output files:");
     $log->info("Output files - $hel_gff");
     $log->info("Output files - $hel_fas.");
-    #push @gff_files, $hel_gff
-     # if -e $hel_gff;
     push @fas_files, $hel_fas
 	if -e $hel_fas;
 
@@ -439,36 +441,30 @@ sub _run_all_commands {
     my $t28 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - Generating combined FASTA file at:             $st.");
-    my $customRepDB = $global_opts->{outfile} =~ s/\.gff*?/.fasta/r;
-    #my $customRepDB  = File::Spec->catfile( abs_path($path), $name.'_tephra_transposons.fasta' );
-    my $customRepGFF = File::Spec->catfile( abs_path($path), $name.'_tephra_transposons.gff3' );
-
+    my $customRepDB = $global_opts->{outfile} =~ s/\.gff.*/.fasta/r;
+    my $tmpiname = $name."_tephra_transposons_tmp_XXXX";
+    my $customRepGFFfh = File::Temp->new( TEMPLATE => $tmpiname,
+					  DIR      => abs_path($path),
+					  SUFFIX   => '.fasta',
+					  UNLINK   => 0);
+    my $customRepGFF = $customRepGFFfh->filename;
     open my $out, '>', $customRepDB or die "\nERROR: Could not open file: $customRepDB\n";
+
     for my $file (@fas_files) {
-	#if (-e $file && -s $file > 0) {
-	    my $lines = do { 
-		local $/ = undef; 
-		open my $fh_in, '<', $file or die "\nERROR: Could not open file: $file\n";
-		<$fh_in>;
-	    };
-	    print $out $lines;
-	#}
+	my $lines = do { 
+	    local $/ = undef; 
+	    open my $fh_in, '<', $file or die "\nERROR: Could not open file: $file\n";
+	    <$fh_in>;
+	};
+	print $out $lines;
     }
     close $out;
-
-    #my $exe_conf = Tephra::Config::Exe->new->get_config_paths;
-    #my $gt = $exe_conf->{gt};
-    #my $gff_cmd = "$gt gff3 -sort -retainids @gff_files";
-    #$gff_cmd .= " | perl -ne 'print unless /^#\\w+\\d+?\$/' > $customRepGFF";
-    #say STDERR "debug: $gff_cmd";
-    #my @gtsort_out = capture([0..5], $gff_cmd);
 
     my $t29 = gettimeofday();
     $total_elapsed = $t29 - $t28;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Results - Finished generating combined FASTA file at:             $ft. Final output files:");
-    #$log->info("Output files - $customRepGFF");
+    $log->info("Results - Finished generating combined FASTA file at:     $ft. Final output files:");
     $log->info("Output files - $customRepDB.");
     
     ## maskref on customRepDB
@@ -504,9 +500,6 @@ sub _run_all_commands {
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findfragments' completed at: $ft. Final output files:");
     $log->info("Output files - $fragments_gff");
-    #$log->info("Output files - $nonltr_fas.");
-    #push @fas_files, $nonltr_fas
-	#if -e $nonltr_fas;
     push @gff_files, $fragments_gff
 	if -e $fragments_gff;
 
@@ -514,7 +507,6 @@ sub _run_all_commands {
     my $t34 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - Generating combined GFF3 file at:              $st.");
-    #my $frag_cmd = "$cmd findfragments -g $masked -d $repeatdb -o $outfile > $log";
 
     my $exe_conf = Tephra::Config::Exe->new->get_config_paths;
     my $gt = $exe_conf->{gt};
@@ -522,6 +514,7 @@ sub _run_all_commands {
     $gff_cmd .= " | perl -ne 'print unless /^#\\w+\\d+?\$/' > $customRepGFF";
     #say STDERR "debug: $gff_cmd";
 
+    # this is so gt does not drop the Helitron IDs
     my @gtsort_out = capture([0..5], $gff_cmd);
     $gff_cmd = "$gt gff3 -sort -retainids $customRepGFF $hel_gff > $global_opts->{outfile}";
     @gtsort_out = capture([0..5], $gff_cmd);
@@ -531,7 +524,7 @@ sub _run_all_commands {
     $total_elapsed = $t35 - $t34;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Results - Finished generating combined GFF3 file at:              $ft. Final output files:");
+    $log->info("Results - Finished generating combined GFF3 file at:      $ft. Final output files:");
     $log->info("Output files - $global_opts->{outfile}");
 
     ## clean up
