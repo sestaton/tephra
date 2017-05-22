@@ -174,7 +174,7 @@ sub find_soloLTRs {
 	$self->write_sololtr_gff($hmmsearch_summary);
     }
     else {
-	say STDERR "\nWARNING: No solo-LTRs were found so none will be reported.";
+	say STDERR "WARNING: No solo-LTRs were found so none will be reported.";
 	unlink $hmmsearch_summary, $seqfile;
     }
 
