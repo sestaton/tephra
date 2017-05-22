@@ -8,6 +8,8 @@ Version	Date	Location
   and scored as expected.
 - Bug fix for not using output filename from the configuration file. A custom name was
   being generated for the GFF3 and the configuration option was previously ignored.
+- Bug fix for leaving empty solo-LTR files when none are discovered. Now a warning is
+  logged when no solo-LTRs are found and the empty files are removed.
 - Modify behavior of 'run_blast' method in Tephra::Role::Run::Blast role. The sort
   attribute now takes a string to specify how to sort: either by coordinate or bit score.
   Also, the option to set the e-value threshold was added.
