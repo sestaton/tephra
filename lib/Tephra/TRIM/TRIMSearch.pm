@@ -54,9 +54,11 @@ sub trim_search_strict {
     my $gffh_sort = $self->sort_gff($ltrh_gff) if -s $ltrh_gff;
 
     if (defined $gffh_sort && -s $gffh_sort) {
-	my @ltrd_opts = qw(-trnas -hmms -seqfile -seqnamelen -matchdescstart -o);
-	my @ltrd_args = ($trnadb,$hmmdb,$genome,"50","yes",$ltrg_gff);
-	
+	#my @ltrd_opts = qw(-trnas -hmms -seqfile -seqnamelen -matchdescstart -o);
+	#my @ltrd_args = ($trnadb,$hmmdb,$genome,"50","yes",$ltrg_gff);
+	my @ltrd_opts = qw(-trnas -hmms -encseq -seqnamelen -matchdescstart -o);
+	my @ltrd_args = ($trnadb,$hmmdb,$index,"50","yes",$ltrg_gff);
+
 	@ltrd_cmd{@ltrd_opts} = @ltrd_args;
 	
 	my $ltr_dig = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort);
@@ -97,9 +99,11 @@ sub trim_search_relaxed {
     my $gffh_sort = $self->sort_gff($ltrh_gff) if -s $ltrh_gff;
 
     if (defined $gffh_sort && -s $gffh_sort) {
-	my @ltrd_opts = qw(-trnas -hmms -seqfile -matchdescstart -seqnamelen -o);
-	my @ltrd_args = ($trnadb,$hmmdb,$genome,"yes","50",$ltrg_gff);
-	
+	#my @ltrd_opts = qw(-trnas -hmms -seqfile -matchdescstart -seqnamelen -o);
+	#my @ltrd_args = ($trnadb,$hmmdb,$genome,"yes","50",$ltrg_gff);
+	my @ltrd_opts = qw(-trnas -hmms -encseq -matchdescstart -seqnamelen -o);
+	my @ltrd_args = ($trnadb,$hmmdb,$index,"yes","50",$ltrg_gff);
+
 	@ltrd_cmd{@ltrd_opts} = @ltrd_args;
 	
 	my $ltr_dig = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort);
