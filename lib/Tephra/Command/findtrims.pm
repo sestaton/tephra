@@ -19,8 +19,8 @@ sub opt_spec {
 	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains "     ],
 	[ "outfile|o=s", "The final combined and filtered GFF3 file of TRIMs "            ],
 	[ "logfile=s",   "The file to use for logging results in addition to the screen " ],
-	[ "clean",       "Clean up the index files (Default: yes) "                       ],
-	[ "debug",       "Show external command for debugging (Default: no) "             ],
+	[ "clean",       "Clean up the index files (Default: No) "                        ],
+	[ "debug",       "Show external command for debugging (Default: No) "             ],
 	[ "help|h",      "Display the usage menu and exit. "                              ],
         [ "man|m",       "Display the full manual. "                                      ],
     );
@@ -114,8 +114,10 @@ sub _run_trim_search {
     my @suff_args = qq(-db $genome -indexname $index -tis -suf -lcp -ssp -sds -des -dna);
     $trim_search->create_index(\@suff_args);
     
-    my $strict_gff  = $trim_search->trim_search_strict($index);
-    my $relaxed_gff = $trim_search->trim_search_relaxed($index);
+    #my $strict_gff  = $trim_search->trim_search_strict($index);
+    #my $relaxed_gff = $trim_search->trim_search_relaxed($index);
+    my $strict_gff  = $trim_search->trim_search({ index => $index, mode => 'strict'  });
+    my $relaxed_gff = $trim_search->trim_search({ index => $index, mode => 'relaxed' });
 
     return ($relaxed_gff, $strict_gff);
 }
@@ -146,7 +148,7 @@ Options:
     --logfile     :   The file to use for logging results in addition to the screen.
     -t|trnadb     :   The file of tRNA sequences in FASTA format to search for PBS. 
     -d|hmmdb      :   The HMM db in HMMERv3 format to search for coding domains.
-    -c|clean      :   Clean up the index files (Default: yes).
+    -c|clean      :   Clean up the index files (Default: No).
 
 END
 }
@@ -207,7 +209,7 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =item -c, --clean
 
- Clean up the index files (Default: yes).
+ Clean up the index files (Default: No).
 
 =item -h, --help
 
