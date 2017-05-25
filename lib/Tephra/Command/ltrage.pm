@@ -17,7 +17,7 @@ sub opt_spec {
 	[ "threads|t=i",   "The number of threads to use for clustering coding domains "                ],
 	[ "indir|i=s",     "The input directory of classifed LTR elements "                             ],
 	[ "all|a",         "Calculate age of all LTR-RTs in <gff> instead of exemplars in <indir> "     ],
-	[ "clean|c",       "Clean up all the intermediate files from PAML and clustalw (Default: yes) " ],
+	[ "clean|c",       "Clean up all the intermediate files from PAML and clustalw (Default: No) "  ],
 	[ "help|h",        "Display the usage menu and exit. "                                          ],
         [ "man|m",         "Display the full manual. "                                                  ],
 	);
@@ -95,7 +95,7 @@ sub help {
       -i|indir      :   The input directory of classified LTR elements.
       -r|subs_rate  :   The nucleotide substitution rate to use (Default: 1e-8).
       -t|threads    :   The number of threads to use for clustering coding domains (Default: 1).
-      -c|clean      :   Clean up all the intermediate files from PAML and clustalw (Default: yes).
+      -c|clean      :   Clean up all the intermediate files from PAML and clustalw (Default: No).
       -a|all        :   Calculate age of all LTR-RTs in <gff> instead of exemplars in <indir>.   
    
 END
@@ -160,7 +160,7 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =item -c, --clean
 
- Clean up all the intermediate files from PAML and clustalw (Default: yes).
+ Clean up all the intermediate files from PAML and clustalw (Default: No).
 
 =item -a, --all
 
