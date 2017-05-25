@@ -68,7 +68,7 @@ sub _refine_ltr_predictions {
     
     my $refine_obj = Tephra::LTR::LTRRefine->new(%refine_opts);
 
-    if (defined $relaxed_gff && defined $strict_gff) {
+    if ($relaxed_gff && $strict_gff) {
 	my $relaxed_features
 	    = $refine_obj->collect_features({ gff => $relaxed_gff, pid_threshold => 85 });
 	my $strict_features
@@ -86,7 +86,7 @@ sub _refine_ltr_predictions {
 
 	unlink $relaxed_gff, $strict_gff;
     }
-    elsif (defined $relaxed_gff && !defined $strict_gff) {
+    elsif ($relaxed_gff && !$strict_gff) {
 	say STDERR "\nWARNING: No LTR retrotransposons were found under strict conditions. ".                  
             "Skipping refinement step.\n";
 	$refine_obj->sort_features({ gff               => $relaxed_gff,
@@ -135,8 +135,10 @@ sub _run_ltr_search {
 	$ltr_search->create_index(\@suff_args);
     }
 
-    my $strict_gff  = $ltr_search->ltr_search_strict($search_config,  $opt->{index});
-    my $relaxed_gff = $ltr_search->ltr_search_relaxed($search_config, $opt->{index});
+    #my $strict_gff  = $ltr_search->ltr_search_strict($search_config,  $opt->{index});
+    #my $relaxed_gff = $ltr_search->ltr_search_relaxed($search_config, $opt->{index});
+    my $strict_gff  = $ltr_search->ltr_search({ config => $search_config, index => $opt->{index}, mode => 'strict'  });
+    my $relaxed_gff = $ltr_search->ltr_search({ config => $search_config, index => $opt->{index}, mode => 'relaxed' });
 
     return ($global_opts, $search_config, $relaxed_gff, $strict_gff);
 }

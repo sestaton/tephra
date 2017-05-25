@@ -35,6 +35,92 @@ has config => (
     documentation => qq{The Tephra LTR configuration file},
 );
 
+sub ltr_search {
+    my $self = shift;
+    my ($search_obj) = @_;
+    my ($config, $index, $mode) = @{$search_obj}{qw(config index mode)};
+    
+    my $genome = $self->genome->absolute->resolve;
+    my $hmmdb  = $self->hmmdb->absolute->resolve;
+    my $trnadb = $self->trnadb->absolute->resolve;
+
+    ## LTRharvest constraints
+    my ($overlaps, $mintsd, $maxtsd, $minlenltr, $maxlenltr, $mindistltr, $maxdistltr, $pdomcutoff, $pdomevalue) = 
+	@{$config->{findltrs}}{qw(overlaps mintsd maxtsd minlenltr maxlenltr mindistltr maxdistltr pdomcutoff pdomevalue)};
+
+    my ($seedlength, $tsdradius, $xdrop, $swmat, $swmis, $swins, $swdel) = 
+	@{$config->{findltrs}}{qw(seedlength tsdradius xdrop swmat swmis swins swdel)};
+
+    ## LTRdigest constraints
+    my ($pptradius, $pptlen, $pptagpr, $uboxlen, $uboxutpr, $pbsradius, $pbslen, $pbsoffset, $pbstrnaoffset, $pbsmaxeditdist, $maxgaplen) = 
+	@{$config->{findltrs}}{qw(pptradius pptlen pptagpr uboxlen uboxutpr pbsradius pbslen pbsoffset pbstrnaoffset pbsmaxeditdist maxgaplen)};
+
+    my (%ltrh_cmd, %ltrd_cmd, @ltrh_opts, @ltrh_args, $ltrh_gff, $ltrg_gff);
+    my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
+    if ($name =~ /(\.fa.*)/) {
+	$name =~ s/$1//;
+    }
+    
+    if ($mode eq 'strict') {
+	$ltrh_gff = File::Spec->catfile( abs_path($path), $name.'_ltrharvest99.gff3' );
+	$ltrg_gff = File::Spec->catfile( abs_path($path), $name.'_ltrdigest99.gff3' );
+
+	@ltrh_opts = qw(-seqids -mintsd -maxtsd -minlenltr -maxlenltr -mindistltr 
+                       -maxdistltr -motif -similar -vic -index -overlaps -seed -vic 
+                       -xdrop -mat -mis -ins -del -gff3);
+	@ltrh_args = ("yes",$mintsd,$maxtsd,$minlenltr,$maxlenltr,$mindistltr,$maxdistltr,"tgca","99",
+		      "10",$index,$overlaps,$seedlength,$tsdradius,$xdrop,
+		      $swmat,$swmis,$swins,$swdel,$ltrh_gff);
+	#@ltrh_cmd{@ltrh_opts} = @ltrh_args;
+    }
+    elsif ($mode eq 'relaxed') {
+	$ltrh_gff = File::Spec->catfile( abs_path($path), $name.'_ltrharvest85.gff3' );
+	$ltrg_gff = File::Spec->catfile( abs_path($path), $name.'_ltrdigest85.gff3' );
+
+	@ltrh_opts = qw(-seqids -mintsd -maxtsd -minlenltr -maxlenltr 
+                       -mindistltr -maxdistltr -similar -vic -index -overlaps
+                       -seed -vic -xdrop -mat -mis -ins -del -gff3);
+	@ltrh_args = ("yes",$mintsd,$maxtsd,$minlenltr,$maxlenltr,$mindistltr,$maxdistltr,"85","10",
+		      $index,$overlaps,$seedlength,$tsdradius,$xdrop,$swmat,
+		      $swmis,$swins,$swdel,$ltrh_gff);
+	#@ltrh_cmd{@ltrh_opts} = @ltrh_args;
+    }
+    else {
+	say STDERR "\nERROR: Could not get 'mode' for LTR search. This is a bug, please report it. Exiting.\n";
+        exit(1);
+    }
+
+    @ltrh_cmd{@ltrh_opts} = @ltrh_args;
+    my $ltr_succ  = $self->run_ltrharvest(\%ltrh_cmd);
+    if (-s $ltrh_gff > 1) {
+	my $gffh_sort = $self->sort_gff($ltrh_gff);
+
+	my @ltrd_opts = qw(-trnas -hmms -seqfile -matchdescstart -seqnamelen -o 
+                           -pdomevalcutoff -pdomcutoff -pptradius -pptlen -pptaprob 
+                           -pptgprob -uboxlen -pptuprob -pbsalilen -pbsradius -pbsoffset -pbstrnaoffset
+                           -pbsmaxedist -maxgaplen);
+	my @ltrd_args = ($trnadb,$hmmdb,$genome,"yes","50",$ltrg_gff,
+			 $pdomevalue,$pdomcutoff,$pptradius,$pptlen,$pptagpr,$pptagpr,$uboxlen,
+	                 $uboxutpr,$pbslen,$pbsradius,$pbsoffset,$pbstrnaoffset,$pbsmaxeditdist,$maxgaplen);
+	@ltrd_cmd{@ltrd_opts} = @ltrd_args;
+	
+	my $ltr_dig = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort);
+	$self->clean_indexes($path) 
+	    if $self->clean && $mode eq 'relaxed';
+	unlink $ltrh_gff;
+	unlink $gffh_sort;
+    
+	return $ltrg_gff;
+    }
+    else {
+	$self->clean_indexes($path) 
+	    if $self->clean && $mode eq 'relaxed';
+	unlink $ltrh_gff;
+
+	return 0;
+    }
+}
+
 sub ltr_search_strict {
     my $self = shift;
     my ($config, $index) = @_;
