@@ -1,7 +1,7 @@
 Revision history for Tephra
 
 Version	Date	Location
-0.07.3
+0.08.0
 
 - Bug fix for Helitron IDs getting dropped in final GFF3 file.
 - Bug fix for sorting unclassified matches in LTRFams class. Hits are now sorted
@@ -15,6 +15,12 @@ Version	Date	Location
   Also, the option to set the e-value threshold was added.
 - Add 'getfragments' command (and Tephra::Genome::FragmentSearch class with associated 
   methods) for identifying truncated or fragmented elements.
+- Refactor 'trim_search' method in Tephra::TRIM::TRIMSearch class to take the mode for the
+  search ('relaxed' or 'strict') and set variables accordingly instead of duplicating
+  code across two separate methods.
+- Refactor 'ltr_search' method in Tephra::LTR::LTRSearch class to take the mode for the
+  search ('relaxed' or 'strict') and set variables accordingly instead of duplicating
+  code across two separate methods.
 
 0.07.2	05/11/2017	Vancouver, BC
 
