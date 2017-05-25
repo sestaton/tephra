@@ -193,7 +193,7 @@ sub _run_all_commands {
 	$log->info("Command - 'tephra ltrage' started at:   $st.");
 
 	my $ltrage_opts = ['-g', $global_opts->{genome}, '-t', $global_opts->{threads},
-			   '-o', $ltrage_out, '-f', $ltrc_gff];
+			   '-o', $ltrage_out, '-f', $ltrc_gff, '--clean'];
 	push @$ltrage_opts, '--all'
 	    if $config->{ltrage}{all} =~ /yes/i;
 	if ($config->{ltrage}{all} =~ /no/i) {
@@ -245,7 +245,7 @@ sub _run_all_commands {
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findtrims' started at:   $st.");
     
-    my $findtrims_opts = ['-g', $trim_ref, '-o', $trims_gff, '--logfile', $global_opts->{logfile}];
+    my $findtrims_opts = ['-g', $trim_ref, '-o', $trims_gff, '--logfile', $global_opts->{logfile}, '--clean'];
     _run_tephra_cmd('findtrims', $findtrims_opts, $global_opts->{debug});
     
     my $t13 = gettimeofday();
@@ -442,10 +442,10 @@ sub _run_all_commands {
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - Generating combined FASTA file at:             $st.");
     my $customRepDB = $global_opts->{outfile} =~ s/\.gff.*/.fasta/r;
-    my $tmpiname = $name."_tephra_transposons_tmp_XXXX";
+    my $tmpiname = $name.'_tephra_transposons_tmp_XXXX';
     my $customRepGFFfh = File::Temp->new( TEMPLATE => $tmpiname,
 					  DIR      => abs_path($path),
-					  SUFFIX   => '.fasta',
+					  SUFFIX   => '.gff3',
 					  UNLINK   => 0);
     my $customRepGFF = $customRepGFFfh->filename;
     open my $out, '>', $customRepDB or die "\nERROR: Could not open file: $customRepDB\n";
@@ -508,6 +508,7 @@ sub _run_all_commands {
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - Generating combined GFF3 file at:              $st.");
 
+    @gff_files = grep { -s $_ } @gff_files; # remove empty files
     my $exe_conf = Tephra::Config::Exe->new->get_config_paths;
     my $gt = $exe_conf->{gt};
     my $gff_cmd = "$gt gff3 -sort @gff_files";
