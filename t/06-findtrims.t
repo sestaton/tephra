@@ -37,7 +37,7 @@ SKIP: {
     #my $find_cmd = "$cmd findtrims -g $genome -t $trnas -d $model --clean";
 
     my $retry = 1;
-    findltrs : {
+    findtrims : {
 	my $find_cmd = "$cmd findtrims -g $genome -o $outfile --clean";
 	#say STDERR $find_cmd;
 
@@ -47,46 +47,46 @@ SKIP: {
 	for my $line (split /^/, $stderr) {
 	    if ($line =~ /length_filtered/) {
 		my ($l_filt) = $line =~ /(\d+)$/;
-		#say STDERR "l_filt: $l_filt exp: 0";
+		say STDERR "l_filt: $l_filt exp: 0";
 		ok( $l_filt == 0, 'Correct number of elements filtered by length' );
 	    }
 	    if ($line =~ /compound_gyp_cop_filtered/) {
 		my ($gc_filt) = $line =~ /(\d+)$/;
-		#say STDERR "gc_filt: $gc_filt";
+		say STDERR "gc_filt: $gc_filt";
 		ok( $gc_filt == 0, 'Correct number of elements filtered compound gypsy/copia' );
 	    }
 	    if ($line =~ /n_perc_filtered/) {
 		my ($n_filt) = $line =~ /(\d+)$/;
 		unless ($n_filt == 43) {
 		    say STDERR "n_filt: $n_filt exp: 43"; 
-		    redo findltrs if $retry;
+		    redo findtrims if $retry;
 		    $retry--;
 		}
 		ok( $n_filt == 43, 'Correct number of elements filtered by N-percentage' );
 	    }
 	    elsif ($line =~ /\'relaxed\' constraints/) {
 		my ($r_ct) = $line =~ /(\d+)$/;
-		#say STDERR "r_ct: $r_ct exp: 757";
+		say STDERR "r_ct: $r_ct exp: 757";
 		ok( $r_ct == 757, 'Correct number of combined elements found by relaxed constraints' );
 	    }
 	    elsif ($line =~ /\'strict\' constraints/) {
 		my ($s_ct) = $line =~ /(\d+)$/;
-		#say STDERR "s_ct: $s_ct exp: 0";
+		say STDERR "s_ct: $s_ct exp: 0";
 		ok( $s_ct == 0, 'Correct number of total elements found by strict constraints' );
 	    }
 	    elsif ($line =~ /\'best\'/) {
 		my ($b_ct) = $line =~ /(\d+)$/;
-		#say STDERR "b_ct: $b_ct exp: 7";
+		say STDERR "b_ct: $b_ct exp: 7";
 		ok( $b_ct == 7, 'Correct number of best elements found' );
 	    }
 	    elsif ($line =~ /\'combined\'/) {
 		my ($c_ct) = $line =~ /(\d+)$/;
-		#say STDERR "c_ct: $c_ct exp: 721";
+		say STDERR "c_ct: $c_ct exp: 721";
 		ok( $c_ct == 721, 'Correct number of combined elements found' );
 	    }
 	    elsif ($line =~ /Total elements written/) {
 		my ($t_ct) = $line =~ /(\d+)$/;
-		#say STDERR "t_ct: $t_ct exp: 721";
+		say STDERR "t_ct: $t_ct exp: 721";
 		ok( $t_ct == 721, 'Correct number of total elements found' );
 	    }
 	}
