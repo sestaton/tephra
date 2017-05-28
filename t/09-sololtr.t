@@ -39,14 +39,17 @@ SKIP: {
     copy $ctestfile, $cresdir or die "\nERROR: copy failed $!";
     copy $gtestfile, $gresdir or die "\nERROR: copy failed $!";
 
-    my @results = capture { system([0..5], "$cmd sololtr -h") };
-    
-    ok(@results, 'Can execute sololtr subcommand');
+    {
+        my @help_args = ($cmd, 'sololtr', '-h');
+        my ($stdout, $stderr, $exit) = capture { system(@help_args) };
+        #say STDERR "stderr: $stderr";
+        ok($stderr, 'Can execute sololtr subcommand');
+    }
 
-    my $find_cmd = "$cmd sololtr -i $outdir -g $masked -r $allstfile -o $outfile -l 100 -p 50 -s $seqfile";
-    #say STDERR $find_cmd;
-    
-    my @ret = capture { system([0..5], $find_cmd) };
+    my @find_cmd = ($cmd, 'sololtr', '-i', $outdir, '-g', $masked, '-r', $allstfile, '-o', $outfile,
+		    '-l', 100, '-p', 50, '-s', $seqfile);
+    #say STDERR $find_cmd;    
+    my @ret = capture { system([0..5], @find_cmd) };
     #system([0..5], $find_cmd);
 
     ok( -s $allstfile, 'Generated summary statistics for all solo-LTR matches' );

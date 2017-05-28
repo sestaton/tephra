@@ -27,15 +27,18 @@ my $outdir  = File::Spec->catdir($testdir,  'ref_tirs_classified_tirages');
 
 SKIP: {
     skip 'skip development tests', 4 unless $devtests;
-    my @results = capture { system([0..5], "$cmd tirage -h") };
+    {
+        my @help_args = ($cmd, 'tirage', '-h');
+        my ($stdout, $stderr, $exit) = capture { system(@help_args) };
+        #say STDERR "stderr: $stderr";
+        ok($stderr, 'Can execute tirage subcommand');
+    }
 
-    ok(@results, 'Can execute tirage subcommand');
-    
     my $outfile = $gff;
     $outfile =~ s/\.gff3/_tirages.tsv/;
-    my $age_cmd = "$cmd tirage -g $genome -f $gff -o $outfile --all";
+    my @age_cmd = ($cmd, 'tirage', '-g', $genome, '-f', $gff, '-o', $outfile, '--all');
     #say STDERR $age_cmd;
-    my @ret = capture { system([0..5], $age_cmd) };
+    my @ret = capture { system([0..5], @age_cmd) };
 
     ok( -s $outfile, 'Generated TIR age report for input GFF3 file');
 

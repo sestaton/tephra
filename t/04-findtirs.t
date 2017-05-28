@@ -21,15 +21,16 @@ my $fas     = File::Spec->catfile($testdir, 'ref_tirs.fasta');
 ## these are subsets for testing
 #my $model   = File::Spec->catfile($testdir, 'te.hmm');
 
-my @results = capture { system([0..5], "$cmd findtirs -h") };
+{
+    my @help_args = ($cmd, 'findtirs', '-h');
+    my ($stdout, $stderr, $exit) = capture { system(@help_args) };
+        #say STDERR "stderr: $stderr";
+    ok($stderr, 'Can execute findtirs subcommand');
+}
 
-ok(@results, 'Can execute findtirs subcommand');
-
-#my $find_cmd = "$cmd findtirs -g $genome -d $model --clean";
-my $find_cmd = "$cmd findtirs -g $genome -o $gff --clean";
+my @find_cmd = "$cmd findtirs -g $genome -o $gff --clean";
 #say STDERR $find_cmd;
-
-my @ret = capture { system([0..5], $find_cmd) };
+my @ret = capture { system([0..5], @find_cmd) };
 
 my @files;
 find( sub { push @files, $File::Find::name if /tirs_?(?:filtered)?.gff3$/ }, $testdir);

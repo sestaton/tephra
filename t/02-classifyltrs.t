@@ -33,14 +33,17 @@ my $repeatdb = File::Spec->catfile($testdir, 'repdb.fas');
 
 SKIP: {
     skip 'skip development tests', 3 unless $devtests;
-    my @results = capture { system([0..5], "$cmd classifyltrs -h") };
+    {
+	my @help_args = ($cmd, 'classifyltrs', '-h');
+	my ($stdout, $stderr, $exit) = capture { system(@help_args) };
+	#say STDERR "stderr: $stderr";
+	ok($stderr, 'Can execute classifyltrs subcommand');
+    }
 
-    ok(@results, 'Can execute classifyltrs subcommand');
-
-    my $find_cmd = "$cmd classifyltrs -g $genome -d $repeatdb -i $ingff -o $outgff -r $outdir";
+    my @find_cmd = ($cmd, 'classifyltrs', '-g', $genome, '-d', $repeatdb, '-i', $ingff, '-o', $outgff, '-r', $outdir);
     #say STDERR $find_cmd;
     
-    my @ret = capture { system([0..5], $find_cmd) };
+    my @ret = capture { system([0..5], @find_cmd) };
 
     my @dirs;
     find( sub { 

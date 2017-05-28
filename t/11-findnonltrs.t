@@ -27,16 +27,19 @@ my $gff     = File::Spec->catfile($testdir, 'Ha1_nonLTRs.gff3');
 my $fas     = File::Spec->catfile($testdir, 'Ha1_nonLTRs.fasta');
 my $outdir  = File::Spec->catdir($testdir,  'Ha1_nonLTRs');
 
-my @results = capture { system([0..5], "$cmd findnonltrs -h") };
-ok( @results, 'Can execute findnonltrs subcommand' );
+{
+    my @help_args = ($cmd, 'findnonltrs', '-h');
+    my ($stdout, $stderr, $exit) = capture { system(@help_args) };
+        #say STDERR "stderr: $stderr";
+    ok($stderr, 'Can execute findnonltrs subcommand');
+}
 
 SKIP: {
     skip 'skip lengthy tests', 2 unless $devtests;
-    my $find_cmd = "$cmd findnonltrs -g $genome -o $gff";
+    my @find_cmd = ($cmd, 'findnonltrs', '-g', $genome, '-o', $gff);
     #say STDERR $find_cmd;
-
     #my ($stdout, $stderr, @ret) = capture { system([0..5], $find_cmd) };
-    system([0..5], $find_cmd);
+    system([0..5], @find_cmd);
 
     ok( -e $gff, 'Can find some non-LTRs' );
     ok( -e $fas, 'Can find some non-LTRs' );

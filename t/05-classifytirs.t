@@ -23,14 +23,16 @@ my $outgff  = File::Spec->catfile($testdir, 'ref_tirs_classified.gff3');
 my $outfas  = File::Spec->catfile($testdir, 'ref_tirs_classified.fasta');
 my $log     = File::Spec->catfile($testdir, 'ref_tephra_classifytirs.log');
 
-my @results = capture { system([0..5], "$cmd classifyltrs -h") };
+{
+    my @help_args = ($cmd, 'classifytirs', '-h');
+    my ($stdout, $stderr, $exit) = capture { system(@help_args) };
+        #say STDERR "stderr: $stderr";
+    ok($stderr, 'Can execute classifytirs subcommand');
+}
 
-ok(@results, 'Can execute classifytirs subcommand');
-
-my $find_cmd = "$cmd classifytirs -g $genome -i $gff -o $outgff";
+my @find_cmd = ($cmd, 'classifytirs', '-g', $genome, '-i', $gff, '-o', $outgff);
 #say STDERR $find_cmd;
-
-my @ret = capture { system([0..5], $find_cmd) };
+my @ret = capture { system([0..5], @find_cmd) };
 
 ok( -e $outgff, 'Correctly classified TIRs' );
 ok( -e $outfas, 'Correctly classified TIRs' );

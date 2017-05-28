@@ -29,14 +29,16 @@ my $log      = File::Spec->catfile($testdir, 'ref_masked.fas.log');
 
 SKIP: {
     skip 'skip development tests', 3 unless $devtests;
-    my @results = capture { system([0..5], "$cmd maskref -h") };
+    {
+        my @help_args = ($cmd, 'maskref', '-h');
+        my ($stdout, $stderr, $exit) = capture { system(@help_args) };
+        #say STDERR "stderr: $stderr";
+        ok($stderr, 'Can execute maskref subcommand');
+    }
 
-    ok(@results, 'Can execute maskref subcommand');
-    
-    my $mask_cmd = "$cmd maskref -g $genome -d $repeatdb -o $masked > $log";
+    my @mask_cmd = ($cmd, 'maskref', '-g', $genome, '-d', $repeatdb, '-o', $masked, $log);
     #say STDERR $mask_cmd;
-    
-    my @ret = capture { system([0..5], $mask_cmd) };
+    my @ret = capture { system([0..5], @mask_cmd) };
 
     ok( -e $masked, 'Can mask reference' );
     ok( -e $log, 'Can mask reference' );

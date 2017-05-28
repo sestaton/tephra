@@ -26,8 +26,10 @@ diag( "Testing Tephra $Tephra::VERSION, Perl $], $^X" );
 my $cmd = File::Spec->catfile('blib', 'bin', 'tephra');
 ok( -x $cmd, 'Can execute tephra' );
 
-my @results = capture { system([0..5], "$cmd commands") };
-ok(@results, 'Can execute commands subcommand');
+{
+    my ($stdout, $stderr, $exit) = capture { system($cmd) };
+    ok($stderr, 'Can execute commands subcommand');
+}
 
 my $config = Tephra::Config::Exe->new->get_config_paths;
 my ($gt, $hscan, $hmm2bin, $hmm3bin, $moddir, $chrdir, $mgescan, $trans, $pamlbin, $transeq, $htslibdir, $blast)

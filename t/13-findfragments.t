@@ -30,14 +30,16 @@ my $log      = File::Spec->catfile($testdir, 'ref_findfragments.log');
 my $thrlog   = File::Spec->catfile($testdir, 'tephra_fragment_searches.log');
 
 SKIP: {
-    skip 'skip development tests', 3 unless $devtests;
-    my @results = capture { system([0..5], "$cmd findfragments -h") };
+    skip 'skip development tests', 5 unless $devtests;
+    {
+        my @help_args = ($cmd, 'findfragments', '-h');
+        my ($stdout, $stderr, $exit) = capture { system(@help_args) };
+        #say STDERR "stderr: $stderr";
+        ok($stderr, 'Can execute findfragments subcommand');
+    }
 
-    ok(@results, 'Can execute findfragments subcommand');
-    
     my $frag_cmd = "$cmd findfragments -g $masked -d $repeatdb -o $outfile > $log";
-    ##say STDERR $frag_cmd;
-    
+    ##say STDERR $frag_cmd;    
     my @ret = capture { system([0..5], $frag_cmd) };
 
     ok( -e $outfile, 'Can run findfragments and generate GFF3 output' );

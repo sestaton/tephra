@@ -33,14 +33,17 @@ my $log       = File::Spec->catfile($testdir, 'all_illrecomb_muscle_reports.log'
 
 SKIP: {
     skip 'skip development tests', 8 unless $devtests;
+    {
+        my @help_args = ($cmd, 'illrec', '-h');
+        my ($stdout, $stderr, $exit) = capture { system(@help_args) };
+        #say STDERR "stderr: $stderr";
+        ok($stderr, 'Can execute illrec subcommand');
+    }
 
-    my @results = capture { system([0..5], "$cmd illrecomb -h") };    
-    ok(@results, 'Can execute illrecomb subcommand');
-
-    my $find_cmd = "$cmd illrecomb -i $testfile -s $allstfile -r $illstfile -o $seqfile";
+    my @find_cmd = ($cmd, 'illrecomb', '-i', $testfile, '-s', $allstfile, '-r', $illstfile, '-o', $seqfile);
     #say STDERR $find_cmd;
 
-    my @ret = capture { system([0..5], $find_cmd) };
+    my @ret = capture { system([0..5], @find_cmd) };
     #system([0..5], $find_cmd);
 
     ok( -s $allstfile, 'Generated statistics for all gap sites' );
