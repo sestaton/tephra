@@ -236,7 +236,7 @@ sub filter_compound_elements {
         $stats{coding_domain_filtered} = $pdom_filtered;
     }
     
-    return $features, \%stats;
+    return ($features, \%stats);
 }
 
 
@@ -561,7 +561,7 @@ sub reduce_features {
     $log->info("Results - Number of 'best' elements that were overlapping in these two data sets:    $best");
     $log->info("Results - Number of 'combined' non-overlapping elements:                             $comb");
 
-    return (\%best_features);
+    return \%best_features;
 }
 
 sub sort_features {
@@ -606,6 +606,7 @@ sub sort_features {
 
     my ($elem_tot, $count) = (0, 1);
     if (defined $combined_features) {
+	#dd $combined_features;
 	open my $ogff, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
 	my ($header, %features);
