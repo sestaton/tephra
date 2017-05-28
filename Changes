@@ -10,6 +10,10 @@ Version	Date	Location
   being generated for the GFF3 and the configuration option was previously ignored.
 - Bug fix for leaving empty solo-LTR files when none are discovered. Now a warning is
   logged when no solo-LTRs are found and the empty files are removed.
+- Bug fix for generating expected help menus with long and short options.
+- Bug fix for classifytirs test not testing the correct command for all tests.
+- Bug fix for not cleaning up all intermediate results from 'all' command as expected (this
+  only affected the 'findtrims' and 'ltrage' commands).
 - Modify behavior of 'run_blast' method in Tephra::Role::Run::Blast role. The sort
   attribute now takes a string to specify how to sort: either by coordinate or bit score.
   Also, the option to set the e-value threshold was added.
@@ -21,6 +25,16 @@ Version	Date	Location
 - Refactor 'ltr_search' method in Tephra::LTR::LTRSearch class to take the mode for the
   search ('relaxed' or 'strict') and set variables accordingly instead of duplicating
   code across two separate methods.
+- Refactor how genometools commands are run and evaluated.
+- Refactor all tests to avoid using the shell for running commands.
+- Refactor 'findltrs' and 'findtrims' tests to not retry failed tests.
+- Renumber test files so they are sequential with not numbers being skipped.
+- Add longer usage description to main program and all subcommands.
+- Document default thread level for all commands that can use more than one process.
+- Add the option to use more than one processor for 'findltrs', 'findtirs', and 'findtrims'
+  commands.
+- Change the default thread level for tests to 2 (was set much higher, 24, for local
+  testing).
 
 0.07.2	05/11/2017	Vancouver, BC
 
