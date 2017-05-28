@@ -3,6 +3,7 @@ package Tephra::Role::Run::GT;
 use 5.014;
 use Moose::Role;
 use MooseX::Types::Path::Class;
+use IO::File;
 use Cwd                 qw(getcwd abs_path);
 use Log::Any            qw($log);
 use IPC::System::Simple qw(system);
@@ -75,35 +76,46 @@ has debug => (
     default    => 0,
 );
 
+has threads => (
+    is        => 'ro',
+    isa       => 'Int',
+    predicate => 'has_threads',
+    lazy      => 1,
+    default   => 1,
+);
+
 sub create_index {
     my $self = shift;
     my ($args) = @_;
+    my $threads = $self->threads;
 
     my $gt = $self->get_gt_exec;
     unshift @$args, 'suffixerator';
-    unshift @$args, $gt;
+    unshift @$args, "$gt -j $threads";
     my $cmd = join qq{ }, @$args;
 
     say STDERR "DEBUG: $cmd" if $self->debug;
-    my ($stdout, $stderr, $exit);
-    try {
-	system($cmd);
-	#my @out = capture { system([0..5], $cmd) };
-    }
-    catch {
-	$log->error("Unable to make suffixerator index. Here is the exception: $_\nExiting.");
+    my ($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
+    return $exit == 0 ? 1 : 0;
+
+    if ($exit) { # non-zero
+	$log->error("'gt suffixerator' failed with exit code: $exit. Here is STDOUT: $stdout\nHere is stderr: $stderr\n");
 	exit(1);
-    };
+    }
 }
 
 sub run_ltrharvest {
     my $self = shift;
     my ($args) = @_;
-    my $debug = $self->debug;
+    my $debug   = $self->debug;
+    my $threads = $self->threads;
+
 
     my $gt = $self->get_gt_exec;
     my @ltrh_args;
-    push @ltrh_args, "$gt ltrharvest";
+    push @ltrh_args, "$gt -j $threads ltrharvest";
+    #push @ltrh_args, $gt;
+    #push @ltrh_args, 'ltrharvest';
 
     for my $opt (keys %$args) {
 	if (defined $args->{$opt}) {
@@ -113,12 +125,11 @@ sub run_ltrharvest {
 
     my $cmd = join qq{ }, @ltrh_args;
     say STDERR "DEBUG: $cmd" if $self->debug; # and exit;
-    try {
-	#system($cmd);
-	my @out = capture { system([0..5], $cmd) };
-    }
-    catch {
-	$log->error("LTRharvest failed. Here is the exception: $_\nExiting.");
+    my ($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
+    return $exit == 0 ? 1 : 0;
+
+    if ($exit) { # non-zero  
+	$log->error("LTRharvest failed with exit code: $exit. Here is STDOUT: $stdout\nHere is stderr: $stderr\n");
 	exit(1);
     };
 }
@@ -126,7 +137,8 @@ sub run_ltrharvest {
 sub run_ltrdigest {
     my $self = shift;
     my ($args, $gff) = @_;
-    my $debug = $self->debug;
+    my $debug   = $self->debug;
+    my $threads = $self->threads;
 
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($hmmer3bin) = @{$config}{qw(hmmer3bin)};
@@ -134,37 +146,42 @@ sub run_ltrdigest {
 
     my $gt = $self->get_gt_exec;
     my @ltrd_args;
-    push @ltrd_args, "$gt ltrdigest";
+    push @ltrd_args, "$gt -j $threads ltrdigest";
+    #push @ltrd_args, $gt;
+    #push @ltrd_args, 'ltrdigest';
+
     for my $opt (keys %$args) {
 	if (defined $args->{$opt}) {
 	    push @ltrd_args, $opt.q{ }.$args->{$opt};
 	}
     }
     
+    #say STDERR "DEBUG: $gff";
     my $cmd = join qq{ }, @ltrd_args, $gff;
     say STDERR "DEBUG: $cmd" if $self->debug;
-    try {
-	#system($cmd);
-	my @out = capture { system([0..5], $cmd) };
-    }
-    catch {
-	$log->error("LTRdigest failed. Here is the exception: $_\nExiting.");
+    my ($stdout, $stderr, $exit) = capture { system($cmd) };
+    #say STDERR "DEBUG: ltrdigest exit status: $exit" if $self->debug;
+    return $exit == 0 ? 1 : 0;
+
+    if ($exit) { # non-zero 
+	$log->error("LTRdigest failed with exit code: $exit. Here is STDOUT: $stdout\nHere is stderr: $stderr\n");
 	exit(1);
-    };
+    }
 }
 
 sub run_tirvish {
     my $self = shift;
     my ($args, $gff) = @_;
-    my $debug = $self->debug;
-    my $gt = $self->get_gt_exec;
+    my $debug   = $self->debug;
+    my $threads = $self->threads;
+    my $gt      = $self->get_gt_exec;
 
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($hmmer3bin) = @{$config}{qw(hmmer3bin)};
     $ENV{PATH} = join ':', $ENV{PATH}, $hmmer3bin;
 
     my @tirv_args;
-    push @tirv_args, "$gt tirvish";
+    push @tirv_args, "$gt -j $threads tirvish";
     for my $opt (keys %$args) {
 	if (defined $args->{$opt}) {
 	    push @tirv_args, $opt.q{ }.$args->{$opt};
@@ -173,35 +190,34 @@ sub run_tirvish {
 
     my $cmd = join qq{ }, @tirv_args, ">", $gff;
     say STDERR "DEBUG: $cmd" if $self->debug;
-    try {
-	my @out = capture { system([0..5], $cmd) };
-    }
-    catch {
-	$log->error("'gt tirvish' failed. Here is the exception: $_\nExiting.");
+    my ($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
+    return $exit == 0 ? 1 : 0;
+
+    if ($exit) { # non-zero 
+	$log->error("'gt tirvish' failed exit code: $exit. Here is STDOUT: $stdout\nHere is stderr: $stderr\n");
 	exit(1);
-    };
+    }
 }
 
 sub sort_gff {
     my $self = shift;
     my ($gff) = @_;
-    my $debug = $self->debug;
+    my $debug   = $self->debug;
+    my $threads = $self->threads;
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $gff_sort = File::Spec->catfile( abs_path($path), $name."_sort".$suffix );
     my $gt = $self->get_gt_exec;
 
-    my $cmd = "$gt gff3 -sort $gff > $gff_sort";
+    my $cmd = "$gt -j $threads gff3 -sort $gff > $gff_sort";
     say STDERR "DEBUG: $cmd" if $self->debug;
-    try {
-	my @out = capture { system([0..5], $cmd) };
-    }
-    catch {
-	$log->error("'gt gff3 -sort' failed. Here is the exception: $_\nExiting.");
-	exit(1);
-    };
+    my ($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
+    return $exit == 0 ? $gff_sort : 0;
 
-    return $gff_sort;
+    if ($exit) { # non-zero 
+	$log->error("'gt gff3 -sort' failed exit code: $exit. Here is STDOUT: $stdout\nHere is stderr: $stderr\n");
+	exit(1);
+    }
 }
 
 sub clean_indexes {
@@ -213,8 +229,9 @@ sub clean_indexes {
 			    if -f && /\.llv|\.md5|\.prf|\.tis|\.suf|\.lcp|\.ssp|\.sds|\.des|\.dna|\.esq|\.prj|\.ois/ };
     my $process = sub { grep ! -d, @_ };
     find({ wanted => $wanted, preprocess => $process }, $dir);
-
     unlink @files;
+
+    return;
 }
 
 sub clean_index_files {
@@ -231,8 +248,8 @@ sub clean_index_files {
 
     my @files;
     find( sub { push @files, $File::Find::name if /$pat/ }, $path);
-
     unlink @files;
+
     return;
 }
 
