@@ -4,22 +4,24 @@ package Tephra::Command::all;
 use 5.014;
 use strict;
 use warnings;
-use File::Spec;
-use File::Basename;
-use File::Temp;
-use Tephra -command;
-use Tephra::Config::Reader;
-use Tephra::Config::Exe;
-use Log::Log4perl;
-use Log::Any::Adapter;
+use Pod::Find           qw(pod_where);
+use Pod::Usage          qw(pod2usage);
+use Capture::Tiny       qw(capture_merged);
 use Time::HiRes         qw(gettimeofday);
 use POSIX               qw(strftime);
 use IPC::System::Simple qw(system capture);
 use Cwd                 qw(abs_path);
+use File::Spec;
+use File::Basename;
+use File::Temp;
+use Log::Log4perl;
+use Log::Any::Adapter;
 use Lingua::EN::Inflect;
 use DateTime;
 use Try::Tiny;
-use Cwd;
+use Tephra -command;
+use Tephra::Config::Reader;
+use Tephra::Config::Exe;
 #use Data::Dump::Color;
 
 our $VERSION = '0.08.0';
@@ -41,15 +43,14 @@ sub validate_args {
         exit(0);
     }
     elsif ($opt->{help}) {
-        $self->help;
-        exit(0);
+        $self->help and exit(0);
     }
     elsif (! $opt->{config}) {
-	say STDERR "\nERROR: Required arguments not given.";
+	say STDERR "\nERROR: Required arguments not given.\n";
 	$self->help and exit(0);
     }
     elsif (! -e $opt->{config}) {
-	say STDERR "\nERROR: The configuration file does not exist. Check arguments.";
+	say STDERR "\nERROR: The configuration file does not exist. Check arguments.\n";
         $self->help and exit(0);
     }
 } 
@@ -127,7 +128,7 @@ sub _run_all_commands {
 
     ## maskref on LTRs
     my $genome_mask1;
-    if (-e $ltrc_fas && -s $ltrc_fas) {
+    if (defined $ltrc_fas && -e $ltrc_fas && -s $ltrc_fas) {
 	$genome_mask1 = File::Spec->catfile( abs_path($path), $name.'_masked.fasta' );
 
 	my $t4 = gettimeofday();
@@ -151,7 +152,7 @@ sub _run_all_commands {
 
     ## sololtr
     my ($sololtr_gff, $sololtr_rep, $sololtr_fas);
-    if (-e $genome_mask1 && -e $ltrc_dir) {
+    if (defined $genome_mask1 && -e $genome_mask1 && -e $ltrc_dir) {
 	$sololtr_gff = File::Spec->catfile( abs_path($path), $name.'_sololtrs.gff3' );
 	$sololtr_rep = File::Spec->catfile( abs_path($path), $name.'_sololtrs_rep.tsv' );
 	$sololtr_fas = File::Spec->catfile( abs_path($path), $name.'_sololtrs_seqs.fasta' );
@@ -185,7 +186,7 @@ sub _run_all_commands {
     }
 
     ## ltrage
-    if (-e $ltrc_gff && -s $ltrc_gff) {
+    if (defined $ltrc_gff && -e $ltrc_gff && -s $ltrc_gff) {
 	my $ltrage_out  = File::Spec->catfile( abs_path($path), $name.'_ltrages.tsv' );
 
 	my $t8 = gettimeofday();
@@ -212,7 +213,7 @@ sub _run_all_commands {
 
     ## illrecomb
     my ($illrec_fas, $illrec_rep, $illrec_stats);
-    if (-e $ltrc_fas && -s $ltrc_fas) {
+    if (defined $ltrc_fas && -e $ltrc_fas && -s $ltrc_fas) {
 	my $illrec_fas   = File::Spec->catfile( abs_path($path), $name.'_illrecomb.fasta' ); 
 	my $illrec_rep   = File::Spec->catfile( abs_path($path), $name.'_illrecomb_rep.tsv' );
 	my $illrec_stats = File::Spec->catfile( abs_path($path), $name.'_illrecomb_stats.tsv' );
@@ -236,7 +237,8 @@ sub _run_all_commands {
     }
 
     ## TRIMs
-    my $trim_ref = (-e $genome_mask1 && -s $genome_mask1) ? $genome_mask1 : $global_opts->{genome};
+    my $trim_ref = (defined $genome_mask1 && -e $genome_mask1 && -s $genome_mask1) ? $genome_mask1 
+	: $global_opts->{genome};
 
     my $trims_gff = File::Spec->catfile( abs_path($path), $name.'_trims.gff3' );
     my $trims_fas = File::Spec->catfile( abs_path($path), $name.'_trims.fasta' );
@@ -694,8 +696,13 @@ sub _capture_tephra_cmd {
 }
    
 sub help {
+    my $desc = capture_merged {
+        pod2usage(-verbose => 99, -sections => "NAME|DESCRIPTION", -exitval => "noexit",
+		  -input => pod_where({-inc => 1}, __PACKAGE__));
+    };
+    chomp $desc;
     print STDERR<<END
-
+$desc
 USAGE: tephra all [-h] [-m]
     -m --man      :   Get the manual entry for a command.
     -h --help     :   Print the command usage.
@@ -723,7 +730,7 @@ __END__
 =head1 DESCRIPTION
 
  This command will run all tephra analysis methods and generate a combined GFF3 of annotations,
- along with a FASTA database and masked genome. An table of results showing global repeat composition 
+ along with a FASTA database and masked genome. A table of results showing global repeat composition 
  will be produced for the input genome.
 
 =head1 AUTHOR 
