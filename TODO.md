@@ -14,14 +14,15 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] merge overlapping hits in chain of protein matches, and contatenate the rest for each element
  - [ ] mark unclassified elements with no protein domains as LARDs
  - [x] combine exemplars for efficiently comparing to a reference set
- - [ ] identify fragmented elements with refined full-length elements
+ - [x] identify fragmented elements with refined full-length elements (handled in v0.08.0+ in 'getfragments'
+       command)
  - [ ] include measure of similarity within/between families
  
 ## Command `tephra findtirs`
  - [x] Find all non-overlapping TIR elements passing thresholds
  - [x] Generate combined GFF3 of high-quality TIRs
  - [x] Check for index (if given)
- - [ ] Add optional test for the presence of coding domains to 'LTRRefine' class. This should reduce the
+ - [x] Add optional test for the presence of coding domains to 'LTRRefine' class. This should reduce the
        number of RLX elements.
 
 ## Command `tephra sololtr`
@@ -34,14 +35,14 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] add family name to GFF output (the family name is now in the Parent tag)
  - [x] add option to pick on the top 20 families to speed up execution
  - [ ] consider preprocessing all LTR files so we don't block on one superfamily waiting for threads to finish
- - [ ] if the soloLTR sequence file is empty, delete all other files and warn no soloLTRs were found
+ - [x] if the soloLTR sequence file is empty, delete all other files and warn no soloLTRs were found
 
 ## Command `tephra classifytirs`
  - [x] Classify 'best' TIR elements into superfamilies based on domain content, TSD, and/or motif
  - [ ] Group TIR elements into families based on TIR similarity and/or cluster-based method used for LTR-RT classification 
  - [x] in tests, skip if empty output (none found). This is not a good test honestly, need a new reference
  - [x] write fasta of each superfamily, and combined library
- - [ ] identify	fragmented elements with refined full-length elements
+ - [x] identify	fragmented elements with refined full-length elements
 
 ## Command `tephra findltrs` 
  - [x] Find all non-overlapping LTR-RTs under strict and relaxed conditions
@@ -114,8 +115,8 @@ This file is for logging feature requests and bugs during development. Hopefully
 
 ## Command `tephra all`
 
- - [ ] All the user to pass a genome and repeat database, along with a species name instead of configuration file.
- - [ ] Generate summary statistics for TE types (domain content, length distribution, diversity, etc.) See
+ - [ ] Allow the user to pass a genome and repeat database, along with a species name instead of configuration file.
+ - [x] Generate summary statistics for TE types (domain content, length distribution, diversity, etc.) See
        (sesbio/transposon_annotation/count_families.pl) for starters.
  - [ ] Generate HTML output for all command. Will need to store JSON data for graphs and tables.
 
@@ -140,4 +141,4 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] investigate why tests fail with Perl version 5.12 or lower (Bio::DB::HTS needs 5.14.2, so that's why)
  - [x] add subcommand to run/log all methods as a pipeline
  - [ ] document the configuration file format and usage
- - [ ] add 'getfragments' subcommand to be run after final masking prior to complete GFF generation
+ - [x] add 'getfragments' subcommand to be run after final masking prior to complete GFF generation
