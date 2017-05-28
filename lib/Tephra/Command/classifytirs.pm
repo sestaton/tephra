@@ -4,7 +4,10 @@ package Tephra::Command::classifytirs;
 use 5.014;
 use strict;
 use warnings;
-use Cwd qw(abs_path);
+use Pod::Find     qw(pod_where);
+use Pod::Usage    qw(pod2usage);
+use Capture::Tiny qw(capture_merged);
+use Cwd           qw(abs_path);
 use File::Basename;
 use Tephra -command;
 use Tephra::Classify::TIRSfams;
@@ -31,15 +34,14 @@ sub validate_args {
         exit(0);
     }
     elsif ($opt->{help}) {
-        $self->help;
-        exit(0);
+        $self->help and exit(0);
     }
     elsif (!$opt->{genome} || !$opt->{gff} || !$opt->{outfile}) {
-	say STDERR "\nERROR: Required arguments not given.";
+	say STDERR "\nERROR: Required arguments not given.\n";
 	$self->help and exit(0);
     }
     elsif (! -e $opt->{genome} || ! -e $opt->{gff}) {
-	say STDERR "\nERROR: One or more of the required files does not exist.";
+	say STDERR "\nERROR: One or more of the required files does not exist.\n";
 	$self->help and exit(0);
     }
 } 
@@ -107,8 +109,13 @@ sub _classify_tir_predictions {
 }
     
 sub help {
+    my $desc = capture_merged {
+        pod2usage(-verbose => 99, -sections => "NAME|DESCRIPTION", -exitval => "noexit",
+		  -input => pod_where({-inc => 1}, __PACKAGE__));
+    };
+    chomp $desc;
     print STDERR<<END
-
+$desc
 USAGE: tephra classifytirs [-h] [-m]
     -m --man      :   Get the manual entry for a command.
     -h --help     :   Print the command usage.

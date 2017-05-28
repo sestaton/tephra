@@ -4,6 +4,9 @@ package Tephra::Command::findnonltrs;
 use 5.014;
 use strict;
 use warnings;
+use Pod::Find     qw(pod_where);
+use Pod::Usage    qw(pod2usage);
+use Capture::Tiny qw(capture_merged);
 use File::Spec;
 use Tephra -command;
 use Tephra::NonLTR::NonLTRSearch;
@@ -30,15 +33,14 @@ sub validate_args {
         exit(0);
     }
     elsif ($opt->{help}) {
-        $self->help;
-        exit(0);
+        $self->help and exit(0);
     }
     elsif (!$opt->{genome} || !$opt->{gff}) {
-	say STDERR "\nERROR: Required arguments not given.";
+	say STDERR "\nERROR: Required arguments not given.\n";
 	$self->help and exit(0);
     }
     elsif (! -e $opt->{genome}) {
-        say STDERR "\nERROR: The genome file does not exist. Check arguments.";
+        say STDERR "\nERROR: The genome file does not exist. Check arguments.\n";
         $self->help and exit(0);
     }
 } 
@@ -76,8 +78,13 @@ sub _run_nonltr_search {
 }
 
 sub help {
+    my $desc = capture_merged {
+        pod2usage(-verbose => 99, -sections => "NAME|DESCRIPTION", -exitval => "noexit",
+		  -input => pod_where({-inc => 1}, __PACKAGE__));
+    };
+    chomp $desc;
     print STDERR<<END
-
+$desc
 USAGE: tephra findnonltrs [-h] [-m]
     -m --man      :   Get the manual entry for a command.
     -h --help     :   Print the command usage.

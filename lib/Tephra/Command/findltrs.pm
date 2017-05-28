@@ -4,6 +4,9 @@ package Tephra::Command::findltrs;
 use 5.014;
 use strict;
 use warnings;
+use Pod::Find     qw(pod_where);
+use Pod::Usage    qw(pod2usage);
+use Capture::Tiny qw(capture_merged);
 use File::Find;
 use File::Basename;
 use Tephra -command;
@@ -19,6 +22,7 @@ sub opt_spec {
 	[ "outfile|o=s", "The final combined and filtered GFF3 file of LTR-RTs "          ],
 	[ "logfile=s",   "The file to use for logging results in addition to the screen " ],
 	[ "index|i=s",   "The suffixerator index to use for the LTR search "              ],
+	[ "threads|t=i", "The number of threads to use for the LTR search (Default: 1) "  ],
 	[ "help|h",      "Display the usage menu and exit. "                              ],
         [ "man|m",       "Display the full manual. "                                      ],
     );
@@ -33,15 +37,14 @@ sub validate_args {
         exit(0);
     }
     elsif ($opt->{help}) {
-        $self->help;
-        exit(0);
+	$self->help and exit(0);
     }
     elsif (!$opt->{config}) {
-	say STDERR "\nERROR: Required arguments not given.";
+	say STDERR "\nERROR: Required arguments not given.\n";
 	$self->help and exit(0);
     }
     elsif (! -e $opt->{config}) { 
-	say STDERR "\nERROR: '--config' file given but does not appear to exist. Check input.";
+	say STDERR "\nERROR: '--config' file given but does not appear to exist. Check input.\n";
 	$self->help and exit(0);
     }
 } 
@@ -121,31 +124,37 @@ sub _run_ltr_search {
     my $search_config = $config_obj->get_configuration;
     my $global_opts   = $config_obj->get_all_opts($search_config);
 
-    my $ltr_search = Tephra::LTR::LTRSearch->new( genome => $global_opts->{genome},
-						  hmmdb  => $global_opts->{hmmdb},
-						  trnadb => $global_opts->{trnadb}, 
-						  clean  => $global_opts->{clean},
-						  debug  => $global_opts->{debug} );
+    my $ltr_search_obj = Tephra::LTR::LTRSearch->new( 
+	genome  => $global_opts->{genome},
+	hmmdb   => $global_opts->{hmmdb},
+	trnadb  => $global_opts->{trnadb}, 
+	clean   => $global_opts->{clean},
+	debug   => $global_opts->{debug},
+	threads => $global_opts->{threads} 
+    );
 
     unless (defined $opt->{index} && @indexfiles == 7) {
 	my ($name, $path, $suffix) = fileparse($global_opts->{genome}, qr/\.[^.]*/);
 	$opt->{index} = $global_opts->{genome}.'.index';
     
 	my @suff_args = qq(-db $global_opts->{genome} -indexname $opt->{index} -tis -suf -lcp -ssp -sds -des -dna);
-	$ltr_search->create_index(\@suff_args);
+	$ltr_search_obj->create_index(\@suff_args);
     }
 
-    #my $strict_gff  = $ltr_search->ltr_search_strict($search_config,  $opt->{index});
-    #my $relaxed_gff = $ltr_search->ltr_search_relaxed($search_config, $opt->{index});
-    my $strict_gff  = $ltr_search->ltr_search({ config => $search_config, index => $opt->{index}, mode => 'strict'  });
-    my $relaxed_gff = $ltr_search->ltr_search({ config => $search_config, index => $opt->{index}, mode => 'relaxed' });
+    my $strict_gff  = $ltr_search_obj->ltr_search({ config => $search_config, index => $opt->{index}, mode => 'strict'  });
+    my $relaxed_gff = $ltr_search_obj->ltr_search({ config => $search_config, index => $opt->{index}, mode => 'relaxed' });
 
     return ($global_opts, $search_config, $relaxed_gff, $strict_gff);
 }
 
 sub help {
+    my $desc = capture_merged {
+        pod2usage(-verbose => 99, -sections => "NAME|DESCRIPTION", -exitval => "noexit",
+		  -input => pod_where({-inc => 1}, __PACKAGE__));
+    };
+    chomp $desc;
     print STDERR<<END
-
+$desc
 USAGE: tephra findltrs [-h] [-m]
     -m --man      :   Get the manual entry for a command.
     -h --help     :   Print the command usage.
@@ -156,6 +165,7 @@ Required:
 Options:
     -o|outfile    :   The final combined and filtered GFF3 file of LTR-RTs.
     -i|index      :   The suffixerator index to use for the LTR search.
+    -t|threads    :   The number of threads to use for the LTR search (Default: 1).
 
 END
 }
@@ -207,7 +217,12 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =item -i, --index
 
- The suffixerator index to use for the LTR search.
+ The suffixerator index to use for the LTR search. 
+
+=item -t, --threads
+
+ The number of threads to use for the LTR search. Specifically, the number
+ of processors to use by the 'gt' program (Default: 1).
 
 =item -t, --trnadb
 

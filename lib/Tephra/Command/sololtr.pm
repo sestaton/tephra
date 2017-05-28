@@ -4,9 +4,9 @@ package Tephra::Command::sololtr;
 use 5.014;
 use strict;
 use warnings;
-#use Pod::Find     qw(pod_where);
-#use Pod::Usage    qw(pod2usage);
-#use Capture::Tiny qw(:all);
+use Pod::Find     qw(pod_where);
+use Pod::Usage    qw(pod2usage);
+use Capture::Tiny qw(capture_merged);
 use Tephra -command;
 use Tephra::Genome::SoloLTRSearch;
 
@@ -22,7 +22,7 @@ sub opt_spec {
 	[ "numfamilies|n=i",  "The number of families to analyze (Default: the top 20)."                    ],
 	[ "allfamilies|a",    "Analyze all LTR-RT families for solo-LTRs (Default: no)."                    ],
 	[ "seq|s=s",          "Extract query sequence from domain alignment."                               ],
-	[ "threads|t=i",      "The number of threads to use for clustering coding domains "                 ],
+	[ "threads|t=i",      "The number of threads to use for clustering coding domains (Default: 1)"     ],
 	[ "clean",            "Clean up the intermediate alignment files (Default: yes) "                   ],
 	[ "help|h",           "Display the usage menu and exit. "                                           ],
 	[ "man|m",            "Display the full manual. "                                                   ],
@@ -38,19 +38,18 @@ sub validate_args {
 	exit(0);
     }
     elsif ($opt->{help}) {
-	$self->help;
-	exit(0);
+	$self->help and exit(0);
     }
     elsif (!$opt->{indir} || !$opt->{genome} || !$opt->{outfile}) {
-	say STDERR "\nERROR: Required arguments not given.";
+	say STDERR "\nERROR: Required arguments not given.\n";
 	$self->help and exit(0);
     }
     elsif (! -e $opt->{indir}) {
-	say STDERR "\nERROR: The '--indir' directory does not appear to exist. Check input.";
+	say STDERR "\nERROR: The '--indir' directory does not appear to exist. Check input.\n";
         $self->help and exit(0);
     }
     elsif (! -e $opt->{genome}) {
-	say STDERR "\nERROR: The '--genome' file does not appear to exist. Check input.";
+	say STDERR "\nERROR: The '--genome' file does not appear to exist. Check input.\n";
         $self->help and exit(0);
     }
 }
@@ -95,14 +94,13 @@ sub _calculate_soloLTR_abund {
 }
 
 sub help {
-    #my $stdout = capture_merged {
-	#pod2usage(-verbose => 99, -sections => "NAME|SYNOPSIS|DESCRIPTION", -exitval => "noexit",
-	#    -input => pod_where({-inc => 1}, __PACKAGE__));
-    #};
-    #chomp $stdout;
-
+    my $desc = capture_merged {
+	pod2usage(-verbose => 99, -sections => "NAME|DESCRIPTION", -exitval => "noexit",
+	    -input => pod_where({-inc => 1}, __PACKAGE__));
+    };
+    chomp $desc;
     print STDERR<<END
-
+$desc
  USAGE: tephra sololtr [-h] [-m]
      -m --man         :    Get the manual entry for a command.
      -h --help        :    Print the command usage.
@@ -140,7 +138,7 @@ __END__
 
 =head1 SYNOPSIS    
 
- tephra sololtr sololtr -i ref_tephra_gypsy_dir -g ref_masked.fas -r sololtr_report.tsv -l 80 -p 39 -f 90 -s
+ tephra sololtr -i ref_tephra_gypsy_dir -g ref_masked.fas -r sololtr_report.tsv -l 80 -p 39 -f 90 -s
 
 =head1 DESCRIPTION
 
@@ -213,7 +211,7 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =item -t, --threads
 
- The number of threads to use for clustering coding domains.
+ The number of threads to use for clustering coding domains (Default: 1).
 
 =item --clean
 

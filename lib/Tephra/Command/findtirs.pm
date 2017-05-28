@@ -4,6 +4,9 @@ package Tephra::Command::findtirs;
 use 5.014;
 use strict;
 use warnings;
+use Pod::Find     qw(pod_where);
+use Pod::Usage    qw(pod2usage);
+use Capture::Tiny qw(capture_merged);
 use File::Find;
 use File::Basename;
 use Tephra -command;
@@ -12,14 +15,15 @@ use Tephra::TIR::TIRSearch;
 
 sub opt_spec {
     return (    
-	[ "genome|g=s",  "The genome sequences in FASTA format to search for TIRs "   ],
-	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains " ],
-	[ "outfile|o=s", "The final combined and filtered GFF3 file of TIRs "         ],
-	[ "index|i=s",   "The suffixerator index to use for the TIR search "          ],
-	[ "clean",       "Clean up the index files (Default: yes) "                   ],
-	[ "debug",       "Show external command for debugging (Default: no) "         ],
-	[ "help|h",      "Display the usage menu and exit. "                          ],
-        [ "man|m",       "Display the full manual. "                                  ],
+	[ "genome|g=s",  "The genome sequences in FASTA format to search for TIRs "      ],
+	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains "    ],
+	[ "outfile|o=s", "The final combined and filtered GFF3 file of TIRs "            ],
+	[ "index|i=s",   "The suffixerator index to use for the TIR search "             ],
+	[ "threads|t=i", "The number of threads to use for the TIR search (Default: 1) " ],
+	[ "clean",       "Clean up the index files (Default: yes) "                      ],
+	[ "debug",       "Show external command for debugging (Default: no) "            ],
+	[ "help|h",      "Display the usage menu and exit. "                             ],
+        [ "man|m",       "Display the full manual. "                                     ],
     );
 }
 
@@ -32,11 +36,10 @@ sub validate_args {
         exit(0);
     }
     elsif ($opt->{help}) {
-        $self->help;
-        exit(0);
+        $self->help and exit(0);
     }
     elsif (!$opt->{genome}) {
-	say STDERR "\nERROR: Required arguments not given.";
+	say STDERR "\nERROR: Required arguments not given.\n";
 	$self->help and exit(0);
     }
 } 
@@ -59,6 +62,7 @@ sub _run_tir_search {
     my $outfile = $opt->{outfile};
     my $clean   = $opt->{clean} // 0;
     my $debug   = $opt->{debug} // 0;
+    my $threads = $opt->{threads} // 1;
 
     my @indexfiles;
     if (defined $index) {
@@ -78,6 +82,7 @@ sub _run_tir_search {
 	hmmdb   => $hmmdb,
 	clean   => $clean,
 	debug   => $debug,
+	threads => $threads,
     );
 
     unless (defined $index && @indexfiles == 7) {
@@ -94,8 +99,13 @@ sub _run_tir_search {
 }
 
 sub help {
+    my $desc = capture_merged {
+        pod2usage(-verbose => 99, -sections => "NAME|DESCRIPTION", -exitval => "noexit",
+		  -input => pod_where({-inc => 1}, __PACKAGE__));
+    };
+    chomp $desc;
     print STDERR<<END
-
+$desc
 USAGE: tephra findtirs [-h] [-m]
     -m --man      :   Get the manual entry for a command.
     -h --help     :   Print the command usage.
@@ -107,6 +117,7 @@ Options:
     -o|outfile    :   The final combined GFF3 file of TIRs.
     -i|index      :   The suffixerator index to use for the TIR search.
     -d|hmmdb      :   The HMM db in HMMERv3 format to search for coding domains.    
+    -t|threads    :   The number of threads to use for the TIR search (Default: 1).
     --clean       :   Clean up the index files (Default: yes).
     --debug       :   Show external commands for debugging (Default: no).
 
@@ -152,6 +163,11 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 =item -o, --outfile
 
  The name of a GFF3 file to place the filtered/reformatted TIR elements.
+
+=item -t, --threads
+
+ The number of threads to use for the TIR search. Specifically,
+ how many processors to use by the 'gt' program (Default: 1).
 
 =item -i, --index
 

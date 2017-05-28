@@ -4,8 +4,11 @@ package Tephra::Command::classifyltrs;
 use 5.014;
 use strict;
 use warnings;
-use Cwd        qw(abs_path);
-use File::Path qw(make_path remove_tree);
+use Pod::Find     qw(pod_where);
+use Pod::Usage    qw(pod2usage);
+use Capture::Tiny qw(capture_merged);
+use Cwd           qw(abs_path);
+use File::Path    qw(make_path remove_tree);
 use File::Basename;
 use Tephra -command;
 use Tephra::Classify::LTRSfams;
@@ -21,7 +24,7 @@ sub opt_spec {
 	[ "outgff|o=s",     "The output GFF3 file of classified LTR-RTs in <genome> "                                ],
 	[ "ingff|i=s",      "The input GFF3 file of LTR-RTs in <genome> "                                            ],
 	[ "outdir|r=s",     "The output directory for placing categorized elements "                                 ],
-	[ "threads|t=i",    "The number of threads to use for clustering coding domains "                            ],
+	[ "threads|t=i",    "The number of threads to use for clustering coding domains (Default: 1)  "              ],
 	[ "percentcov|c=i", "The percent coverage cutoff for the shorter element in pairwise matches (Default: 50) " ],
         [ "percentid|p=i",  "The percent identity cutoff for classification of pairwise matches (Default: 80) "      ],
         [ "hitlen|l=i",     "The minimum length for classifying pairwise BLAST hits (Default: 80) "                  ],
@@ -38,23 +41,22 @@ sub validate_args {
         exit(0);
     }
     elsif ($opt->{help}) {
-        $self->help;
-        exit(0);
+        $self->help and exit(0);
     }
     elsif (!$opt->{genome} || !$opt->{repeatdb} || !$opt->{ingff} || !$opt->{outgff} || !$opt->{outdir}) {
-	say STDERR "\nERROR: Required arguments not given.";
+	say STDERR "\nERROR: Required arguments not given.\n";
 	$self->help and exit(0);
     }
     elsif (! -e $opt->{genome}) {
-        say STDERR "\nERROR: The genome file does not exist. Check arguments.";
+        say STDERR "\nERROR: The genome file does not exist. Check arguments.\n";
         $self->help and exit(0);
     }
     elsif (! -e $opt->{repeatdb}) {
-        say STDERR "\nERROR: The repeat database file does not exist. Check arguments.";
+        say STDERR "\nERROR: The repeat database file does not exist. Check arguments.\n";
         $self->help and exit(0);
     }
     elsif (! -e $opt->{ingff}) {
-        say STDERR "\nERROR: The input GFF3 file does not exist. Check arguments.";
+        say STDERR "\nERROR: The input GFF3 file does not exist. Check arguments.\n";
         $self->help and exit(0);
     }
 } 
@@ -174,8 +176,13 @@ sub _classify_ltr_families {
 }
 
 sub help {
+    my $desc = capture_merged {
+        pod2usage(-verbose => 99, -sections => "NAME|DESCRIPTION", -exitval => "noexit",
+		  -input => pod_where({-inc => 1}, __PACKAGE__));
+    };
+    chomp $desc;
     print STDERR<<END
-
+$desc
 USAGE: tephra classifyltrs [-h] [-m]
     -m --man      :   Get the manual entry for a command.
     -h --help     :   Print the command usage.

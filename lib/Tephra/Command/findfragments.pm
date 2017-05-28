@@ -4,7 +4,10 @@ package Tephra::Command::findfragments;
 use 5.014;
 use strict;
 use warnings;
-use File::Path qw(make_path remove_tree);
+use Pod::Find     qw(pod_where);
+use Pod::Usage    qw(pod2usage);
+use Capture::Tiny qw(capture_merged);
+use File::Path    qw(make_path remove_tree);
 use Tephra -command;
 use Tephra::Genome::FragmentSearch;
 
@@ -28,11 +31,10 @@ sub validate_args {
         exit(0);
     }
     elsif ($opt->{help}) {
-        $self->help;
-        exit(0);
+        $self->help and exit(0);
     }
     elsif (!$opt->{genome} || !$opt->{repeatdb} || !$opt->{outfile}) {
-	say STDERR "\nERROR: Required arguments not given.";
+	say STDERR "\nERROR: Required arguments not given.\n";
 	$self->help and exit(0);
     }
 } 
@@ -65,8 +67,13 @@ sub _find_transposon_fragments {
 }
 
 sub help {
+    my $desc = capture_merged {
+        pod2usage(-verbose => 99, -sections => "NAME|DESCRIPTION", -exitval => "noexit",
+		  -input => pod_where({-inc => 1}, __PACKAGE__));
+    };
+    chomp $desc;
     print STDERR<<END
-
+$desc
 USAGE: tephra findfragments [-h] [-m]
     -m --man      :   Get the manual entry for a command.
     -h --help     :   Print the command usage.

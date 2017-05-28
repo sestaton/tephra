@@ -4,7 +4,10 @@ package Tephra::Command::reannotate;
 use 5.014;
 use strict;
 use warnings;
-use File::Path qw(make_path remove_tree);
+use Pod::Find     qw(pod_where);
+use Pod::Usage    qw(pod2usage);
+use Capture::Tiny qw(capture_merged);
+use File::Path    qw(make_path remove_tree);
 use Tephra -command;
 use Tephra::Annotation::Transfer;
 
@@ -12,8 +15,8 @@ sub opt_spec {
     return (    
 	[ "fasta|f=s",      "The genome sequences in FASTA format used to search for LTR-RTs "                 ],
 	[ "repeatdb|d=s",   "The file of repeat sequences in FASTA format to use for classification "          ], 
-	[ "outfile|o=s",    "The reannoted FASTA file of repeats "                                             ],         
-	[ "threads|t=i",    "The number of threads to use for clustering coding domains "                      ],
+	[ "outfile|o=s",    "The reannoted FASTA file of repeats "                                             ],  
+	[ "threads|t=i",    "The number of threads to use for clustering coding domains (Default: 1) "         ],
 	[ "percentcov|c=i", "The percent coverage cutoff for BLAST hits to the repeat database (Default: 50) " ],
 	[ "percentid|p=i",  "The percent identity cutoff for BLAST hits to the repeat database (Default: 80) " ],
 	[ "hitlen|l=i",     "The minimum length BLAST hits to the repeat database (Default: 80) "              ],
@@ -29,11 +32,10 @@ sub validate_args {
         exit(0);
     }
     elsif ($opt->{help}) {
-        $self->help;
-        exit(0);
+        $self->help and exit(0);
     }
     elsif (!$opt->{fasta} || !$opt->{repeatdb} || !$opt->{outfile}) {
-	say STDERR "\nERROR: Required arguments not given.";
+	say STDERR "\nERROR: Required arguments not given.\n";
 	$self->help and exit(0);
     }
 } 
@@ -69,8 +71,13 @@ sub _transfer_annotations {
 }
 
 sub help {
+    my $desc = capture_merged {
+        pod2usage(-verbose => 99, -sections => "NAME|DESCRIPTION", -exitval => "noexit",
+		  -input => pod_where({-inc => 1}, __PACKAGE__));
+    };
+    chomp $desc;
     print STDERR<<END
-
+$desc
 USAGE: tephra reannotate [-h] [-m]
     -m --man      :   Get the manual entry for a command.
     -h --help     :   Print the command usage.
@@ -81,7 +88,7 @@ Required:
     -o|outfile    :   The output file of FASTA sequences that will have been reclassified.
     
 Options:
-    -t|threads    :   The number of threads to use for clustering coding domains.
+    -t|threads    :   The number of threads to use for clustering coding domains (Default: 1).
     -c|percentcov :   The percent coverage cutoff for BLAST hits to the repeat database (Default: 50).
     -p|percentid  :   The percent identity cutoff for BLAST hits to the repeat database (Default: 80).
     -l|hitlen     :   The minimum length BLAST hits to the repeat database (Default: 80).
@@ -137,7 +144,7 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =item -t, --threads
 
- The number of threads to use for clustering coding domains.
+ The number of threads to use for clustering coding domains (Default: 1).
 
 =item -c, --percentcov
 
