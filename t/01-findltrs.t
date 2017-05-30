@@ -26,7 +26,7 @@ my $log     = File::Spec->catfile($testdir, 'ref_tephra_findltrs.log');
 #my $model   = File::Spec->catfile($testdir, 'te.hmm');
 #my $trnas   = File::Spec->catfile($testdir, 'trnas.fas');
 
-my $config  = write_config($testdir);
+my $config  = write_config($testdir, $log);
 ok( -e $config, 'Can create config file for testing' );
 
 {
@@ -111,16 +111,16 @@ ok( -e $log,     'Logfile of results generated'      );
 my @outfiles;
 find( sub { push @outfiles, $File::Find::name if /^ref_/ && ! /combined_filtered.gff3/ }, $testdir);
 unlink @outfiles;
-unlink $config;
+unlink $config, $log;
     
 done_testing();
 
 sub write_config {
-    my ($testdir) = @_;
+    my ($testdir, $log) = @_;
     my $config = File::Spec->catfile($testdir, 'tephra_ltr_config.yml');
 
     my $conf = "all:
-  - logfile:          $testdir/tephra_full.log
+  - logfile:          $log
   - genome:           $testdir/ref.fas
   - outfile:          $testdir/tephra_transposons.gff3
   - repeatdb:         $testdir/repdb.fas 
@@ -128,7 +128,7 @@ sub write_config {
   - hmmdb:            TephraDB
   - threads:          2
   - clean:            YES
-  - debug:            NO
+  - debug:            YES
   - subs_rate:        1e-8
 findltrs:
   - dedup:            NO
