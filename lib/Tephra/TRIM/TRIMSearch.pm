@@ -27,14 +27,21 @@ Version 0.08.0
 our $VERSION = '0.08.0';
 $VERSION = eval $VERSION;
 
+has logfile => (
+      is        => 'ro',
+      isa       => 'Str',
+      predicate => 'has_logfile',
+);
+
 sub trim_search {
     my $self = shift;
     my ($search_obj) = @_;
 
     my ($index, $mode) = @{$search_obj}{qw(index mode)};
-    my $genome = $self->genome->absolute->resolve;
-    my $hmmdb  = $self->hmmdb;
-    my $trnadb = $self->trnadb;
+    my $genome  = $self->genome->absolute->resolve;
+    my $hmmdb   = $self->hmmdb;
+    my $trnadb  = $self->trnadb;
+    my $logfile = $self->logfile;
 
     my (%ltrh_cmd, %ltrd_cmd, @ltrh_opts, @ltrh_args, $ltrh_gff, $ltrg_gff);
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
@@ -65,16 +72,16 @@ sub trim_search {
     }
 
     @ltrh_cmd{@ltrh_opts} = @ltrh_args;
-    my $ltrh_succ  = $self->run_ltrharvest(\%ltrh_cmd);
-    my $gffh_sort = $self->sort_gff($ltrh_gff) if -s $ltrh_gff;
+    my $ltrh_succ = $self->run_ltrharvest(\%ltrh_cmd, $logfile);
+    my $gffh_sort = $self->sort_gff($ltrh_gff, $logfile) if -s $ltrh_gff;
 
-    if ($ltrh_succ && -s $gffh_sort) {
+    if ($ltrh_succ && defined $gffh_sort && -s $gffh_sort) {
 	my @ltrd_opts = qw(-trnas -hmms -seqfile -seqnamelen -matchdescstart -o);
 	my @ltrd_args = ($trnadb,$hmmdb,$genome,"50","yes",$ltrg_gff);
 
 	@ltrd_cmd{@ltrd_opts} = @ltrd_args;
 	
-	my $ltr_dig = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort);
+	my $ltr_dig = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort, $logfile);
 	$self->clean_indexes($path) 
 	    if $self->clean && $mode eq 'relaxed';
 	unlink $ltrh_gff;

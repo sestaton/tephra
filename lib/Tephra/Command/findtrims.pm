@@ -7,7 +7,8 @@ use warnings;
 use Pod::Find     qw(pod_where);
 use Pod::Usage    qw(pod2usage);
 use Capture::Tiny qw(capture_merged);
-use Cwd           qw(abs_path);
+use Cwd           qw(abs_path getcwd);
+use File::Copy    qw(copy);
 use File::Spec;
 use File::Basename;
 use Tephra -command;
@@ -21,7 +22,7 @@ sub opt_spec {
 	[ "trnadb|r=s",  "The file of tRNA sequences in FASTA format to search for PBS "              ], 
 	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains "                 ],
 	[ "outfile|o=s", "The final combined and filtered GFF3 file of TRIMs "                        ],
-	[ "logfile=s",   "The file to use for logging results in addition to the screen (Default: 1)" ],
+	[ "logfile|l=s", "The file to use for logging results in addition to the screen "             ],
 	[ "threads|t=i", "The number of threads to use for the TRIM search"                           ],
 	[ "clean",       "Clean up the index files (Default: No) "                                    ],
 	[ "debug",       "Show external command for debugging (Default: No) "                         ],
@@ -96,12 +97,22 @@ sub _run_trim_search {
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($tephra_hmmdb, $tephra_trnadb) = @{$config}{qw(hmmdb trnadb)};
 
+    my $dir = getcwd();
+    my $tmpiname  = 'tephra_transposons_hmmdb_XXXX';
+    my $tmp_hmmdbfh = File::Temp->new( TEMPLATE => $tmpiname,
+				       DIR      => $dir,
+				       SUFFIX   => '.hmm',
+				       UNLINK   => 0);
+    my $tmp_hmmdb = $tmp_hmmdbfh->filename;
+    copy $tephra_hmmdb, $tmp_hmmdb or die "Copy failed: $!";
+
     my $genome  = $opt->{genome};
-    my $hmmdb   = $opt->{hmmdb} // $tephra_hmmdb;
+    my $hmmdb   = $opt->{hmmdb} // $tmp_hmmdb;
     my $trnadb  = $opt->{trnadb} // $tephra_trnadb;
     my $clean   = $opt->{clean} // 0;
     my $debug   = $opt->{debug} // 0;
     my $threads = $opt->{threads} // 1;
+    my $logfile = $opt->{logfile} // File::Spec->catfile($dir, 'tephra_findtrims.log');
 
     my $trim_search = Tephra::TRIM::TRIMSearch->new( 
 	genome  => $genome, 
@@ -110,6 +121,7 @@ sub _run_trim_search {
 	clean   => $clean,
 	debug   => $debug,
 	threads => $threads,
+	logfile => $logfile,
     );
 
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
@@ -117,10 +129,11 @@ sub _run_trim_search {
 
     $genome = abs_path($genome);
     my @suff_args = qq(-db $genome -indexname $index -tis -suf -lcp -ssp -sds -des -dna);
-    $trim_search->create_index(\@suff_args);
+    $trim_search->create_index(\@suff_args, $logfile);
     
     my $strict_gff  = $trim_search->trim_search({ index => $index, mode => 'strict'  });
     my $relaxed_gff = $trim_search->trim_search({ index => $index, mode => 'relaxed' });
+    unlink $tmp_hmmdb;
 
     return ($relaxed_gff, $strict_gff);
 }

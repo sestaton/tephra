@@ -26,6 +26,12 @@ has outfile => (
       required  => 0,
 );
 
+has logfile => (
+      is        => 'ro',
+      isa       => 'Str',
+      predicate => 'has_logfile',
+);
+
 =head1 NAME
 
 Tephra::TIR::TIRSearch - Find TIR transposons in a reference genome
@@ -46,6 +52,7 @@ sub tir_search {
     my $genome  = $self->genome->absolute->resolve;
     my $hmmdb   = $self->hmmdb;
     my $outfile = $self->outfile;
+    my $logfile = $self->logfile;
     my (%suf_args, %tirv_cmd);
 
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
@@ -62,7 +69,7 @@ sub tir_search {
     my @tirv_args = ("yes","27","100",$index,$hmmdb);
     @tirv_cmd{@tirv_opts} = @tirv_args;
     
-    $self->run_tirvish(\%tirv_cmd, $gff);
+    $self->run_tirvish(\%tirv_cmd, $gff, $logfile);
     
     my $filtered = $self->_filter_tir_gff($gff, $fas);
 

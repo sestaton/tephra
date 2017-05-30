@@ -7,6 +7,8 @@ use warnings;
 use Pod::Find     qw(pod_where);
 use Pod::Usage    qw(pod2usage);
 use Capture::Tiny qw(capture_merged);
+use Cwd           qw(getcwd);
+use File::Copy    qw(copy);
 use File::Find;
 use File::Basename;
 use Tephra -command;
@@ -15,15 +17,16 @@ use Tephra::TIR::TIRSearch;
 
 sub opt_spec {
     return (    
-	[ "genome|g=s",  "The genome sequences in FASTA format to search for TIRs "      ],
-	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains "    ],
-	[ "outfile|o=s", "The final combined and filtered GFF3 file of TIRs "            ],
-	[ "index|i=s",   "The suffixerator index to use for the TIR search "             ],
-	[ "threads|t=i", "The number of threads to use for the TIR search (Default: 1) " ],
-	[ "clean",       "Clean up the index files (Default: yes) "                      ],
-	[ "debug",       "Show external command for debugging (Default: no) "            ],
-	[ "help|h",      "Display the usage menu and exit. "                             ],
-        [ "man|m",       "Display the full manual. "                                     ],
+	[ "genome|g=s",  "The genome sequences in FASTA format to search for TIRs "       ],
+	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains "     ],
+	[ "outfile|o=s", "The final combined and filtered GFF3 file of TIRs "             ],
+	[ "index|i=s",   "The suffixerator index to use for the TIR search "              ],
+	[ "threads|t=i", "The number of threads to use for the TIR search (Default: 1) "  ],
+	[ "logfile|l=s", "The file to use for logging results in addition to the screen " ],
+	[ "clean",       "Clean up the index files (Default: yes) "                       ],
+	[ "debug",       "Show external command for debugging (Default: no) "             ],
+	[ "help|h",      "Display the usage menu and exit. "                              ],
+        [ "man|m",       "Display the full manual. "                                      ],
     );
 }
 
@@ -56,6 +59,7 @@ sub _run_tir_search {
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($tephra_hmmdb) = @{$config}{qw(hmmdb)};
     my $hmmdb = $opt->{hmmdb} // $tephra_hmmdb;
+    my $dir   = getcwd();
 
     my $genome  = $opt->{genome};
     my $index   = $opt->{index};
@@ -63,6 +67,8 @@ sub _run_tir_search {
     my $clean   = $opt->{clean} // 0;
     my $debug   = $opt->{debug} // 0;
     my $threads = $opt->{threads} // 1;
+    my $logfile = $opt->{logfile} // File::Spec->catfile($dir, 'tephra_findtirs.log');
+    #say $logfile;
 
     my @indexfiles;
     if (defined $index) {
@@ -83,6 +89,7 @@ sub _run_tir_search {
 	clean   => $clean,
 	debug   => $debug,
 	threads => $threads,
+	logfile => $logfile,
     );
 
     unless (defined $index && @indexfiles == 7) {
@@ -90,7 +97,7 @@ sub _run_tir_search {
 	$index = $genome.'.index';
 
 	my @suff_args = qq(-db $genome -indexname $index -tis -suf -lcp -des -ssp -dna -mirrored);
-	$tir_search->create_index(\@suff_args);
+	$tir_search->create_index(\@suff_args, $logfile);
     }
     
     my $gff = $tir_search->tir_search($index);

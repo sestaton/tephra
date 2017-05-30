@@ -7,6 +7,8 @@ use warnings;
 use Pod::Find     qw(pod_where);
 use Pod::Usage    qw(pod2usage);
 use Capture::Tiny qw(capture_merged);
+use File::Copy    qw(copy);
+use Cwd           qw(getcwd);
 use File::Find;
 use File::Basename;
 use Tephra -command;
@@ -20,7 +22,7 @@ sub opt_spec {
     return (    
 	[ "config|c=s",  "The Tephra LTR option configuration file "                      ],
 	[ "outfile|o=s", "The final combined and filtered GFF3 file of LTR-RTs "          ],
-	[ "logfile=s",   "The file to use for logging results in addition to the screen " ],
+	[ "logfile|l=s", "The file to use for logging results in addition to the screen " ],
 	[ "index|i=s",   "The suffixerator index to use for the LTR search "              ],
 	[ "threads|t=i", "The number of threads to use for the LTR search (Default: 1) "  ],
 	[ "help|h",      "Display the usage menu and exit. "                              ],
@@ -119,10 +121,24 @@ sub _run_ltr_search {
     
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($tephra_hmmdb, $tephra_trnadb) = @{$config}{qw(hmmdb trnadb)};
-    
+
     my $config_obj    = Tephra::Config::Reader->new( config => $opt->{config} );
     my $search_config = $config_obj->get_configuration;
     my $global_opts   = $config_obj->get_all_opts($search_config);
+   
+    my $using_tephra_db = 0;
+    if ($global_opts->{hmmdb} =~ /TephraDB/) { 
+	$using_tephra_db = 1;
+	my $dir = getcwd();
+	my $tmpiname  = 'tephra_transposons_hmmdb_XXXX';
+	my $tmp_hmmdbfh = File::Temp->new( TEMPLATE => $tmpiname,
+					   DIR      => $dir,
+					   SUFFIX   => '.hmm',
+					   UNLINK   => 0);
+	my $tmp_hmmdb = $tmp_hmmdbfh->filename;
+	copy $tephra_hmmdb, $tmp_hmmdb or die "Copy failed: $!";
+	$global_opts->{hmmdb} = $tmp_hmmdb;
+    }
 
     my $ltr_search_obj = Tephra::LTR::LTRSearch->new( 
 	genome  => $global_opts->{genome},
@@ -130,7 +146,8 @@ sub _run_ltr_search {
 	trnadb  => $global_opts->{trnadb}, 
 	clean   => $global_opts->{clean},
 	debug   => $global_opts->{debug},
-	threads => $global_opts->{threads} 
+	threads => $global_opts->{threads},
+	logfile => $global_opts->{logfile},
     );
 
     unless (defined $opt->{index} && @indexfiles == 7) {
@@ -138,11 +155,12 @@ sub _run_ltr_search {
 	$opt->{index} = $global_opts->{genome}.'.index';
     
 	my @suff_args = qq(-db $global_opts->{genome} -indexname $opt->{index} -tis -suf -lcp -ssp -sds -des -dna);
-	$ltr_search_obj->create_index(\@suff_args);
+	$ltr_search_obj->create_index(\@suff_args, $global_opts->{logfile});
     }
 
     my $strict_gff  = $ltr_search_obj->ltr_search({ config => $search_config, index => $opt->{index}, mode => 'strict'  });
     my $relaxed_gff = $ltr_search_obj->ltr_search({ config => $search_config, index => $opt->{index}, mode => 'relaxed' });
+    unlink $global_opts->{hmmdb} if $using_tephra_db; # this is just a temp file to keep ltrdigest from crashing
 
     return ($global_opts, $search_config, $relaxed_gff, $strict_gff);
 }

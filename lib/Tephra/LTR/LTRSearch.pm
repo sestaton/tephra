@@ -35,14 +35,21 @@ has config => (
     documentation => qq{The Tephra LTR configuration file},
 );
 
+has logfile => (
+      is        => 'ro',
+      isa       => 'Str',
+      predicate => 'has_logfile',
+);
+
 sub ltr_search {
     my $self = shift;
     my ($search_obj) = @_;
     my ($config, $index, $mode) = @{$search_obj}{qw(config index mode)};
     
-    my $genome = $self->genome->absolute->resolve;
-    my $hmmdb  = $self->hmmdb->absolute->resolve;
-    my $trnadb = $self->trnadb->absolute->resolve;
+    my $genome  = $self->genome->absolute->resolve;
+    my $hmmdb   = $self->hmmdb->absolute->resolve;
+    my $trnadb  = $self->trnadb->absolute->resolve;
+    my $logfile = $self->logfile;
 
     ## LTRharvest constraints
     my ($overlaps, $mintsd, $maxtsd, $minlenltr, $maxlenltr, $mindistltr, $maxdistltr, $pdomcutoff, $pdomevalue) = 
@@ -89,10 +96,10 @@ sub ltr_search {
     }
 
     @ltrh_cmd{@ltrh_opts} = @ltrh_args;
-    my $ltrh_succ = $self->run_ltrharvest(\%ltrh_cmd);
+    my $ltrh_succ = $self->run_ltrharvest(\%ltrh_cmd, $logfile);
 
     if ($ltrh_succ && -s $ltrh_gff) {
-	my $gffh_sort = $self->sort_gff($ltrh_gff);
+	my $gffh_sort = $self->sort_gff($ltrh_gff, $logfile);
 
 	my @ltrd_opts = qw(-trnas -hmms -seqfile -matchdescstart -seqnamelen -o 
                            -pdomevalcutoff -pdomcutoff -pptradius -pptlen -pptaprob 
@@ -103,7 +110,7 @@ sub ltr_search {
 	                 $uboxutpr,$pbslen,$pbsradius,$pbsoffset,$pbstrnaoffset,$pbsmaxeditdist,$maxgaplen);
 	@ltrd_cmd{@ltrd_opts} = @ltrd_args;
 
-	my $ltrd_succ = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort);
+	my $ltrd_succ = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort, $logfile);
 
 	$self->clean_indexes($path) 
 	    if $self->clean && $mode eq 'relaxed';
