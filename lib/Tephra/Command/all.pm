@@ -92,8 +92,11 @@ sub _run_all_commands {
     my $total_elapsed = $t1 - $t0;
     my $final_time = sprintf("%.2f",$total_elapsed/60);
     my $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - 'tephra findltrs' completed at: $ft. Final output file is:");
-    $log->info("Output files - $ltr_gff.");
+
+    if (-e $ltr_gff) {
+	$log->info("Command - 'tephra findltrs' completed at: $ft. Final output file is:");
+	$log->info("Output files - $ltr_gff.");
+    }
 
     ## classifyltrs
     my ($ltrc_gff, $ltrc_fas, $ltrc_dir);
@@ -117,13 +120,14 @@ sub _run_all_commands {
 	$total_elapsed = $t3 - $t2;
 	$final_time = sprintf("%.2f",$total_elapsed/60);
 	$ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-	$log->info("Command - 'tephra classifyltrs' completed at: $ft. Final output files:");
-	$log->info("Output files - $ltrc_gff");
-	$log->info("Output files - $ltrc_fas.");
-	push @fas_files, $ltrc_fas
-	    if -e $ltrc_fas;
-        push @gff_files, $ltrc_gff
-	    if -e $ltrc_gff;
+
+	if (-e $ltrc_gff && -e $ltrc_fas) {
+	    $log->info("Command - 'tephra classifyltrs' completed at: $ft. Final output files:");
+	    $log->info("Output files - $ltrc_gff");
+	    $log->info("Output files - $ltrc_fas.");
+	    push @fas_files, $ltrc_fas;
+	    push @gff_files, $ltrc_gff;
+	}
     }
 
     ## maskref on LTRs
@@ -207,8 +211,10 @@ sub _run_all_commands {
 	$total_elapsed = $t9 - $t8;
 	$final_time = sprintf("%.2f",$total_elapsed/60);
 	$ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-	$log->info("Command - 'tephra ltrage' completed at: $ft. Final output file:");
-	$log->info("Output files - $ltrage_out.");
+	if (-e $ltrage_out) {
+	    $log->info("Command - 'tephra ltrage' completed at: $ft. Final output file:");
+	    $log->info("Output files - $ltrage_out.");
+	}
     }
 
     ## illrecomb
@@ -230,10 +236,13 @@ sub _run_all_commands {
 	$total_elapsed = $t11 - $t10;
 	$final_time = sprintf("%.2f",$total_elapsed/60);
 	$ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-	$log->info("Command - 'tephra illrecomb' completed at: $ft. Final output files:");
-	$log->info("Output files - $illrec_fas");
-	$log->info("Output files - $illrec_rep");
-	$log->info("Output files - $illrec_stats.");
+
+	if (-e $illrec_fas && -e $illrec_rep && -e $illrec_stats) {
+	    $log->info("Command - 'tephra illrecomb' completed at: $ft. Final output files:");
+	    $log->info("Output files - $illrec_fas");
+	    $log->info("Output files - $illrec_rep");
+	    $log->info("Output files - $illrec_stats.");
+	}
     }
 
     ## TRIMs
@@ -254,13 +263,14 @@ sub _run_all_commands {
     $total_elapsed = $t13 - $t12;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - 'tephra findtrims' completed at: $ft. Final output files:");
-    $log->info("Output files - $trims_gff");
-    $log->info("Output files - $trims_fas.");
-    push @fas_files, $trims_fas
-	if -e $trims_fas;
-    push @gff_files, $trims_gff
-	if -e $trims_gff;
+
+    if (-e $trims_gff && -e $trims_fas) {
+	$log->info("Command - 'tephra findtrims' completed at: $ft. Final output files:");
+	$log->info("Output files - $trims_gff");
+	$log->info("Output files - $trims_fas.");
+	push @fas_files, $trims_fas;
+	push @gff_files, $trims_gff;
+    }
 
     ## maskref for TRIMs
     my $genome_mask2;
@@ -307,11 +317,13 @@ sub _run_all_commands {
     $total_elapsed = $t17 - $t16;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - 'tephra findhelitrons' completed at: $ft. Final output files:");
-    $log->info("Output files - $hel_gff");
-    $log->info("Output files - $hel_fas.");
-    push @fas_files, $hel_fas
-	if -e $hel_fas;
+
+    if (-e $hel_gff && -e $hel_fas) {
+	$log->info("Command - 'tephra findhelitrons' completed at: $ft. Final output files:");
+	$log->info("Output files - $hel_gff");
+	$log->info("Output files - $hel_fas.");
+	push @fas_files, $hel_fas;
+    }
 
     ## maskref on Helitrons
     my $genome_mask3;
@@ -358,8 +370,11 @@ sub _run_all_commands {
     $total_elapsed = $t21 - $t20;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - 'tephra findtirs' completed at: $ft. Final output file:");
-    $log->info("Output files - $tir_gff.");
+    
+    if (-e $tir_gff) {
+	$log->info("Command - 'tephra findtirs' completed at: $ft. Final output file:");
+	$log->info("Output files - $tir_gff.");
+    }
 
     ## classifytirs
     my ($tirc_gff, $tirc_fas);
@@ -378,13 +393,14 @@ sub _run_all_commands {
 	$total_elapsed = $t23 - $t22;
 	$final_time = sprintf("%.2f",$total_elapsed/60);
 	$ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-	$log->info("Command - 'tephra classifytirs' completed at: $ft. Final output files:");
-	$log->info("Output files - $tirc_gff");
-	$log->info("Output files - $tirc_fas.");
-	push @gff_files, $tirc_gff
-	    if -e $tirc_gff;
-        push @fas_files, $tirc_fas
-	    if -e $tirc_fas;
+
+	if (-e $tirc_gff && -e $tirc_fas) {
+	    $log->info("Command - 'tephra classifytirs' completed at: $ft. Final output files:");
+	    $log->info("Output files - $tirc_gff");
+	    $log->info("Output files - $tirc_fas.");
+	    push @gff_files, $tirc_gff;
+	    push @fas_files, $tirc_fas;
+	}
     }
 
     ## maskref on TIRs
@@ -431,13 +447,14 @@ sub _run_all_commands {
     $total_elapsed = $t27 - $t26;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - 'tephra findnonltrs' completed at: $ft. Final output files:");
-    $log->info("Output files - $nonltr_gff");
-    $log->info("Output files - $nonltr_fas.");
-    push @fas_files, $nonltr_fas
-	if -e $nonltr_fas;
-    push @gff_files, $nonltr_gff
-	if -e $nonltr_gff;
+
+    if (-e $nonltr_gff && -e $nonltr_fas) {
+	$log->info("Command - 'tephra findnonltrs' completed at: $ft. Final output files:");
+	$log->info("Output files - $nonltr_gff");
+	$log->info("Output files - $nonltr_fas.");
+	push @fas_files, $nonltr_fas;
+	push @gff_files, $nonltr_gff;
+    }
 
     ## combine results
     my $t28 = gettimeofday();
@@ -466,7 +483,7 @@ sub _run_all_commands {
     $total_elapsed = $t29 - $t28;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Results - Finished generating combined FASTA file at:     $ft. Final output files:");
+    $log->info("Results - Finished generating combined FASTA file at:    $ft. Final output files:");
     $log->info("Output files - $customRepDB.");
     
     ## maskref on customRepDB
@@ -500,10 +517,12 @@ sub _run_all_commands {
     $total_elapsed = $t33 - $t32;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - 'tephra findfragments' completed at: $ft. Final output files:");
-    $log->info("Output files - $fragments_gff");
-    push @gff_files, $fragments_gff
-	if -e $fragments_gff;
+
+    if (-e $fragments_gff) {
+	$log->info("Command - 'tephra findfragments' completed at: $ft. Final output files:");
+	$log->info("Output files - $fragments_gff");
+	push @gff_files, $fragments_gff;
+    }
 
     ## combine GFF3
     my $t34 = gettimeofday();
@@ -527,7 +546,7 @@ sub _run_all_commands {
     $total_elapsed = $t35 - $t34;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Results - Finished generating combined GFF3 file at:      $ft. Final output files:");
+    $log->info("Results - Finished generating combined GFF3 file at:     $ft. Final output files:");
     $log->info("Output files - $global_opts->{outfile}");
 
     ## clean up
