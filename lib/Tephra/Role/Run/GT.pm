@@ -16,6 +16,8 @@ use Tephra::Config::Exe;
 #use Data::Dump::Color;
 use namespace::autoclean;
 
+with 'Tephra::Role::Util';
+
 =head1 NAME
 
 Tephra::Role::Run::GT - Helper role for running genometools
@@ -86,8 +88,9 @@ has threads => (
 
 sub create_index {
     my $self = shift;
-    my ($args) = @_;
+    my ($args, $logfile) = @_;
     my $threads = $self->threads;
+    my $log     = $self->get_tephra_logger($logfile);
 
     my $gt = $self->get_gt_exec;
     unshift @$args, 'suffixerator';
@@ -106,10 +109,10 @@ sub create_index {
 
 sub run_ltrharvest {
     my $self = shift;
-    my ($args) = @_;
+    my ($args, $logfile) = @_;
     my $debug   = $self->debug;
     my $threads = $self->threads;
-
+    my $log     = $self->get_tephra_logger($logfile);
 
     my $gt = $self->get_gt_exec;
     my @ltrh_args;
@@ -136,9 +139,10 @@ sub run_ltrharvest {
 
 sub run_ltrdigest {
     my $self = shift;
-    my ($args, $gff) = @_;
+    my ($args, $gff, $logfile) = @_;
     my $debug   = $self->debug;
     my $threads = $self->threads;
+    my $log     = $self->get_tephra_logger($logfile);
 
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($hmmer3bin) = @{$config}{qw(hmmer3bin)};
@@ -150,6 +154,10 @@ sub run_ltrdigest {
     #push @ltrd_args, $gt;
     #push @ltrd_args, 'ltrdigest';
 
+    my $hmmdb = $args->{'-hmms'};
+    push @ltrd_args, '-hmms'.q{ }.$hmmdb;
+    delete $args->{'-hmms'};
+
     for my $opt (keys %$args) {
 	if (defined $args->{$opt}) {
 	    push @ltrd_args, $opt.q{ }.$args->{$opt};
@@ -160,7 +168,8 @@ sub run_ltrdigest {
     my $cmd = join qq{ }, @ltrd_args, $gff;
     say STDERR "DEBUG: $cmd" if $self->debug;
     my ($stdout, $stderr, $exit) = capture { system($cmd) };
-    #say STDERR "DEBUG: ltrdigest exit status: $exit" if $self->debug;
+    #say STDERR join "\n", "stdout: $stdout", "stderr: $stderr" if $self->debug;
+    say STDERR "DEBUG: ltrdigest exit status: $exit" if $self->debug;
     return $exit == 0 ? 1 : 0;
 
     if ($exit) { # non-zero 
@@ -171,10 +180,11 @@ sub run_ltrdigest {
 
 sub run_tirvish {
     my $self = shift;
-    my ($args, $gff) = @_;
+    my ($args, $gff, $logfile) = @_;
     my $debug   = $self->debug;
     my $threads = $self->threads;
     my $gt      = $self->get_gt_exec;
+    my $log     = $self->get_tephra_logger($logfile);
 
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($hmmer3bin) = @{$config}{qw(hmmer3bin)};
@@ -201,12 +211,13 @@ sub run_tirvish {
 
 sub sort_gff {
     my $self = shift;
-    my ($gff) = @_;
+    my ($gff, $logfile) = @_;
     my $debug   = $self->debug;
     my $threads = $self->threads;
+    my $log     = $self->get_tephra_logger($logfile);
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $gff_sort = File::Spec->catfile( abs_path($path), $name."_sort".$suffix );
+    my $gff_sort = File::Spec->catfile( abs_path($path), $name."_sort$suffix" );
     my $gt = $self->get_gt_exec;
 
     my $cmd = "$gt -j $threads gff3 -sort $gff > $gff_sort";
