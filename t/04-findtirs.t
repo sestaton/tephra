@@ -29,7 +29,7 @@ my $fas     = File::Spec->catfile($testdir, 'ref_tirs.fasta');
 }
 
 my @find_cmd = "$cmd findtirs -g $genome -o $gff --clean";
-#say STDERR $find_cmd;
+#say STDERR join q{ }, @find_cmd;
 my @ret = capture { system([0..5], @find_cmd) };
 
 my @files;
