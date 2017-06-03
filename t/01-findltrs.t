@@ -128,7 +128,7 @@ sub write_config {
   - hmmdb:            TephraDB
   - threads:          2
   - clean:            YES
-  - debug:            YES
+  - debug:            NO
   - subs_rate:        1e-8
 findltrs:
   - dedup:            NO
