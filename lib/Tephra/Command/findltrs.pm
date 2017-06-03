@@ -7,6 +7,7 @@ use warnings;
 use Pod::Find     qw(pod_where);
 use Pod::Usage    qw(pod2usage);
 use Capture::Tiny qw(capture_merged);
+use File::Path    qw(remove_tree);
 use File::Copy    qw(copy);
 use Cwd           qw(getcwd);
 use File::Find;
@@ -88,7 +89,7 @@ sub _refine_ltr_predictions {
 
 	$refine_obj->sort_features({ gff               => $relaxed_gff, 
 				     combined_features => $combined_features });
-
+	
 	unlink $relaxed_gff, $strict_gff;
     }
     elsif ($relaxed_gff && !$strict_gff) {
@@ -158,8 +159,14 @@ sub _run_ltr_search {
 	$ltr_search_obj->create_index(\@suff_args, $global_opts->{logfile});
     }
 
-    my $strict_gff  = $ltr_search_obj->ltr_search({ config => $search_config, index => $opt->{index}, mode => 'strict'  });
-    my $relaxed_gff = $ltr_search_obj->ltr_search({ config => $search_config, index => $opt->{index}, mode => 'relaxed' });
+    #my ($strict_gff, $strict_models) = 
+    my $strict_gff =
+	$ltr_search_obj->ltr_search({ config => $search_config, index => $opt->{index}, mode => 'strict'  });
+    #my ($relaxed_gff, $relaxed_models) = 
+    my $relaxed_gff =
+	$ltr_search_obj->ltr_search({ config => $search_config, index => $opt->{index}, mode => 'relaxed' });
+    #remove_tree($strict_models, { safe => 1 });
+    #remove_tree($relaxed_models, { safe => 1 });
     unlink $global_opts->{hmmdb} if $using_tephra_db; # this is just a temp file to keep ltrdigest from crashing
 
     return ($global_opts, $search_config, $relaxed_gff, $strict_gff);
