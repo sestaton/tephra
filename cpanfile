@@ -22,4 +22,5 @@ requires 'Net::FTP';
 requires 'Bio::GFF3::LowLevel';
 requires  'Lingua::EN::Inflect';
 requires 'DateTime';
+requires 'XML::SAX::Expat'; # for 'blastxml' format parsing in Bio::SearchIO
 #requires 'Data::Dump::Color';
