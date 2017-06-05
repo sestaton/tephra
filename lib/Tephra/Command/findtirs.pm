@@ -101,6 +101,7 @@ sub _run_tir_search {
     }
     
     my $gff = $tir_search->tir_search($index);
+    unlink $logfile unless -s $logfile;
 
     return $gff;
 }
