@@ -226,14 +226,16 @@ sub extract_tir_features {
     my $index = $self->index_ref($fasta);
 
     #dd $features;
-    my ($family, %tirs, %seen, %coord_map);
+    my ($superfamily, %tirs, %seen, %coord_map);
     for my $rep_region (keys %$features) {
         for my $tir_feature (@{$features->{$rep_region}}) {
 	    if ($tir_feature->{type} eq 'terminal_inverted_repeat_element') {
 		my $elem_id = @{$tir_feature->{attributes}{ID}}[0];
-		$family  = @{$tir_feature->{attributes}{family}}[0];
+		next unless defined $elem_id;
+		$superfamily = @{$tir_feature->{attributes}{superfamily}}[0];
 		my ($start, $end) = @{$tir_feature}{qw(start end)};
-		my $key = defined $family ? join "||", $family, $elem_id, $start, $end : join "||", $elem_id, $start, $end;
+		my $key = defined $superfamily ? join "||", $superfamily, $elem_id, $start, $end 
+		    : join "||", $elem_id, $start, $end;
 		$tirs{$key}{'full'} = join "||", @{$tir_feature}{qw(seq_id type start end)};
 		$coord_map{$elem_id} = join "||", @{$tir_feature}{qw(seq_id start end)};
 	    }
@@ -245,7 +247,7 @@ sub extract_tir_features {
 			@{$tir_feature}{qw(type start end strand)};
 		    $strand //= '?';
 		    my $tirkey = join "||", $seq_id, $type, $start, $end, $strand;
-		    $pkey = defined $family ? join "||", $family, $pkey : $pkey;
+		    $pkey = defined $superfamily ? join "||", $superfamily, $pkey : $pkey;
 		    push @{$tirs{$pkey}{'tirs'}}, $tirkey unless exists $seen{$tirkey};
 		    $seen{$tirkey} = 1;
 		}
@@ -257,9 +259,9 @@ sub extract_tir_features {
     my $tirct = 0;
     my $orientation;
     for my $tir (sort keys %tirs) {
-	my ($element, $rstart, $rend) = split /\|\|/, $tir;
+	my ($sfam, $element, $rstart, $rend) = split /\|\|/, $tir;
 	my ($seq_id, $type, $start, $end) = split /\|\|/, $tirs{$tir}{'full'};
-	my $tir_file = join "_", $element, $seq_id, $start, $end, 'tirs.fasta';
+	my $tir_file = join "_", $sfam, $element, $seq_id, $start, $end, 'tirs.fasta';
 	my $tirs_out = File::Spec->catfile($dir, $tir_file);
 	die "\nERROR: $tirs_out exists. This will cause problems downstream. Please remove the previous ".
 	    "results and try again. Exiting.\n" if -e $tirs_out;
@@ -274,14 +276,14 @@ sub extract_tir_features {
 		$orientation = '5prime' if $strand eq '-';
                 $orientation = '3prime'  if $strand eq '+';
                 $orientation = 'unk-prime-r' if $strand eq '?';
-		$self->subseq($index, $src, $element, $s, $e, $tirs_outfh, $orientation); #, $family);
+		$self->subseq($index, $src, $sfam, $element, $s, $e, $tirs_outfh, $orientation); #, $family);
                 $tirct = 0;
             }
             else {
 		$orientation = '5prime' if $strand eq '+';
                 $orientation = '3prime' if $strand eq '-';
                 $orientation = 'unk-prime-f' if $strand eq '?';
-		$self->subseq($index, $src, $element, $s, $e, $tirs_outfh, $orientation); #, $family);
+		$self->subseq($index, $src, $sfam, $element, $s, $e, $tirs_outfh, $orientation); #, $family);
                 $tirct++;
             }
         }
@@ -388,7 +390,7 @@ sub parse_aln {
 
 sub subseq {
     my $self = shift;
-    my ($index, $loc, $elem, $start, $end, $out, $orient) = @_;
+    my ($index, $loc, $sfam, $elem, $start, $end, $out, $orient) = @_;
 
     my $location = "$loc:$start-$end";
     my ($seq, $length) = $index->get_sequence($location);
@@ -400,8 +402,8 @@ sub subseq {
     $seq = $self->_revcom($seq) if $orient =~ /3prime|prime-r/;
 
     my $id;
-    $id = join "_", $elem, $loc, $start, $end if !$orient;
-    $id = join "_", $orient, $elem, $loc, $start, $end if $orient; # for unique IDs with clustalw
+    $id = join "_", $sfam, $elem, $loc, $start, $end if !$orient;
+    $id = join "_", $orient, $sfam, $elem, $loc, $start, $end if $orient; # for unique IDs with clustalw
 
     $seq =~ s/.{60}\K/\n/g;
     say $out join "\n", ">$id", $seq;
