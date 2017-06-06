@@ -113,12 +113,17 @@ This file is for logging feature requests and bugs during development. Hopefully
 
  - [x] Add correct sequence IDs to report
 
+## Command `tephra tirage`
+
+- [ ] Update menu for all available options.
+
 ## Command `tephra all`
 
  - [ ] Allow the user to pass a genome and repeat database, along with a species name instead of configuration file.
  - [x] Generate summary statistics for TE types (domain content, length distribution, diversity, etc.) See
        (sesbio/transposon_annotation/count_families.pl) for starters.
  - [ ] Generate HTML output for all command. Will need to store JSON data for graphs and tables.
+ - [ ] Add tirage options to configuration file.
 
 *** 
 
