@@ -159,7 +159,7 @@ sub calculate_ltr_ages {
 	find({ wanted => $wanted, preprocess => $process }, $resdir);
 	unlink @alnfiles;
 
-	remove_tree( $resdir, { safe => 1 } );
+	remove_tree( $args->{resdir}, { safe => 1 } );
     }
 
     my $t2 = gettimeofday();
