@@ -112,6 +112,7 @@ sub find_transposon_fragments {
 			      for my $src (nsort keys %$data_ref) {
 				  my $windows = $data_ref->{$src};
 				  $self->write_fragment_gff($src, $windows, $out);
+				  undef $windows;
 			      }
 			      my $t1 = gettimeofday();
 			      my $elapsed = $t1 - $t0;
@@ -193,7 +194,7 @@ sub collapse_overlaps {
             
             $windows{$subjectStart} =
                 { match => $queryId, start => $subjectStart, end => $subjectEnd, len => $alnLength, 
-                  evalue => $eVal, strand => $strand};
+                  evalue => $eVal, strand => $strand };
         }
     }
     close $l;
@@ -214,10 +215,8 @@ sub write_fragment_gff {
     for my $s (sort { $a <=> $b } keys %$windows) {
         $filt++;
         my ($match, $sstart, $send, $slen, $seval, $sstr) = @{$windows->{$s}}{qw(match start end len evalue strand)};
-        say $out join "\t", $src, 'BLASTN', 'similarity', $sstart, $send, $seval, $sstr, '.', "ID=$match"."_fragment$filt"; 
+        say $out join "\t", $src, 'BLASTN', 'similarity', $sstart, $send, $seval, $sstr, '.', "ID=$match"."_fragment_$src-$filt"; 
     }
-
-    #undef %windows;
 
     return;
 }
