@@ -6,6 +6,7 @@ use Bio::GFF3::LowLevel qw(gff3_format_feature);
 use List::UtilsBy       qw(nsort_by);
 use Cwd                 qw(abs_path);
 use File::Copy          qw(move);
+use File::Path          qw(remove_tree);
 use File::Spec;
 use File::Basename;
 use Path::Class::File;
@@ -69,8 +70,9 @@ sub tir_search {
     my @tirv_args = ("yes","27","100",$index,$hmmdb);
     @tirv_cmd{@tirv_opts} = @tirv_args;
     
-    $self->run_tirvish(\%tirv_cmd, $gff, $logfile);
-    
+    my $tirv_succ = $self->run_tirvish(\%tirv_cmd, $gff, $logfile);
+    #remove_tree($model_dir, { safe => 1 });
+
     my $filtered = $self->_filter_tir_gff($gff, $fas);
 
     $self->clean_indexes($path) if $self->clean;
