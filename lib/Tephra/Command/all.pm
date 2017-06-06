@@ -22,6 +22,7 @@ use Try::Tiny;
 use Tephra -command;
 use Tephra::Config::Reader;
 use Tephra::Config::Exe;
+use Tephra::Annotation::Util;
 #use Data::Dump::Color;
 
 our $VERSION = '0.08.0';
@@ -64,7 +65,7 @@ sub execute {
 sub _run_all_commands {
     my ($opt) = @_;
 
-    my (@mask_files, @fas_files, @gff_files);
+    my (@mask_files, @fas_files, @gff_files, @age_files, @classified_fastas);
     my $config_obj  = Tephra::Config::Reader->new( config => $opt->{config} );
     my $config      = $config_obj->get_configuration;
     my $global_opts = $config_obj->get_all_opts($config);
@@ -131,7 +132,38 @@ sub _run_all_commands {
 	    $log->info("Output files - $ltrc_fas");
 	    push @fas_files, $ltrc_fas;
 	    push @gff_files, $ltrc_gff;
+	    push @classified_fastas, $ltrc_fas;
 	}
+    }
+
+    ## ltrage
+    if (defined $ltrc_gff && -e $ltrc_gff && -s $ltrc_gff) {
+        my $ltrage_out  = File::Spec->catfile( abs_path($path), $name.'_ltrages.tsv' );
+
+        my $t8 = gettimeofday();
+        $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
+        $log->info("Command - 'tephra ltrage' started at:   $st.");
+
+        my $ltrage_opts = ['-g', $global_opts->{genome}, '-t', $global_opts->{threads},
+                           '-o', $ltrage_out, '-f', $ltrc_gff, '-r', $global_opts->{subs_rate}, '--clean'];
+        push @$ltrage_opts, '--all'
+            if $config->{ltrage}{all} =~ /yes/i;
+        if ($config->{ltrage}{all} =~ /no/i) {
+            push @$ltrage_opts, '-i';
+            push @$ltrage_opts, $ltrc_dir;
+        }
+        _capture_tephra_cmd('ltrage', $ltrage_opts, $global_opts->{debug});
+        
+        my $t9 = gettimeofday();
+        $total_elapsed = $t9 - $t8;
+        $final_time = sprintf("%.2f",$total_elapsed/60);
+        $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
+        $log->info("Command - 'tephra ltrage' completed at: $ft.");
+
+        if (-e $ltrage_out) {
+            $log->info("Output files - $ltrage_out");
+            push @age_files, $ltrage_out;
+        }
     }
 
     ## maskref on LTRs
@@ -191,35 +223,6 @@ sub _run_all_commands {
 	    $log->info("Output files - $sololtr_rep");
 	    $log->info("Output files - $sololtr_fas");
 	    push @gff_files, $sololtr_gff;
-	}
-    }
-
-    ## ltrage
-    if (defined $ltrc_gff && -e $ltrc_gff && -s $ltrc_gff) {
-	my $ltrage_out  = File::Spec->catfile( abs_path($path), $name.'_ltrages.tsv' );
-
-	my $t8 = gettimeofday();
-	$st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-	$log->info("Command - 'tephra ltrage' started at:   $st.");
-
-	my $ltrage_opts = ['-g', $global_opts->{genome}, '-t', $global_opts->{threads},
-			   '-o', $ltrage_out, '-f', $ltrc_gff, '--clean'];
-	push @$ltrage_opts, '--all'
-	    if $config->{ltrage}{all} =~ /yes/i;
-	if ($config->{ltrage}{all} =~ /no/i) {
-	    push @$ltrage_opts, '-i';
-	    push @$ltrage_opts, $ltrc_dir;
-	}
-	_capture_tephra_cmd('ltrage', $ltrage_opts, $global_opts->{debug});
-	
-	my $t9 = gettimeofday();
-	$total_elapsed = $t9 - $t8;
-	$final_time = sprintf("%.2f",$total_elapsed/60);
-	$ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-	$log->info("Command - 'tephra ltrage' completed at: $ft.");
-
-	if (-e $ltrage_out) {
-	    $log->info("Output files - $ltrage_out");
 	}
     }
 
@@ -410,7 +413,38 @@ sub _run_all_commands {
 	    $log->info("Output files - $tirc_fas");
 	    push @gff_files, $tirc_gff;
 	    push @fas_files, $tirc_fas;
+	    push @classified_fastas, $tirc_fas;
 	}
+    }
+
+    ## tirage
+    if (defined $tirc_gff && -e $tirc_gff && -s $tirc_gff) {
+        my $tirage_out  = File::Spec->catfile( abs_path($path), $name.'_tirages.tsv' );
+
+        my $t24 = gettimeofday();
+        $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
+        $log->info("Command - 'tephra tirage' started at:   $st.");
+
+        my $tirage_opts = ['-g', $global_opts->{genome}, '-t', $global_opts->{threads},
+                           '-o', $tirage_out, '-f', $tirc_gff, '-r', $global_opts->{subs_rate}, '--clean'];
+        push @$tirage_opts, '--all'
+            if $config->{tirage}{all} =~ /yes/i;
+        #if ($config->{ltrage}{all} =~ /no/i) {
+            #push @$tirage_opts, '-i';
+            #push @$tirage_opts, $tirc_dir;
+        #}
+        _capture_tephra_cmd('tirage', $tirage_opts, $global_opts->{debug});
+
+        my $t25 = gettimeofday();
+        $total_elapsed = $t25 - $t24;
+        $final_time = sprintf("%.2f",$total_elapsed/60);
+        $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
+        $log->info("Command - 'tephra tirage' completed at: $ft.");
+
+        if (-e $tirage_out) {
+            $log->info("Output files - $tirage_out");
+	    push @age_files, $tirage_out;
+        }
     }
 
     ## maskref on TIRs
@@ -418,7 +452,7 @@ sub _run_all_commands {
     if (-e $tirc_fas && -s $tirc_fas) {
 	$genome_mask4 = File::Spec->catfile( abs_path($path), $name.'_masked4.fasta' );
 
-	my $t24 = gettimeofday();
+	my $t26 = gettimeofday();
 	$st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
 	$log->info("Command - 'tephra maskref' on TIRs started at:   $st.");
 	
@@ -427,8 +461,8 @@ sub _run_all_commands {
 			  '-t', $global_opts->{threads}];
 	_capture_tephra_cmd('maskref', $mask4_opts, $global_opts->{debug});
 	
-	my $t25 = gettimeofday();
-	$total_elapsed = $t25 - $t24;
+	my $t27 = gettimeofday();
+	$total_elapsed = $t27 - $t26;
 	$final_time = sprintf("%.2f",$total_elapsed/60);
 	$ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
 	$log->info("Command - 'tephra maskref' on TIRs completed at: $ft.");
@@ -446,7 +480,7 @@ sub _run_all_commands {
 	           : (defined $genome_mask1 && -s $genome_mask1) ? $genome_mask1 
 	           : $global_opts->{genome};
 
-    my $t26 = gettimeofday();
+    my $t28 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findnonltrs' started at:   $st.");
     my $nonltr_gff = File::Spec->catfile( abs_path($path), $name.'_nonLTRs.gff3' );
@@ -455,8 +489,8 @@ sub _run_all_commands {
     my $findnonltrs_opts = ['-g', $nonltr_ref, '-o', $nonltr_gff];
     _capture_tephra_cmd('findnonltrs', $findnonltrs_opts, $global_opts->{debug});
     
-    my $t27 = gettimeofday();
-    $total_elapsed = $t27 - $t26;
+    my $t29 = gettimeofday();
+    $total_elapsed = $t29 - $t28;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findnonltrs' completed at: $ft.");
@@ -469,7 +503,7 @@ sub _run_all_commands {
     }
 
     ## combine results
-    my $t28 = gettimeofday();
+    my $t30 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - Generating combined FASTA file at:             $st.");
     my $customRepDB = $global_opts->{outfile} =~ s/\.gff.*/.fasta/r;
@@ -491,8 +525,8 @@ sub _run_all_commands {
     }
     close $out;
 
-    my $t29 = gettimeofday();
-    $total_elapsed = $t29 - $t28;
+    my $t31 = gettimeofday();
+    $total_elapsed = $t31 - $t30;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Results - Finished generating combined FASTA file at:    $ft. Final output files:");
@@ -500,7 +534,7 @@ sub _run_all_commands {
     
     ## maskref on customRepDB
     my $final_mask = File::Spec->catfile( abs_path($path), $name.'_tephra_genome_masked.fasta' );
-    my $t30 = gettimeofday();
+    my $t32 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra maskref' on full transposon database started at:   $st.");
  
@@ -509,24 +543,24 @@ sub _run_all_commands {
 			  '-t', $global_opts->{threads}];
     _run_tephra_cmd('maskref', $finalmask_opts, $global_opts->{debug});
 
-    my $t31 = gettimeofday();
-    $total_elapsed = $t31 - $t30;
+    my $t33 = gettimeofday();
+    $total_elapsed = $t33 - $t32;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Results - 'tephra maskref' on full transposon database finished at:  $ft. Final output file:");
     $log->info("Output files - $final_mask");
 
     ## findfragments
-    my $t32 = gettimeofday();
+    my $t34 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findfragments' started at:   $st.");
     my $fragments_gff = File::Spec->catfile( abs_path($path), $name.'_transposon_fragments.gff3' );
 
-    my $findfragments_opts = ['-g', $final_mask, '-d', $customRepDB, '-o', $fragments_gff];
+    my $findfragments_opts = ['-g', $final_mask, '-d', $customRepDB, '-o', $fragments_gff, '-t', $global_opts->{threads}];
     _capture_tephra_cmd('findfragments', $findfragments_opts, $global_opts->{debug});
     
-    my $t33 = gettimeofday();
-    $total_elapsed = $t33 - $t32;
+    my $t35 = gettimeofday();
+    $total_elapsed = $t35 - $t34;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findfragments' completed at: $ft.");
@@ -536,7 +570,7 @@ sub _run_all_commands {
     }
 
     ## combine GFF3
-    my $t34 = gettimeofday();
+    my $t36 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - Generating combined GFF3 file at:              $st.");
 
@@ -553,12 +587,26 @@ sub _run_all_commands {
     @gtsort_out = capture([0..5], $gff_cmd);
     unlink $customRepGFF;
 
-    my $t35 = gettimeofday();
-    $total_elapsed = $t35 - $t34;
+    my $t37 = gettimeofday();
+    $total_elapsed = $t37 - $t36;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Results - Finished generating combined GFF3 file at:     $ft. Final output files:");
     $log->info("Output files - $global_opts->{outfile}");
+
+    ## combine age files
+    my $age_sum = File::Spec->catfile( abs_path($path), $name.'_ltr-tir_age_summary.tsv' );
+    my $t38 = gettimeofday();
+    $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
+    $log->info("Command - Generating combined age files at:                                     $st.");
+
+    my $age_ct = _combine_age_files(\@age_files, \@classifed_fastas, $age_sum);
+
+    my $t39 = gettimeofday();
+    $total_elapsed = $t39 - $t38;
+    $final_time = sprintf("%.2f",$total_elapsed/60);
+    $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
+    $log->info("Results - Finished generating combined age files for $age_ct transposons at:    $st.");
 
     ## clean up
     my $clean_vmidx;
@@ -581,6 +629,68 @@ sub _run_all_commands {
 
     # Log summary of results
     _log_interval( $tzero, $log );
+}
+
+## methods
+sub _combine_age_files {
+    my ($ages, $fastas, $age_sum) = @_;
+
+    my $util = Tephra::Annotation::Util->new;
+
+    my ($famname, %families, %ages);
+    for my $fasta (@fastas) {
+	open my $in, '<', $fasta or die "\nERROR: Could not open file: $fasta\n";
+	
+	while (my $line = <$in>) {
+	    chomp $line;
+	    if ($line =~ /^>([A-Z]{3}(?:_singleton_)?(?:_?family\d+)?)_(?:LTR_|terminal)/) {
+		$famname = $1;
+		$line =~ s/>//;
+		push @{$families{$famname}}, $line;
+	    }
+	}
+	close $in;
+    }
+
+    for my $agefile (@ages) { 
+	open my $tab, '<', $agefile or die "\nERROR: Could not open file: $agefile\n";
+	
+	while (my $line = <$tab>) {
+	    chomp $line;
+	    next if $line =~ /^(?:LTR|TIR)-ID/;
+	    #LTR-ID Divergence Age Ts:Tv
+	    my ($id, $div, $age, $tstv) = split /\t/, $line;
+	    #say $id and exit;
+	    if ($id =~ /^([A-Z]{3}(?:_singleton_)?(?:_?family\d+)?)_(?:LTR_|terminal)/) {
+		my $fam = $1;
+		#say $fam and exit;
+		if (exists $families{$fam}) {
+		    say $fam;# and exit;
+		    my $famsize = @{$families{$fam}};
+		    push @{$ages{$famsize}{$fam}}, join "||", $id, $div, $age, $tstv;
+		}
+	    }
+	}
+	close $tab;
+    }
+
+    open my $out, '>', $age_sum or die "\nERROR: Could not open file: $age_sum\n";
+    say $out join "\t", 'Superfamily', 'Family', 'Family_size', 'ElementID', 'Divergence', 'Age', 'Ts:Tv';
+
+    my $ct = 0;
+    for my $famsize (reverse sort { $a <=> $b } keys %ages) {
+	for my $fam (nsort keys %{$ages{$famsize}}) { 
+	    for my $agestr (@{$ages{$famsize}{$fam}}) {
+		$ct++;
+		my ($id, $div, $age, $tstv) = split /\|\|/, $agestr;
+		my $sfam = $util->map_superfamily_name($fam);
+		say $out join "\t", $sfam, $fam, $famsize, $id, $div, $age, $tstv;
+	    }
+	}
+    }
+    close $out;
+   
+    return $ct;
 }
 
 sub _get_all_opts {
