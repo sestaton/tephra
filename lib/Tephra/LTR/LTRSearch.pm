@@ -5,6 +5,7 @@ use Moose;
 use File::Spec;
 use File::Find;
 use File::Basename;
+use File::Path          qw(remove_tree);
 use IPC::System::Simple qw(system EXIT_ANY);
 use Cwd                 qw(abs_path);
 use Log::Any            qw($log);
@@ -111,12 +112,11 @@ sub ltr_search {
 	@ltrd_cmd{@ltrd_opts} = @ltrd_args;
 
 	my $ltrd_succ = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort, $logfile);
-
 	$self->clean_indexes($path) 
 	    if $self->clean && $mode eq 'relaxed';
 	unlink $ltrh_gff;
 	unlink $gffh_sort;
-    
+	
 	return $ltrd_gff;
     }
     else {

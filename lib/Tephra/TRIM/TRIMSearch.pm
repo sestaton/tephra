@@ -6,6 +6,7 @@ use Path::Class::File;
 use File::Spec;
 use File::Find;
 use File::Basename;
+use File::Path          qw(remove_tree);
 use Cwd                 qw(getcwd abs_path);
 use IPC::System::Simple qw(system EXIT_ANY);
 use Log::Any            qw($log);
@@ -81,7 +82,7 @@ sub trim_search {
 
 	@ltrd_cmd{@ltrd_opts} = @ltrd_args;
 	
-	my $ltr_dig = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort, $logfile);
+	my $ltrd_succ = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort, $logfile);
 	$self->clean_indexes($path) 
 	    if $self->clean && $mode eq 'relaxed';
 	unlink $ltrh_gff;
