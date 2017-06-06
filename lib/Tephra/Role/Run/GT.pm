@@ -4,11 +4,13 @@ use 5.014;
 use Moose::Role;
 use MooseX::Types::Path::Class;
 use IO::File;
+use POSIX;
+use Env                 qw(@PATH);
 use Cwd                 qw(getcwd abs_path);
 use Log::Any            qw($log);
-use IPC::System::Simple qw(system);
-use Capture::Tiny       qw(capture);
-use Try::Tiny;
+use IPC::System::Simple qw(system EXIT_ANY);
+use File::Path          qw(make_path);
+use File::Temp;
 use File::Spec;
 use File::Find;
 use File::Basename;
@@ -95,16 +97,21 @@ sub create_index {
     my $gt = $self->get_gt_exec;
     unshift @$args, 'suffixerator';
     unshift @$args, "$gt -j $threads";
+
+    my $err = $self->_make_gt_errorlog('suffixerator');
     my $cmd = join qq{ }, @$args;
-
+    $cmd .= " 2> $err";
     say STDERR "DEBUG: $cmd" if $self->debug;
-    my ($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
-    return $exit == 0 ? 1 : 0;
+    my $EXIT = system(EXIT_ANY, $cmd);
+    my $errors = $self->_errorlog_to_string($err);
 
-    if ($exit) { # non-zero
-	$log->error("'gt suffixerator' failed with exit code: $exit. Here is STDOUT: $stdout\nHere is stderr: $stderr\n");
+    if ($EXIT) { # non-zero
+	$log->error("'gt suffixerator' failed with exit value: $EXIT. Here is the output: $errors\n");
 	exit(1);
     }
+
+    unlink $err unless -s $err;
+    return $EXIT == 0 ? 1 : 0;
 }
 
 sub run_ltrharvest {
@@ -117,8 +124,6 @@ sub run_ltrharvest {
     my $gt = $self->get_gt_exec;
     my @ltrh_args;
     push @ltrh_args, "$gt -j $threads ltrharvest";
-    #push @ltrh_args, $gt;
-    #push @ltrh_args, 'ltrharvest';
 
     for my $opt (keys %$args) {
 	if (defined $args->{$opt}) {
@@ -126,15 +131,20 @@ sub run_ltrharvest {
 	}
     } 
 
+    my $err = $self->_make_gt_errorlog('ltrharvest');
     my $cmd = join qq{ }, @ltrh_args;
+    $cmd .= " 2>&1 >$err";
     say STDERR "DEBUG: $cmd" if $self->debug; # and exit;
-    my ($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
-    return $exit == 0 ? 1 : 0;
+    my $EXIT = system(EXIT_ANY, $cmd);
+    my $errors = $self->_errorlog_to_string($err);
 
-    if ($exit) { # non-zero  
-	$log->error("LTRharvest failed with exit code: $exit. Here is STDOUT: $stdout\nHere is stderr: $stderr\n");
+    if ($EXIT) { # non-zero  
+	$log->error("LTRharvest failed with exit value: $EXIT. Here is the output: $errors\n");
 	exit(1);
-    };
+    }
+
+    unlink $err unless -s $err;
+    return $EXIT == 0 ? 1 : 0;
 }
 
 sub run_ltrdigest {
@@ -144,18 +154,24 @@ sub run_ltrdigest {
     my $threads = $self->threads;
     my $log     = $self->get_tephra_logger($logfile);
 
+    # see: https://github.com/genometools/genometools/issues/662
+    # there is something wrong with setting the TMPDIR with ltrdirgest
+    #my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
+    #my $time = POSIX::strftime("%d-%m-%Y_%H-%M-%S", localtime);
+    #my $model_dir = File::Spec->catdir($path, "tephra_hmm_modeldir_$time");
+    #make_path( $model_dir, {verbose => 0, mode => 0771,} );
+    #$TMDIR = $model_dir; 
+
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($hmmer3bin) = @{$config}{qw(hmmer3bin)};
-    $ENV{PATH} = join ':', $ENV{PATH}, $hmmer3bin;
-
+    push @PATH, $hmmer3bin;
+  
     my $gt = $self->get_gt_exec;
     my @ltrd_args;
     push @ltrd_args, "$gt -j $threads ltrdigest";
-    #push @ltrd_args, $gt;
-    #push @ltrd_args, 'ltrdigest';
 
     my $hmmdb = $args->{'-hmms'};
-    push @ltrd_args, '-hmms'.q{ }.$hmmdb;
+    push @ltrd_args, '-hmms'.q{ }.$hmmdb; 
     delete $args->{'-hmms'};
 
     for my $opt (keys %$args) {
@@ -164,18 +180,23 @@ sub run_ltrdigest {
 	}
     }
     
-    #say STDERR "DEBUG: $gff";
+    my $err = $self->_make_gt_errorlog('ltrdigest');
     my $cmd = join qq{ }, @ltrd_args, $gff;
+    
+    $cmd .= " 2>&1 >$err";
     say STDERR "DEBUG: $cmd" if $self->debug;
-    my ($stdout, $stderr, $exit) = capture { system($cmd) };
-    #say STDERR join "\n", "stdout: $stdout", "stderr: $stderr" if $self->debug;
-    say STDERR "DEBUG: ltrdigest exit status: $exit" if $self->debug;
-    return $exit == 0 ? 1 : 0;
+    my $EXIT = system(EXIT_ANY, $cmd);
+    my $errors = $self->_errorlog_to_string($err);
+    undef @PATH;
+    #undef $TMPDIR;
 
-    if ($exit) { # non-zero 
-	$log->error("LTRdigest failed with exit code: $exit. Here is STDOUT: $stdout\nHere is stderr: $stderr\n");
+    if ($EXIT) { # non-zero 
+	$log->error("LTRdigest failed with exit value: $EXIT. Here is the output: $errors\n");
 	exit(1);
     }
+
+    unlink $err unless -s $err;
+    return $EXIT == 0 ? 1 : 0;
 }
 
 sub run_tirvish {
@@ -186,9 +207,16 @@ sub run_tirvish {
     my $gt      = $self->get_gt_exec;
     my $log     = $self->get_tephra_logger($logfile);
 
+    #my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
+    #my $time = POSIX::strftime("%d-%m-%Y_%H:%M:%S", localtime);
+    #my $model_dir = File::Spec->catdir($path, "tephra_hmm_modeldir_$time");
+    #make_path( $model_dir, {verbose => 0, mode => 0771,} );
+    #$ENV{TMPDIR} = $model_dir;
+
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($hmmer3bin) = @{$config}{qw(hmmer3bin)};
-    $ENV{PATH} = join ':', $ENV{PATH}, $hmmer3bin;
+    #$ENV{PATH} = join ':', $ENV{PATH}, $hmmer3bin;
+    push @PATH, $hmmer3bin;
 
     my @tirv_args;
     push @tirv_args, "$gt -j $threads tirvish";
@@ -197,16 +225,22 @@ sub run_tirvish {
 	    push @tirv_args, $opt.q{ }.$args->{$opt};
 	}
     }
-
+    
+    my $err = $self->_make_gt_errorlog('tirvish');
     my $cmd = join qq{ }, @tirv_args, ">", $gff;
+     $cmd .= " 2> $err";
     say STDERR "DEBUG: $cmd" if $self->debug;
-    my ($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
-    return $exit == 0 ? 1 : 0;
+    my $EXIT = system(EXIT_ANY, $cmd);
+    my $errors = $self->_errorlog_to_string($err);
+    undef @PATH;
 
-    if ($exit) { # non-zero 
-	$log->error("'gt tirvish' failed exit code: $exit. Here is STDOUT: $stdout\nHere is stderr: $stderr\n");
+    if ($EXIT) { # non-zero 
+	$log->error("'gt tirvish' failed exit value: $EXIT. Here is the output: $errors\n");
 	exit(1);
     }
+
+    unlink $err unless -s $err;
+    return $EXIT == 0 ? 1 : 0;
 }
 
 sub sort_gff {
@@ -220,21 +254,26 @@ sub sort_gff {
     my $gff_sort = File::Spec->catfile( abs_path($path), $name."_sort$suffix" );
     my $gt = $self->get_gt_exec;
 
+    my $err = $self->_make_gt_errorlog('gt-sort');
     my $cmd = "$gt -j $threads gff3 -sort $gff > $gff_sort";
+    $cmd .= " 2> $err";
     say STDERR "DEBUG: $cmd" if $self->debug;
-    my ($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
-    return $exit == 0 ? $gff_sort : 0;
+    my $EXIT = system(EXIT_ANY, $cmd);
+    my $errors = $self->_errorlog_to_string($err);
 
-    if ($exit) { # non-zero 
-	$log->error("'gt gff3 -sort' failed exit code: $exit. Here is STDOUT: $stdout\nHere is stderr: $stderr\n");
+    if ($EXIT) { # non-zero 
+	$log->error("'gt gff3 -sort' failed exit value: $EXIT. Here is the output: $errors\n");
 	exit(1);
     }
+
+    unlink $err unless -s $err;
+    return $EXIT == 0 ? $gff_sort : 0;
 }
 
 sub clean_indexes {
     my $self = shift;
     my ($dir) = @_;
-
+    
     my @files;
     my $wanted  = sub { push @files, $File::Find::name
 			    if -f && /\.llv|\.md5|\.prf|\.tis|\.suf|\.lcp|\.ssp|\.sds|\.des|\.dna|\.esq|\.prj|\.ois/ };
@@ -264,6 +303,36 @@ sub clean_index_files {
     return;
 }
 
+sub _make_gt_errorlog {
+    my $self = shift;
+    my ($cmd) = @_;
+    
+    my $dir = getcwd();
+    my $tmpiname  = "tephra_$cmd"."_errors_XXXX";
+    my $tmp_hmmdbfh = File::Temp->new( TEMPLATE => $tmpiname,
+				       DIR      => $dir,
+				       SUFFIX   => '.err',
+				       UNLINK   => 0);
+    my $tmp_hmmdb = $tmp_hmmdbfh->filename;
+    
+    
+    return $tmp_hmmdb;
+}
+
+sub _errorlog_to_string {
+    my $self = shift;
+    my ($log) = @_;
+
+    my $lines = do {
+	local $/ = undef;
+	open my $in, '<', $log or die "\nERROR: Could not open file: $log\n";
+	<$in>;
+    };
+    unlink $log;
+
+    return $lines;
+}
+
 sub _build_gt_exec {
     my $self  = shift;
     my $gtexe = $self->get_gt_exec; # set during class initialization
@@ -290,7 +359,8 @@ sub _build_gt_exec {
 	}
     }
     else {
-        $log->error("Unable to find 'gt' executable. Make sure genometools is installed. Exiting.");
+        #$log->error("Unable to find 'gt' executable. Make sure genometools is installed. Exiting.");
+	say STDERR "\nERROR: Unable to find 'gt' executable. Make sure genometools is installed. Exiting.\n";
         exit(1);
     }
 }
