@@ -11,6 +11,7 @@ use Time::HiRes         qw(gettimeofday);
 use POSIX               qw(strftime);
 use IPC::System::Simple qw(system capture);
 use Cwd                 qw(abs_path);
+use Sort::Naturally;
 use File::Spec;
 use File::Basename;
 use File::Temp;
@@ -600,7 +601,7 @@ sub _run_all_commands {
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - Generating combined age files at:                                     $st.");
 
-    my $age_ct = _combine_age_files(\@age_files, \@classifed_fastas, $age_sum);
+    my $age_ct = _combine_age_files(\@age_files, \@classified_fastas, $age_sum);
 
     my $t39 = gettimeofday();
     $total_elapsed = $t39 - $t38;
@@ -631,14 +632,16 @@ sub _run_all_commands {
     _log_interval( $tzero, $log );
 }
 
-## methods
+#
+# methods
+#
 sub _combine_age_files {
     my ($ages, $fastas, $age_sum) = @_;
 
     my $util = Tephra::Annotation::Util->new;
 
     my ($famname, %families, %ages);
-    for my $fasta (@fastas) {
+    for my $fasta (@$fastas) {
 	open my $in, '<', $fasta or die "\nERROR: Could not open file: $fasta\n";
 	
 	while (my $line = <$in>) {
@@ -652,7 +655,7 @@ sub _combine_age_files {
 	close $in;
     }
 
-    for my $agefile (@ages) { 
+    for my $agefile (@$ages) { 
 	open my $tab, '<', $agefile or die "\nERROR: Could not open file: $agefile\n";
 	
 	while (my $line = <$tab>) {
