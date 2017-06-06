@@ -99,6 +99,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Take substitution rate as an option
  - [x] check if input directory exists
  - [ ] write age to GFF file
+ - [ ] Clean up results if requested
 
 ## Command `tephra maskref`
  - [x] Generate masked reference from custom repeat library 
@@ -115,7 +116,9 @@ This file is for logging feature requests and bugs during development. Hopefully
 
 ## Command `tephra tirage`
 
-- [ ] Update menu for all available options.
+- [x ] Update menu for all available options.
+- [x] Add 3-letter code to age file IDs
+- [x] Clean up results if requested
 
 ## Command `tephra all`
 
@@ -123,7 +126,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Generate summary statistics for TE types (domain content, length distribution, diversity, etc.) See
        (sesbio/transposon_annotation/count_families.pl) for starters.
  - [ ] Generate HTML output for all command. Will need to store JSON data for graphs and tables.
- - [ ] Add tirage options to configuration file.
+ - [x] Add tirage options to configuration file.
 
 *** 
 
