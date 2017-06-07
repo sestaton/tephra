@@ -665,10 +665,8 @@ sub _combine_age_files {
 	    next if $line =~ /^(?:LTR|TIR)-ID/;
 	    #LTR-ID Divergence Age Ts:Tv
 	    my ($id, $div, $age, $tstv) = split /\t/, $line;
-	    #say $id and exit;
 	    if ($id =~ /^([A-Z]{3}(?:_singleton_)?(?:_?family\d+)?)_(?:LTR_|terminal)/) {
 		my $fam = $1;
-		#say $fam and exit;
 		if (exists $families{$fam}) {
 		    my $famsize = @{$families{$fam}};
 		    push @{$ages{$famsize}{$fam}}, join "||", $id, $div, $age, $tstv;
