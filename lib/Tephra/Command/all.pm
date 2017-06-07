@@ -599,10 +599,12 @@ sub _run_all_commands {
     my $age_sum = File::Spec->catfile( abs_path($path), $name.'_ltr-tir_age_summary.tsv' );
     my $t38 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - Generating combined age files at:                                     $st.");
+    #$log->info("Command - Generating combined age files at:                                     $st.");
 
     my $age_ct = _combine_age_files(\@age_files, \@classified_fastas, $age_sum);
+    my $age_pd = ' ' x length($age_ct);
 
+    $log->info("Command - Generating combined age files at:$age_pd                              $st.");
     my $t39 = gettimeofday();
     $total_elapsed = $t39 - $t38;
     $final_time = sprintf("%.2f",$total_elapsed/60);
@@ -668,7 +670,6 @@ sub _combine_age_files {
 		my $fam = $1;
 		#say $fam and exit;
 		if (exists $families{$fam}) {
-		    say $fam;# and exit;
 		    my $famsize = @{$families{$fam}};
 		    push @{$ages{$famsize}{$fam}}, join "||", $id, $div, $age, $tstv;
 		}
@@ -687,6 +688,7 @@ sub _combine_age_files {
 		$ct++;
 		my ($id, $div, $age, $tstv) = split /\|\|/, $agestr;
 		my $sfam = $util->map_superfamily_name($fam);
+		$sfam = $sfam ? $sfam : 'Unknown'; # the method above returns 0 if the superfamily is unknown
 		say $out join "\t", $sfam, $fam, $famsize, $id, $div, $age, $tstv;
 	    }
 	}
