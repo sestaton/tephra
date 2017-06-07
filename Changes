@@ -14,10 +14,12 @@ Version	Date	Location
 - Bug fix for classifytirs test not testing the correct command for all tests.
 - Bug fix for not cleaning up all intermediate results from 'all' command as expected (this
   only affected the 'findtrims' and 'ltrage' commands).
+- Bug fix for not getting substitution rate from configuration file and using default.
+- Bug fix for not cleaning up results from ltrage and tirage commands.
 - Modify behavior of 'run_blast' method in Tephra::Role::Run::Blast role. The sort
   attribute now takes a string to specify how to sort: either by coordinate or bit score.
   Also, the option to set the e-value threshold was added.
-- Add 'getfragments' command (and Tephra::Genome::FragmentSearch class with associated 
+- Add 'findfragments' command (and Tephra::Genome::FragmentSearch class with associated 
   methods) for identifying truncated or fragmented elements.
 - Refactor 'trim_search' method in Tephra::TRIM::TRIMSearch class to take the mode for the
   search ('relaxed' or 'strict') and set variables accordingly instead of duplicating
@@ -35,6 +37,9 @@ Version	Date	Location
   commands.
 - Change the default thread level for tests to 2 (was set much higher, 24, for local
   testing).
+- Add 'tirage' command results to 'all' subcommand. 
+- Add method to combine and summarize TIR and LTR age results by family to 'all' command. 
+- Add Tephra::Annotation::Util class for working with transposon names.
 
 0.07.2	05/11/2017	Vancouver, BC
 
