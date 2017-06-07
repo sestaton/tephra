@@ -99,7 +99,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Take substitution rate as an option
  - [x] check if input directory exists
  - [ ] write age to GFF file
- - [ ] Clean up results if requested
+ - [x] Clean up results if requested
 
 ## Command `tephra maskref`
  - [x] Generate masked reference from custom repeat library 
@@ -116,7 +116,7 @@ This file is for logging feature requests and bugs during development. Hopefully
 
 ## Command `tephra tirage`
 
-- [x ] Update menu for all available options.
+- [x] Update menu for all available options.
 - [x] Add 3-letter code to age file IDs
 - [x] Clean up results if requested
 
