@@ -25,10 +25,8 @@ has 'debug' => (
     default    => 0,
 );
 
-#
-# methods
-#
 =head2 map_superfamily_name
+
  Title   : map_superfamily_name
 
  Usage   : my $superfamily_name = $self->map_superfamily_name($match);
@@ -42,11 +40,12 @@ has 'debug' => (
 
 =cut
 
+## NB: This method is pulled straight from Transposome (github.com/sestaton/Transposome).
 sub map_superfamily_name {
     my $self = shift;
     my ($id) = @_;
 
-    my ($sfamily_code) = ($id =~ /(^[A-Z]{3})_/);
+    my ($sfamily_code) = ($id =~ /(^[A-Z]{3})_?/);
     unless (defined $sfamily_code) {
 	say STDERR "\n[WARNING]: Could not get 3-letter code from: $id. Skipping.\n"
 	    if $self->debug;
