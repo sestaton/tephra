@@ -438,8 +438,8 @@ sub parse_clusters {
 	    $all_pdoms{$dom} = 1;
         }
         next if $line =~ /^# \d+/;
-	    if ($line =~ /^(\d+):/) {
-		$clusnum = $1;
+	if ($line =~ /^(\d+):/) {
+	    $clusnum = $1;
         }
         elsif ($line =~ /^\s+(\S+)/) {
             my $element = $1;
