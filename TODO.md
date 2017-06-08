@@ -119,6 +119,7 @@ This file is for logging feature requests and bugs during development. Hopefully
 - [x] Update menu for all available options.
 - [x] Add 3-letter code to age file IDs
 - [x] Clean up results if requested
+- [ ] Add method to select the top families instead of --all
 
 ## Command `tephra all`
 
