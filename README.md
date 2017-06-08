@@ -30,8 +30,8 @@ The next two commands install BioPerl, and these can be skipped if BioPerl is in
 
 Finally, download the [latest release](https://github.com/sestaton/tephra/releases/latest) and run the following commands:
 
-    wget https://github.com/sestaton/tephra/archive/v0.07.2.tar.gz
-    tar xzf v0.07.2.tar.gz && cd tephra-0.07.2
+    wget https://github.com/sestaton/tephra/archive/v0.08.0.tar.gz
+    tar xzf v0.08.0.tar.gz && cd tephra-0.08.0
     cpanm --installdeps .
     perl Makefile.PL
     make test
@@ -89,6 +89,7 @@ Tephra is a command-line program only for now. The command `tephra` itself contr
                 all: Run all subcommands and generate annotations for all transposon types.
        classifyltrs: Classify LTR retrotransposons into superfamilies and families.
        classifytirs: Classify TIR transposons into superfamilies.
+      findfragments: Search a masked genome with a repeat database to find fragmented elements.
       findhelitrons: Find Helitons in a genome assembly.
            findltrs: Find LTR retrotransposons in a genome assembly.
         findnonltrs: Find non-LTR retrotransposons in a genome assembly.
