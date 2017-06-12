@@ -500,7 +500,7 @@ sub _run_all_commands {
 	$log->info("Output files - $nonltr_gff");
 	$log->info("Output files - $nonltr_fas");
 	push @fas_files, $nonltr_fas;
-	push @gff_files, $nonltr_gff;
+	#push @gff_files, $nonltr_gff;
     }
 
     ## combine results
@@ -582,9 +582,9 @@ sub _run_all_commands {
     $gff_cmd .= " | perl -ne 'print unless /^#\\w+\\d+?\$/' > $customRepGFF";
     #say STDERR "debug: $gff_cmd";
 
-    # this is so gt does not drop the Helitron and fragment IDs
+    # this is so gt does not drop IDs
     my @gtsort_out = capture([0..5], $gff_cmd);
-    $gff_cmd = "$gt gff3 -sort -retainids $customRepGFF $hel_gff $fragments_gff > $global_opts->{outfile}";
+    $gff_cmd = "$gt gff3 -sort -retainids $customRepGFF $hel_gff $fragments_gff $nonltr_gff > $global_opts->{outfile}";
     @gtsort_out = capture([0..5], $gff_cmd);
     unlink $customRepGFF;
 
