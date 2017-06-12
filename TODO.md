@@ -116,10 +116,10 @@ This file is for logging feature requests and bugs during development. Hopefully
 
 ## Command `tephra tirage`
 
-- [x] Update menu for all available options.
-- [x] Add 3-letter code to age file IDs
-- [x] Clean up results if requested
-- [ ] Add method to select the top families instead of --all
+ - [x] Update menu for all available options.
+ - [x] Add 3-letter code to age file IDs
+ - [x] Clean up results if requested
+ - [ ] Add method to select the top families instead of --all (requires generating families first)
 
 ## Command `tephra all`
 
@@ -150,4 +150,4 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] investigate why tests fail with Perl version 5.12 or lower (Bio::DB::HTS needs 5.14.2, so that's why)
  - [x] add subcommand to run/log all methods as a pipeline
  - [ ] document the configuration file format and usage
- - [x] add 'getfragments' subcommand to be run after final masking prior to complete GFF generation
+ - [x] add 'findfragments' subcommand to be run after final masking prior to complete GFF generation
