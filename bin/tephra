@@ -7,8 +7,6 @@ use Pod::Find           qw(pod_where);
 use Pod::Usage          qw(pod2usage);
 use Capture::Tiny       qw(capture_merged);
 use IPC::System::Simple qw(system);
-#use Pod::Find;
-#use Pod::Usage;
 use Tephra;
 
 our $VERSION = '0.08.1';
