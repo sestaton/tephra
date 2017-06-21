@@ -67,6 +67,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Generate GFF3 of full-length helitrons
  - [ ] Annotate coding domains in helitrons and include domains in GFF 
  - [x] Adjust header for full length elements to match output of other commands
+ - [ ] Remove strand from FASTA header for consistency with other commands
 
 ## Command `tephra findtrims`
  - [x] Find all non-overlapping TRIMs under strict and relaxed conditions
