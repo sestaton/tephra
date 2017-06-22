@@ -132,13 +132,13 @@ sub make_hscan_outfiles {
 	if ($start > $stop && $strand eq '-') {
 	    $gff_str = join "||", $ref, 'HelitronScanner', 'helitron', $stop, $start, '.', 
 	        $strand, '.', "ID=$id;Ontology_term=SO:0000544";
-	    $id .= "_$ref"."_$stop"."_$start"."_$strand";
+	    $id .= "_$ref"."_$stop"."_$start"; #."_$strand";
 	    say $outf join "\n", ">".$id, $seq;
 	}
 	else {
 	    $gff_str = join "||", $ref, 'HelitronScanner', 'helitron', $start, $stop, '.',
                 $strand, '.', "ID=$id;Ontology_term=SO:0000544";
-	    $id .= "_$ref"."_$start"."_$stop"."_$strand";
+	    $id .= "_$ref"."_$start"."_$stop"; #."_$strand";
 	    say $outf join "\n", ">".$id, $seq;
 	}
 	push @{$hel{$ref}}, $gff_str;
