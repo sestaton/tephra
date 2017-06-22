@@ -41,7 +41,7 @@ SKIP: {
     }
 
     my @find_cmd = ($cmd, 'classifyltrs', '-g', $genome, '-d', $repeatdb, '-i', $ingff, '-o', $outgff, '-r', $outdir);
-    #say STDERR $find_cmd;
+    #say STDERR join q{ }, @find_cmd;
     
     my @ret = capture { system([0..5], @find_cmd) };
 
@@ -58,6 +58,7 @@ SKIP: {
     while (<$in>) { $ct++ if /^>/; }
     close $in;
     
+    #say STDERR "ct: $ct";
     ok( $ct == 6, 'Correct number of classified elements in combined family file' );
     say "$ct total combined elements";
 
