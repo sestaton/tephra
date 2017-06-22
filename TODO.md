@@ -39,7 +39,7 @@ This file is for logging feature requests and bugs during development. Hopefully
 
 ## Command `tephra classifytirs`
  - [x] Classify 'best' TIR elements into superfamilies based on domain content, TSD, and/or motif
- - [ ] Group TIR elements into families based on TIR similarity and/or cluster-based method used for LTR-RT classification 
+ - [x] Group TIR elements into families based on TIR similarity and/or cluster-based method used for LTR-RT classification 
  - [x] in tests, skip if empty output (none found). This is not a good test honestly, need a new reference
  - [x] write fasta of each superfamily, and combined library
  - [x] identify	fragmented elements with refined full-length elements
