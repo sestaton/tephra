@@ -320,7 +320,7 @@ sub _run_all_commands {
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findhelitrons' started at:   $st.");
 
-    my $findhels_opts = ['-g', $hel_ref, '-o', $hel_gff];
+    my $findhels_opts = ['-g', $hel_ref, '-o', $hel_gff, '--logfile', $global_opts->{logfile}];
     push @$findhels_opts, '--debug'
 	if $global_opts->{debug};
     _capture_tephra_cmd('findhelitrons', $findhels_opts, $global_opts->{debug});
@@ -487,7 +487,7 @@ sub _run_all_commands {
     my $nonltr_gff = File::Spec->catfile( abs_path($path), $name.'_tephra_nonLTRs.gff3' );
     my $nonltr_fas = File::Spec->catfile( abs_path($path), $name.'_tephra_nonLTRs.fasta' );
 
-    my $findnonltrs_opts = ['-g', $nonltr_ref, '-o', $nonltr_gff];
+    my $findnonltrs_opts = ['-g', $nonltr_ref, '-o', $nonltr_gff, '--logfile', $global_opts->{logfile}];
     _capture_tephra_cmd('findnonltrs', $findnonltrs_opts, $global_opts->{debug});
     
     my $t29 = gettimeofday();
