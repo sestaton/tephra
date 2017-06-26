@@ -5,10 +5,12 @@ use Moose;
 use Bio::DB::HTS::Kseq;
 use File::Find;
 use File::Spec;
+use File::Temp qw(tempfile);
 use File::Path qw(make_path remove_tree);
 use Cwd        qw(abs_path);
 use File::Basename;
 use Sort::Naturally;
+use Tephra::Annotation::Util;
 use Tephra::Config::Exe;
 use namespace::autoclean;
 #use Data::Dump::Color;
@@ -52,7 +54,7 @@ sub write_gff {
         }
     }
 
-    $self->_fasta_to_gff(\@nonltrs);
+    my ($fas, $gff, $sf_elem_map) = $self->_fasta_to_gff(\@nonltrs);
     say STDERR "Done with non-LTR search.";
 
     ## clean up
@@ -63,6 +65,8 @@ sub write_gff {
     for my $dir ($fdir, $rdir, $rgdir, $fastadir) {
 	remove_tree( $dir, { safe => 1 } );
     }
+
+    return ({ fasta => $fas, gff => $gff }, $sf_elem_map);
 }
 
 sub _fasta_to_gff {
@@ -72,13 +76,24 @@ sub _fasta_to_gff {
     my $genome = $self->genome;
     my $outgff = $self->gff;
 
+    my $util = Tephra::Annotation::Util->new;
     my $index = $self->index_ref($genome);
     my $clade_map = $self->_build_clade_map;
 
-    my ($name, $path, $suffix) = fileparse($outgff, qr/\.[^.]*/);
-    my $fas = File::Spec->catfile($path, $name.'.fasta' );
-    open my $out, '>', $outgff or die "\nERROR: Could not open file: $outgff\n";
-    open my $faout, '>', $fas or die "\nERROR: Could not open file: $fas\n";
+    my ($gname, $gpath, $gsuffix) = fileparse($outgff, qr/\.[^.]*/);
+    my $tmpfname = $gname.'_tephra_nonltr_fas_XXXX';
+    my $tmpgname = $gname.'_tephra_nonltr_gff_XXXX';
+
+    my ($outf, $ffilename) = tempfile( TEMPLATE => $tmpfname,
+                                       DIR      => $gpath,
+                                       UNLINK   => 0,
+                                       SUFFIX => '.fasta');
+    
+    my ($outg, $gfilename) = tempfile( TEMPLATE => $tmpgname,
+                                       DIR      => $gpath,
+                                       UNLINK   => 0,
+                                       SUFFIX => '.gff3');
+
     my ($lens, $combined) = $self->_get_seq_region;
 
     my %regions;
@@ -102,14 +117,14 @@ sub _fasta_to_gff {
     }
 
     my @ids = map { nsort keys %{$regions{$_}} } keys %regions;
-    say $out '##gff-version 3';
+    say $outg '##gff-version 3';
 
     my %seen;
     for my $seqid (@ids) {
 	my ($name, $path, $suffix) = fileparse($seqid, qr/\.[^.]*/);
 	if (exists $lens->{$name}) {
 	    unless (exists $seen{$name}) {
-		say $out join q{ }, '##sequence-region', $name, '1', $lens->{$name};
+		say $outg join q{ }, '##sequence-region', $name, '1', $lens->{$name};
 		$seen{$name} = 1;
 	    }
 	}
@@ -120,6 +135,7 @@ sub _fasta_to_gff {
 
     ##TODO: How to get the strand correct? Added in v0.03.0.
     my $ct = 0;
+    my %sf_elem_map;
     for my $clade (keys %regions) {
 	my $code = $clade_map->{$clade} // $clade;
 	for my $seqid (nsort keys %{$regions{$clade}}) {
@@ -128,7 +144,8 @@ sub _fasta_to_gff {
 	        my ($start, $end, $strand) = split /\|\|/, $regions{$clade}{$seqid}{$start};
 		my $seqname = $seqid;
 		$seqname =~ s/\.fa.*//;
-		my $elem = $code."_non_LTR_retrotransposon$ct";
+		#my $elem = $code."_non_LTR_retrotransposon$ct";
+		my $elem = "non_LTR_retrotransposon$ct";
                 my $tmp = $elem.'.fasta';
 		
 		my $seq = $self->_get_full_seq($index, $seqname, $start, $end);
@@ -136,18 +153,21 @@ sub _fasta_to_gff {
 		my ($filtered_seq, $adj_start, $adj_end) = $self->_filterNpercent($seq, $start, $end);
 		if (defined $filtered_seq) {
 		    my $id = join "_", $elem, $seqname, $adj_start, $adj_end;
-		    say $faout join "\n", ">$id", $filtered_seq;
-		    say $out join "\t", $name, 'Tephra', 'non_LTR_retrotransposon', $adj_start, $adj_end, '.', $strand, '.', 
-		        "ID=$elem;Name=$clade;Ontology_term=SO:0000189"; 
+		    say $outf join "\n", ">$id", $filtered_seq;
+		    say $outg join "\t", $name, 'Tephra', 'non_LTR_retrotransposon', $adj_start, $adj_end, '.', $strand, '.',
+		        "ID=$elem;Ontology_term=SO:0000189";
+		    my $sfcode = $util->map_superfamily_name_to_code($clade);
+		    $sf_elem_map{$elem} = $sfcode;
 		    $ct++;
 		}
 	    }
 	} 
     }
-    close $faout;
+    close $outf;
+    close $outg;
     unlink $combined;
 
-    return;
+    return ($ffilename, $gfilename,\%sf_elem_map);
 }
 
 sub _get_seq_region {
