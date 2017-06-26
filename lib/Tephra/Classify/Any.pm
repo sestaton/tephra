@@ -14,7 +14,6 @@ use File::Path  qw(make_path);
 use Cwd         qw(abs_path);         
 #use Log::Any    qw($log);
 use Carp 'croak';
-use Try::Tiny;
 use Tephra::Annotation::MakeExemplars;
 #use Data::Dump::Color;
 use namespace::autoclean;
@@ -123,9 +122,9 @@ sub parse_blast {
     my ($blast_report) = @_;
     return undef unless defined $blast_report;
 
-    my $blast_hpid = $self->blast_hit_pid;
-    my $blast_hcov = $self->blast_hit_cov;
-    my $blast_hlen = $self->blast_hit_len;
+    my $blast_hpid = 80; #$self->blast_hit_pid;
+    my $blast_hcov = 50; #$self->blast_hit_cov;
+    my $blast_hlen = 80; #$self->blast_hit_len;
     my $perc_cov   = sprintf("%.2f", $blast_hcov/100);
 
     my (%matches, %seen);
@@ -142,7 +141,7 @@ sub parse_blast {
 	my $minlen = min($qlen, $hlen); # we want to measure the coverage of the smaller element
 	my ($coords) = ($queryid =~ /_(\d+_\d+)$/);
         $queryid =~ s/_$coords//;
-	my ($family) = ($hitid =~ /(\w{3}_(?:non_LTR_retrotransposon|helitron)\d+)_/);
+	my ($family) = ($hitid =~ /((?:\w{3}_)?(?:non_LTR_retrotransposon|helitron)\d+)_/);
 	if ($hitlen >= $blast_hlen && $hitlen >= ($minlen * $perc_cov) && $pid >= $blast_hpid) {
 	    unless (exists $seen{$queryid}) {
 		push @{$matches{$family}}, $queryid;
@@ -158,61 +157,32 @@ sub parse_blast {
 
 sub write_families {
     my $self = shift;
-    my ($matches, $tetype, $tefas) = @_;
+    my ($tefas, $matches) = @_;
 
     my ($name, $path, $suffix) = fileparse($tefas, qr/\.[^.]*/);
-    #my $dir  = basename($cpath);
-    #my ($sf) = ($dir =~ /_(\w+)$/);
+    my $dir  = basename($path);
+    my ($sf) = ($dir =~ /_(\w+)$/);
 
-    #my $sfname;
-    #if ($tetype eq 'non-LTR') {
-	#$sfname = 'RLG' if $sf =~ /gypsy/i;
-	#$sfname = 'RLC' if $sf =~ /copia/i;
-	#$sfname = 'RLX' if $sf =~ /unclassified/i;
-    #}
-    #if ($tetype eq 'Helitron') {
-	#$sfname = 'DTA' if $sf =~ /hat/i;
-	#$sfname = 'DTC' if $sf =~ /cacta/i;
-	#$sfname = 'DTM' if $sf =~ /mutator/i;
-	#$sfname = 'DTT' if $sf =~ /mariner/i;
-	#$sfname = 'DTX' if $sf =~ /unclassified/i;
-    #}
-
-    #my @compfiles;
-    #find( sub { push @compfiles, $File::Find::name if /complete.fasta$/ }, $cpath );
-    #my $ltrfas = shift @compfiles;
     my $seqstore = $self->_store_seq($tefas);
     my $elemct = (keys %$seqstore);
 	
     my ($idx, $famtot, $tomerge) = (0, 0, 0);
     my (%fastas, %annot_ids, %sfmap);
 
-    #my $fam_id_map;
-    #if (defined $matches) {
-	#my $tomerge = $self->_compare_merged_nonmerged($matches, $seqstore, $unmerged_stats);
-	#$fam_id_map = $tomerge == 1 ? $matches : $dom_fam_map;
-    #}
-
-    #for my $str (reverse sort { @{$fam_id_map->{$a}} <=> @{$fam_id_map->{$b}} } keys %$fam_id_map) {
     for my $str (reverse sort { @{$matches->{$a}} <=> @{$matches->{$b}} } keys %$matches) {
 	my $famfile = $sf."_family$idx".".fasta";
 	my $outfile = File::Spec->catfile( abs_path($path), $famfile );
 	open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 	for my $elem (@{$matches->{$str}}) {
-	    #my $query = $elem =~ s/\w{3}_singleton_family\d+_//r;
-	    my ($sfname) = ($elem =~ /^(\w{3})_\w+/);
-	    if (exists $seqstore->{$query}) {
+	    if (exists $seqstore->{$elem}) {
 		$famtot++;
-		my $coordsh = $seqstore->{$query};
-		my $coords  = (keys %$coordsh)[0];
-		$seqstore->{$query}{$coords} =~ s/.{60}\K/\n/g;
-		say $out join "\n", ">$sfname"."_family$idx"."_$query"."_$coords", $seqstore->{$query}{$coords};
-		delete $seqstore->{$query};
-		$annot_ids{$query} = $sfname."_family$idx";
-		$sfmap{$sfname}++;
+		$seqstore->{$elem} =~ s/.{60}\K/\n/g;
+		$annot_ids{$elem} = "family$idx";
+		say $out join "\n", ">$elem"."_family$idx", $seqstore->{$elem};
+		delete $seqstore->{$elem};
 	    }
 	    else {
-		croak "\nERROR: $query not found in store. Exiting.";
+		croak "\nERROR: $elem not found in store. Exiting.";
 	    }
 	}
 	close $out;
@@ -227,13 +197,14 @@ sub write_families {
 	my $xoutfile = File::Spec->catfile( abs_path($path), $famxfile );
 	open my $outx, '>', $xoutfile or die "\nERROR: Could not open file: $xoutfile\n";
 	for my $k (nsort keys %$seqstore) {
-	    my ($sfname) = ($k =~ /^(\w{3})_\w+/);
-	    $sfmap{$sfname}++;
-	    my $coordsh = $seqstore->{$k};
-	    my $coords  = (keys %$coordsh)[0];
-	    $seqstore->{$k}{$coords} =~ s/.{60}\K/\n/g;
-	    say $outx join "\n", ">$sfname"."_singleton_family$idx"."_$k"."_$coords", $seqstore->{$k}{$coords};
-	    $annot_ids{$k} = $sfname."_singleton_family$idx";
+	    $seqstore->{$k} =~ s/.{60}\K/\n/g;
+	    my $chr = $k;
+	    my ($id) = ($k =~ /(helitron\d+|non_LTR_retrotransposon\d+)_/);
+	    my ($start, $stop) = ($k =~ /(\d+)_(\d+)$/);
+	    $chr =~ s/${id}_//;
+	    $chr =~ s/_$start.*//;
+	    say $outx join "\n", ">$id"."_singleton_family$idx"."_$chr"."_$start"."_$stop", $seqstore->{$k};
+	    $annot_ids{$k} = "singleton_family$idx";
 	    $idx++;
 	}
 	close $outx;
@@ -250,14 +221,11 @@ sub write_families {
 
 sub combine_families {
     my ($self) = shift;
-    my ($outfiles) = @_;
-    #my $genome = $self->genome->absolute->resolve;
-    #my $outdir = $self->outdir->absolute->resolve;
+    my ($outfiles, $sf_elem_map) = @_;
     my $outfile = $self->fasta;
     
-    #my ($name, $path, $suffix) = fileparse($outgff, qr/\.[^.]*/);
-    #my $outfile = File::Spec->catfile($path, $name.'.fasta');
-
+    #dd $sf_elem_map;
+    #say STDERR "DEBUG outfile: $outfile";
     open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
     my $ct = 0;
@@ -268,21 +236,25 @@ sub combine_families {
 	while (my $seqobj = $iter->next_seq) {
 	    my $id  = $seqobj->name;
 	    my $seq = $seqobj->seq;
-	    $seq =~ s/.{60}\K/\n/g;
-	    say $out join "\n", ">$id", $seq;
-	    $ct++;
+	    my ($key) = ($id =~ /(helitron\d+|non_LTR_retrotransposon\d+)_/);
+	    #say STDERR "DEBUG id:  $id";
+	    #say STDERR "DEBUG key: $key";
+	    if (exists $sf_elem_map->{$key}) {
+		$seq =~ s/.{60}\K/\n/g;
+		say $out join "\n", ">$sf_elem_map->{$key}"."_$id", $seq;
+		$ct++;
+	    }
 	}
 	#unlink $file;
     }
-    close $outfile;
+    close $out;
 
     return $ct;
 }
 
 sub annotate_gff {
     my $self = shift;
-    my ($annot_ids, $ingff) = @_;
-    #my $outdir = $self->outdir->absolute->resolve;
+    my ($annot_ids, $ingff, $sf_elem_map) = @_;
     my $outgff = $self->gff;
 
     open my $in, '<', $ingff or die "\nERROR: Could not open file: $ingff\n";
@@ -295,12 +267,16 @@ sub annotate_gff {
 	}
 	else {
 	    my @f = split /\t/, $line;
-	    if ($f[2] eq 'helitron|non_LTR_retrotransposon') {
-		my ($id) = ($f[8] =~ /ID=(helitron\d+|non_LTR_retrotransposon\d+);/);
-		my $key  = $id."_$f[0]";
+	    if ($f[2] =~ /helitron|non_LTR_retrotransposon/) {
+		my ($id) = ($f[8] =~ /ID=((?:\w{3}_)?helitron\d+|(?:\w{3}_)?non_LTR_retrotransposon\d+);/);
+		my $key  = join "_", $id, $f[0], $f[3], $f[4];
+		#say STDERR "DEBUG id : $id";
+		#say STDERR "DEBUG key: $key";
 		if (exists $annot_ids->{$key}) {
 		    my $family = $annot_ids->{$key};
-		    $f[8] =~ s/ID=$id\;/ID=$id;family=$family;/;
+		    my $sfamily = $sf_elem_map->{$id};
+		    my $fid = $sfamily."_$id";
+		    $f[8] =~ s/ID=$id\;/ID=$fid;family=$family;/;
 		    say $out join "\t", @f;
 		}
 		else {
@@ -318,30 +294,6 @@ sub annotate_gff {
     return;
 }
 
-sub _compare_merged_nonmerged {
-    my $self = shift;
-    my ($matches, $seqstore, $unmerged_stats) = @_;
-
-    my $famtot = 0;
-
-    for my $str (keys %$matches) {
-	for my $elem (@{$matches->{$str}}) {
-	    my $query = $elem =~ s/\w{3}_singleton_family\d+_//r;
-	    if (exists $seqstore->{$query}) {
-		$famtot++;
-	    }
-	    else {
-		croak "\nERROR: $query not found in store. Exiting.";
-	    }
-	    
-	}
-    }
-
-    my $tomerge = $unmerged_stats->{total_in_families} < $famtot ? 1 : 0;
-
-    return $tomerge;
-}
-
 sub _store_seq {
     my $self = shift;
     my ($file) = @_;
@@ -351,10 +303,8 @@ sub _store_seq {
     my $iter = $kseq->iterator();
     while (my $seqobj = $iter->next_seq) {
 	my $id = $seqobj->name;
-	my ($coords) = ($id =~ /_(\d+_\d+)$/);
-	$id =~ s/_$coords//;
 	my $seq = $seqobj->seq;
-	$hash{$id} = { $coords => $seq };
+	$hash{$id} = $seq;
     }
 
     return \%hash;
