@@ -151,7 +151,7 @@ sub _classify_ltr_families {
 
     my ($outfiles, $annot_ids) = $classify_fams_obj->make_families($gffs, $log);
     $classify_fams_obj->combine_families($outfiles);
-    $classify_fams_obj->annotate_gff($annot_ids, $ingff);
+    $classify_fams_obj->annotate_gff($annot_ids, $opt->{ingff});
     
     unlink $_ for values %$gffs;
 }
