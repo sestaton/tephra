@@ -161,8 +161,8 @@ sub _classify_tir_families {
     my $debug   = $opt->{debug} // 0;
     my $type    = 'TIR';
 
-    unless ( -d $outdir ) {
-        make_path( $outdir, {verbose => 0, mode => 0771,} );
+    unless ( -d $opt->{outdir} ) {
+        make_path( $opt->{outdir}, {verbose => 0, mode => 0771,} );
     }
 
     my $classify_fams_obj = Tephra::Classify::Fams->new(
@@ -179,7 +179,7 @@ sub _classify_tir_families {
 
     my ($outfiles, $annot_ids) = $classify_fams_obj->make_families($gffs, $log);
     $classify_fams_obj->combine_families($outfiles);
-    $classify_fams_obj->annotate_gff($annot_ids, $ingff);
+    $classify_fams_obj->annotate_gff($annot_ids, $opt->{ingff});
     
     unlink $_ for values %$gffs;
 }
