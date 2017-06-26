@@ -105,6 +105,85 @@ sub map_superfamily_name {
     }
 }
 
+=head2 map_superfamily_name_to_code
+
+ Title   : map_superfamily_name_to_code
+
+ Usage   : my $superfamily_name = $self->map_superfamily_name_to_code($match);
+           
+ Function: Get the 3-letter code based on a superfamily or clade name
+                                                                            Return_type
+ Returns : The 3-letter superfamily code                                    Scalar
+            
+                                                                            Arg_type
+ Args    : A BLAST hit or any sequence identifier                           Scalar
+
+=cut
+
+sub map_superfamily_name_to_code {
+    my $self = shift;
+    my ($name) = @_;
+
+    my %sfcode_table = (
+        'RYD' => 'DIRS',
+        'RYN' => 'Ngaro',
+        'RYX' => 'Unknown_DIRS',
+        'RYV' => 'VIPER',
+        'RII' => 'I',
+        'RIJ' => 'Jockey',
+        'RIL' => 'L1',
+        'RIR' => 'R2',
+        'RIT' => 'RTE',
+	'RIC' => 'CR1',
+	'RIS' => 'R1',
+	'RIA' => 'RandI',
+	'RIE' => 'Rex',
+	'RID' => 'Tad1',
+        'RIX' => 'Unknown_LINE',
+        'RLB' => 'Bel/Pao',
+        'RLG' => 'Gypsy',
+        'RLC' => 'Copia',
+        'RLE' => 'ERV',
+        'RLR' => 'Retrovirus',
+        'RLX' => 'Unknown_LTR',
+        'PPP' => 'Penelope',
+        'RPX' => 'Unknown_PLE',
+        'RSS' => '5S',
+        'RSL' => '7SL',
+        'RST' => 'tRNA',
+        'RSX' => 'Unknown_SINE',
+        'RXX' => 'Unknown_retrotransposon',
+        'DYC' => 'Crypton',
+        'DYX' => 'Unknown_Crypton',
+        'DTC' => 'CACTA',
+        'DTA' => 'hAT',
+        'DTE' => 'Merlin',
+        'DTM' => 'Mutator',
+        'DTP' => 'P',
+        'DTH' => 'PIF/Harbinger',
+        'DTB' => 'PiggyBac',
+        'DTT' => 'Tc1/Mariner',
+        'DTR' => 'Transib',
+        'DTX' => 'Unknown_TIR',
+        'DXX' => 'Unknown_DNA_transposon',
+        'DHH' => 'Helitron',
+        'DHX' => 'Unknown_Helitron',
+        'DMM' => 'Maverick',
+        'DMX' => 'Unknown_Maverick',
+	'RST' => 'SINE2/tRNA' );
+    
+    my %name_table = reverse %sfcode_table;
+
+    if (exists $name_table{$name}) {
+	return $name_table{$name};
+    }
+    else {
+	say STDERR "\n[WARNING]: No 3-letter code could be found for: $name\n"
+	    if $self->debug;
+	return 0;
+    }
+}
+
 =head1 AUTHOR
 
 S. Evan Staton, C<< <statonse at gmail.com> >>
