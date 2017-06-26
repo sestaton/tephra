@@ -115,9 +115,9 @@ sub _run_all_commands {
 	$st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
 	$log->info("Command - 'tephra classifyltrs' started at:   $st.");
 	
-	my $classifyltrs_opts = ['-g', $global_opts->{genome}, '-d', $global_opts->{repeatdb}, 
-				 '-i', $ltr_gff, '-o', $ltrc_gff,
-				 '-r', $ltrc_dir, '-t', $global_opts->{threads}, '--logfile', $global_opts->{logfile}];
+	my $classifyltrs_opts = ['-g', $global_opts->{genome}, '-d', $global_opts->{repeatdb}, '-i', $ltr_gff, 
+				 '-o', $ltrc_gff, '-r', $ltrc_dir, '-t', $global_opts->{threads}, 
+				 '--logfile', $global_opts->{logfile}];
 	push @$classifyltrs_opts, '--debug'
 	    if $global_opts->{debug};
 	_run_tephra_cmd('classifyltrs', $classifyltrs_opts, $global_opts->{debug}); 
@@ -391,16 +391,19 @@ sub _run_all_commands {
     }
 
     ## classifytirs
-    my ($tirc_gff, $tirc_fas);
+    my ($tirc_gff, $tirc_fas, $tirc_dir);
     if (-e $tir_gff && -s $tir_gff) {
 	$tirc_gff = File::Spec->catfile( abs_path($path), $name.'_tephra_tirs_classified.gff3' );
 	$tirc_fas = File::Spec->catfile( abs_path($path), $name.'_tephra_tirs_classified.fasta' );
-
+	$tirc_dir = File::Spec->catdir(  abs_path($path), $name.'_tephra_tirs_classified_results' );
+	
 	my $t22 = gettimeofday();
 	$st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
 	$log->info("Command - 'tephra classifytirs' started at:   $st.");
 
-	my $classifytirs_opts = ['-g', $tir_ref, '-i', $tir_gff, '-o', $tirc_gff, '--logfile', $global_opts->{logfile}];
+	my $classifytirs_opts = ['-g', $tir_ref, '-i', $tir_gff, '-o', $tirc_gff, '-r', $tirc_dir, 
+				 '-t', $global_opts->{threads}, '-d', $global_opts->{repeatdb}, 
+				 '--logfile', $global_opts->{logfile}];
 	_run_tephra_cmd('classifytirs', $classifytirs_opts, $global_opts->{debug});
 
 	my $t23 = gettimeofday();
@@ -430,10 +433,10 @@ sub _run_all_commands {
                            '-o', $tirage_out, '-f', $tirc_gff, '-r', $global_opts->{subs_rate}, '--clean'];
         push @$tirage_opts, '--all'
             if $config->{tirage}{all} =~ /yes/i;
-        #if ($config->{ltrage}{all} =~ /no/i) {
-            #push @$tirage_opts, '-i';
-            #push @$tirage_opts, $tirc_dir;
-        #}
+        if ($config->{tirage}{all} =~ /no/i) {
+            push @$tirage_opts, '-i';
+            push @$tirage_opts, $tirc_dir;
+        }
         _capture_tephra_cmd('tirage', $tirage_opts, $global_opts->{debug});
 
         my $t25 = gettimeofday();
