@@ -184,7 +184,7 @@ sub collect_feature_args {
     }
     else {
 	my $dir = $self->dir->absolute->resolve;
-	my $wanted  = sub { push @tirs, $File::Find::name if -f && /exemplar_tirs.fasta$/ };
+	my $wanted  = sub { push @tirs, $File::Find::name if -f && /exemplar_repeats.fasta$/ };
 	my $process = sub { grep ! -d, @_ };
 	find({ wanted => $wanted, preprocess => $process }, $dir);
 

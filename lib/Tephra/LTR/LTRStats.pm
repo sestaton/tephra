@@ -422,7 +422,7 @@ sub _get_exemplar_ltrs {
 
     for my $sfdir (@dirs) {
 	my ($ltrfile, %ltrfams);
-	find( sub { $ltrfile = $File::Find::name if -f and /exemplar_ltrs.fasta$/ }, $sfdir);
+	find( sub { $ltrfile = $File::Find::name if -f and /exemplar_repeats.fasta$/ }, $sfdir);
 	unless (defined $ltrfile) {
 	    say STDERR "\nWARNING: No exemplar LTR file was found in: $sfdir.";
 	    say STDERR "This is likely because there were no families identified by the 'classifyltrs' command for this superfamily.";
