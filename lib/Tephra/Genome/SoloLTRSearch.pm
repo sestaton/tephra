@@ -488,7 +488,7 @@ sub _get_exemplar_ltrs {
     my ($dir) = @_;
 
     my ($ltrfile, @ltrseqs, %ltrfams);
-    find( sub { $ltrfile = $File::Find::name if -f and /exemplar_ltrs.fasta$/ }, $dir);
+    find( sub { $ltrfile = $File::Find::name if -f and /exemplar_repeats.fasta$/ }, $dir);
     unless (defined $ltrfile) {
 	say STDERR "\nWARNING: Exemplar LTR file not found in $dir.\n";
 	return;

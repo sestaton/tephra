@@ -202,7 +202,6 @@ sub find_align_gaps {
 
     my $cwd = getcwd();
     open my $illrecstat_fh, '>>', $illrecstatsfile or die "\nERROR: Could not open file: $!";
-    
     open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
     my ($seqs_in_aln, $count) = $self->split_aln($aln_file);
