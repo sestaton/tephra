@@ -110,7 +110,7 @@ sub make_exemplars {
 	    my $family = $exemplars->{$exemplar_id_form};
 	    $ltrs{$key}{'full'} = join "||", $full_feats, $family;
 
-	    if ($feature->{type} =~ /long_terminal_repeat|terminal_inverted_repeat/) {
+	    if ($feature->{type} =~ /long_terminal_repeat|^terminal_inverted_repeat$/) {
 		my $parent = @{$feature->{attributes}{Parent}}[0];
 		my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
 		if ($seq_id eq $feature->{seq_id}) {
