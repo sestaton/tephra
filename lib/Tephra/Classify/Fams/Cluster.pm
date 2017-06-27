@@ -180,47 +180,6 @@ sub extract_ltr_features {
     close $fivefh;
     close $threfh;
 
-    ## This is where we merge overlapping hits in a chain and concatenate non-overlapping hits
-    ## to create a single domain sequence for each element
-    #for my $src (keys %pdoms) {
-    #    for my $element (keys %{$pdoms{$src}}) {
-    #        my ($pdom_s, $pdom_e, $str);
-    #        for my $pdom_type (keys %{$pdoms{$src}{$element}}) {
-    #            my (%lrange, %seqs, $union);
-    #            my $pdom_file = File::Spec->catfile( abs_path($resdir), $pdom_type.'_pdom.fasta' );
-    #            open my $fh, '>>', $pdom_file or die "\nERROR: Could not open file: $pdom_file\n";
-    #            for my $split_dom (@{$pdoms{$src}{$element}{$pdom_type}}) {
-    #                ($pdom_s, $pdom_e, $str) = split /\|\|/, $split_dom;
-    #                push @{$lrange{$src}{$element}{$pdom_type}}, "$pdom_s..$pdom_e";
-    #            }
-    #            
-    #            if (@{$lrange{$src}{$element}{$pdom_type}} > 1) {
-    #                {
-    #                    no warnings; # Number::Range warns on EVERY single interger that overlaps
-    #                    my $range = Number::Range->new(@{$lrange{$src}{$element}{$pdom_type}});
-    #                    $union = $range->range;
-    #                }
-    #                        
-    #                for my $r (split /\,/, $union) {
-    #                    my ($ustart, $uend) = split /\.\./, $r;
-    #                    my $seq = $self->subseq_pdoms($index, $src, $ustart, $uend);
-    #                    my $k = join "_", $ustart, $uend;
-    #                    $seqs{$k} = $seq;
-    #                }
-    #                        
-    #                $self->concat_pdoms($src, $element, \%seqs, $fh);
-    #		}
-	#	else {
-        #            my ($nustart, $nuend, $str) = split /\|\|/, @{$pdoms{$src}{$element}{$pdom_type}}[0];
-        #            $self->subseq($index, $src, $element, $nustart, $nuend, $fh);
-        #        }
-        #        close $fh;
-        #        %seqs   = ();
-        #        %lrange = ();
-        #        unlink $pdom_file if ! -s $pdom_file;
-        #    }
-        #}
-    #}
     $self->merge_overlapping_hits($index, $resdir, \%pdoms);
 
     for my $file ($comp, $ppts, $pbs, $five_pr_ltrs, $three_pr_ltrs) {
@@ -249,14 +208,10 @@ sub extract_tir_features {
     }
     
     my $comp = File::Spec->catfile($resdir, $name.'_complete.fasta');
-    #my $ppts = File::Spec->catfile($resdir, $name.'_ppt.fasta');
-    #my $pbs  = File::Spec->catfile($resdir, $name.'_pbs.fasta');
     my $five_pr_tirs  = File::Spec->catfile($resdir, $name.'_5prime-tirs.fasta');
     my $three_pr_tirs = File::Spec->catfile($resdir, $name.'_3prime-tirs.fasta');
 
     open my $allfh, '>>', $comp or die "\nERROR: Could not open file: $comp\n";
-    #open my $pptfh, '>>', $ppts or die "\nERROR: Could not open file: $ppts\n";
-    #open my $pbsfh, '>>', $pbs or die "\nERROR: Could not open file: $pbs\n";
     open my $fivefh, '>>', $five_pr_tirs or die "\nERROR: Could not open file: $five_pr_tirs\n";
     open my $threfh, '>>', $three_pr_tirs or die "\nERROR: Could not open file: $three_pr_tirs\n";
 
@@ -287,15 +242,6 @@ sub extract_tir_features {
                 $seen{$tirkey} = 1;
             }
         }
-        #elsif ($feature->{type} eq 'primer_binding_site') {
-            #my $name = $feature->{attributes}{trna};
-            #my $parent = @{$feature->{attributes}{Parent}}[0];
-            #my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
-            #if ($seq_id eq $feature->{seq_id}) {
-                #$tirs{$pkey}{'pbs'} =
-                    #join "||", @{$feature}{qw(seq_id type)}, $name, @{$feature}{qw(start end)};
-            #}
-        #}
         elsif ($feature->{type} eq 'protein_match') {
 	    my $name = @{$feature->{attributes}{name}}[0];
             my $parent = @{$feature->{attributes}{Parent}}[0];
@@ -306,14 +252,6 @@ sub extract_tir_features {
                 $seen{$pdomkey} = 1;
             }
         }
-        #elsif ($feature->{type} eq 'RR_tract') {
-            #my $parent = @{$feature->{attributes}{Parent}}[0];
-            #my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
-            #if ($seq_id eq $feature->{seq_id}) {
-                #$tirs{$pkey}{'ppt'} =
-                    #join "||", @{$feature}{qw(seq_id type start end)};
-            #}
-        #}
     }
     close $gffio;
 
@@ -324,18 +262,6 @@ sub extract_tir_features {
         # full element
         my ($source, $prim_tag, $fstart, $fend) = split /\|\|/, $tirs{$tir}{'full'};
         $self->subseq($index, $source, $element, $fstart, $fend, $allfh);
-
-        # pbs
-        #if ($tirs{$tir}{'pbs'}) {
-            #my ($pbssource, $pbstag, $trna, $pbsstart, $pbsend) = split /\|\|/, $tirs{$tir}{'pbs'};
-            #$self->subseq($index, $pbssource, $element, $pbsstart, $pbsend, $pbsfh);
-        #}
-
-        # ppt
-        #if ($tirs{$tir}{'ppt'}) {
-            #my ($pptsource, $ppttag, $pptstart, $pptend) = split /\|\|/, $tirs{$tir}{'ppt'};
-            #$self->subseq($index, $source, $element, $pptstart, $pptend, $pptfh);
-        #}
 
         for my $tir_repeat (@{$tirs{$tir}{'tirs'}}) {
             my ($src, $tirtag, $s, $e, $strand) = split /\|\|/, $tir_repeat;
@@ -363,52 +289,9 @@ sub extract_tir_features {
         }
     }
     close $allfh;
-    #close $pptfh;
-    #close $pbsfh;
     close $fivefh;
     close $threfh;
     
-    ## This is where we merge overlapping hits in a chain and concatenate non-overlapping hits
-    ## to create a single domain sequence for each element
-    #for my $src (keys %pdoms) {
-    #for my $element (keys %{$pdoms{$src}}) {
-     #       my ($pdom_s, $pdom_e, $str);
-      #      for my $pdom_type (keys %{$pdoms{$src}{$element}}) {
-      #          my (%lrange, %seqs, $union);
-      #          my $pdom_file = File::Spec->catfile( abs_path($resdir), $pdom_type.'_pdom.fasta' );
-      #          open my $fh, '>>', $pdom_file or die "\nERROR: Could not open file: $pdom_file\n";
-      #          for my $split_dom (@{$pdoms{$src}{$element}{$pdom_type}}) {
-      #              ($pdom_s, $pdom_e, $str) = split /\|\|/, $split_dom;
-      #              push @{$lrange{$src}{$element}{$pdom_type}}, "$pdom_s..$pdom_e";
-      #          }
-      #          
-      #          if (@{$lrange{$src}{$element}{$pdom_type}} > 1) {
-      #              {
-      #                  no warnings; # Number::Range warns on EVERY single interger that overlaps
-      #                  my $range = Number::Range->new(@{$lrange{$src}{$element}{$pdom_type}});
-      #                  $union = $range->range;
-      #              }
-      #                      
-      #              for my $r (split /\,/, $union) {
-      #                  my ($ustart, $uend) = split /\.\./, $r;
-      #                  my $seq = $self->subseq_pdoms($index, $src, $ustart, $uend);
-      #                  my $k = join "_", $ustart, $uend;
-      #                  $seqs{$k} = $seq;
-      #              }
-      #                      
-      #              $self->concat_pdoms($src, $element, \%seqs, $fh);
-      #          }
-      #          else {
-      #              my ($nustart, $nuend, $str) = split /\|\|/, @{$pdoms{$src}{$element}{$pdom_type}}[0];
-      #              $self->subseq($index, $src, $element, $nustart, $nuend, $fh);
-      #          }
-      #          close $fh;
-      #          %seqs   = ();
-      #          %lrange = ();
-      #          unlink $pdom_file if ! -s $pdom_file;
-      #      }
-      #  }
-    #}
     $self->merge_overlapping_hits($index, $resdir, \%pdoms);
 
     for my $file ($comp, $five_pr_tirs, $three_pr_tirs) {
