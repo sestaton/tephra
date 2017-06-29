@@ -1,6 +1,18 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.08.2
+
+- Add family-level classification methods for TIR, Helitron, and non-LTR retrotransposons.
+  These methods are now in the Tephra::Classify::Any class.
+- Move Tephra::LTR::MakeExemplars to Tephra::Annotation::MakeExemplars and add
+  some abstraction so the methods now work for finding TIR exemplars also.
+- Change Tephra::Classify::LTRFams and subclasses to the more abstract
+  Tephra::Classify::Fams and modify class methods to work for LTR and TIR elements.
+- The --all option to 'tirage' is no longer required since family annotations are 
+  modeled the same way as for LTR retrotransposons. It is now possible to omit the --all
+  option and only calculate age on the top N families.
+
 0.08.1	06/12/2017	Vancouver, BC
 
 - Bug fix for non_LTR_retrotransposon IDs getting dropped in final GFF3.
