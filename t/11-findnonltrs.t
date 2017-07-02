@@ -49,7 +49,7 @@ SKIP: {
     open my $in, '<', $fas;
     while (<$in>) { 
 	chomp;
-	if (/^>RIL_non_LTR_retrotransposon/) {
+	if (/^>RIL/) {
 	    $seqct++;
 	}
     }
@@ -61,7 +61,7 @@ SKIP: {
 	chomp;
 	next if /^#/;
 	my @f = split /\t/;
-	++$gct if $f[8] =~ /ID=RIL_non_LTR_retrotransposon\d+.*;family/;
+	++$gct if $f[8] =~ /ID=non_LTR_retrotransposon\d+.*;family/;
     }
     close $gin;
 
@@ -78,8 +78,9 @@ SKIP: {
     say STDERR "DEBUG: tot -> $tot";
     ok( -e $log, 'findnonltrs log created' );
     ok( $seqct == 16, 'Correct number of non-LTRs found' );
+    ok( $gct == 16, 'Correct number of non-LTRs found' );
     ok( $tot == 16, 'Correct number of elements logged' );
-    ok( $tot == $seqct, 'Correct number of elements logged and written');
+    #ok( $tot == $seqct, 'Correct number of elements logged and written');
 
     ## clean up
     unlink $gff, $fas, $log;
