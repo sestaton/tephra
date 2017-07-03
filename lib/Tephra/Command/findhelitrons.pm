@@ -8,6 +8,7 @@ use Pod::Find     qw(pod_where);
 use Pod::Usage    qw(pod2usage);
 use Capture::Tiny qw(capture_merged);
 use Cwd           qw(abs_path);
+use File::Copy    qw(move);
 use File::Basename;
 use Tephra -command;
 use Tephra::Config::Exe;
@@ -75,7 +76,7 @@ sub _run_helitron_search {
         gff             => $gff,
         debug           => $debug );
 
-    if (defined $opt->{fasta}) {#
+    if (defined $opt->{fasta}) {
 	$opts{fasta} = $opt->{fasta};
     }
 
@@ -94,7 +95,7 @@ sub _find_helitron_families {
     my $threads = $opt->{threads} // 1;
 
     my $anno_obj = Tephra::Classify::Any->new(
-        fasta   => $fasta,
+        fasta   => $hel_obj->{fasta},
         gff     => $opt->{gff},
         threads => $threads,
         outdir  => $path,
@@ -112,23 +113,30 @@ sub _find_helitron_families {
     }
 
     my $blast_report = $anno_obj->process_blast_args;
-    my $matches = $anno_obj->parse_blast($blast_report);
-    my ($fams, $ids, $sfmap, $family_stats) = $anno_obj->write_families($hel_obj->{fasta}, $matches);
-    my $totct = $anno_obj->combine_families($fams, $sf_elem_map);
-    $anno_obj->annotate_gff($ids, $hel_obj->{gff}, $sf_elem_map);
-    #dd $family_stats;
 
-    my ($elemct, $famct, $famtot, $singct) =
-	@{$family_stats}{qw(total_elements families total_in_families singletons)};
-    
-    $log->info("Results - Number of Helitron families:                         $famct");
-    $log->info("Results - Number of Helitron elements in families:             $famtot");
-    $log->info("Results - Number of Helitron singleton families/elements:      $singct");
-    $log->info("Results - Number of Helitron elements (for debugging):         $elemct");
-    $log->info("Results - Number of Helitron elements written (for debugging): $totct");
-
-    unlink $_ for keys %$fams;
-    unlink @{$hel_obj}{qw(fasta gff)};
+    if (defined $blast_report) { 
+	my $matches = $anno_obj->parse_blast($blast_report);
+	my ($fams, $ids, $sfmap, $family_stats) = $anno_obj->write_families($hel_obj->{fasta}, $matches, $sf_elem_map);
+	my $totct = $anno_obj->combine_families($fams, $fasta);
+	$anno_obj->annotate_gff($ids, $hel_obj->{gff}, $sf_elem_map);
+	
+	my ($elemct, $famct, $famtot, $singct) =
+	    @{$family_stats}{qw(total_elements families total_in_families singletons)};
+	
+	$log->info("Results - Number of Helitron families:                         $famct");
+	$log->info("Results - Number of Helitron elements in families:             $famtot");
+	$log->info("Results - Number of Helitron singleton families/elements:      $singct");
+	$log->info("Results - Number of Helitron elements (for debugging):         $elemct");
+	$log->info("Results - Number of Helitron elements written (for debugging): $totct");
+	
+	unlink $_ for keys %$fams;
+	unlink @{$hel_obj}{qw(fasta gff)};
+    }
+    else {
+	say "\nWARNING: No BLAST hits were found so no Helitron families could be determined.\n";
+	move $hel_obj->{fasta}, $fasta or die "move failed: $!";
+	move $hel_obj->{gff}, $opt->{gff} or die "move failed: $!";
+    }
 }
 
 sub help {

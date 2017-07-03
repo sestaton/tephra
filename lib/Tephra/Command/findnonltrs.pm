@@ -8,6 +8,7 @@ use Pod::Find     qw(pod_where);
 use Pod::Usage    qw(pod2usage);
 use Capture::Tiny qw(capture_merged);
 use Cwd           qw(abs_path);
+use File::Copy    qw(move);
 use File::Spec;
 use File::Basename;
 use Tephra -command;
@@ -95,7 +96,7 @@ sub _find_nonltr_families {
     my $threads = $opt->{threads} // 1;
 
     my $anno_obj = Tephra::Classify::Any->new(
-        fasta   => $fasta,
+        fasta   => $obj->{fasta},
         gff     => $opt->{gff},
         threads => $threads,
         outdir  => $path,
@@ -113,23 +114,30 @@ sub _find_nonltr_families {
     }
 
     my $blast_report = $anno_obj->process_blast_args;
-    my $matches = $anno_obj->parse_blast($blast_report);
-    my ($fams, $ids, $sfmap, $family_stats) = $anno_obj->write_families($obj->{fasta}, $matches);
-    my $totct = $anno_obj->combine_families($fams, $sf_elem_map);
-    $anno_obj->annotate_gff($ids, $obj->{gff}, $sf_elem_map);
-    #dd $family_stats;
 
-    my ($elemct, $famct, $famtot, $singct) =
-        @{$family_stats}{qw(total_elements families total_in_families singletons)};
-
-    $log->info("Results - Number of non-LTR families:                         $famct");
-    $log->info("Results - Number of non-LTR elements in families:             $famtot");
-    $log->info("Results - Number of non-LTR singleton families/elements:      $singct");
-    $log->info("Results - Number of non-LTR elements (for debugging):         $elemct");
-    $log->info("Results - Number of non-LTR elements written (for debugging): $totct");
-
-    unlink $_ for keys %$fams;
-    unlink @{$obj}{qw(fasta gff)};
+    if (defined $blast_report) {
+	my $matches = $anno_obj->parse_blast($blast_report);
+	my ($fams, $ids, $sfmap, $family_stats) = $anno_obj->write_families($obj->{fasta}, $matches, $sf_elem_map);
+	my $totct = $anno_obj->combine_families($fams, $fasta);
+	$anno_obj->annotate_gff($ids, $obj->{gff}, $sf_elem_map);
+	
+	my ($elemct, $famct, $famtot, $singct) =
+	    @{$family_stats}{qw(total_elements families total_in_families singletons)};
+	
+	$log->info("Results - Number of non-LTR families:                         $famct");
+	$log->info("Results - Number of non-LTR elements in families:             $famtot");
+	$log->info("Results - Number of non-LTR singleton families/elements:      $singct");
+	$log->info("Results - Number of non-LTR elements (for debugging):         $elemct");
+	$log->info("Results - Number of non-LTR elements written (for debugging): $totct");
+	
+	unlink $_ for keys %$fams;
+	unlink @{$obj}{qw(fasta gff)};
+    }
+    else {
+	say "\nWARNING: No BLAST hits were found so no non-LTR families could be determined.\n";
+        move $obj->{fasta}, $fasta or die "move failed: $!";
+        move $obj->{gff}, $opt->{gff} or die "move failed: $!";
+    }
 }
 
 sub help {
