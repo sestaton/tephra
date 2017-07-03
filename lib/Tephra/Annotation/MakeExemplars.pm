@@ -76,7 +76,12 @@ sub make_exemplars {
     my $index = $self->index_ref($fasta);
     my $exemplars = $self->process_vmatch_args($dir);
 
-    my ($sf) = ($dir =~ /_(\w+)$/);
+    #my ($sf) = ($dir =~ /_(\w+)$/);
+    my ($sf) = ($dir =~ /_((?:\w+\d+\-)?\w+)$/);
+    unless (defined $sf) {
+        say STDERR "\nERROR: Can't get sf from $dir $.";
+    }
+
     my $exemcomp = File::Spec->catfile($dir, $sf.'_exemplar_complete.fasta');
     my $ltrs_out = File::Spec->catfile($dir, $sf.'_exemplar_repeats.fasta');
 
