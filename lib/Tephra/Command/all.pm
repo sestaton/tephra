@@ -599,9 +599,26 @@ sub _run_all_commands {
     $log->info("Results - Finished generating combined GFF3 file at:     $ft. Final output files:");
     $log->info("Output files - $global_opts->{outfile}");
 
-    ## combine age files
-    my $age_sum = File::Spec->catfile( abs_path($path), $name.'_ltr-tir_age_summary.tsv' );
+    ## calculate family similarity
+    my $te_sum = File::Spec->catfile( abs_path($path), $name.'_tephra_transposons_length-similarity_summary.tsv' );
     my $t38 = gettimeofday();
+    $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
+    $log->info("Command - Calculating global transposon family similarity at:           $st.");
+
+    #my $age_ct = _combine_age_files(\@age_files, \@classified_fastas, $age_sum);
+    my $util = Tephra::Annotation::Util->new;
+    $util->calculate_family_similarity($customRepDB, $te_sum, $global_opts->{threads});
+    #my $age_pd = ' ' x length($age_ct);
+
+    my $t39 = gettimeofday();
+    $total_elapsed = $t39 - $t38;
+    $final_time = sprintf("%.2f",$total_elapsed/60);
+    $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
+    $log->info("Results - Finished calculating global transposon family similarity at:    $st.");
+
+    ## combine age files
+    my $age_sum = File::Spec->catfile( abs_path($path), $name.'_tephra_ltr-tir_age_summary.tsv' );
+    my $t40 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     #$log->info("Command - Generating combined age files at:                                     $st.");
 
@@ -609,8 +626,8 @@ sub _run_all_commands {
     my $age_pd = ' ' x length($age_ct);
 
     $log->info("Command - Generating combined age files at:$age_pd                              $st.");
-    my $t39 = gettimeofday();
-    $total_elapsed = $t39 - $t38;
+    my $t41 = gettimeofday();
+    $total_elapsed = $t41 - $t40;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Results - Finished generating combined age files for $age_ct transposons at:    $st.");
