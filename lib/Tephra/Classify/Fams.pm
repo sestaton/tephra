@@ -119,9 +119,17 @@ sub make_families {
 				  my $family_stats = $data_ref->{$type}{family_stats};
 				  my ($sf, $elemct, $famct, $famtot, $singct) =
                                       @{$family_stats}{qw(superfamily total_elements families total_in_families singletons)};
-				  my ($sfam) = ($sf =~ /_?(\w+)\z/);
-				  my $pad = $sfam =~ /unclassified/i ? 0 : 7;
+				  my ($sfam) = ($sf =~ /_?((?:\w+\d+\-)?\w+)\z/);
+				  $sfam =~ s/tirs_|tephra_ltrs_//; # if $sfam =~ /^tirs_/;
+				  my $pad = $sfam =~ /unclassified/i ? 0 : length('unclassified')-length($sfam);
 				  my $lpad = ' ' x $pad;
+				  if ($sfam =~ /-/) {
+				      my ($tc1, $mar) = split /-/, $sfam;
+				      $sfam = join "-", ucfirst($tc1), ucfirst($mar);
+				  }
+				  else {
+				      $sfam = ucfirst($sfam);
+				  }
 				  $log->info("Results - Number of $sfam families:$lpad                      $famct");
 				  $log->info("Results - Number of $sfam elements in families:$lpad          $famtot");
 				  $log->info("Results - Number of $sfam singleton families/elements:$lpad   $singct");
@@ -216,7 +224,10 @@ sub make_fasta_from_dom_orgs {
 
     my ($cname, $cpath, $csuffix) = fileparse($clsfile, qr/\.[^.]*/);
     my $dir  = basename($cpath);
-    my ($sf) = ($dir =~ /_(\w+)$/);
+    my ($sf) = ($dir =~ /_((?:\w+\d+\-)?\w+)$/);
+    unless (defined $sf) {
+	say STDERR "\nERROR: Can't get sf from $clsfile at $.";
+    }
 
     my $sfname;
     if ($tetype eq 'LTR') {
@@ -357,7 +368,7 @@ sub parse_blast {
 	my $minlen = min($qlen, $hlen); # we want to measure the coverage of the smaller element
 	my ($coords) = ($queryid =~ /_(\d+_\d+)$/);
         $queryid =~ s/_$coords//;
-	my ($family) = ($hitid =~ /(\w{3}_family\d+)_/);
+	my ($family) = ($hitid =~ /(\w{3}_(?:singleton_)?family\d+)_/);
 	if ($hitlen >= $blast_hlen && $hitlen >= ($minlen * $perc_cov) && $pid >= $blast_hpid) {
 	    unless (exists $seen{$queryid}) {
 		push @{$matches{$family}}, $queryid;
@@ -377,7 +388,11 @@ sub write_families {
 
     my ($cname, $cpath, $csuffix) = fileparse($clsfile, qr/\.[^.]*/);
     my $dir  = basename($cpath);
-    my ($sf) = ($dir =~ /_(\w+)$/);
+    #my ($sf) = ($dir =~ /_(\w+)$/);
+    my ($sf) = ($dir =~ /_((?:\w+\d+\-)?\w+)$/);
+    unless (defined $sf) {
+        say STDERR "\nERROR: Can't get sf from $clsfile at $.";
+    }
 
     my $sfname;
     if ($tetype eq 'LTR') {
