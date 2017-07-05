@@ -1,7 +1,7 @@
 Revision history for Tephra
 
 Version	Date	Location
-0.08.2
+0.09.0
 
 - Add family-level classification methods for TIR, Helitron, and non-LTR retrotransposons.
   These methods are now in the Tephra::Classify::Any class.
@@ -12,6 +12,11 @@ Version	Date	Location
 - The --all option to 'tirage' is no longer required since family annotations are 
   modeled the same way as for LTR retrotransposons. It is now possible to omit the --all
   option and only calculate age on the top N families.
+- Add method to calculate the global similarity within a TE family and log the results
+  when the 'all' command is run.
+- Add RIL clades to superfamily mapping method in Tephra::Annotation::Util class.
+- Adjust IDs of non-LTR and Helitron elements to be SO compliant and not require
+  and tricks for sorting. This standarizes ID formats for TE types.
 
 0.08.1	06/12/2017	Vancouver, BC
 
