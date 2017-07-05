@@ -140,8 +140,8 @@ sub parse_blast {
 	my $qlen = $qend - $qstart + 1;
 	my $hlen = $hend - $hstart + 1;
 	my $minlen = min($qlen, $hlen); # we want to measure the coverage of the smaller element
-	my ($coords) = ($queryid =~ /_(\d+_\d+)$/);
-        $queryid =~ s/_$coords//;
+	#my ($coords) = ($queryid =~ /_(\d+_\d+)$/);
+        #$queryid =~ s/_$coords//;
 	#DHH_helitron1_singleton_family0_Contig57_HLAC-254L24_106214_107555
 	my ($elem) = ($hitid =~ /(non_LTR_retrotransposon\d+|helitron\d+)_/);
 	#my ($family, $elem) = ($hitid =~ /^(\w{3})_(non_LTR_retrotransposon\d+|helitron\d+)_/);
