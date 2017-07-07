@@ -120,8 +120,9 @@ sub make_families {
 				  my ($sf, $elemct, $famct, $famtot, $singct) =
                                       @{$family_stats}{qw(superfamily total_elements families total_in_families singletons)};
 				  my ($sfam) = ($sf =~ /_?((?:\w+\d+\-)?\w+)\z/);
-				  $sfam =~ s/tirs_|tephra_ltrs_//; # if $sfam =~ /^tirs_/;
+				  $sfam =~ s/tirs_|tephra_ltrs_|Tephra_//; # if $sfam =~ /^tirs_/;
 				  my $pad = $sfam =~ /unclassified/i ? 0 : length('unclassified')-length($sfam);
+				  $pad = $pad > 0 ? $pad : 0;
 				  my $lpad = ' ' x $pad;
 				  if ($sfam =~ /-/) {
 				      my ($tc1, $mar) = split /-/, $sfam;
