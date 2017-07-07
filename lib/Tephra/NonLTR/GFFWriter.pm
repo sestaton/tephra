@@ -55,7 +55,7 @@ sub write_gff {
     }
 
     my ($fas, $gff, $sf_elem_map) = $self->_fasta_to_gff(\@nonltrs);
-    say STDERR "Done with non-LTR search.";
+    #say STDERR "Done with non-LTR search.";
 
     ## clean up
     my $fdir  = File::Spec->catdir( abs_path($outdir), 'f' );
