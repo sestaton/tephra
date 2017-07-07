@@ -116,7 +116,8 @@ sub _find_helitron_families {
 
     if (defined $blast_report) { 
 	my $matches = $anno_obj->parse_blast($blast_report);
-	my ($fams, $ids, $sfmap, $family_stats) = $anno_obj->write_families($hel_obj->{fasta}, $matches, $sf_elem_map);
+	my ($fams, $ids, $sfmap, $family_stats) = 
+	    $anno_obj->write_families($hel_obj->{fasta}, $matches, $sf_elem_map, 'helitron');
 	my $totct = $anno_obj->combine_families($fams, $fasta);
 	$anno_obj->annotate_gff($ids, $hel_obj->{gff}, $sf_elem_map);
 	
