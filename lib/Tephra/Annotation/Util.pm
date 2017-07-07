@@ -43,6 +43,9 @@ sub calculate_family_similarity {
     while (my $obj = $iter->next_seq) {
 	my $id = $obj->name;
 	my $seq = $obj->seq;
+	# TRIMs are not classified to the family level                                          
+	# so this comparison would make no sense here 
+	next if $id =~ /TRIM_retrotransposon/i;
 	if ($id =~ /^(\w{3}_(?:singleton_)?family\d+)_/) {
 	    $famname = $1;
 	    push @{$families{$famname}}, { seq => $seq, id => $id };
@@ -121,6 +124,7 @@ sub map_superfamily_name {
         'RLC' => 'Copia',
         'RLE' => 'ERV',
         'RLR' => 'Retrovirus',
+	'RLT' => 'TRIM',
         'RLX' => 'Unknown_LTR',
         'PPP' => 'Penelope',
         'RPX' => 'Unknown_PLE',
@@ -198,6 +202,7 @@ sub map_superfamily_name_to_code {
         'RLC' => 'Copia',
         'RLE' => 'ERV',
         'RLR' => 'Retrovirus',
+	'RLT' => 'TRIM',
         'RLX' => 'Unknown_LTR',
         'PPP' => 'Penelope',
         'RPX' => 'Unknown_PLE',
