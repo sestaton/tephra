@@ -160,15 +160,15 @@ sub parse_blast {
 
 sub write_families {
     my $self = shift;
-    my ($tefas, $matches, $sf_elem_map) = @_;
+    my ($tefas, $matches, $sf_elem_map, $sf) = @_;
 
     my ($name, $path, $suffix) = fileparse($tefas, qr/\.[^.]*/);
     my $dir  = basename($path);
     #my ($sf) = ($dir =~ /_(\w+)$/);
-    my ($sf) = ($dir =~ /_((?:\w+\d+-)?\w+)$/);
-    unless (defined $sf) {
-        say STDERR "\nERROR: Can't get sf from $dir $.";
-    }
+    #my ($sf) = ($dir =~ /_((?:\w+\d+-)?\w+)$/);
+    #unless (defined $sf) {
+        #say STDERR "\nERROR: Can't get sf from $dir $.";
+    #}
 
     my $seqstore = $self->_store_seq($tefas);
     #dd $seqstore;
@@ -186,9 +186,15 @@ sub write_families {
 		$famtot++;
 		$seqstore->{$elem} =~ s/.{60}\K/\n/g;
 		$annot_ids{$elem} = "family$idx";
-		my $sfcode = $sf_elem_map->{$elem};
+		my ($id) = ($elem =~ /(helitron\d+|non_LTR_retrotransposon\d+)_/);
+		my ($start, $stop) = ($elem =~ /(\d+)_(\d+)$/);
+		my $chr = $elem;
+		$chr =~ s/${id}_//;
+		$chr =~ s/_$start.*//;
+		my $sfcode = $sf_elem_map->{$id};
+		#my $sfcode = $sf_elem_map->{$elem};
 		#say $out join "\n", ">$elem"."_family$idx", $seqstore->{$elem};
-		say $out join "\n", ">$sfcode"."_family$idx"."_$elem", $seqstore->{$elem};
+		say $out join "\n", ">$sfcode"."_family$idx"."_$id"."_$chr"."_$start"."_$stop", $seqstore->{$elem};
 		delete $seqstore->{$elem};
 	    }
 	    else {
