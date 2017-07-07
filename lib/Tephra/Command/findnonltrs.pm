@@ -23,6 +23,7 @@ sub opt_spec {
 	[ "outdir|d=s",  "The location to place the results "                              ],
 	[ "gff|o=s",     "The GFF3 outfile to place the non-LTRs found in <genome> "       ],
 	[ "threads|t=i", "The number of threads to use for BLAST searches (Default: 1)  "  ],
+	[ "logfile|l=s", "The file to use for logging results in addition to the screen " ],
 	[ "verbose|v",   "Display progress for each chromosome (Default: no) "             ],
 	[ "help|h",      "Display the usage menu and exit. "                               ],
         [ "man|m",       "Display the full manual. "                                       ],
@@ -117,7 +118,8 @@ sub _find_nonltr_families {
 
     if (defined $blast_report) {
 	my $matches = $anno_obj->parse_blast($blast_report);
-	my ($fams, $ids, $sfmap, $family_stats) = $anno_obj->write_families($obj->{fasta}, $matches, $sf_elem_map);
+	my ($fams, $ids, $sfmap, $family_stats) = 
+	    $anno_obj->write_families($obj->{fasta}, $matches, $sf_elem_map, 'non-LTR');
 	my $totct = $anno_obj->combine_families($fams, $fasta);
 	$anno_obj->annotate_gff($ids, $obj->{gff}, $sf_elem_map);
 	
