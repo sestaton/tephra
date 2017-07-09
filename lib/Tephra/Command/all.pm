@@ -603,7 +603,7 @@ sub _run_all_commands {
     my $te_sum = File::Spec->catfile( abs_path($path), $name.'_tephra_transposons_length-similarity_summary.tsv' );
     my $t38 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - Calculating global transposon family similarity at:           $st.");
+    $log->info("Command - Calculating global transposon family similarity at:              $st.");
 
     #my $age_ct = _combine_age_files(\@age_files, \@classified_fastas, $age_sum);
     my $util = Tephra::Annotation::Util->new;
@@ -614,7 +614,7 @@ sub _run_all_commands {
     $total_elapsed = $t39 - $t38;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Results - Finished calculating global transposon family similarity at:    $st.");
+    $log->info("Results - Finished calculating global transposon family similarity at:      $st.");
 
     ## combine age files
     my $age_sum = File::Spec->catfile( abs_path($path), $name.'_tephra_ltr-tir_age_summary.tsv' );
