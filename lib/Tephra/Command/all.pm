@@ -335,7 +335,7 @@ sub _run_all_commands {
 	$log->info("Output files - $hel_gff");
 	$log->info("Output files - $hel_fas");
 	push @fas_files, $hel_fas;
-	push @gff_files, $hel_gff;
+	#push @gff_files, $hel_gff;
     }
 
     ## maskref on Helitrons
@@ -504,7 +504,7 @@ sub _run_all_commands {
 	$log->info("Output files - $nonltr_gff");
 	$log->info("Output files - $nonltr_fas");
 	push @fas_files, $nonltr_fas;
-	push @gff_files, $nonltr_gff;
+	#push @gff_files, $nonltr_gff;
     }
 
     ## combine results
@@ -588,7 +588,7 @@ sub _run_all_commands {
 
     # this is so gt does not drop IDs
     my @gtsort_out = capture([0..5], $gff_cmd);
-    $gff_cmd = "$gt gff3 -sort -retainids $customRepGFF $fragments_gff > $global_opts->{outfile}";
+    $gff_cmd = "$gt gff3 -sort -retainids $customRepGFF $hel_gff $nonltr_gff $fragments_gff > $global_opts->{outfile}";
     @gtsort_out = capture([0..5], $gff_cmd);
     unlink $customRepGFF;
 
@@ -608,7 +608,6 @@ sub _run_all_commands {
     #my $age_ct = _combine_age_files(\@age_files, \@classified_fastas, $age_sum);
     my $util = Tephra::Annotation::Util->new;
     $util->calculate_family_similarity($customRepDB, $te_sum, $global_opts->{threads});
-    #my $age_pd = ' ' x length($age_ct);
 
     my $t39 = gettimeofday();
     $total_elapsed = $t39 - $t38;
