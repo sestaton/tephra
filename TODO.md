@@ -88,9 +88,9 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] add verbose option so as to not print progress when there are 5k scaffolds
  - [x] write combined file of all elements
  - [x] take a multifasta as input and create directories for input/output to methods
- - [ ] use complete elements to find truncated nonLTRs after masking (do this with complete file at the end
+ - [x] use complete elements to find truncated nonLTRs after masking (do this with complete file at the end
        on masked genome to get fragments for all types)
- - [ ] use domain/blast based method for classifying elements into families
+ - [x] use domain/blast based method for classifying elements into families
  - [ ] investigate issues related to why most elements reported on negative strand and contain
        many gaps
 
@@ -119,7 +119,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Update menu for all available options.
  - [x] Add 3-letter code to age file IDs
  - [x] Clean up results if requested
- - [ ] Add method to select the top families instead of --all (requires generating families first)
+ - [x] Add method to select the top families instead of --all (requires generating families first)
 
 ## Command `tephra all`
 
