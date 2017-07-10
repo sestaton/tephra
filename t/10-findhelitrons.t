@@ -52,8 +52,8 @@ my ($id, $family);
 open my $in, '<', $hsfas;
 while (<$in>) { 
     chomp;
-    if (/^>(DHH_helitron1)_(singleton_family0)_Contig57_HLAC-254L24_106214_107555/) {
-	($id, $family) = ($1, $2);
+    if (/^>(DHH_singleton_family0)_(helitron1)_Contig57_HLAC-254L24_106214_107555/) {
+	($family, $id) = ($1, $2);
 	$seqct++;
     }
 }
@@ -65,7 +65,7 @@ while (<$gin>) {
     chomp;
     next if /^#/;
     my @f = split /\t/;
-    ($gid, $gfamily) = ($f[8] =~ /ID=(DHH_helitron1);family=(singleton_family0);Ontology_term=SO:0000544/);
+    ($gid, $gfamily) = ($f[8] =~ /ID=(helitron1);family=(DHH_singleton_family0);Ontology_term=SO:0000544/);
 }
 close $gin;
 
