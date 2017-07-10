@@ -13,7 +13,7 @@ use File::Find;
 use File::Spec;
 #use Data::Dump::Color;
 
-use Test::More tests => 3;
+use Test::More tests => 7;
 
 $| = 1;
 
@@ -21,9 +21,14 @@ my $cmd      = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir  = File::Spec->catdir('t', 'test_data');
 my $outdir   = File::Spec->catfile($testdir, 't_family_domains');
 my $genome   = File::Spec->catfile($testdir, 'ref.fas');
+my $log      = File::Spec->catfile($testdir, 'ref_tephra_classifyltrs.log');
 my $ingff    = File::Spec->catfile($testdir, 'ref_tephra_ltrs_combined_filtered.gff3');
 my $outgff   = File::Spec->catfile($testdir, 'ref_tephra_ltrs_combined_filtered_classified.gff3');
 my $outfas   = File::Spec->catfile($testdir, 'ref_tephra_ltrs_combined_filtered_classified.fasta');
+my $uncfas   = File::Spec->catfile($testdir, 'ref_tephra_ltrs_combined_filtered_unclassified.fasta');
+my $copdom   = File::Spec->catfile($testdir, 'ref_tephra_ltrs_combined_filtered_copia_domain_org.tsv');
+my $gypdom   = File::Spec->catfile($testdir, 'ref_tephra_ltrs_combined_filtered_gypsy_domain_org.tsv');
+my $uncdom   = File::Spec->catfile($testdir, 'ref_tephra_ltrs_combined_filtered_unclassified_domain_org.tsv');
 my $repeatdb = File::Spec->catfile($testdir, 'repdb.fas');
 
 {
@@ -53,9 +58,11 @@ close $in;
 
 #say STDERR "ct: $ct";
 ok( $ct == 6, 'Correct number of classified elements in combined family file' );
-say "$ct total combined elements";
+ok( -e $log, 'Generated log for classifyltrs command' );
+ok( -e $copdom, 'Generated domain organization file for Copia elements' );
+ok( -e $gypdom, 'Generated domain organization file for Gypsy elements' );
+ok( -e $uncdom, 'Generated domain organization file for Unclassfied elements' );
 
-unlink $outfas;
-unlink $ingff;
+unlink $outfas, $ingff, $log, $uncfas, $copdom, $gypdom, $uncdom;
 
 done_testing();
