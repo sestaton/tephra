@@ -632,19 +632,10 @@ sub _run_all_commands {
     $log->info("Results - Finished generating combined age files for $age_ct transposons at:    $st.");
 
     ## clean up
-    my $clean_vmidx;
-    my $has_vmatch = 0;
-    my @path = split /:|;/, $ENV{PATH};
-    for my $p (@path) {
-	my $exe = File::Spec->catfile($p, 'cleanpp.sh');
+    my $vmatchbin = $exe_conf->{vmatchbin};
+    my $clean_vmidx = File::Spec->catfile($vmatchbin, 'cleanapp.sh');
 
-	if (-e $exe && -x $exe) {
-	    $clean_vmidx = $exe;
-	    $has_vmatch = 1;
-	}
-    }
-
-    capture([0..5], $clean_vmidx) if $has_vmatch;
+    capture([0..5], $clean_vmidx);
     capture([0..5], $gt, 'clean');
     my @fais = glob "*.fai";
     unlink @fais;

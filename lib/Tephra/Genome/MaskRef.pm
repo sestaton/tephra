@@ -13,6 +13,7 @@ use Time::HiRes qw(gettimeofday);
 use Sort::Naturally;
 use Set::IntervalTree;
 use Parallel::ForkManager;
+use Tephra::Config::Exe;
 use namespace::autoclean;
 #use Data::Dump::Color qw(dump dd);
 
@@ -211,12 +212,17 @@ sub run_masking {
     local $SIG{INT} = sub {
         $log->warn("Caught SIGINT; Waiting for child processes to finish.");
         $pm->wait_all_children;
-         exit 1;
+	exit 1;
     };
 
-    my $mkvtree = "mkvtree -db $wchr -indexname $index -dna -allout -v -pl 2>&1 > $mkvtree_log";
-    my $vmatchm = "vmatch -p -d -q $repeatdb -qspeedup 2 -l $length -best 10000 -identity $pid -dbmaskmatch N $index 1> $outpart 2> $vmatch_mlog";
-    my $vmatchr = "vmatch -p -d -q $repeatdb -qspeedup 2 -l $length -best 10000 -sort ia -identity $pid -showdesc 0 $index 1> $report 2> $vmatch_rlog";
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($vmatchbin) = @{$config}{qw(vmatchbin)};
+    my $vmatch  = File::Spec->catfile($vmatchbin, 'vmatch');
+    my $mkvtree = File::Spec->catfile($vmatchbin, 'mkvtree');
+
+    my $mkvtree = "$mkvtree -db $wchr -indexname $index -dna -allout -v -pl 2>&1 > $mkvtree_log";
+    my $vmatchm = "$vmatch -p -d -q $repeatdb -qspeedup 2 -l $length -best 10000 -identity $pid -dbmaskmatch N $index 1> $outpart 2> $vmatch_mlog";
+    my $vmatchr = "$vmatch -p -d -q $repeatdb -qspeedup 2 -l $length -best 10000 -sort ia -identity $pid -showdesc 0 $index 1> $report 2> $vmatch_rlog";
 
     $self->run_cmd($mkvtree); # need to warn here, not just log errors
     for my $run ($vmatchm, $vmatchr) {
@@ -389,24 +395,18 @@ sub write_masking_results {
     # chromosomes. The only difference will be that the output chromosomes
     # are sorted by the ID (the only other option would be a random order, which
     # is not useful at all for comparison purposes or debugging).
-    # NB: This is a new method in v0.04.4, so I'm leaving the debugging statements
-    # in place for now.
     for my $id (nsort keys %$seqs) {
 	my $seq;
 	my @subsets = nsort keys %{$seqs->{$id}};
 	my $final = $subsets[-1];
-	#say STDERR "final: $final";
 	if (@subsets > 1) {
 	    for my $subs (@subsets) {
 		my $length = length($seqs->{$id}{$subs});
-		#say STDERR join q{ }, $id, $subs, $length;
 		if ($seqct > 0) {
 		    if ($subs eq $final) {
 			$length -= $overlap;
-			#say STDERR join q{ }, 'final: ', $subs, $overlap, $length;
 			my $seqpart = substr $seqs->{$id}{$subs}, $overlap, $length;
 			$seq .= $seqpart;
-			#say STDERR join q{ }, 'final: ', $id, $subs, length($seqpart);
 			$genome_length += length($seqpart);
 		    }
 		    else {
@@ -414,7 +414,6 @@ sub write_masking_results {
 			my $seqpart = substr $seqs->{$id}{$subs}, $overlap, $length;
 			$seq .= $seqpart;
 			$genome_length += length($seqpart);
-			#say STDERR join q{ }, $id, $subs, length($seqpart);
 		    }
 		}
 		else {
@@ -422,7 +421,6 @@ sub write_masking_results {
 		    my $seqpart = substr $seqs->{$id}{$subs}, 0, $length;
 		    $seq .= $seqpart;
 		    $genome_length += length($seqpart);
-		    #say STDERR join q{ }, $id, $subs, length($seqpart);
 		}
 		$seqct++;
 	    }
@@ -430,11 +428,9 @@ sub write_masking_results {
 	else {
 	    my ($subsetid) = keys %{$seqs->{$id}};
 	    $seq = $seqs->{$id}{$subsetid};
-	    #say STDERR join q{ }, $id, $subsetid, length($seq);
 	    $genome_length += length($seq);
 	}
 	$seq =~ s/.{60}\K/\n/g;
-	#say STDERR join q{ }, $id, length($seq);
 	say $out join "\n", ">$id", $seq;
 	$seqct = 0;
     }
@@ -648,6 +644,10 @@ sub _build_repeat_map {
 	'RIT' => { class => 'Class I', order => 'LINE', repeat_name => 'RTE' },
 	'RIX' => { class => 'Class I', order => 'LINE', repeat_name => 'Unknown LINE' },
 	'RIC' => { class => 'Class I', order => 'LINE', repeat_name => 'CR1' },
+	'RIS' => { class => 'Class I', order => 'LINE', repeat_name => 'R1' },
+	'RIA' => { class => 'Class I', order => 'LINE', repeat_name => 'RandI' },
+	'RIE' => { class => 'Class I', order => 'LINE', repeat_name => 'Rex' },
+	'RID' => { class => 'Class I', order => 'LINE', repeat_name => 'Tad1' },
 	# LTR
 	'RLB' => { class => 'Class I', order => 'LTR', repeat_name => 'Bel/Pao' },
 	'RLC' => { class => 'Class I', order => 'LTR', repeat_name => 'Copia' },

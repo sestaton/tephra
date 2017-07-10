@@ -18,6 +18,7 @@ use Cwd                 qw(abs_path);
 use Parallel::ForkManager;
 use Carp 'croak';
 use Try::Tiny;
+use Tephra::Config::Exe;
 #use Data::Dump::Color;
 use namespace::autoclean;
 
@@ -383,7 +384,6 @@ sub collect_feature_args {
     my ($dir) = @_;
     my $tetype = $self->type;
 
-    #say STDERR "DIR: $dir" and exit;
     my (@fiveltrs, @threeltrs, @fivetirs, @threetirs, @ppt, @pbs, @pdoms, %vmatch_args);
     if ($tetype eq 'LTR') {
 	find( sub { push @fiveltrs, $File::Find::name if -f and /5prime-ltrs.fasta$/ }, $dir);
@@ -529,13 +529,18 @@ sub process_cluster_args {
     my $vmrep = File::Spec->catfile( abs_path($path), $name.'_vmatch-out.txt' );
     my $log   = File::Spec->catfile( abs_path($path), $name.'_vmatch-out.log' );
 
-    my $mkvtreecmd = "mkvtree -db $db -dna -indexname $index -allout -v -pl ";
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($vmatchbin) = @{$config}{qw(vmatchbin)};
+    my $vmatch  = File::Spec->catfile($vmatchbin, 'vmatch');
+    my $mkvtree = File::Spec->catfile($vmatchbin, 'mkvtree');
+
+    my $mkvtreecmd = "$mkvtree -db $db -dna -indexname $index -allout -v -pl ";
     if (defined $args->{$type}{prefixlen}) {
         $mkvtreecmd .= "$args->{$type}{prefixlen} ";
     }
     $mkvtreecmd .= "2>&1 > $log";
     say STDERR "DEBUG: $mkvtreecmd" if $self->debug;
-    my $vmatchcmd  = "vmatch $args->{$type}{args} $index > $vmrep";
+    my $vmatchcmd  = "$vmatch $args->{$type}{args} $index > $vmrep";
     say STDERR "DEBUG: $vmatchcmd" if $self->debug;
     $self->run_cmd($mkvtreecmd);
     $self->run_cmd($vmatchcmd);
