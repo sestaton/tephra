@@ -32,7 +32,6 @@ has 'debug' => (
 
 sub calculate_family_similarity {
     my $self = shift;
-    #my $usage = "$0 ltr-fams_combined.fasta similarity.tsv\n";
     my ($fasta, $outfile, $threads) = @_;
     
     open my $outfh, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
@@ -49,17 +48,15 @@ sub calculate_family_similarity {
 	if ($id =~ /^(\w{3}_(?:singleton_)?family\d+)_/) {
 	    $famname = $1;
 	    push @{$families{$famname}}, { seq => $seq, id => $id };
-	    #$lengths{$id} = length($seq);
+	    push @{$lengths{$famname}}, length($seq);
 	}
 	else {
 	    say STDERR "\nWARNING: '$id' does not match pattern.\n";
 	}
     }
-    #dd \%families and exit;
 
     for my $fam (reverse sort { @{$families{$a}} <=> @{$families{$b}} } keys %families) {
 	my $famsize = @{$families{$fam}};
-	#say join "\t", $fam, $famsize;
 	if (@{$families{$fam}} > 1) {
 	    my $outfile = $fam.'.fasta';
 	    open my $out, '>', $outfile;
@@ -67,11 +64,10 @@ sub calculate_family_similarity {
 		say $out join "\n", ">".$seqobj->{id}, $seqobj->{seq};
 	    }
 	    close $out;
-	    $self->_do_blast_search($fam, $famsize, $outfile, $outfh, $threads);
+	    $self->_do_blast_search($fam, $famsize, $outfile, $outfh, $threads, $lengths{$fam});
 	    unlink $outfile;
 	}
     }
-    #dd \%families;
 
     return;
 }
@@ -244,14 +240,10 @@ sub map_superfamily_name_to_code {
 
 sub _do_blast_search {
     my $self = shift;
-    my ($fam, $famsize, $fas, $outfh, $threads) = @_;
+    my ($fam, $famsize, $fas, $outfh, $threads, $fam_lengths) = @_;
 
     my $out = $fas.'.bln';
     my $blastdb = $self->make_blastdb($fas);
-    #system("makeblastdb -in $fas -dbtype nucl 2>&1 > /dev/null") 
-        #== 0 or die $!;
-    #system('blastn', '-query', $fas, '-db', $fas, '-outfmt', '6', '-num_threads', 12, '-out', $out, '-evalue', 1e-10) 
-        #== 0 or die $!;
     my $blast_report = $self->run_blast({ query   => $fas, 
 					  db      => $blastdb, 
 					  threads => $threads, 
@@ -266,8 +258,6 @@ sub _do_blast_search {
         chomp $line;
         my @f = split /\t/, $line;
         if ($f[3] >= 80) { # hits are at least 80 bp
-            #say $outfh join "\t", $fam, @f[0..3];
-            #push @{$hits{$fam}}, { stats => join "||", @f[0..3], pid => $f[3] };
             push @pid, $f[2];
             push @lengths, $f[3];
             $uniq{$f[0]} = 1;
@@ -279,23 +269,24 @@ sub _do_blast_search {
     unlink @dbfiles;
     unlink $blast_report;
 
-    #my $stat = Statistics::Descriptive::Full->new;
-    #$stat->add_data(@pid);
-    my $pid_sum = sum(@pid);
-    my $pid_ct  = @pid;
+    # similarity
+    my $pid_sum  = sum(@pid);
+    my $pid_ct   = @pid;
     my $pid_mean = sprintf("%.2f", $pid_sum/$pid_ct);
-    my $count = keys %uniq;
-    #my $mean = $stat->mean;
+    my $count    = keys %uniq;
 
-    #my $lstat = Statistics::Descriptive::Full->new;
-    #$lstat->add_data(@lengths);
-    #my $lmean = $lstat->mean;
-    my $len_sum = sum(@lengths);
-    my $len_ct  = @lengths;
+    # ave HSP length
+    my $len_sum  = sum(@lengths);
+    my $len_ct   = @lengths;
     my $len_mean = sprintf("%.2f", $len_sum/$len_ct);
 
-    say $outfh join "\t", 'family', 'family_size', 'family_count_analyzed', 'similarity_mean', 'length_mean';
-    say $outfh join "\t", $fam, $famsize, $count, $pid_mean, $len_mean;
+    # ave element length
+    my $fam_len_sum  = sum(@$fam_lengths);
+    my $fam_len_ct   = @$fam_lengths;
+    my $fam_len_mean = sprintf("%.2f", $fam_len_sum/$fam_len_ct);
+
+    say $outfh join "\t", 'family', 'family_size', 'family_count_analyzed', 'similarity_mean', 'hit_length_mean', 'element_length_mean';
+    say $outfh join "\t", $fam, $famsize, $count, $pid_mean, $len_mean, $fam_len_mean;
 
     return;
 }
