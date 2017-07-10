@@ -59,6 +59,12 @@ sub configure_root {
 	$config->{gt} = $self->fetch_gt_exes;
 	print STDERR ".";
     }
+
+    unless (-e $config->{vmatchbin} && -x $config->{vmatchbin}) {
+	#say STDERR "getting vmatch";
+	$config->{vmatchbin} = $self->fetch_vmatch_exes;
+	print STDERR ".";
+    }
     
     unless (-e $config->{hscanjar}) {
 	#say STDERR "getting hscan";
@@ -174,6 +180,46 @@ sub fetch_gt_exes {
     my $gt = File::Spec->catfile($ldir, 'bin', 'gt');
 
     return $gt
+}
+
+sub fetch_vmatch_exes {
+    my $self = shift;
+    my $root = $self->basedir->absolute->resolve;
+    my $wd   = $self->workingdir->absolute->resolve;
+    
+    my $host = 'http://vmatch.de';
+    my $dir  = 'distributions';
+    my $page = 'download.html';
+    my $file = 'vmatch_distlisting.html';
+    $self->fetch_file($file, $host."/".$page);
+    
+    my $tree = HTML::TreeBuilder->new;
+    $tree->parse_file($file);
+    
+    my ($dist, $ldist, $ldir);
+    for my $tag ($tree->look_down(_tag => 'a')) {
+	if ($tag->attr('href')) {
+	    if ($tag->as_text =~ /Linux_x86_64-64bit.tar.gz\z/) {
+		$dist = $tag->as_text;
+		my $archive = join "/", $host, $dir, $dist;
+		$self->fetch_file($dist, $archive);
+		
+		$ldist = $dist;
+		$ldist =~ s/\.tar.gz\z//;
+		$ldir = File::Spec->catdir($root, 'vmatch');
+		
+		system("tar xzf $dist") == 0 or die $!;
+		
+		move $ldist, $ldir or die "Move failed: $!";
+		unlink $dist;
+	    }
+	}
+    }
+    unlink $file;
+    
+    my $vmatchbin = File::Spec->catfile($ldir);
+
+    return $vmatchbin;
 }
 
 sub fetch_hscan {
