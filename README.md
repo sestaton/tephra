@@ -9,7 +9,7 @@ Tephra is a command line application to annotate [transposable elements](http://
 
 **DEPENDENCIES**
 
-Part of the utility of Tephra is to provide family-level TE classifications and infer patterns of molecular evoltion. To be efficient as possible, these tasks require a few external programs. Specifically, you will need to download [MUSCLE](http://http://drive5.com/muscle/) and [Vmatch](http://vmatch.de) and add the PATH to these programs. Both of these programs are free, but they have a special license so I cannot distribute them. If you are only interested in TE identification, you can skip the installation of these programs.
+Part of the utility of Tephra is to provide family-level TE classifications and infer patterns of molecular evoltion. To be efficient as possible, these tasks require a few external programs. Specifically, you will need to download [MUSCLE](http://http://drive5.com/muscle/) and add this program to your system PATH. This program is free, but it has a special license so I cannot distribute it. If you are only interested in TE identification and classification, you can skip the installation of this program (it is only used for calculating the insertion age of transposons).
 
 **INSTALLATION**
 
@@ -30,8 +30,8 @@ The next two commands install BioPerl, and these can be skipped if BioPerl is in
 
 Finally, download the [latest release](https://github.com/sestaton/tephra/releases/latest) and run the following commands:
 
-    wget https://github.com/sestaton/tephra/archive/v0.08.0.tar.gz
-    tar xzf v0.08.0.tar.gz && cd tephra-0.08.0
+    wget https://github.com/sestaton/tephra/archive/v0.09.0.tar.gz
+    tar xzf v0.08.0.tar.gz && cd tephra-0.09.0
     cpanm --installdeps .
     perl Makefile.PL
     make test
