@@ -57,7 +57,9 @@ SKIP: {
     ok( $fragct == 3, 'Expected number of fragments discovered' );
 
     ## clean up
-    unlink $log, $thrlog, $masked, $outfile;
+    unlink $log, $thrlog, $outfile;
 };
+
+unlink $masked;
 
 done_testing();
