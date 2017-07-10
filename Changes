@@ -5,6 +5,9 @@ Version	Date	Location
 
 - Add family-level classification methods for TIR, Helitron, and non-LTR retrotransposons.
   These methods are now in the Tephra::Classify::Any class.
+- Standarize FASTA and GFF3 ID formats for TIR, Helitron and non-LTR retrotransposons. All TEs
+  now have the same FASTA header format (">familyNumber_elementID_chromosome_start_end"), and GFF3
+  ID format ("ID=elementID;family=familyNumber;...").
 - Move Tephra::LTR::MakeExemplars to Tephra::Annotation::MakeExemplars and add
   some abstraction so the methods now work for finding TIR exemplars also.
 - Change Tephra::Classify::LTRFams and subclasses to the more abstract
