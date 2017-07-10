@@ -1,7 +1,7 @@
 Revision history for Tephra
 
 Version	Date	Location
-0.09.0
+0.09.0	07/10/2017	Vancouver, BC
 
 - Add family-level classification methods for TIR, Helitron, and non-LTR retrotransposons.
   These methods are now in the Tephra::Classify::Any class.
@@ -17,6 +17,9 @@ Version	Date	Location
 - Add RIL clades to superfamily mapping method in Tephra::Annotation::Util class.
 - Adjust IDs of non-LTR and Helitron elements to be SO compliant and not require
   and tricks for sorting. This standarizes ID formats for TE types.
+- Add method to install and configure Vmatch during the build process.
+- Remove development flag for tests involving Vmatch ('classifyltrs', 'classifytirs', and
+  'maskref'). Now these tests will be run on each build and not just manually.
 
 0.08.1	06/12/2017	Vancouver, BC
 
