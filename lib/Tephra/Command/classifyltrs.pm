@@ -12,7 +12,7 @@ use File::Path    qw(make_path remove_tree);
 use File::Basename;
 use Tephra -command;
 use Tephra::Classify::LTRSfams;
-use Tephra::Classify::LTRFams;
+use Tephra::Classify::Fams;
 
 sub opt_spec {
     return (    
@@ -71,14 +71,10 @@ sub execute {
 sub _classify_ltr_superfamilies {
     my ($opt) = @_;
 
-    #my $genome   = $opt->{genome};
-    #my $repeatdb = $opt->{repeatdb};
-    #my $ingff    = $opt->{ingff};
-    my $outdir   = $opt->{outdir};
     my $threads = $opt->{threads} // 1;
 
-    unless ( -d $outdir ) {
-	make_path( $outdir, {verbose => 0, mode => 0771,} );
+    unless ( -d $opt->{outdir} ) {
+	make_path( $opt->{outdir}, {verbose => 0, mode => 0771,} );
     }
     
     my %classify_opts = (
@@ -127,50 +123,35 @@ sub _classify_ltr_superfamilies {
 	$gffs{'unclassified'} = $unc_gff;
     }
 
-    #my $cop_gff = $classify_obj->write_copia($copia, $header);
-    #my $unc_gff = $classify_obj->write_unclassified($features, $header);
     
     return (\%gffs, $log);
-    #return ({ gypsy => $gyp_gff, copia => $cop_gff, unclassified => $unc_gff });
 }
 
 sub _classify_ltr_families {
     my ($opt, $gffs, $log) = @_;
 
-    my $genome   = $opt->{genome};
-    my $repeatdb = $opt->{repeatdb};
-    my $ingff    = $opt->{ingff};
-    my $outgff   = $opt->{outgff};
-    my $outdir   = $opt->{outdir};
-    my $threads  = $opt->{threads} // 1;
-    my $hpcov    = $opt->{percentcov} // 50;
-    my $hpid     = $opt->{percentid} // 80;
-    my $hlen     = $opt->{hitlen} // 80;
-    my $debug    = $opt->{debug} // 0;
+    my $threads = $opt->{threads} // 1;
+    my $hpcov   = $opt->{percentcov} // 50;
+    my $hpid    = $opt->{percentid} // 80;
+    my $hlen    = $opt->{hitlen} // 80;
+    my $debug   = $opt->{debug} // 0;
+    my $type    = 'LTR';
 
-    #my ($cop_gff, $gyp_gff, $unc_gff) = @{$gffs}{qw(copia gypsy unclassified)};
-
-    #for my $file ($cop_gff, $gyp_gff, $unc_gff) {
-	#unless (defined $file && -e $file) {
-	    #say STDERR "\nERROR: There was an error generating GFF3 for family level classification. Exiting.\n";
-	#}
-    #}
-
-    my $classify_fams_obj = Tephra::Classify::LTRFams->new(
-	genome        => $genome,
-	gff           => $outgff,
-	outdir        => $outdir,
+    my $classify_fams_obj = Tephra::Classify::Fams->new(
+	genome        => $opt->{genome},
+	gff           => $opt->{outgff},
+	outdir        => $opt->{outdir},
 	threads       => $threads,
 	blast_hit_cov => $hpcov,
         blast_hit_pid => $hpid,
         blast_hit_len => $hlen,
 	debug         => $debug,
+	type          => $type,
     );
 
-    my ($outfiles, $annot_ids) = $classify_fams_obj->make_ltr_families($gffs, $log);
+    my ($outfiles, $annot_ids) = $classify_fams_obj->make_families($gffs, $log);
     $classify_fams_obj->combine_families($outfiles);
-    $classify_fams_obj->annotate_gff($annot_ids, $ingff);
-    #unlink $gyp_gff, $cop_gff, $unc_gff;
+    $classify_fams_obj->annotate_gff($annot_ids, $opt->{ingff});
     
     unlink $_ for values %$gffs;
 }

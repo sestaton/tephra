@@ -51,7 +51,7 @@ SKIP: {
     copy $gtestfile, $gresdir or die "\nERROR: copy failed $!";
 
     my @all_cmd = ($cmd, 'all', '-c', $config);
-    #say STDERR $all_cmd;
+    say STDERR join q{ }, @all_cmd;
     #my ($astdout, $astderr, @aret) = capture { system([0..5], $all_cmd) };
     system([0..5], @all_cmd);
 
@@ -87,7 +87,7 @@ sub write_config {
   - hmmdb:            TephraDB
   - threads:          2
   - clean:            YES
-  - debug:            NO
+  - debug:            YES
   - subs_rate:        1e-8
 findltrs:
   - dedup:            NO

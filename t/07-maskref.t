@@ -15,11 +15,6 @@ use Test::More tests => 3;
 
 $| = 1;
 
-my $devtests = 0;
-if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
-    $devtests = 1;
-}
-
 my $cmd      = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir  = File::Spec->catdir('t', 'test_data');
 my $genome   = File::Spec->catfile($testdir, 'ref.fas');
@@ -27,24 +22,21 @@ my $repeatdb = File::Spec->catfile($testdir, 'repdb.fas');
 my $masked   = File::Spec->catfile($testdir, 'ref_masked.fas');
 my $log      = File::Spec->catfile($testdir, 'ref_masked.fas.log');
 
-SKIP: {
-    skip 'skip development tests', 3 unless $devtests;
-    {
-        my @help_args = ($cmd, 'maskref', '-h');
-        my ($stdout, $stderr, $exit) = capture { system(@help_args) };
-        #say STDERR "stderr: $stderr";
-        ok($stderr, 'Can execute maskref subcommand');
-    }
+{
+    my @help_args = ($cmd, 'maskref', '-h');
+    my ($stdout, $stderr, $exit) = capture { system(@help_args) };
+    #say STDERR "stderr: $stderr";
+    ok($stderr, 'Can execute maskref subcommand');
+}
 
-    my @mask_cmd = ($cmd, 'maskref', '-g', $genome, '-d', $repeatdb, '-o', $masked, $log);
-    #say STDERR $mask_cmd;
-    my @ret = capture { system([0..5], @mask_cmd) };
+my @mask_cmd = ($cmd, 'maskref', '-g', $genome, '-d', $repeatdb, '-o', $masked, $log);
+#say STDERR $mask_cmd;
+my @ret = capture { system([0..5], @mask_cmd) };
 
-    ok( -e $masked, 'Can mask reference' );
-    ok( -e $log, 'Can mask reference' );
-    
-    ## clean up
-    unlink $log;
-};
+ok( -e $masked, 'Can mask reference' );
+ok( -e $log, 'Can mask reference' );
+
+## clean up
+unlink $log;
 
 done_testing();

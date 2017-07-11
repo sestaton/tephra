@@ -31,11 +31,11 @@ Tephra::Genome::SoloLTRSearch - Find solo-LTRs in a refence genome
 
 =head1 VERSION
 
-Version 0.08.1
+Version 0.09.0
 
 =cut
 
-our $VERSION = '0.08.1';
+our $VERSION = '0.09.0';
 $VERSION = eval $VERSION;
 
 has dir => (
@@ -488,7 +488,7 @@ sub _get_exemplar_ltrs {
     my ($dir) = @_;
 
     my ($ltrfile, @ltrseqs, %ltrfams);
-    find( sub { $ltrfile = $File::Find::name if -f and /exemplar_ltrs.fasta$/ }, $dir);
+    find( sub { $ltrfile = $File::Find::name if -f and /exemplar_repeats.fasta$/ }, $dir);
     unless (defined $ltrfile) {
 	say STDERR "\nWARNING: Exemplar LTR file not found in $dir.\n";
 	return;

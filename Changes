@@ -1,6 +1,29 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.09.0	07/10/2017	Vancouver, BC
+
+- Add family-level classification methods for TIR, Helitron, and non-LTR retrotransposons.
+  These methods are now in the Tephra::Classify::Any class.
+- Standarize FASTA and GFF3 ID formats for TIR, Helitron and non-LTR retrotransposons. All TEs
+  now have the same FASTA header format (">familyNumber_elementID_chromosome_start_end"), and GFF3
+  ID format ("ID=elementID;family=familyNumber;...").
+- Move Tephra::LTR::MakeExemplars to Tephra::Annotation::MakeExemplars and add
+  some abstraction so the methods now work for finding TIR exemplars also.
+- Change Tephra::Classify::LTRFams and subclasses to the more abstract
+  Tephra::Classify::Fams and modify class methods to work for LTR and TIR elements.
+- The --all option to 'tirage' is no longer required since family annotations are 
+  modeled the same way as for LTR retrotransposons. It is now possible to omit the --all
+  option and only calculate age on the top N families.
+- Add method to calculate the global similarity within a TE family and log the results
+  when the 'all' command is run.
+- Add RIL clades to superfamily mapping method in Tephra::Annotation::Util class.
+- Adjust IDs of non-LTR and Helitron elements to be SO compliant and not require
+  and tricks for sorting. This standarizes ID formats for TE types.
+- Add method to install and configure Vmatch during the build process.
+- Remove development flag for tests involving Vmatch ('classifyltrs', 'classifytirs', and
+  'maskref'). Now these tests will be run on each build and not just manually.
+
 0.08.1	06/12/2017	Vancouver, BC
 
 - Bug fix for non_LTR_retrotransposon IDs getting dropped in final GFF3.

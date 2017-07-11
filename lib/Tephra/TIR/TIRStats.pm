@@ -33,11 +33,11 @@ Tephra::TIR::TIRStats - Calculate the age distribution of TIR transposons
 
 =head1 VERSION
 
-Version 0.08.1
+Version 0.09.0
 
 =cut
 
-our $VERSION = '0.08.1';
+our $VERSION = '0.09.0';
 $VERSION = eval $VERSION;
 
 has genome => (
@@ -184,7 +184,7 @@ sub collect_feature_args {
     }
     else {
 	my $dir = $self->dir->absolute->resolve;
-	my $wanted  = sub { push @tirs, $File::Find::name if -f && /exemplar_tirs.fasta$/ };
+	my $wanted  = sub { push @tirs, $File::Find::name if -f && /exemplar_repeats.fasta$/ };
 	my $process = sub { grep ! -d, @_ };
 	find({ wanted => $wanted, preprocess => $process }, $dir);
 

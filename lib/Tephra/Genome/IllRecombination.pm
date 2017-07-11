@@ -31,11 +31,11 @@ Tephra::Genome::IllRecombination - Calculate illegitimate recombination in a gen
 
 =head1 VERSION
 
-Version 0.08.1
+Version 0.09.0
 
 =cut
 
-our $VERSION = '0.08.1';
+our $VERSION = '0.09.0';
 $VERSION = eval $VERSION;
 
 has infile => (
@@ -202,7 +202,6 @@ sub find_align_gaps {
 
     my $cwd = getcwd();
     open my $illrecstat_fh, '>>', $illrecstatsfile or die "\nERROR: Could not open file: $!";
-    
     open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
     my ($seqs_in_aln, $count) = $self->split_aln($aln_file);

@@ -33,11 +33,11 @@ Tephra::LTR::LTRStats - Calculate the age distribution of LTR retrotransposons
 
 =head1 VERSION
 
-Version 0.08.1
+Version 0.09.0
 
 =cut
 
-our $VERSION = '0.08.1';
+our $VERSION = '0.09.0';
 $VERSION = eval $VERSION;
 
 has genome => (
@@ -422,7 +422,7 @@ sub _get_exemplar_ltrs {
 
     for my $sfdir (@dirs) {
 	my ($ltrfile, %ltrfams);
-	find( sub { $ltrfile = $File::Find::name if -f and /exemplar_ltrs.fasta$/ }, $sfdir);
+	find( sub { $ltrfile = $File::Find::name if -f and /exemplar_repeats.fasta$/ }, $sfdir);
 	unless (defined $ltrfile) {
 	    say STDERR "\nWARNING: No exemplar LTR file was found in: $sfdir.";
 	    say STDERR "This is likely because there were no families identified by the 'classifyltrs' command for this superfamily.";

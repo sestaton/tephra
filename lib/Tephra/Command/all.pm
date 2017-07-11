@@ -26,7 +26,7 @@ use Tephra::Config::Exe;
 use Tephra::Annotation::Util;
 #use Data::Dump::Color;
 
-our $VERSION = '0.08.1';
+our $VERSION = '0.09.0';
 
 sub opt_spec {
     return (    
@@ -115,9 +115,9 @@ sub _run_all_commands {
 	$st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
 	$log->info("Command - 'tephra classifyltrs' started at:   $st.");
 	
-	my $classifyltrs_opts = ['-g', $global_opts->{genome}, '-d', $global_opts->{repeatdb}, 
-				 '-i', $ltr_gff, '-o', $ltrc_gff,
-				 '-r', $ltrc_dir, '-t', $global_opts->{threads}, '--logfile', $global_opts->{logfile}];
+	my $classifyltrs_opts = ['-g', $global_opts->{genome}, '-d', $global_opts->{repeatdb}, '-i', $ltr_gff, 
+				 '-o', $ltrc_gff, '-r', $ltrc_dir, '-t', $global_opts->{threads}, 
+				 '--logfile', $global_opts->{logfile}];
 	push @$classifyltrs_opts, '--debug'
 	    if $global_opts->{debug};
 	_run_tephra_cmd('classifyltrs', $classifyltrs_opts, $global_opts->{debug}); 
@@ -139,7 +139,7 @@ sub _run_all_commands {
 
     ## ltrage
     if (defined $ltrc_gff && -e $ltrc_gff && -s $ltrc_gff) {
-        my $ltrage_out  = File::Spec->catfile( abs_path($path), $name.'_ltrages.tsv' );
+        my $ltrage_out  = File::Spec->catfile( abs_path($path), $name.'_tephra_ltrages.tsv' );
 
         my $t8 = gettimeofday();
         $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
@@ -170,7 +170,7 @@ sub _run_all_commands {
     ## maskref on LTRs
     my $genome_mask1;
     if (defined $ltrc_fas && -e $ltrc_fas && -s $ltrc_fas) {
-	$genome_mask1 = File::Spec->catfile( abs_path($path), $name.'_masked.fasta' );
+	$genome_mask1 = File::Spec->catfile( abs_path($path), $name.'_tephra_masked.fasta' );
 
 	my $t4 = gettimeofday();
 	$st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
@@ -196,9 +196,9 @@ sub _run_all_commands {
     ## sololtr
     my ($sololtr_gff, $sololtr_rep, $sololtr_fas);
     if (defined $genome_mask1 && -e $genome_mask1 && -e $ltrc_dir) {
-	$sololtr_gff = File::Spec->catfile( abs_path($path), $name.'_sololtrs.gff3' );
-	$sololtr_rep = File::Spec->catfile( abs_path($path), $name.'_sololtrs_rep.tsv' );
-	$sololtr_fas = File::Spec->catfile( abs_path($path), $name.'_sololtrs_seqs.fasta' );
+	$sololtr_gff = File::Spec->catfile( abs_path($path), $name.'_tephra_sololtrs.gff3' );
+	$sololtr_rep = File::Spec->catfile( abs_path($path), $name.'_tephra_sololtrs_rep.tsv' );
+	$sololtr_fas = File::Spec->catfile( abs_path($path), $name.'_tephra_sololtrs_seqs.fasta' );
 
 	my $t6 = gettimeofday();
 	$st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
@@ -230,9 +230,9 @@ sub _run_all_commands {
     ## illrecomb
     my ($illrec_fas, $illrec_rep, $illrec_stats);
     if (defined $ltrc_fas && -e $ltrc_fas && -s $ltrc_fas) {
-	my $illrec_fas   = File::Spec->catfile( abs_path($path), $name.'_illrecomb.fasta' ); 
-	my $illrec_rep   = File::Spec->catfile( abs_path($path), $name.'_illrecomb_rep.tsv' );
-	my $illrec_stats = File::Spec->catfile( abs_path($path), $name.'_illrecomb_stats.tsv' );
+	my $illrec_fas   = File::Spec->catfile( abs_path($path), $name.'_tephra_illrecomb.fasta' ); 
+	my $illrec_rep   = File::Spec->catfile( abs_path($path), $name.'_tephra_illrecomb_rep.tsv' );
+	my $illrec_stats = File::Spec->catfile( abs_path($path), $name.'_tephra_illrecomb_stats.tsv' );
 
 	my $t10 = gettimeofday();
 	$st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
@@ -259,8 +259,8 @@ sub _run_all_commands {
     my $trim_ref = (defined $genome_mask1 && -e $genome_mask1 && -s $genome_mask1) ? $genome_mask1 
 	: $global_opts->{genome};
 
-    my $trims_gff = File::Spec->catfile( abs_path($path), $name.'_trims.gff3' );
-    my $trims_fas = File::Spec->catfile( abs_path($path), $name.'_trims.fasta' );
+    my $trims_gff = File::Spec->catfile( abs_path($path), $name.'_tephra_trims.gff3' );
+    my $trims_fas = File::Spec->catfile( abs_path($path), $name.'_tephra_trims.fasta' );
     
     my $t12 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
@@ -285,7 +285,7 @@ sub _run_all_commands {
     ## maskref for TRIMs
     my $genome_mask2;
     if (-e $trims_fas && -s $trims_fas) {
-	$genome_mask2 = File::Spec->catfile( abs_path($path), $name.'_masked2.fasta' );
+	$genome_mask2 = File::Spec->catfile( abs_path($path), $name.'_tephra_masked2.fasta' );
 
 	my $t14 = gettimeofday();
 	$st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
@@ -313,14 +313,14 @@ sub _run_all_commands {
 	        : (defined $genome_mask1 && -s $genome_mask1) ? $genome_mask1 
 	        : $global_opts->{genome};
 
-    my $hel_gff = File::Spec->catfile( abs_path($path), $name.'_helitrons.gff3' );
-    my $hel_fas = File::Spec->catfile( abs_path($path), $name.'_helitrons.fasta' );
+    my $hel_gff = File::Spec->catfile( abs_path($path), $name.'_tephra_helitrons.gff3' );
+    my $hel_fas = File::Spec->catfile( abs_path($path), $name.'_tephra_helitrons.fasta' );
     
     my $t16 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findhelitrons' started at:   $st.");
 
-    my $findhels_opts = ['-g', $hel_ref, '-o', $hel_gff];
+    my $findhels_opts = ['-g', $hel_ref, '-o', $hel_gff, '--logfile', $global_opts->{logfile}];
     push @$findhels_opts, '--debug'
 	if $global_opts->{debug};
     _capture_tephra_cmd('findhelitrons', $findhels_opts, $global_opts->{debug});
@@ -335,12 +335,13 @@ sub _run_all_commands {
 	$log->info("Output files - $hel_gff");
 	$log->info("Output files - $hel_fas");
 	push @fas_files, $hel_fas;
+	#push @gff_files, $hel_gff;
     }
 
     ## maskref on Helitrons
     my $genome_mask3;
     if (-e $hel_fas && -s $hel_fas) {
-	$genome_mask3 = File::Spec->catfile( abs_path($path), $name.'_masked3.fasta' );
+	$genome_mask3 = File::Spec->catfile( abs_path($path), $name.'_tephra_masked3.fasta' );
 
 	my $t18 = gettimeofday();
 	$st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
@@ -373,7 +374,7 @@ sub _run_all_commands {
     my $t20 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findtirs' started at:   $st.");
-    my $tir_gff = File::Spec->catfile( abs_path($path), $name.'_tirs.gff3' );
+    my $tir_gff = File::Spec->catfile( abs_path($path), $name.'_tephra_tirs.gff3' );
 
     my $findtirs_opts = ['-g', $tir_ref, '-o', $tir_gff];
     push @$findtirs_opts, '--debug'
@@ -391,16 +392,19 @@ sub _run_all_commands {
     }
 
     ## classifytirs
-    my ($tirc_gff, $tirc_fas);
+    my ($tirc_gff, $tirc_fas, $tirc_dir);
     if (-e $tir_gff && -s $tir_gff) {
-	$tirc_gff = File::Spec->catfile( abs_path($path), $name.'_tirs_classified.gff3' );
-	$tirc_fas = File::Spec->catfile( abs_path($path), $name.'_tirs_classified.fasta' );
-
+	$tirc_gff = File::Spec->catfile( abs_path($path), $name.'_tephra_tirs_classified.gff3' );
+	$tirc_fas = File::Spec->catfile( abs_path($path), $name.'_tephra_tirs_classified.fasta' );
+	$tirc_dir = File::Spec->catdir(  abs_path($path), $name.'_tephra_tirs_classified_results' );
+	
 	my $t22 = gettimeofday();
 	$st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
 	$log->info("Command - 'tephra classifytirs' started at:   $st.");
 
-	my $classifytirs_opts = ['-g', $tir_ref, '-i', $tir_gff, '-o', $tirc_gff, '--logfile', $global_opts->{logfile}];
+	my $classifytirs_opts = ['-g', $tir_ref, '-i', $tir_gff, '-o', $tirc_gff, '-r', $tirc_dir, 
+				 '-t', $global_opts->{threads}, '-d', $global_opts->{repeatdb}, 
+				 '--logfile', $global_opts->{logfile}];
 	_run_tephra_cmd('classifytirs', $classifytirs_opts, $global_opts->{debug});
 
 	my $t23 = gettimeofday();
@@ -420,7 +424,7 @@ sub _run_all_commands {
 
     ## tirage
     if (defined $tirc_gff && -e $tirc_gff && -s $tirc_gff) {
-        my $tirage_out  = File::Spec->catfile( abs_path($path), $name.'_tirages.tsv' );
+        my $tirage_out  = File::Spec->catfile( abs_path($path), $name.'_tephra_tirages.tsv' );
 
         my $t24 = gettimeofday();
         $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
@@ -430,10 +434,10 @@ sub _run_all_commands {
                            '-o', $tirage_out, '-f', $tirc_gff, '-r', $global_opts->{subs_rate}, '--clean'];
         push @$tirage_opts, '--all'
             if $config->{tirage}{all} =~ /yes/i;
-        #if ($config->{ltrage}{all} =~ /no/i) {
-            #push @$tirage_opts, '-i';
-            #push @$tirage_opts, $tirc_dir;
-        #}
+        if ($config->{tirage}{all} =~ /no/i) {
+            push @$tirage_opts, '-i';
+            push @$tirage_opts, $tirc_dir;
+        }
         _capture_tephra_cmd('tirage', $tirage_opts, $global_opts->{debug});
 
         my $t25 = gettimeofday();
@@ -451,7 +455,7 @@ sub _run_all_commands {
     ## maskref on TIRs
     my $genome_mask4;
     if (-e $tirc_fas && -s $tirc_fas) {
-	$genome_mask4 = File::Spec->catfile( abs_path($path), $name.'_masked4.fasta' );
+	$genome_mask4 = File::Spec->catfile( abs_path($path), $name.'_tephra_masked4.fasta' );
 
 	my $t26 = gettimeofday();
 	$st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
@@ -484,10 +488,10 @@ sub _run_all_commands {
     my $t28 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findnonltrs' started at:   $st.");
-    my $nonltr_gff = File::Spec->catfile( abs_path($path), $name.'_nonLTRs.gff3' );
-    my $nonltr_fas = File::Spec->catfile( abs_path($path), $name.'_nonLTRs.fasta' );
+    my $nonltr_gff = File::Spec->catfile( abs_path($path), $name.'_tephra_nonLTRs.gff3' );
+    my $nonltr_fas = File::Spec->catfile( abs_path($path), $name.'_tephra_nonLTRs.fasta' );
 
-    my $findnonltrs_opts = ['-g', $nonltr_ref, '-o', $nonltr_gff];
+    my $findnonltrs_opts = ['-g', $nonltr_ref, '-o', $nonltr_gff, '--logfile', $global_opts->{logfile}];
     _capture_tephra_cmd('findnonltrs', $findnonltrs_opts, $global_opts->{debug});
     
     my $t29 = gettimeofday();
@@ -555,7 +559,7 @@ sub _run_all_commands {
     my $t34 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findfragments' started at:   $st.");
-    my $fragments_gff = File::Spec->catfile( abs_path($path), $name.'_transposon_fragments.gff3' );
+    my $fragments_gff = File::Spec->catfile( abs_path($path), $name.'_tephra_transposon_fragments.gff3' );
 
     my $findfragments_opts = ['-g', $final_mask, '-d', $customRepDB, '-o', $fragments_gff, '-t', $global_opts->{threads}];
     _capture_tephra_cmd('findfragments', $findfragments_opts, $global_opts->{debug});
@@ -584,7 +588,7 @@ sub _run_all_commands {
 
     # this is so gt does not drop IDs
     my @gtsort_out = capture([0..5], $gff_cmd);
-    $gff_cmd = "$gt gff3 -sort -retainids $customRepGFF $hel_gff $fragments_gff $nonltr_gff > $global_opts->{outfile}";
+    $gff_cmd = "$gt gff3 -sort -retainids $customRepGFF $hel_gff $nonltr_gff $fragments_gff > $global_opts->{outfile}";
     @gtsort_out = capture([0..5], $gff_cmd);
     unlink $customRepGFF;
 
@@ -595,9 +599,25 @@ sub _run_all_commands {
     $log->info("Results - Finished generating combined GFF3 file at:     $ft. Final output files:");
     $log->info("Output files - $global_opts->{outfile}");
 
-    ## combine age files
-    my $age_sum = File::Spec->catfile( abs_path($path), $name.'_ltr-tir_age_summary.tsv' );
+    ## calculate family similarity
+    my $te_sum = File::Spec->catfile( abs_path($path), $name.'_tephra_transposons_length-similarity_summary.tsv' );
     my $t38 = gettimeofday();
+    $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
+    $log->info("Command - Calculating global transposon family similarity at:              $st.");
+
+    #my $age_ct = _combine_age_files(\@age_files, \@classified_fastas, $age_sum);
+    my $util = Tephra::Annotation::Util->new;
+    $util->calculate_family_similarity($customRepDB, $te_sum, $global_opts->{threads});
+
+    my $t39 = gettimeofday();
+    $total_elapsed = $t39 - $t38;
+    $final_time = sprintf("%.2f",$total_elapsed/60);
+    $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
+    $log->info("Results - Finished calculating global transposon family similarity at:      $st.");
+
+    ## combine age files
+    my $age_sum = File::Spec->catfile( abs_path($path), $name.'_tephra_ltr-tir_age_summary.tsv' );
+    my $t40 = gettimeofday();
     $st = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     #$log->info("Command - Generating combined age files at:                                     $st.");
 
@@ -605,26 +625,17 @@ sub _run_all_commands {
     my $age_pd = ' ' x length($age_ct);
 
     $log->info("Command - Generating combined age files at:$age_pd                              $st.");
-    my $t39 = gettimeofday();
-    $total_elapsed = $t39 - $t38;
+    my $t41 = gettimeofday();
+    $total_elapsed = $t41 - $t40;
     $final_time = sprintf("%.2f",$total_elapsed/60);
     $ft = POSIX::strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Results - Finished generating combined age files for $age_ct transposons at:    $st.");
 
     ## clean up
-    my $clean_vmidx;
-    my $has_vmatch = 0;
-    my @path = split /:|;/, $ENV{PATH};
-    for my $p (@path) {
-	my $exe = File::Spec->catfile($p, 'cleanpp.sh');
+    my $vmatchbin = $exe_conf->{vmatchbin};
+    my $clean_vmidx = File::Spec->catfile($vmatchbin, 'cleanapp.sh');
 
-	if (-e $exe && -x $exe) {
-	    $clean_vmidx = $exe;
-	    $has_vmatch = 1;
-	}
-    }
-
-    capture([0..5], $clean_vmidx) if $has_vmatch;
+    capture([0..5], $clean_vmidx);
     capture([0..5], $gt, 'clean');
     my @fais = glob "*.fai";
     unlink @fais;

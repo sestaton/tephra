@@ -1,4 +1,4 @@
-package Tephra::LTR::MakeExemplars;
+package Tephra::Annotation::MakeExemplars;
 
 use 5.014;
 use Moose;
@@ -17,15 +17,15 @@ with 'Tephra::Role::GFF',
 
 =head1 NAME
 
-Tephra::LTR::MakeExemplars - Make exemplars from a LTR retrotransposon family
+Tephra::Annotation::MakeExemplars - Make exemplars from family-level classifications
 
 =head1 VERSION
 
-Version 0.08.1
+Version 0.09.0
 
 =cut
 
-our $VERSION = '0.08.1';
+our $VERSION = '0.09.0';
 $VERSION = eval $VERSION;
 
 has dir => (
@@ -76,9 +76,14 @@ sub make_exemplars {
     my $index = $self->index_ref($fasta);
     my $exemplars = $self->process_vmatch_args($dir);
 
-    my ($sf) = ($dir =~ /_(\w+)$/);
+    #my ($sf) = ($dir =~ /_(\w+)$/);
+    my ($sf) = ($dir =~ /_((?:\w+\d+\-)?\w+)$/);
+    unless (defined $sf) {
+        say STDERR "\nERROR: Can't get sf from $dir $.";
+    }
+
     my $exemcomp = File::Spec->catfile($dir, $sf.'_exemplar_complete.fasta');
-    my $ltrs_out = File::Spec->catfile($dir, $sf.'_exemplar_ltrs.fasta');
+    my $ltrs_out = File::Spec->catfile($dir, $sf.'_exemplar_repeats.fasta');
 
     open my $allfh, '>>', $exemcomp or die "\nERROR: Could not open file: $exemcomp\n";
     open my $ltrs_outfh, '>>', $ltrs_out or die "\nERROR: Could not open file: $ltrs_out\n";
@@ -92,7 +97,7 @@ sub make_exemplars {
 	chomp $line;
 	next if $line =~ /^#/;
 	my $feature = gff3_parse_feature( $line );
-	if ($feature->{type} eq 'LTR_retrotransposon') {
+	if ($feature->{type} =~ /LTR_retrotransposon|terminal_inverted_repeat_element/) {
 	    $elem_id = @{$feature->{attributes}{ID}}[0];
 	    ($source_id, $source, $type, $start, $end, $strand) 
 		= @{$feature}{qw(seq_id source type start end strand)};
@@ -110,7 +115,7 @@ sub make_exemplars {
 	    my $family = $exemplars->{$exemplar_id_form};
 	    $ltrs{$key}{'full'} = join "||", $full_feats, $family;
 
-	    if ($feature->{type} eq 'long_terminal_repeat') {
+	    if ($feature->{type} =~ /long_terminal_repeat|^terminal_inverted_repeat$/) {
 		my $parent = @{$feature->{attributes}{Parent}}[0];
 		my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
 		if ($seq_id eq $feature->{seq_id}) {
@@ -118,7 +123,7 @@ sub make_exemplars {
 			@{$feature}{qw(seq_id type start end strand)};
 		    $strand //= '?';
 		    my $ltrkey = join "||", $seq_id, $type, $start, $end, $strand, $family;
-		    push @{$ltrs{$pkey}{'ltrs'}}, $ltrkey;
+		    push @{$ltrs{$pkey}{'repeats'}}, $ltrkey;
 		}
 	    }
 	}
@@ -135,8 +140,8 @@ sub make_exemplars {
 	my ($source, $prim_tag, $start, $end, $strand, $family) = split /\|\|/, $ltrs{$ltr}{'full'};
 	$self->subseq($index, $source, $element, $start, $end, $allfh, undef, $family);
 	
-	# ltrs
-	for my $ltr_repeat (@{$ltrs{$ltr}{'ltrs'}}) {
+	# ltrs/tirs
+	for my $ltr_repeat (@{$ltrs{$ltr}{'repeats'}}) {
 	    my ($src, $ltrtag, $s, $e, $strand, $fam) = split /\|\|/, $ltr_repeat;
 	    my $lfname = $element;
 	    my $orientation;
@@ -214,7 +219,7 @@ sub calculate_exemplars {
     $self->run_cmd($mkcmd);
     $self->run_cmd($vmcmd);
     my $exemplar = $self->parse_vmatch($vmerSearchOut);
-    my ($family) = ($exemplar =~ /(^RL[CGX]_family\d+)/);
+    my ($family) = ($exemplar =~ /(^\w{3}_family\d+)/);
     $exemplar =~ s/${family}_//;
     $self->clean_index_files($index);
     unlink $vmerSearchOut;
@@ -275,7 +280,7 @@ reached at the email address listed above to resolve any questions.
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Tephra::LTR::MakeExemplars
+    perldoc Tephra::Annotation::MakeExemplars
 
 
 =head1 LICENSE AND COPYRIGHT

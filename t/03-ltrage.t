@@ -58,4 +58,6 @@ SKIP: {
     unlink @outfiles;
 };
 
+unlink $gff;
+
 done_testing();
