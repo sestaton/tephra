@@ -220,11 +220,11 @@ sub run_masking {
     my $vmatch  = File::Spec->catfile($vmatchbin, 'vmatch');
     my $mkvtree = File::Spec->catfile($vmatchbin, 'mkvtree');
 
-    my $mkvtree = "$mkvtree -db $wchr -indexname $index -dna -allout -v -pl 2>&1 > $mkvtree_log";
-    my $vmatchm = "$vmatch -p -d -q $repeatdb -qspeedup 2 -l $length -best 10000 -identity $pid -dbmaskmatch N $index 1> $outpart 2> $vmatch_mlog";
-    my $vmatchr = "$vmatch -p -d -q $repeatdb -qspeedup 2 -l $length -best 10000 -sort ia -identity $pid -showdesc 0 $index 1> $report 2> $vmatch_rlog";
+    my $mkvtreec = "$mkvtree -db $wchr -indexname $index -dna -allout -v -pl 2>&1 > $mkvtree_log";
+    my $vmatchm  = "$vmatch -p -d -q $repeatdb -qspeedup 2 -l $length -best 10000 -identity $pid -dbmaskmatch N $index 1> $outpart 2> $vmatch_mlog";
+    my $vmatchr  = "$vmatch -p -d -q $repeatdb -qspeedup 2 -l $length -best 10000 -sort ia -identity $pid -showdesc 0 $index 1> $report 2> $vmatch_rlog";
 
-    $self->run_cmd($mkvtree); # need to warn here, not just log errors
+    $self->run_cmd($mkvtreec); # need to warn here, not just log errors
     for my $run ($vmatchm, $vmatchr) {
 	$pm->start($run) and next;
 	$SIG{INT} = sub { $pm->finish };
