@@ -633,7 +633,7 @@ sub _run_all_commands {
 
     ## clean up
     my $vmatchbin = $exe_conf->{vmatchbin};
-    my $clean_vmidx = File::Spec->catfile($vmatchbin, 'cleanapp.sh');
+    my $clean_vmidx = File::Spec->catfile($vmatchbin, 'cleanpp.sh');
 
     capture([0..5], $clean_vmidx);
     capture([0..5], $gt, 'clean');
