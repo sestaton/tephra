@@ -1,6 +1,10 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.09.1	07/24/2017	Vancouver, BC
+
+- Bug fix for length/identity summary file with header being printed for each family.
+
 0.09.0	07/10/2017	Vancouver, BC
 
 - Add family-level classification methods for TIR, Helitron, and non-LTR retrotransposons.
