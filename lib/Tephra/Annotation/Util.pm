@@ -55,6 +55,8 @@ sub calculate_family_similarity {
 	}
     }
 
+    say $outfh join "\t", 'family', 'family_size', 'family_count_analyzed', 'similarity_mean', 'hit_length_mean', 'element_length_mean';
+
     for my $fam (reverse sort { @{$families{$a}} <=> @{$families{$b}} } keys %families) {
 	my $famsize = @{$families{$fam}};
 	if (@{$families{$fam}} > 1) {
@@ -285,7 +287,6 @@ sub _do_blast_search {
     my $fam_len_ct   = @$fam_lengths;
     my $fam_len_mean = sprintf("%.2f", $fam_len_sum/$fam_len_ct);
 
-    say $outfh join "\t", 'family', 'family_size', 'family_count_analyzed', 'similarity_mean', 'hit_length_mean', 'element_length_mean';
     say $outfh join "\t", $fam, $famsize, $count, $pid_mean, $len_mean, $fam_len_mean;
 
     return;
