@@ -15,11 +15,11 @@ Tephra::Annotation::Util - Utility methods for working with transposon annotatio
 
 =head1 VERSION
 
-Version 0.09.0
+Version 0.09.1
 
 =cut
 
-our $VERSION = '0.09.0';
+our $VERSION = '0.09.1';
 $VERSION = eval $VERSION;
 
 has 'debug' => (
