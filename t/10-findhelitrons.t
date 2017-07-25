@@ -35,7 +35,7 @@ my $hslog   = File::Spec->catfile($testdir, 'ref_tephra_findhelitrons.log');
 }
 
 my @find_cmd = ($cmd, 'findhelitrons', '-g', $genome, '-o', $hsgff);
-say STDERR join q{ }, @find_cmd;
+#say STDERR join q{ }, @find_cmd;
 my @ret = capture { system([0..5], @find_cmd) };
 #system([0..5], @find_cmd);
 

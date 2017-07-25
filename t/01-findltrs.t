@@ -37,7 +37,7 @@ ok( -e $config, 'Can create config file for testing' );
 }
 
 my @find_args = ($cmd, 'findltrs', '-c', $config); # == 0 or die $!;
-say STDERR join q{ }, @find_args;
+#say STDERR join q{ }, @find_args;
 
 my ($stdout, $stderr, $exit) = capture { system(@find_args) }; 
 ok( -e $outgff, 'Can find some LTRs' );
