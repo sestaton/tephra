@@ -1,6 +1,13 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.09.2	08/08/2017	Vancouver, BC
+
+- Bug fixes for 'tirage' and 'all' commands to correctly parse family name from the TIR
+  GFF3 and add these to the summary file. The family-generation method for TIR elements 
+  was added in v0.09.0 and the parser in the Tephra::TIR::TIRStats class was not updated 
+  to parse the 'family' attribute.
+ 
 0.09.1	07/24/2017	Vancouver, BC
 
 - Bug fix for length/identity summary file with header being printed for each family.
