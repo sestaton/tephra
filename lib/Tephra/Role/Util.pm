@@ -16,11 +16,11 @@ Tephra::Role::Util - Helper methods for running programs
 
 =head1 VERSION
 
-Version 0.09.1
+Version 0.09.2
 
 =cut
 
-our $VERSION = '0.09.1';
+our $VERSION = '0.09.2';
 $VERSION = eval $VERSION;
 
 sub run_cmd {

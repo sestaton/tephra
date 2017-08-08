@@ -26,7 +26,7 @@ use Tephra::Config::Exe;
 use Tephra::Annotation::Util;
 #use Data::Dump::Color;
 
-our $VERSION = '0.09.1';
+our $VERSION = '0.09.2';
 
 sub opt_spec {
     return (    
