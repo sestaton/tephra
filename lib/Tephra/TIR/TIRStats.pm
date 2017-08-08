@@ -226,15 +226,15 @@ sub extract_tir_features {
     my $index = $self->index_ref($fasta);
 
     #dd $features;
-    my (%tirs, %seen, %coord_map);
+    my ($family, %tirs, %seen, %coord_map);
     for my $rep_region (keys %$features) {
         for my $tir_feature (@{$features->{$rep_region}}) {
 	    if ($tir_feature->{type} eq 'terminal_inverted_repeat_element') {
 		my $elem_id = @{$tir_feature->{attributes}{ID}}[0];
 		next unless defined $elem_id;
-		my $family = @{$tir_feature->{attributes}{family}}[0];
+		$family = @{$tir_feature->{attributes}{family}}[0];
 		my ($start, $end) = @{$tir_feature}{qw(start end)};
-		my $key = defined $superfamily ? join "||", $family, $elem_id, $start, $end 
+		my $key = defined $family ? join "||", $family, $elem_id, $start, $end 
 		    : join "||", $elem_id, $start, $end;
 		$tirs{$key}{'full'} = join "||", @{$tir_feature}{qw(seq_id type start end)};
 		$coord_map{$elem_id} = join "||", @{$tir_feature}{qw(seq_id start end)};
@@ -247,7 +247,7 @@ sub extract_tir_features {
 			@{$tir_feature}{qw(type start end strand)};
 		    $strand //= '?';
 		    my $tirkey = join "||", $seq_id, $type, $start, $end, $strand;
-		    $pkey = defined $superfamily ? join "||", $superfamily, $pkey : $pkey;
+		    $pkey = defined $family ? join "||", $family, $pkey : $pkey;
 		    push @{$tirs{$pkey}{'tirs'}}, $tirkey unless exists $seen{$tirkey};
 		    $seen{$tirkey} = 1;
 		}
