@@ -155,3 +155,5 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] add classification method for TRIMs
  - [ ] move 'classify[ltr|tir]' commands to 'find[ltr|tir]' commands to simplify the process similar to the methods
        for the commands for helitrons and tirs
+ - [ ] modify header to include element number in family. The element number should be listed numerically according 
+       to chromosome position? (Wicker et al., 2007)
