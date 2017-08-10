@@ -27,11 +27,11 @@ Tephra::Classify::LTRSFams - Classify LTR retrotransposons into superfamilies
 
 =head1 VERSION
 
-Version 0.09.2
+Version 0.09.3
 
 =cut
 
-our $VERSION = '0.09.2';
+our $VERSION = '0.09.3';
 $VERSION = eval $VERSION;
 
 has genome => (
@@ -195,7 +195,7 @@ sub find_unclassified {
 
     for my $rep_region (keys %$features) {
 	for my $ltr_feature (@{$features->{$rep_region}}) {
-	    if ($ltr_feature->{type} eq 'LTR_retrotransposon') {
+	    if ($ltr_feature->{type} =~ /(?:LTR|TRIM)_retrotransposon/) {
 		my ($seq_id, $start, $end) = @{$ltr_feature}{qw(seq_id start end)};
 		my $elem = $ltr_feature->{attributes}{ID}[0];
 		my $id = join "_", $elem, $seq_id, $start, $end;
@@ -297,7 +297,7 @@ sub write_gypsy {
 		my $pdom_name = $ltr_feature->{attributes}{name}[0];
 		push @all_pdoms, $pdom_name;
 	    }
-	    if ($ltr_feature->{type} eq 'LTR_retrotransposon') {
+	    if ($ltr_feature->{type} =~ /(?:LTR|TRIM)_retrotransposon/) {
 		($seq_id, $source, $start, $end, $strand) 
 		    = @{$ltr_feature}{qw(seq_id source start end strand)};
 		$strand //= '?';
@@ -382,7 +382,7 @@ sub write_copia {
                 my $pdom_name = $ltr_feature->{attributes}{name}[0];
                 push @all_pdoms, $pdom_name;
             }
-            if ($ltr_feature->{type} eq 'LTR_retrotransposon') {
+            if ($ltr_feature->{type} =~ /(?:LTR|TRIM)_retrotransposon/) {
 		($seq_id, $source, $start, $end, $strand) 
 		    = @{$ltr_feature}{qw(seq_id source start end strand)};
                 my $ltrlen = $end - $start + 1;
@@ -468,7 +468,7 @@ sub write_unclassified {
                 my $pdom_name = $ltr_feature->{attributes}{name}[0];
                 push @all_pdoms, $pdom_name;
             }
-            if ($ltr_feature->{type} eq 'LTR_retrotransposon') {
+            if ($ltr_feature->{type} =~ /(?:LTR|TRIM)_retrotransposon/) {
 		($seq_id, $source, $start, $end, $strand) 
 		    = @{$ltr_feature}{qw(seq_id source start end strand)};
 		$strand //= '?';
