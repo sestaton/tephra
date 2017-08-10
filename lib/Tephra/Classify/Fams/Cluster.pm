@@ -31,11 +31,11 @@ with 'Tephra::Role::GFF',
 
 =head1 VERSION
 
-Version 0.09.2
+Version 0.09.3
 
 =cut
 
-our $VERSION = '0.09.2';
+our $VERSION = '0.09.3';
 $VERSION = eval $VERSION;
 
 has debug => (
@@ -84,7 +84,7 @@ sub extract_ltr_features {
         next if $line =~ /^#/;
         my $feature = gff3_parse_feature( $line );
 
-        if ($feature->{type} eq 'LTR_retrotransposon') {
+        if ($feature->{type} =~ /(?:LTR|TRIM)_retrotransposon/) {
             my $elem_id = @{$feature->{attributes}{ID}}[0];
             my ($start, $end) = @{$feature}{qw(start end)};
             my $key = join "||", $elem_id, $start, $end;

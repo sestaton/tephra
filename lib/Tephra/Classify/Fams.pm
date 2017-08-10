@@ -31,11 +31,11 @@ Tephra::Classify::Fams - Classify LTR/TIR transposons into families
 
 =head1 VERSION
 
-Version 0.09.2
+Version 0.09.3
 
 =cut
 
-our $VERSION = '0.09.2';
+our $VERSION = '0.09.3';
 $VERSION = eval $VERSION;
 
 =head1 SYNOPSIS
@@ -520,8 +520,8 @@ sub annotate_gff {
 	}
 	else {
 	    my @f = split /\t/, $line;
-	    if ($f[2] =~ /LTR_retrotransposon|terminal_inverted_repeat_element/) {
-		my ($id) = ($f[8] =~ /ID=(LTR_retrotransposon\d+|terminal_inverted_repeat_element\d+);/);
+	    if ($f[2] =~ /(?:LTR|TRIM)_retrotransposon|terminal_inverted_repeat_element/) {
+		my ($id) = ($f[8] =~ /ID=((?:LTR|TRIM)_retrotransposon\d+|terminal_inverted_repeat_element\d+);/);
 		my $key  = $id."_$f[0]";
 		if (exists $annot_ids->{$key}) {
 		    my $family = $annot_ids->{$key};
