@@ -106,6 +106,7 @@ sub _classify_ltr_superfamilies {
     my ($unc_fas, $ltr_rregion_map) = $classify_obj->find_unclassified($features);
     my $blast_out = $classify_obj->search_unclassified($unc_fas);
     $classify_obj->annotate_unclassified($blast_out, $gypsy, $copia, $features, $ltr_rregion_map);
+    unlink $unc_fas;
 
     my ($gyp_gff, $cop_gff, $unc_gff, %gffs);
     if (%$gypsy) {
@@ -123,7 +124,6 @@ sub _classify_ltr_superfamilies {
 	$gffs{'unclassified'} = $unc_gff;
     }
 
-    
     return (\%gffs, $log);
 }
 
