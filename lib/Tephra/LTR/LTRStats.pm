@@ -226,7 +226,7 @@ sub extract_ltr_features {
     my ($family, %ltrs, %seen, %coord_map);
     for my $rep_region (keys %$features) {
         for my $ltr_feature (@{$features->{$rep_region}}) {
-	    if ($ltr_feature->{type} eq 'LTR_retrotransposon') {
+	    if ($ltr_feature->{type} =~ /(?:LTR|TRIM)_retrotransposon/) {
 		my $elem_id = @{$ltr_feature->{attributes}{ID}}[0];
 		$family  = @{$ltr_feature->{attributes}{family}}[0];
 		my ($start, $end) = @{$ltr_feature}{qw(start end)};
@@ -436,7 +436,7 @@ sub _get_exemplar_ltrs {
 	while ( my $seq = $iter->next_seq() ) {
 	    my $id  = $seq->name;
 	    my $seq = $seq->seq;
-	    if ($id =~ /^[35]prime_(RL[CGX]_family\d+)_LTR_retrotransposon.*/) {
+	    if ($id =~ /^[35]prime_(RL[CGX]_family\d+)_(?:LTR|TRIM)_retrotransposon.*/) {
 		my $family = $1;
 		push @{$ltrfams{$family}}, { id => $id, seq => $seq };
 	    }
