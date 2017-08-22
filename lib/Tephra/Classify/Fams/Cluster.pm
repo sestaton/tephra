@@ -23,7 +23,8 @@ use Tephra::Config::Exe;
 use namespace::autoclean;
 
 with 'Tephra::Role::GFF',
-     'Tephra::Role::Util';
+     'Tephra::Role::Util',
+     'Tephra::Role::Run::Any';
 
 =head1 NAME
 

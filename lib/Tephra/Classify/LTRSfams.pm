@@ -18,8 +18,10 @@ use Tephra::Config::Exe;
 #use Data::Dump::Color;
 use namespace::autoclean;
 
-with 'Tephra::Role::GFF',
-     'Tephra::Role::Util';
+with 'Tephra::Role::Logger',
+     'Tephra::Role::GFF',
+     'Tephra::Role::Util',
+     'Tephra::Role::Run::Any';
 
 =head1 NAME
 
@@ -344,17 +346,17 @@ sub write_gypsy {
     my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
     my $count = $stat->count;
 
-    $log->info("Results - Total number of Gypsy elements:                                   $count");
-    $log->info("Results - Minimum length of Gypsy elements:                                 $min");
-    $log->info("Results - Maximum length of Gypsy elements:                                 $max");
-    $log->info("Results - Mean length of Gypsy elements:                                    $mean");
-    $log->info("Results - Number of Gypsy elements with protein matches:                    $pdoms");
+    $log->info("Results - Total number of Gypsy elements:                         $count");
+    $log->info("Results - Minimum length of Gypsy elements:                       $min");
+    $log->info("Results - Maximum length of Gypsy elements:                       $max");
+    $log->info("Results - Mean length of Gypsy elements:                          $mean");
+    $log->info("Results - Number of Gypsy elements with protein matches:          $pdoms");
     
     return $outfile;
 }
 
 sub write_copia {
-    my $self = shift;
+     my $self = shift;
     my ($copia, $header, $log) = @_;
     my $gff = $self->gff->absolute->resolve;
     
@@ -429,11 +431,11 @@ sub write_copia {
     my $count = $stat->count;
 
     if (defined $count && defined $min && defined $max && defined $mean) {
-	$log->info("Results - Total number of Copia elements:                                   $count");
-	$log->info("Results - Minimum length of Copia elements:                                 $min");
-	$log->info("Results - Maximum length of Copia elements:                                 $max");
-	$log->info("Results - Mean length of Copia elements:                                    $mean");
-	$log->info("Results - Number of Copia elements with protein matches:                    $pdoms");
+	$log->info("Results - Total number of Copia elements:                         $count");
+	$log->info("Results - Minimum length of Copia elements:                       $min");
+	$log->info("Results - Maximum length of Copia elements:                       $max");
+	$log->info("Results - Mean length of Copia elements:                          $mean");
+	$log->info("Results - Number of Copia elements with protein matches:          $pdoms");
     }
 
     return $outfile;
@@ -516,11 +518,11 @@ sub write_unclassified {
     my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
     my $count = $stat->count;
 
-    $log->info("Results - Total number of unclassified LTR-RT elements:                     $count");
-    $log->info("Results - Minimum length of unclassified LTR-RT elements:                   $min");
-    $log->info("Results - Maximum length of unclassified LTR-RT elements:                   $max");
-    $log->info("Results - Mean length of unclassified LTR-RT elements:                      $mean");
-    $log->info("Results - Number of unclassified LTR-RT elements with protein matches:      $pdoms");
+    $log->info("Results - Total number of unclassified LTR-RT elements:           $count");
+    $log->info("Results - Minimum length of unclassified LTR-RT elements:         $min");
+    $log->info("Results - Maximum length of unclassified LTR-RT elements:         $max");
+    $log->info("Results - Mean length of unclassified LTR-RT elements:            $mean");
+    $log->info("Results - Number of unclas. LTR-RT elements with protein matches: $pdoms");
 
     return $outfile;
 }

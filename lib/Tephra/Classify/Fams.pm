@@ -120,21 +120,33 @@ sub make_families {
 				  my ($sf, $elemct, $famct, $famtot, $singct) =
                                       @{$family_stats}{qw(superfamily total_elements families total_in_families singletons)};
 				  my ($sfam) = ($sf =~ /_?((?:\w+\d+\-)?\w+)\z/);
-				  $sfam =~ s/tirs_|tephra_ltrs_|Tephra_//; # if $sfam =~ /^tirs_/;
+				  #say STDERR "bef subs: $sfam";
+				  $sfam =~ s/.*hat.*/hAT/i;
+				  $sfam =~ s/.*tc1-mariner.*/Tc1-Mariner/i;
+				  $sfam =~ s/.*mutator.*/Mutator/i;
+				  $sfam =~ s/.*cacta.*/CACTA/i;
+				  $sfam =~ s/.*gypsy.*/Gypsy/i;
+				  $sfam =~ s/.*copia.*/Copia/i;
+				  $sfam =~ s/.*unclassified.*/unclassified/i;
+				  #$sfam =~ s/tirs_|ltrs_|//i; # if $sfam =~ /^tirs_/;
+				  #$sfam =~ s///i;
+				  #say STDERR "aft subs: $sfam";
 				  my $pad = $sfam =~ /unclassified/i ? 0 : length('unclassified')-length($sfam);
 				  $pad = $pad > 0 ? $pad : 0;
 				  my $lpad = ' ' x $pad;
-				  if ($sfam =~ /-/) {
-				      my ($tc1, $mar) = split /-/, $sfam;
-				      $sfam = join "-", ucfirst($tc1), ucfirst($mar);
-				  }
-				  else {
-				      $sfam = ucfirst($sfam);
-				  }
-				  $log->info("Results - Number of $sfam families:$lpad                      $famct");
-				  $log->info("Results - Number of $sfam elements in families:$lpad          $famtot");
-				  $log->info("Results - Number of $sfam singleton families/elements:$lpad   $singct");
-				  $log->info("Results - Number of $sfam elements (for debugging):$lpad      $elemct");
+				  #if ($sfam =~ /-/) {
+				      #my ($tc1, $mar) = split /-/, $sfam;
+				      #$sfam = join "-", ucfirst($tc1), ucfirst($mar);
+				  #}
+				  #else {
+				      #$sfam = ucfirst($sfam)
+					  #unless $sfam =~ /hAT/;
+				  #}
+				  #say STDERR "aft ucfirst: $sfam";
+				  $log->info("Results - Number of $sfam families:$lpad                        $famct");
+				  $log->info("Results - Number of $sfam elements in families:$lpad            $famtot");
+				  $log->info("Results - Number of $sfam singleton families/elements:$lpad     $singct");
+				  $log->info("Results - Number of $sfam elements (for debugging):$lpad        $elemct");
 
 				  push @family_fastas, $data_ref->{$type}{family_fasta};
 				  push @annotated_ids, $data_ref->{$type}{annotated_ids};

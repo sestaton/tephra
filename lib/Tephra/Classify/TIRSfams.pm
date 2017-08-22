@@ -21,9 +21,11 @@ use Tephra::Config::Exe;
 #use Data::Dump::Color;
 use namespace::autoclean;
 
-with 'Tephra::Role::GFF',
+with 'Tephra::Role::Logger',
+     'Tephra::Role::GFF',
      'Tephra::Role::Util',
      'Tephra::Role::Run::GT';
+
 
 =head1 NAME
 
