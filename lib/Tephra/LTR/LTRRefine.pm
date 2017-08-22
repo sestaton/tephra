@@ -19,7 +19,8 @@ use Carp 'croak';
 #use Data::Dump::Color;
 use namespace::autoclean;
 
-with 'Tephra::Role::Util';
+with 'Tephra::Role::Util', 
+     'Tephra::Role::Logger';
 
 =head1 NAME
 

@@ -23,7 +23,7 @@ use Tephra::Config::Exe;
 #use Data::Dump::Color;
 use namespace::autoclean;
 
-with 'Tephra::Role::Util';
+with 'Tephra::Role::Run::Any';
 
 =head1 NAME
 
