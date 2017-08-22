@@ -240,6 +240,97 @@ sub map_superfamily_name_to_code {
     }
 }
 
+sub build_repeat_map {
+    my $self = shift;
+
+    my %repeat_map = (
+	## Class I
+	# DIRS
+	'RLD' => { class => 'Class I', order => 'DIRS', repeat_name => 'DIRS' },
+	'RYN' => { class => 'Class I', order => 'DIRS', repeat_name => 'Ngaro' },
+	'RYX' => { class => 'Class I', order => 'DIRS', repeat_name => 'Unknown DIRS' },
+	'RYV' => { class => 'Class I', order => 'DIRS', repeat_name => 'VIPER' },
+	# LINE 
+	'RII' => { class => 'Class I', order => 'LINE', repeat_name => 'I' },
+	'RIJ' => { class => 'Class I', order => 'LINE', repeat_name => 'Jockey' },
+	'RIL' => { class => 'Class I', order => 'LINE', repeat_name => 'L1' },
+	'RIR' => { class => 'Class I', order => 'LINE', repeat_name => 'R2' },
+	'RIT' => { class => 'Class I', order => 'LINE', repeat_name => 'RTE' },
+	'RIX' => { class => 'Class I', order => 'LINE', repeat_name => 'Unknown LINE' },
+	'RIC' => { class => 'Class I', order => 'LINE', repeat_name => 'CR1' },
+	'RIS' => { class => 'Class I', order => 'LINE', repeat_name => 'R1' },
+	'RIA' => { class => 'Class I', order => 'LINE', repeat_name => 'RandI' },
+	'RIE' => { class => 'Class I', order => 'LINE', repeat_name => 'Rex' },
+	'RID' => { class => 'Class I', order => 'LINE', repeat_name => 'Tad1' },
+	# LTR
+	'RLB' => { class => 'Class I', order => 'LTR', repeat_name => 'Bel/Pao' },
+	'RLC' => { class => 'Class I', order => 'LTR', repeat_name => 'Copia' },
+	'RLE' => { class => 'Class I', order => 'LTR', repeat_name => 'ERV' },
+	'RLG' => { class => 'Class I', order => 'LTR', repeat_name => 'Gypsy' },
+	'RLR' => { class => 'Class I', order => 'LTR', repeat_name => 'Retrovirus' },
+	'RLT' => { class => 'Class I', order => 'LTR', repeat_name => 'TRIM' },
+	'RLX' => { class => 'Class I', order => 'LTR', repeat_name => 'Unknown LTR' },
+	# PLE
+	'RPP' => { class => 'Class I', order => 'Penelope', repeat_name => 'Penelope' },
+	'RPX' => { class => 'Class I', order => 'Penelope', repeat_name => 'Unknown PLE' },
+	# SINE
+	'RSS' => { class => 'Class I', order => 'SINE', repeat_name => '5S' },
+	'RSL' => { class => 'Class I', order => 'SINE', repeat_name => '7SL' },
+	'RST' => { class => 'Class I', order => 'SINE', repeat_name => 'tRNA' },
+	'RSX' => { class => 'Class I', order => 'SINE', repeat_name => 'Unknown SINE' },
+	'RXX' => { class => 'Class I', order => 'SINE', repeat_name => 'Unknown retrotransposon' },
+	## Class II
+	# - Subclass 1
+	# Crypton
+	'DYC' => { class => 'Class II', order => 'Crypton', repeat_name => 'Crypton' },
+	'DYX' => { class => 'Class II', order => 'Crypton', repeat_name => 'Unknown Crypton' },
+	# TIR
+	'DTC' => { class => 'Class II', order => 'TIR', repeat_name => 'CACTA' },
+	'DTA' => { class => 'Class II', order => 'TIR', repeat_name => 'hAT' },
+	'DTE' => { class => 'Class II', order => 'TIR', repeat_name => 'Merlin' },
+	'DTM' => { class => 'Class II', order => 'TIR', repeat_name => 'Mutator' },
+	'DTP' => { class => 'Class II', order => 'TIR', repeat_name => 'P' },
+	'DTH' => { class => 'Class II', order => 'TIR', repeat_name => 'PIF/Harbinger' },
+	'DTB' => { class => 'Class II', order => 'TIR', repeat_name => 'PiggyBac' },
+	'DTT' => { class => 'Class II', order => 'TIR', repeat_name => 'Tc1/Mariner' },
+	'DTR' => { class => 'Class II', order => 'TIR', repeat_name => 'Transib' },
+	'DTX' => { class => 'Class II', order => 'TIR', repeat_name => 'Unknown TIR' },
+	'DXX' => { class => 'Class II', order => 'TIR', repeat_name => 'Unknown DNA transposon' },
+	# - Subclass 2
+	# Helitron
+	'DHH' => { class => 'Class II', order => 'Helitron', repeat_name => 'Helitron' },
+	'DHX' => { class => 'Class II', order => 'Helitron', repeat_name => 'Unknown Helitron' },
+	# Maverick
+	'DMM' => { class => 'Class II', order => 'Maverick', repeat_name => 'Maverick' },
+	'DMX' => { class => 'Class II', order => 'Maverick', repeat_name => 'Unknown Maverick' },
+	);
+
+    return \%repeat_map;
+}
+
+sub get_SO_terms {
+    my $self = shift;
+
+    my %table = (
+        'LTR_retrotransposon'     => 'SO:0000186',
+        'non_LTR_retrotransposon' => 'SO:0000189',
+        
+        'U_box'                => 'SO:0001788',
+        'RR_tract'             => 'SO:0000435',
+        'long_terminal_repeat' => 'SO:0000286',
+        'inverted_repeat'      => 'SO:0000294',
+        'primer_binding_site'  => 'SO:0005850',
+        'protein_match'        => 'SO:0000349',
+        
+        'terminal_inverted_repeat_element' => 'SO:0000208',
+        'terminal_inverted_repeat'         => 'SO:0000481',
+        'helitron'                         => 'SO:0000544',
+        'MITE'                             => 'SO:0000338',
+        'DNA_transposon'                   => 'SO:0000182' );
+
+    return \%table;
+}
+
 sub _do_blast_search {
     my $self = shift;
     my ($fam, $famsize, $fas, $outfh, $threads, $fam_lengths) = @_;
