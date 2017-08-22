@@ -23,6 +23,7 @@ if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
 my $cmd      = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir  = File::Spec->catdir('t', 'test_data');
 my $genome   = File::Spec->catfile($testdir, 'ref.fas');
+my $index    = File::Spec->catfile($testdir, 'ref.fas.fai');
 my $repeatdb = File::Spec->catfile($testdir, 'repdb.fas');
 my $masked   = File::Spec->catfile($testdir, 'ref_masked.fas');
 my $outfile  = File::Spec->catfile($testdir, 'ref_masked_tephra_repdb_fragments.gff3');
@@ -60,6 +61,6 @@ SKIP: {
     unlink $log, $thrlog, $outfile;
 };
 
-unlink $masked;
+unlink $masked, $index;
 
 done_testing();

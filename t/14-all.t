@@ -63,7 +63,7 @@ SKIP: {
     unlink $gff, $fas, $log, $config;
 
     my @outfiles;
-    find( sub { push @outfiles, $File::Find::name if /^ref_/ }, $testdir);
+    find( sub { push @outfiles, $File::Find::name if /^ref_|\.fai$/ }, $testdir);
     for my $res (@outfiles) {
 	unlink $res 
 	    if -f $res;
