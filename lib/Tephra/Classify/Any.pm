@@ -19,6 +19,7 @@ use Tephra::Annotation::MakeExemplars;
 use namespace::autoclean;
 
 with 'Tephra::Role::Util',
+     'Tephra::Role::Logger',
      'Tephra::Classify::Fams::Cluster',
      'Tephra::Role::Run::Blast';
 

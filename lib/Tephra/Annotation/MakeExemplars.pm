@@ -11,8 +11,10 @@ use Carp 'croak';
 #use Data::Dump::Color;
 use namespace::autoclean;
 
-with 'Tephra::Role::GFF',
+with 'Tephra::Role::Logger',
+     'Tephra::Role::GFF',
      'Tephra::Role::Util',
+     'Tephra::Role::Run::Any',
      'Tephra::Role::Run::GT';
 
 =head1 NAME
@@ -97,7 +99,7 @@ sub make_exemplars {
 	chomp $line;
 	next if $line =~ /^#/;
 	my $feature = gff3_parse_feature( $line );
-	if ($feature->{type} =~ /LTR_retrotransposon|terminal_inverted_repeat_element/) {
+	if ($feature->{type} =~ /(?:LTR|TRIM)_retrotransposon|terminal_inverted_repeat_element/) {
 	    $elem_id = @{$feature->{attributes}{ID}}[0];
 	    ($source_id, $source, $type, $start, $end, $strand) 
 		= @{$feature}{qw(seq_id source type start end strand)};
@@ -219,7 +221,7 @@ sub calculate_exemplars {
     $self->run_cmd($mkcmd);
     $self->run_cmd($vmcmd);
     my $exemplar = $self->parse_vmatch($vmerSearchOut);
-    my ($family) = ($exemplar =~ /(^\w{3}_family\d+)/);
+    my ($family) = ($exemplar =~ /(^[A-Z]{3}_family\d+)/);
     $exemplar =~ s/${family}_//;
     $self->clean_index_files($index);
     unlink $vmerSearchOut;
