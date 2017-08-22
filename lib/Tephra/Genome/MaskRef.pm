@@ -14,10 +14,11 @@ use Sort::Naturally;
 use Set::IntervalTree;
 use Parallel::ForkManager;
 use Tephra::Config::Exe;
+use Tephra::Annotation::Util;
 use namespace::autoclean;
 #use Data::Dump::Color qw(dump dd);
 
-with 'Tephra::Role::Util',
+with 'Tephra::Role::Run::Any',
      'Tephra::Role::Run::GT';
 
 =head1 NAME
@@ -272,7 +273,8 @@ sub get_masking_results {
 	$rep_end = $sub_chr_length;
     }
 
-    my $repeat_map = $self->_build_repeat_map;
+    my $util = Tephra::Annotation::Util->new;
+    my $repeat_map = $util->build_repeat_map;
 
     open my $in, '<', $voutfile or die "\nERROR: Could not open file: $voutfile\n";
     
@@ -369,7 +371,7 @@ sub get_masking_results {
     }
 
     for my $s (sort { $a <=> $b } keys %windows) { 
-	my ($code) = ($windows{$s}{match} =~ /^(\w{3})-?_?/);         
+	my ($code) = ($windows{$s}{match} =~ /(^[A-Z]{3})_?\-?/);
 	if (defined $code && exists $repeat_map->{$code}) {
 	    push @{$report{ $code }}, $windows{$s}{len};
 	}

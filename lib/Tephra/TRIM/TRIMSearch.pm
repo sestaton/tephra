@@ -13,7 +13,9 @@ use Log::Any            qw($log);
 use Try::Tiny;
 use namespace::autoclean;
 
-with 'Tephra::Role::Run::GT';
+with 'Tephra::Role::Logger',
+     'Tephra::Role::Run::GT';
+
 
 =head1 NAME
 
@@ -73,8 +75,9 @@ sub trim_search {
     }
 
     @ltrh_cmd{@ltrh_opts} = @ltrh_args;
-    my $ltrh_succ = $self->run_ltrharvest(\%ltrh_cmd, $logfile);
-    my $gffh_sort = $self->sort_gff($ltrh_gff, $logfile) if -s $ltrh_gff;
+    my $log = $self->get_tephra_logger($logfile);
+    my $ltrh_succ = $self->run_ltrharvest(\%ltrh_cmd, $log);
+    my $gffh_sort = $self->sort_gff($ltrh_gff, $log) if -s $ltrh_gff;
 
     if ($ltrh_succ && defined $gffh_sort && -s $gffh_sort) {
 	my @ltrd_opts = qw(-trnas -hmms -seqfile -seqnamelen -matchdescstart -o);
@@ -82,7 +85,7 @@ sub trim_search {
 
 	@ltrd_cmd{@ltrd_opts} = @ltrd_args;
 	
-	my $ltrd_succ = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort, $logfile);
+	my $ltrd_succ = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort, $log);
 	$self->clean_indexes($path) 
 	    if $self->clean && $mode eq 'relaxed';
 	unlink $ltrh_gff;

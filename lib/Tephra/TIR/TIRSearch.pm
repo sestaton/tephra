@@ -16,9 +16,10 @@ use Carp 'croak';
 #use Data::Dump::Color;
 use namespace::autoclean;
 
-with 'Tephra::Role::Run::GT',
+with 'Tephra::Role::Logger',
      'Tephra::Role::GFF',
-     'Tephra::Role::Util';
+     'Tephra::Role::Util',
+     'Tephra::Role::Run::GT';
 
 has outfile => (
       is        => 'ro',
@@ -70,7 +71,8 @@ sub tir_search {
     my @tirv_args = ("yes","27","100",$index,$hmmdb);
     @tirv_cmd{@tirv_opts} = @tirv_args;
     
-    my $tirv_succ = $self->run_tirvish(\%tirv_cmd, $gff, $logfile);
+    my $log = $self->get_tephra_logger($logfile);
+    my $tirv_succ = $self->run_tirvish(\%tirv_cmd, $gff, $log);
     #remove_tree($model_dir, { safe => 1 });
 
     my $filtered = $self->_filter_tir_gff($gff, $fas);

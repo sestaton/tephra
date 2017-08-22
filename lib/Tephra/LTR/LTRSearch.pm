@@ -14,7 +14,8 @@ use YAML::Tiny;
 use namespace::autoclean;
 #use Data::Dump;
 
-with 'Tephra::Role::Run::GT';
+with 'Tephra::Role::Logger',
+     'Tephra::Role::Run::GT';
 
 =head1 NAME
 
@@ -96,11 +97,13 @@ sub ltr_search {
         exit(1);
     }
 
+    my $log = $self->get_tephra_logger($logfile);
+
     @ltrh_cmd{@ltrh_opts} = @ltrh_args;
-    my $ltrh_succ = $self->run_ltrharvest(\%ltrh_cmd, $logfile);
+    my $ltrh_succ = $self->run_ltrharvest(\%ltrh_cmd, $log);
 
     if ($ltrh_succ && -s $ltrh_gff) {
-	my $gffh_sort = $self->sort_gff($ltrh_gff, $logfile);
+	my $gffh_sort = $self->sort_gff($ltrh_gff, $log);
 
 	my @ltrd_opts = qw(-trnas -hmms -seqfile -matchdescstart -seqnamelen -o 
                            -pdomevalcutoff -pdomcutoff -pptradius -pptlen -pptaprob 
@@ -111,7 +114,7 @@ sub ltr_search {
 	                 $uboxutpr,$pbslen,$pbsradius,$pbsoffset,$pbstrnaoffset,$pbsmaxeditdist,$maxgaplen);
 	@ltrd_cmd{@ltrd_opts} = @ltrd_args;
 
-	my $ltrd_succ = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort, $logfile);
+	my $ltrd_succ = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort, $log);
 	$self->clean_indexes($path) 
 	    if $self->clean && $mode eq 'relaxed';
 	unlink $ltrh_gff;
