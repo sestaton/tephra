@@ -97,6 +97,7 @@ sub _run_all_commands {
 	    $refct++;
 	    $log->info("Output files - $genome_mask1");
 	    push @mask_files, $genome_mask1;
+	    push @mask_files, $genome_mask1.'.log';
 	    unlink $tmp_ltr_ref;
 	}
     }
@@ -159,6 +160,7 @@ sub _run_all_commands {
 	    $refct++;
 	    $log->info("Output files - $genome_mask2");
 	    push @mask_files, $genome_mask2;
+	    push @mask_files, $genome_mask2.'.log';
 	}
     }
 
@@ -216,6 +218,7 @@ sub _run_all_commands {
 	    $refct++;
 	    $log->info("Output files - $genome_mask3");
 	    push @mask_files, $genome_mask3;
+	    push @mask_files, $genome_mask3.'.log';
 	}
     }
 
@@ -271,6 +274,7 @@ sub _run_all_commands {
 	    $refct++;
 	    $log->info("Output files - $genome_mask4");
 	    push @mask_files, $genome_mask4;
+	    push @mask_files, $genome_mask4.'.log';
 	}
     }
 
@@ -304,6 +308,8 @@ sub _run_all_commands {
             database       => $customRepDB,
             dbtype         => 'full transposon database',
             ref_count      => $refct });
+
+    push @mask_files, $final_mask.'.log';
 
     ## findfragments
     my $fragments_gff = $tephra_obj->find_fragments($log, $customRepDB, $final_mask);
