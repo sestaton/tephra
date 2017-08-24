@@ -39,7 +39,7 @@ has verbose => ( is => 'ro', isa => 'Bool', predicate  => 'has_debug', lazy => 1
 sub run_mgescan {
     my $self = shift;
     my $dna_file = $self->fasta->absolute->resolve;
-    my $out_dir  = $self->outdir;;
+    my $out_dir  = $self->outdir;
     my $phmm_dir = $self->phmmdir->absolute->resolve;
     my $pdir     = $self->pdir->absolute->resolve;
 
@@ -55,17 +55,17 @@ sub run_mgescan {
     }
     
     # get signal for some state of ORF1, RT, and APE
-    print "Getting signal...\n" if $self->verbose;
-    print "    Protein sequence...\n" if $self->verbose;
+    say STDERR "Getting signal..." if $self->verbose;
+    say STDERR "    Protein sequence..." if $self->verbose;
     my $pep_file = File::Spec->catfile($out_dir, $dna_name.$dna_suffix.'.pep');
     $self->translate_forward($dna_file, $pep_file);
 
-    print "    RT signal...\n" if $self->verbose;
+    say STDERR "    RT signal..." if $self->verbose;
     my $phmm_file = File::Spec->catfile($phmm_dir, 'ebi_ds36752_seq.hmm');
     my $domain_rt_pos_file = File::Spec->catfile($pos_dir, $dna_name.$dna_suffix.'.rt.pos');
     $self->get_signal_domain($pep_file, $phmm_file, $domain_rt_pos_file);
     
-    print "    APE signal...\n" if $self->verbose;
+    say STDERR "    APE signal..." if $self->verbose;
     $phmm_file = File::Spec->catfile($phmm_dir, 'ebi_ds36736_seq.hmm');
     my $domain_ape_pos_file = File::Spec->catfile($pos_dir, $dna_name.$dna_suffix.'.ape.pos');
     $self->get_signal_domain($pep_file, $phmm_file, $domain_ape_pos_file);
@@ -85,7 +85,7 @@ sub run_mgescan {
 	}
 
 	# run hmm
-	print "Running HMM...\n" if $self->verbose;
+	say STDERR "Running HMM..." if $self->verbose;
 
 	my $mgescan  = File::Spec->catfile($pdir, 'hmm', 'tephra-MGEScan');
 	my $out_file = File::Spec->catfile($outf_dir, $dna_name.$dna_suffix);
@@ -95,7 +95,7 @@ sub run_mgescan {
 	my $tephra_dir = $ENV{TEPHRA_DIR} // File::Spec->catfile($ENV{HOME}, '.tephra');
 	$ENV{PATH} = join ':', $ENV{PATH}, File::Spec->catfile($tephra_dir, 'EMBOSS-6.5.7', 'bin');
 	#my $cmd = "$mgescan -m $chrhmm -s $dna_file -r $domain_rt_pos_file -a $domain_ape_pos_file -o $out_file -p $ldir -d $outf_dir";
-	#say STDERR "CMD: $cmd"; ##TODO: add debug option
+	say STDERR "CMD: $cmd" if $self->verbose;
 	system("$mgescan -m $chrhmm -s $dna_file -r $domain_rt_pos_file -a $domain_ape_pos_file -o $out_file -p $ldir -d $outf_dir");
     }
     unlink $pep_file if -e $pep_file;
@@ -110,7 +110,8 @@ sub translate_forward {
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($translate) = @{$config}{qw(transcmd)};
     my $cmd = "$translate -d $in -h $name -p $out";
-    #say STDERR "CMD: $cmd"; #TODO: add debug option
+    say STDERR "CMD: $cmd" if $self->verbose;
+    
     try {
 	system($cmd);
     }
