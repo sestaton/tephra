@@ -143,10 +143,10 @@ sub make_families {
 					  #unless $sfam =~ /hAT/;
 				  #}
 				  #say STDERR "aft ucfirst: $sfam";
-				  $log->info("Results - Number of $sfam families:$lpad                        $famct");
-				  $log->info("Results - Number of $sfam elements in families:$lpad            $famtot");
-				  $log->info("Results - Number of $sfam singleton families/elements:$lpad     $singct");
-				  $log->info("Results - Number of $sfam elements (for debugging):$lpad        $elemct");
+				  $log->info("Results - Number of $sfam families:$lpad                          $famct");
+				  $log->info("Results - Number of $sfam elements in families:$lpad              $famtot");
+				  $log->info("Results - Number of $sfam singleton families/elements:$lpad       $singct");
+				  $log->info("Results - Number of $sfam elements (for debugging):$lpad          $elemct");
 
 				  push @family_fastas, $data_ref->{$type}{family_fasta};
 				  push @annotated_ids, $data_ref->{$type}{annotated_ids};
