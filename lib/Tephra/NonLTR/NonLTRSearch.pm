@@ -66,7 +66,7 @@ sub find_nonltrs {
     die "\nERROR: No FASTA files found in genome directory. Sequences must be over 50kb and less than 50% gaps. Exiting.\n" 
 	if @$fasfiles == 0;
 
-    printf STDERR "Running forward...\n" if $self->verbose;
+    say STDERR "Running forward..." if $self->verbose;
     for my $file (sort @$fasfiles) {    
 	my $run_hmm = Tephra::NonLTR::RunHMM->new( 
 	    fasta   => $file, 
@@ -84,7 +84,7 @@ sub find_nonltrs {
     $pp->postprocess;
 
     # Backward strand
-    printf "Running backward...\n" if $self->verbose;
+    say STDERR "Running backward..." if $self->verbose;
 
     my $sequtils = Tephra::NonLTR::SeqUtils->new;
     my $revfasfiles = $sequtils->invert_seq($genome_dir, $minus_dna_dir);
