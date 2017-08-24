@@ -47,7 +47,7 @@ sub invert_seq {
         $revseq =~ s/.{60}\K/\n/g;
         my $outfile = File::Spec->catfile($minus_dna_dir, $name.$suffix);
         open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile";;
-	say $out join "\n", ">".$file, $revseq;
+	say $out join "\n", ">".$name, $revseq;
 	close $out;
 	push @revfasfiles, $outfile;
     }
