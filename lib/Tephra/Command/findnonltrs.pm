@@ -23,7 +23,7 @@ sub opt_spec {
 	[ "outdir|d=s",  "The location to place the results "                              ],
 	[ "gff|o=s",     "The GFF3 outfile to place the non-LTRs found in <genome> "       ],
 	[ "threads|t=i", "The number of threads to use for BLAST searches (Default: 1)  "  ],
-	[ "logfile|l=s", "The file to use for logging results in addition to the screen " ],
+	[ "logfile|l=s", "The file to use for logging results in addition to the screen "  ],
 	[ "verbose|v",   "Display progress for each chromosome (Default: no) "             ],
 	[ "help|h",      "Display the usage menu and exit. "                               ],
         [ "man|m",       "Display the full manual. "                                       ],
@@ -162,6 +162,7 @@ Options:
     -d|outdir     :   The location to place the results.
     -p|pdir       :   Location of the HMM models (Default: configured automatically).
     -t|threads    :   The number of threads to use for BLAST searches (Default: 1).
+    -v|verbose    :   Display progress for each chromosome (Default: no).
 
 END
 }
@@ -218,6 +219,10 @@ The genome sequences in FASTA format to search for non-LTR-RTs.
 =item -t, --threads
 
  The number of threads to use for BLAST searches (Default: 1).
+
+=item -v, --verbose
+
+ Display progress for each chromosome (Default: no).
 
 =item -h, --help
 
