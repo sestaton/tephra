@@ -161,11 +161,12 @@ sub find_tc1_mariner {
 	my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
 	my $count = $stat->count;
 
-	$log->info("Results - Total number of Tc1-Mariner elements:           $count");
-	$log->info("Results - Minimum length of Tc1-Mariner elements:         $min");
-	$log->info("Results - Maximum length of Tc1-Mariner elements:         $max");
-	$log->info("Results - Mean length of Tc1-Mariner elements:            $mean");
-	$log->info("Results - Number of Tc1-Mariner elements protein matches: $pdoms");
+	my $pad = ' ' x 10;
+	$log->info("Results - Total number of Tc1-Mariner elements:$pad           $count");
+	$log->info("Results - Minimum length of Tc1-Mariner elements:$pad         $min");
+	$log->info("Results - Maximum length of Tc1-Mariner elements:$pad         $max");
+	$log->info("Results - Mean length of Tc1-Mariner elements:$pad            $mean");
+	$log->info("Results - Number of Tc1-Mariner elements protein matches:$pad $pdoms");
 
 	return ($outfile, $fas, $count);
     }
@@ -272,11 +273,12 @@ sub find_hat {
 	my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
 	my $count = $stat->count;
 
-	$log->info("Results - Total number of hAT elements:                   $count");
-        $log->info("Results - Minimum length of hAT elements:                 $min");
-        $log->info("Results - Maximum length of hAT elements:                 $max");
-        $log->info("Results - Mean length of hAT elements:                    $mean");
-	$log->info("Results - Number of hAT elements protein matches:         $pdoms");
+	my $pad = ' ' x 10;
+	$log->info("Results - Total number of hAT elements:$pad                   $count");
+        $log->info("Results - Minimum length of hAT elements:$pad                 $min");
+        $log->info("Results - Maximum length of hAT elements:$pad                 $max");
+        $log->info("Results - Mean length of hAT elements:$pad                    $mean");
+	$log->info("Results - Number of hAT elements protein matches:$pad         $pdoms");
 
 	return ($outfile, $fas, $count);
     }
@@ -386,11 +388,12 @@ sub find_mutator {
 	my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
 	my $count = $stat->count;
 
-	$log->info("Results - Total number of Mutator elements:               $count");
-        $log->info("Results - Minimum length of Mutator elements:             $min");
-        $log->info("Results - Maximum length of Mutator elements:             $max");
-        $log->info("Results - Mean length of Mutator elements:                $mean");
-	$log->info("Results - Number of Mutator elements protein matches:     $pdoms");
+	my $pad = ' ' x 10;
+	$log->info("Results - Total number of Mutator elements:$pad               $count");
+        $log->info("Results - Minimum length of Mutator elements:$pad             $min");
+        $log->info("Results - Maximum length of Mutator elements:$pad             $max");
+        $log->info("Results - Mean length of Mutator elements:$pad                $mean");
+	$log->info("Results - Number of Mutator elements protein matches:$pad     $pdoms");
 
 	return ($outfile, $fas, $count);
     }
@@ -507,11 +510,12 @@ sub find_cacta {
 	my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
 	my $count = $stat->count;
 	
-	$log->info("Results - Total number of CACTA elements:                 $count");
-        $log->info("Results - Minimum length of CACTA elements:               $min");
-        $log->info("Results - Maximum length of CACTA elements:               $max");
-        $log->info("Results - Mean length of CACTA elements:                  $mean");
-	$log->info("Results - Number of CACTA elements protein matches:       $pdoms");
+	my $pad = ' ' x 10;
+	$log->info("Results - Total number of CACTA elements:$pad                 $count");
+        $log->info("Results - Minimum length of CACTA elements:$pad               $min");
+        $log->info("Results - Maximum length of CACTA elements:$pad               $max");
+        $log->info("Results - Mean length of CACTA elements:$pad                  $mean");
+	$log->info("Results - Number of CACTA elements protein matches:$pad       $pdoms");
 
 	return ($outfile, $fas, $count);
     }
@@ -606,11 +610,12 @@ sub write_unclassified_tirs {
 	my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
 	my $count = $stat->count;
 
-	$log->info("Results - Total number of unclassified TIR elements:      $count");
-        $log->info("Results - Minimum length of unclassified TIR elements:    $min");
-        $log->info("Results - Maximum length of unclassified TIR elements:    $max");
-        $log->info("Results - Mean length of unclassified TIR elements:       $mean");
-	$log->info("Results - Number of unclas. TIR elements protein matches: $pdoms");
+	my $pad = ' ' x 10;
+	$log->info("Results - Total number of unclassified TIR elements:$pad      $count");
+        $log->info("Results - Minimum length of unclassified TIR elements:$pad    $min");
+        $log->info("Results - Maximum length of unclassified TIR elements:$pad    $max");
+        $log->info("Results - Mean length of unclassified TIR elements:$pad       $mean");
+	$log->info("Results - Number of unclas. TIR elements protein matches:$pad $pdoms");
 
 	return ($outfile, $fas, $count);
     }
