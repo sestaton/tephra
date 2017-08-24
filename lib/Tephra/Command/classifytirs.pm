@@ -135,13 +135,13 @@ sub _classify_tir_superfamilies {
 	 #);
 
 	#$classify_obj->write_combined_output(\%outfiles);
-	
-	$log->info("Results - Total number of TIR elements:                   $all_ct");
-	$log->info("Results - Number of Tc1-Mariner elements:                 $tc1_ct");
-	$log->info("Results - Number of hAT elements:                         $hat_ct");
-	$log->info("Results - Number of Mutator elements:                     $mut_ct");
-	$log->info("Results - Number of CACTA elements:                       $cac_ct");
-	$log->info("Results - Number of unclassified TIR elements:            $unc_ct");
+	my $pad = ' ' x 20;
+	$log->info("Results - Total number of TIR elements:$pad         $all_ct");
+	$log->info("Results - Number of Tc1-Mariner elements:$pad       $tc1_ct");
+	$log->info("Results - Number of hAT elements:$pad               $hat_ct");
+	$log->info("Results - Number of Mutator elements:$pad           $mut_ct");
+	$log->info("Results - Number of CACTA elements:$pad             $cac_ct");
+	$log->info("Results - Number of unclassified TIR elements:$pad  $unc_ct");
 	unlink $_ for @fastas;
 
 	return (\%gffs, $log);
@@ -149,6 +149,7 @@ sub _classify_tir_superfamilies {
     else {
 	say STDERR "\nWARNING: No TIR elements were classified. Check input.\n";
     }
+    return;
 }
 
 sub _classify_tir_families {
