@@ -1,6 +1,24 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.09.3	
+
+- Fix Vmatch clean command name for removing index files.
+- Add TRIM retrotransposons annotation to family-level classifications for
+  LTR retrotransposons.
+- Remove unclassified LTR retrotransposon FASTA file used for family-level classifications. This is essentially a temp file and keeping this along with the FASTA of classified elements is redundant and confusing.
+- Add separate roles for logging, command execution, and Tephra subcommand execution.
+- Add a parent class for running all Tephra commands in the 'all' subcommand.
+- Add Annotation::Util method to get repeat name and superfamily code from transposon ID.
+- Reduce method calls by passing log object to command execution methods instead of generating log
+ object for each method call.
+- Adjust logging method in family-level classification method for LTR/TIR elements in order align results in the log for different transposons types.
+- Clean up fai index after test completion.
+- Clean up masking log files from 'all' command at completion.
+- Document --verbose option for 'findnonltrs' command, and change logging behavior so all output goes
+to STDERR.
+
+
 0.09.2	08/08/2017	Vancouver, BC
 
 - Bug fixes for 'tirage' and 'all' commands to correctly parse family name from the TIR
