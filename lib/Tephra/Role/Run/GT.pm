@@ -7,19 +7,12 @@ use File::Temp;
 use File::Spec;
 use File::Find;
 use File::Basename;
-#use IO::File;
-#use POSIX;
 use Env                 qw(@PATH);
 use Cwd                 qw(getcwd abs_path);
-#use Log::Any            qw($log);
 use IPC::System::Simple qw(system EXIT_ANY);
-#use File::Path          qw(make_path);
 use Tephra::Config::Exe;
 #use Data::Dump::Color;
 use namespace::autoclean;
-
-#requires 'get_tephra_logger';
-#with 
 
 =head1 NAME
 
@@ -93,7 +86,6 @@ sub create_index {
     my $self = shift;
     my ($args, $log) = @_;
     my $threads = $self->threads;
-    #my $log     = $self->get_tephra_logger($logfile);
 
     my $gt = $self->get_gt_exec;
     unshift @$args, 'suffixerator';
@@ -120,7 +112,6 @@ sub run_ltrharvest {
     my ($args, $log) = @_;
     my $debug   = $self->debug;
     my $threads = $self->threads;
-    #my $log     = $self->get_tephra_logger($logfile);
 
     my $gt = $self->get_gt_exec;
     my @ltrh_args;
@@ -153,7 +144,6 @@ sub run_ltrdigest {
     my ($args, $gff, $log) = @_;
     my $debug   = $self->debug;
     my $threads = $self->threads;
-    #my $log     = $self->get_tephra_logger($logfile);
 
     # see: https://github.com/genometools/genometools/issues/662
     # there is something wrong with setting the TMPDIR with ltrdirgest
@@ -206,7 +196,6 @@ sub run_tirvish {
     my $debug   = $self->debug;
     my $threads = $self->threads;
     my $gt      = $self->get_gt_exec;
-    #my $log     = $self->get_tephra_logger($logfile);
 
     #my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     #my $time = POSIX::strftime("%d-%m-%Y_%H:%M:%S", localtime);
@@ -249,7 +238,6 @@ sub sort_gff {
     my ($gff, $log) = @_;
     my $debug   = $self->debug;
     my $threads = $self->threads;
-    #my $log     = $self->get_tephra_logger($logfile);
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $gff_sort = File::Spec->catfile( abs_path($path), $name."_sort$suffix" );
@@ -308,8 +296,6 @@ sub _make_gt_errorlog {
     my $self = shift;
     my ($cmd) = @_;
  
-    #use File::Temp;
-
     my $dir = getcwd();
     my $tmpiname  = "tephra_$cmd"."_errors_XXXX";
     my $tmp_hmmdbfh = File::Temp->new( TEMPLATE => $tmpiname,
