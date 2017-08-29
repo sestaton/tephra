@@ -109,10 +109,6 @@ sub _run_all_commands {
 
     if (-e $trims_fas && -e $trims_gff) {
 	$has_trims = 1;
-        $log->info("Output files - $trims_gff");
-        $log->info("Output files - $trims_fas");
-        push @fas_files, $trims_fas;
-        push @gff_files, $trims_gff;
     }
 
     ## combine LTRs and TRIMs
@@ -120,7 +116,7 @@ sub _run_all_commands {
     if ($has_ltrs && $has_trims) {
 	$ltr_trim_gff = $tephra_obj->combine_ltrs_trims($trims_gff, $ltr_gff);
 
-	## classifyltrs
+	## classifyltrs on combined LTRs and TRIMs
 	($ltrc_fas, $ltrc_gff, $ltrc_dir) = $tephra_obj->classify_ltrs($log, $ltr_trim_gff);
 
 	if (-e $ltrc_gff && -e $ltrc_fas) {
@@ -129,7 +125,26 @@ sub _run_all_commands {
 	    push @fas_files, $ltrc_fas;
 	    push @gff_files, $ltrc_gff;
 	    push @classified_fastas, $ltrc_fas;
+	    #unlink $trims_fas, $trims_gff;
 	}
+    }
+    elsif (!$has_trims && $has_ltrs) {
+	$log->info("Output files - $trims_gff");
+        $log->info("Output files - $trims_fas");
+        push @fas_files, $trims_fas;
+        push @gff_files, $trims_gff;
+
+	## classifyltrs on LTRs only
+        ($ltrc_fas, $ltrc_gff, $ltrc_dir) = $tephra_obj->classify_ltrs($log, $ltr_gff);
+
+	if (-e $ltrc_gff && -e $ltrc_fas) {
+            $log->info("Output files - $ltrc_gff");
+            $log->info("Output files - $ltrc_fas");
+            push @fas_files, $ltrc_fas;
+            push @gff_files, $ltrc_gff;
+            push @classified_fastas, $ltrc_fas;
+            #unlink $trims_fas, $trims_gff;
+        }
     }
 
     ## ltrage
