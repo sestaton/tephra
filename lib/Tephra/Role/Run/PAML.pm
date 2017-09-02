@@ -212,7 +212,7 @@ sub _build_baseml_exec { # this should probably be a separate role
 
 =head1 AUTHOR
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 BUGS
 
