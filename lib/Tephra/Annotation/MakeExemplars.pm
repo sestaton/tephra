@@ -8,6 +8,7 @@ use File::Basename;
 use Bio::GFF3::LowLevel qw(gff3_parse_feature);
 use Cwd                 qw(abs_path);
 use Carp 'croak';
+use Tephra::Config::Exe;
 #use Data::Dump::Color;
 use namespace::autoclean;
 
@@ -208,14 +209,19 @@ sub calculate_exemplars {
     my $self = shift;
     my ($db) = @_;
 
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($vmatchbin) = @{$config}{qw(vmatchbin)};
+    my $vmatch  = File::Spec->catfile($vmatchbin, 'vmatch');
+    my $mkvtree = File::Spec->catfile($vmatchbin, 'mkvtree');
+
     my ($name, $path, $suffix) = fileparse($db, qr/\.[^.]*/);
     my $index = File::Spec->catfile($path, $name.'_mkvtree.index');
     my $vmerSearchOut = File::Spec->catfile($path, $name.'.vmersearch');
     my $mk_args = "-db $db -dna -indexname $index -allout -pl";
     my $vm_args = "-showdesc 0 -qspeedup 2 -l 20 -q $db -identity 80 $index > $vmerSearchOut";
     
-    my $mkcmd = "mkvtree $mk_args";
-    my $vmcmd = "vmatch $vm_args";
+    my $mkcmd = "$mkvtree $mk_args";
+    my $vmcmd = "$vmatch $vm_args";
     say STDERR "DEBUG: $mkcmd" if $self->debug;
     say STDERR "DEBUG: $vmcmd" if $self->debug;
     $self->run_cmd($mkcmd);
