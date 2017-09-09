@@ -13,7 +13,6 @@ use Bio::DB::HTS::Kseq;
 use Tephra::Config::Exe;
 use Tephra::Annotation::Util;
 use namespace::autoclean;
-
 #use Data::Dump::Color;
 
 with 'Tephra::Role::Logger',
@@ -62,14 +61,7 @@ sub find_ltrs {
     my $ft = strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findltrs' completed at: $ft.");
 
-    #if (-e $ltr_fas && -s $ltr_fas) {
-    #$log->info("Output files - $ltr_gff");
-
     return ($ltr_fas, $ltr_gff);
-    #}
-    #else {
-        #unlink $ltr_fas, $ltr_gff;
-    #}
 }
 
 sub find_trims {
