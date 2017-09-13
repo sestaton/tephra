@@ -1,7 +1,12 @@
 Revision history for Tephra
 
 Version	Date	Location
-0.09.3	
+0.09.4	
+
+- Log final masking results of complete TE library against the reference when the 'all' command
+  is executed.
+
+0.09.3	09/09/2017	Vancouver, BC
 
 - Fix Vmatch clean command name for removing index files.
 - Add TRIM retrotransposons annotation to family-level classifications for
