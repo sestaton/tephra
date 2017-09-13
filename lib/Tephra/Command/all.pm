@@ -85,12 +85,13 @@ sub _run_all_commands {
 	my $tmp_ltr_ref = $tephra_obj->make_temp_reference_for_masking($ltr_fas, 'LTRs');
 
 	$genome_mask1 = $tephra_obj->mask_reference({
-	    log       => $log, 
-	    config    => $config, 
-	    reference => $global_opts->{genome}, 
-	    database  => $tmp_ltr_ref, 
-	    dbtype    => 'LTRs', 
-	    ref_count => $refct });
+	    log         => $log, 
+	    log_results => 0,
+	    config      => $config, 
+	    reference   => $global_opts->{genome}, 
+	    database    => $tmp_ltr_ref, 
+	    dbtype      => 'LTRs', 
+	    ref_count   => $refct });
 
 	if (defined $genome_mask1 && -e $genome_mask1) { 
 	    $refct++;
@@ -154,16 +155,17 @@ sub _run_all_commands {
         }
     }
 
-    ## maskref on LTRs
+    ## maskref on classified LTRs and TRIMs
     my $genome_mask2;
     if (defined $ltrc_fas && -e $ltrc_fas && -s $ltrc_fas) {
 	$genome_mask2 = $tephra_obj->mask_reference({
-            log       => $log,
-            config    => $config,
-            reference => $genome_mask1,
-            database  => $ltrc_fas,
-            dbtype    => 'TRIMs',
-            ref_count => $refct });
+            log         => $log,
+	    log_results => 0,
+            config      => $config,
+            reference   => $genome_mask1,
+            database    => $ltrc_fas,
+            dbtype      => 'TRIMs',
+            ref_count   => $refct });
 
 	if (defined $genome_mask2 && -e $genome_mask2) { 
 	    $refct++;
@@ -215,12 +217,13 @@ sub _run_all_commands {
     my $genome_mask3;
     if (-e $hel_fas && -s $hel_fas) {
 	$genome_mask3 = $tephra_obj->mask_reference({
-            log       => $log,
-            config    => $config,
-            reference => $hel_ref,
-            database  => $hel_fas,
-            dbtype    => 'Helitrons',
-            ref_count => $refct });
+            log         => $log,
+	    log_results => 0,
+            config      => $config,
+            reference   => $hel_ref,
+            database    => $hel_fas,
+            dbtype      => 'Helitrons',
+            ref_count   => $refct });
 
 	if (defined $genome_mask3 && -e $genome_mask3) { 
 	    $refct++;
@@ -271,12 +274,13 @@ sub _run_all_commands {
     my $genome_mask4;
     if (-e $tirc_fas && -s $tirc_fas) {
 	$genome_mask4 = $tephra_obj->mask_reference({
-            log       => $log,
-            config    => $config,
-            reference => $genome_mask3,
-            database  => $tirc_fas,
-            dbtype    => 'TIRs',
-            ref_count => $refct });
+            log         => $log,
+	    log_results => 0,
+            config      => $config,
+            reference   => $genome_mask3,
+            database    => $tirc_fas,
+            dbtype      => 'TIRs',
+            ref_count   => $refct });
 
 	if (defined $genome_mask4 && -e $genome_mask4) {
 	    $refct++;
@@ -309,12 +313,13 @@ sub _run_all_commands {
 
     ## maskref on customRepDB
     my $final_mask = $tephra_obj->mask_reference({
-	  log       => $log,
-	  config    => $config,
-	  reference => $global_opts->{genome},
-	  database  => $customRepDB,
-	  dbtype    => 'full transposon database',
-	  ref_count => $refct });
+	  log         => $log,
+	  log_results => 1,
+	  config      => $config,
+	  reference   => $global_opts->{genome},
+	  database    => $customRepDB,
+	  dbtype      => 'full transposon database',
+	  ref_count   => $refct });
 
     push @mask_files, $final_mask.'.log';
 

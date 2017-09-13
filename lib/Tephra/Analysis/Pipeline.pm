@@ -95,8 +95,8 @@ sub mask_reference {
     my ($data_ref) = @_;
     my $global_opts = $self->global_options;
 
-    my ($log, $config, $ref, $db, $type, $refct) = 
-        @{$data_ref}{qw(log config reference database dbtype ref_count)};
+    my ($log, $log_results, $config, $ref, $db, $type, $refct) = 
+        @{$data_ref}{qw(log log_results config reference database dbtype ref_count)};
 
     my ($name, $path, $suffix) = fileparse($global_opts->{genome}, qr/\.[^.]*/); 
 
@@ -121,7 +121,13 @@ sub mask_reference {
     
     my $mask_opts = ['-g', $ref, '-d', $db, '-o', $masked_ref, '-s', $config->{maskref}{splitsize}, 
                      '-v', $config->{maskref}{overlap}, '-t', $global_opts->{threads}];
-    $self->capture_tephra_cmd('maskref', $mask_opts, $global_opts->{debug});
+
+    if ($log_results) {
+	$self->run_tephra_cmd('maskref', $mask_opts, $global_opts->{debug});
+    }
+    else {
+	$self->capture_tephra_cmd('maskref', $mask_opts, $global_opts->{debug});
+    }
 
     my $t1 = gettimeofday();
     my $total_elapsed = $t1 - $t0;
