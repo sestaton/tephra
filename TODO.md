@@ -152,7 +152,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] add subcommand to run/log all methods as a pipeline
  - [ ] document the configuration file format and usage
  - [x] add 'findfragments' subcommand to be run after final masking prior to complete GFF generation
- - [ ] add classification method for TRIMs
+ - [x] add classification method for TRIMs
  - [ ] move 'classify[ltr|tir]' commands to 'find[ltr|tir]' commands to simplify the process similar to the methods
        for the commands for helitrons and tirs
  - [ ] modify header to include element number in family. The element number should be listed numerically according 
