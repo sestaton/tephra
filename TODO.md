@@ -44,7 +44,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] write fasta of each superfamily, and combined library
  - [x] identify	fragmented elements with refined full-length elements
 
-## Command `tephra findltrs` 
+## Command `tephra findltrs`
  - [x] Find all non-overlapping LTR-RTs under strict and relaxed conditions
  - [x] Filter elements by quality score, retaining the best elements
  - [x] Generate combined GFF3 of high-quality LTR-RTs
