@@ -40,11 +40,11 @@ Tephra::TIR::TIRSearch - Find TIR transposons in a reference genome
 
 =head1 VERSION
 
-Version 0.09.3
+Version 0.09.4
 
 =cut
 
-our $VERSION = '0.09.3';
+our $VERSION = '0.09.4';
 $VERSION = eval $VERSION;
 
 sub tir_search {
