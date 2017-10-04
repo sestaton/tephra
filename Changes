@@ -5,6 +5,7 @@ Version	Date	Location
 
 - Log final masking results of complete TE library against the reference when the 'all' command
   is executed.
+- Minor adjustment to final GFF3 sorting to ensure IDs are retained for all elements.
 
 0.09.3	09/09/2017	Vancouver, BC
 
