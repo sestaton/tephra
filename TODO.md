@@ -16,7 +16,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] combine exemplars for efficiently comparing to a reference set
  - [x] identify fragmented elements with refined full-length elements (handled in v0.08.0+ in 'getfragments'
        command)
- - [ ] include measure of similarity within/between families
+ - [x] include measure of similarity within/between families
  
 ## Command `tephra findtirs`
  - [x] Find all non-overlapping TIR elements passing thresholds
