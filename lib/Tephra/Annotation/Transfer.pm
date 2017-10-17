@@ -27,7 +27,7 @@ Version 0.09.4
 our $VERSION = '0.09.4';
 $VERSION = eval $VERSION;
 
-has fasta => (
+has infile => (
     is       => 'ro',
     isa      => 'Path::Class::File',
     required => 1,
@@ -70,15 +70,21 @@ sub transfer_annotations {
 
 sub process_blast_args {
     my $self = shift;
-    my $fasta   = $self->fasta;
+    my $fasta   = $self->infile;
     my $rdb     = $self->repeatdb;
     my $out     = $self->outfile;
     my $threads = $self->threads;
 
-    my (@fams, %exemplars);
+    my ($dbname, $dbpath, $dbsuffix) = fileparse($rdb, qr/\.[^.]*/);
+    my ($faname, $fapath, $fasuffix) = fileparse($fasta, qr/\.[^.]*/);
+    my $outfile = File::Spec->catfile($fapath, $faname.'_'.$dbname.'.bln');
 
     my $blastdb = $self->make_blastdb($rdb);
-    my $blast_report = $self->run_blast({ query => $fasta, db => $blastdb, threads => $threads });
+    my $blast_report = $self->run_blast({ query   => $fasta, 
+					  db      => $blastdb, 
+					  threads => $threads, 
+					  outfile => $outfile,
+					  sort    => 'bitscore' });
     my @dbfiles = glob "$blastdb*";
     unlink @dbfiles;
 
@@ -178,7 +184,7 @@ sub parse_blast {
 
 sub write_annotations {
     my $self = shift;
-    my $fasta   = $self->fasta;
+    my $fasta   = $self->infile;
     my $outfile = $self->outfile;
     my ($combined, $id_map) = @_;
 
