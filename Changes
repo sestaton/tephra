@@ -1,6 +1,13 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.09.5 10/17/2017	Vancouver, BC
+
+- Change argument name of input file for 'reannotate' command from 'fasta' to 'infile' to
+  follow conventions of other commands.
+- Fix bug with input arguments to BLAST method in Tephra::Annotation::Transfer class that
+  was preventing 'reannotate' command from functioning properly.
+
 0.09.4	10/04/2017	Vancouver, BC
 
 - Log final masking results of complete TE library against the reference when the 'all' command
