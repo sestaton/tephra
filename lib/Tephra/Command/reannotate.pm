@@ -13,7 +13,7 @@ use Tephra::Annotation::Transfer;
 
 sub opt_spec {
     return (    
-	[ "fasta|f=s",      "The genome sequences in FASTA format used to search for LTR-RTs "                 ],
+	[ "infile|i=s",     "The file of repeat sequences in FASTA format to classify "                        ],
 	[ "repeatdb|d=s",   "The file of repeat sequences in FASTA format to use for classification "          ], 
 	[ "outfile|o=s",    "The reannoted FASTA file of repeats "                                             ],  
 	[ "threads|t=i",    "The number of threads to use for clustering coding domains (Default: 1) "         ],
@@ -34,7 +34,7 @@ sub validate_args {
     elsif ($opt->{help}) {
         $self->help and exit(0);
     }
-    elsif (!$opt->{fasta} || !$opt->{repeatdb} || !$opt->{outfile}) {
+    elsif (!$opt->{infile} || !$opt->{repeatdb} || !$opt->{outfile}) {
 	say STDERR "\nERROR: Required arguments not given.\n";
 	$self->help and exit(0);
     }
@@ -49,18 +49,15 @@ sub execute {
 sub _transfer_annotations {
     my ($opt) = @_;
 
-    my $fasta    = $opt->{fasta};
-    my $repeatdb = $opt->{repeatdb};
-    my $outfile  = $opt->{outfile};
     my $threads  = $opt->{threads} // 1;
     my $hpcov    = $opt->{percentcov} // 50;
     my $hpid     = $opt->{percentid} // 80;
     my $hlen     = $opt->{hitlen} // 80;
     
     my $anno_obj = Tephra::Annotation::Transfer->new( 
-	fasta         => $fasta, 
-	repeatdb      => $repeatdb, 
-	outfile       => $outfile,
+	infile        => $opt->{infile}, 
+	repeatdb      => $opt->{repeatdb}, 
+	outfile       => $opt->{outfile},
 	threads       => $threads,
 	blast_hit_cov => $hpcov,
 	blast_hit_pid => $hpid,
@@ -83,7 +80,7 @@ USAGE: tephra reannotate [-h] [-m]
     -h --help     :   Print the command usage.
 
 Required:
-    -f|fasta      :   The input repeat sequences in FASTA format that will be classified. 
+    -i|infile     :   The file of repeat sequences in FASTA format to classify.
     -d|repeatdb   :   The file of repeat sequences in FASTA format to use for classification. 
     -o|outfile    :   The output file of FASTA sequences that will have been reclassified.
     
@@ -108,7 +105,7 @@ __END__
 
 =head1 SYNOPSIS    
 
- tephra reannotate -f custom_repeats.fas -d repeatdb.fas -o ref_classified.fas
+ tephra reannotate -i custom_repeats.fas -d repeatdb.fas -o ref_classified.fas
 
 =head1 DESCRIPTION
 
@@ -124,7 +121,7 @@ S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =over 2
 
-=item -f, --fasta
+=item -i, --infile
 
  The repeat sequences in FASTA format used to search against a reference set.
 
