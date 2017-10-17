@@ -23,7 +23,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Generate combined GFF3 of high-quality TIRs
  - [x] Check for index (if given)
  - [ ] Add optional test for the presence of coding domains similar to 'LTRRefine' class. This should reduce the
-       number of DTX elements.
+       number of DTX elements. Add this to the configuration file for the 'all' command the same as for LTRs.
 
 
 ## Command `tephra sololtr`
@@ -117,6 +117,8 @@ This file is for logging feature requests and bugs during development. Hopefully
 ## Command `tephra illrecomb`
 
  - [x] Add correct sequence IDs to report
+ - [ ] Investigate the apparent disagreement between the query/subject string and homology strings
+ - [ ] Summarize the stats in a more intuitive way so it is clear what the gap summaries mean
 
 ## Command `tephra tirage`
 
@@ -132,6 +134,7 @@ This file is for logging feature requests and bugs during development. Hopefully
        (sesbio/transposon_annotation/count_families.pl) for starters.
  - [ ] Generate HTML output for all command. Will need to store JSON data for graphs and tables.
  - [x] Add tirage options to configuration file.
+ - [ ] Remove FASTA/GFF3 files of unclassified elements once the classification process is complete. 
 
 *** 
 
