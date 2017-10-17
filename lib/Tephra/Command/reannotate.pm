@@ -16,7 +16,7 @@ sub opt_spec {
 	[ "infile|i=s",     "The file of repeat sequences in FASTA format to classify "                        ],
 	[ "repeatdb|d=s",   "The file of repeat sequences in FASTA format to use for classification "          ], 
 	[ "outfile|o=s",    "The reannoted FASTA file of repeats "                                             ],  
-	[ "threads|t=i",    "The number of threads to use for clustering coding domains (Default: 1) "         ],
+	[ "threads|t=i",    "The number of threads to use for BLAST search (Default: 1) "                      ],
 	[ "percentcov|c=i", "The percent coverage cutoff for BLAST hits to the repeat database (Default: 50) " ],
 	[ "percentid|p=i",  "The percent identity cutoff for BLAST hits to the repeat database (Default: 80) " ],
 	[ "hitlen|l=i",     "The minimum length BLAST hits to the repeat database (Default: 80) "              ],
@@ -85,7 +85,7 @@ Required:
     -o|outfile    :   The output file of FASTA sequences that will have been reclassified.
     
 Options:
-    -t|threads    :   The number of threads to use for clustering coding domains (Default: 1).
+    -t|threads    :   The number of threads to use for BLAST search (Default: 1).
     -c|percentcov :   The percent coverage cutoff for BLAST hits to the repeat database (Default: 50).
     -p|percentid  :   The percent identity cutoff for BLAST hits to the repeat database (Default: 80).
     -l|hitlen     :   The minimum length BLAST hits to the repeat database (Default: 80).
@@ -141,7 +141,7 @@ S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =item -t, --threads
 
- The number of threads to use for clustering coding domains (Default: 1).
+ The number of threads to use for BLAST search (Default: 1).
 
 =item -c, --percentcov
 
