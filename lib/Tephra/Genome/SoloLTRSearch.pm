@@ -132,9 +132,7 @@ sub find_soloLTRs {
     my $anno_dir = $self->dir->absolute->resolve;
     my $genome   = $self->genome->absolute->resolve;
     my $seqfile  = $self->seqfile;
-
-    my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);                                                                
-    my $hmmsearch_summary = $self->report // File::Spec->catfile($path, $name.'_tephra_soloLTRs.tsv'); 
+    my $report   = $self->report; 
 
     my @sfs;
     find( sub { push @sfs, $File::Find::name if -d && /_copia\z|_gypsy\z/ }, $anno_dir);
@@ -151,7 +149,7 @@ sub find_soloLTRs {
 
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			      my ($model_dir, $reports) = @{$data_ref}{qw(model_dir reports)};
-			      $self->_collate($reports, $hmmsearch_summary);
+			      $self->_collate($reports, $report);
 			      if ($self->clean) {
 				  remove_tree( $model_dir, { safe => 1} );
 			      }
@@ -162,20 +160,20 @@ sub find_soloLTRs {
 	my $sf = (split /_/, $dir)[-1];
 	$pm->start($sf) and next;
 	$SIG{INT} = sub { $pm->finish };
-	my $data_ref = $self->run_sf_search($sf, $dir, $dirct, $hmmsearch_summary);
+	my $data_ref = $self->run_sf_search($sf, $dir, $dirct, $report);
 	$dirct++;
 	$pm->finish(0, $data_ref);
     }
     $pm->wait_all_children;
 
-    my $soloct = $self->_check_report_summary($hmmsearch_summary);
+    my $soloct = $self->_check_report_summary($report);
 
     if ($soloct > 0) {
-	$self->write_sololtr_gff($hmmsearch_summary);
+	$self->write_sololtr_gff($report);
     }
     else {
 	say STDERR "WARNING: No solo-LTRs were found so none will be reported.";
-	unlink $hmmsearch_summary, $seqfile;
+	unlink $report, $seqfile;
     }
 
     return;
