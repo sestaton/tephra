@@ -7,6 +7,8 @@ use warnings;
 use Pod::Find     qw(pod_where);
 use Pod::Usage    qw(pod2usage);
 use Capture::Tiny qw(capture_merged);
+use File::Spec;
+use File::Basename;
 use Tephra -command;
 use Tephra::Genome::SoloLTRSearch;
 
@@ -63,10 +65,9 @@ sub execute {
 sub _calculate_soloLTR_abund {
     my ($opt) = @_;
 
-    my $dir     = $opt->{indir};
-    my $genome  = $opt->{genome};
-    my $report  = $opt->{report};
-    my $outfile = $opt->{outfile};
+    my ($name, $path, $suffix) = fileparse($opt->{genome}, qr/\.[^.]*/);
+    my $report = $opt->{report} // File::Spec->catfile($path, $name.'_tephra_soloLTRs.tsv');
+
     my $pid     = $opt->{percentid} // 39;
     my $pcov    = $opt->{percentcov} // 80;
     my $len     = $opt->{matchlen} // 80;
@@ -77,10 +78,10 @@ sub _calculate_soloLTR_abund {
     my $all     = $opt->{allfamilies} // 0;
 
     my $ill_obj = Tephra::Genome::SoloLTRSearch->new(
-	dir          => $dir,
-	genome       => $genome,
+	dir          => $opt->{indir},
+	genome       => $opt->{genome},
+	outfile      => $opt->{outfile},
 	report       => $report,
-	outfile      => $outfile,
 	percentid    => $pid,
 	matchlen     => $len,
 	numfamilies  => $famnum,
