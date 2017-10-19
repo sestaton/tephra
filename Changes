@@ -7,7 +7,7 @@ Version	Date	Location
   follow conventions of other commands.
 - Fix bug with input arguments to BLAST method in Tephra::Annotation::Transfer class that
   was preventing 'reannotate' command from functioning properly.
-- Fix argument descriptions and documentation for 'reannotate' command that did accurately
+- Fix argument descriptions and documentation for 'reannotate' command to more accurately
   reflect the use of the command.
 
 0.09.4	10/04/2017	Vancouver, BC
