@@ -17,6 +17,8 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] identify fragmented elements with refined full-length elements (handled in v0.08.0+ in 'getfragments'
        command)
  - [x] include measure of similarity within/between families
+ - [ ] use BLAST role to run searches for 'search_unclassified' method in Tephra::Classify::LTRSfams
+ - [ ] investigate why UBN2* domains are being used to classify Gypsy
  
 ## Command `tephra findtirs`
  - [x] Find all non-overlapping TIR elements passing thresholds
@@ -24,7 +26,6 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Check for index (if given)
  - [ ] Add optional test for the presence of coding domains similar to 'LTRRefine' class. This should reduce the
        number of DTX elements. Add this to the configuration file for the 'all' command the same as for LTRs.
-
 
 ## Command `tephra sololtr`
  - [x] Create HMM of LTRs for each LTR-RT
@@ -54,11 +55,16 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] adjust filtering command to not increment if element has been deleted (inflated filtering stats)
  - [x] reporting of superfamilies after ltr search?.. better to do that at classification stage
  - [x] add options for LTR size parameters
- - [ ] add LTR_Finder
+ - [ ] add LTR_Finder (caveat: seems too slow in preliminary tests, probably better to continue refining
+       the current methods)
  - [x] add config file to handle the multitude of LTR-RT constraints
  - [x] clean up ltrharvest and ltrdigest intermediate files
  - [x] Add optional test for the presence of coding domains to 'LTRRefine' class. This should reduce the
        number of RLX elements.
+ - [ ] flag suspicious compound elements somehow
+ - [ ] adjust domain organization file to allow referencing a specific element or family (perhaps do the domain
+       summary on each family and combine the results)
+ - [ ] adding to the above, a final HTML file with family-level identity and domain organization would be useful
 
  - Domain matches 
    - [ ] adjust duplicate domain filtering to consider strand and range of matches
@@ -135,6 +141,10 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] Generate HTML output for all command. Will need to store JSON data for graphs and tables.
  - [x] Add tirage options to configuration file.
  - [ ] Remove FASTA/GFF3 files of unclassified elements once the classification process is complete. 
+
+## Command `tephra reannotate`
+
+ - [ ] Add tests!
 
 *** 
 
