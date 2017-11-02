@@ -19,7 +19,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] include measure of similarity within/between families
  - [ ] use BLAST role to run searches for 'search_unclassified' method in Tephra::Classify::LTRSfams
  - [ ] investigate why UBN2* domains are being used to classify Gypsy
- 
+
 ## Command `tephra findtirs`
  - [x] Find all non-overlapping TIR elements passing thresholds
  - [x] Generate combined GFF3 of high-quality TIRs
@@ -36,8 +36,10 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] make sure to set path to correct version of hmmer
  - [x] add family name to GFF output (the family name is now in the Parent tag)
  - [x] add option to pick on the top 20 families to speed up execution
- - [ ] consider preprocessing all LTR files so we don't block on one superfamily waiting for threads to finish
+ - [x] consider preprocessing all LTR files so we don't block on one superfamily waiting for threads to finish
  - [x] if the soloLTR sequence file is empty, delete all other files and warn no soloLTRs were found
+ - [ ] evaluate search results as the process completes so the number of (potentially empty) files does not
+       grow too large
 
 ## Command `tephra classifytirs`
  - [x] Classify 'best' TIR elements into superfamilies based on domain content, TSD, and/or motif
