@@ -48,6 +48,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] in tests, skip if empty output (none found). This is not a good test honestly, need a new reference
  - [x] write fasta of each superfamily, and combined library
  - [x] identify	fragmented elements with refined full-length elements
+ - [ ] report domain architecture, as for LTR elements
 
 ## Command `tephra findltrs`
  - [x] Find all non-overlapping LTR-RTs under strict and relaxed conditions
