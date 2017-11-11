@@ -12,11 +12,11 @@ Tephra::Role::Run::TephraCmd - Helper role for running Tephra subcommands
 
 =head1 VERSION
 
-Version 0.09.4
+Version 0.09.5
 
 =cut
 
-our $VERSION = '0.09.4';
+our $VERSION = '0.09.5';
 $VERSION = eval $VERSION;
 
 sub run_tephra_cmd {

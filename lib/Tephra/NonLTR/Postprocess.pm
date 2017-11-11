@@ -17,11 +17,11 @@ Tephra::NonLTR::Postprocess - Postprocess initial scan for non-LTR coding domain
 
 =head1 VERSION
 
-Version 0.09.4
+Version 0.09.5
 
 =cut
 
-our $VERSION = '0.09.4';
+our $VERSION = '0.09.5';
 $VERSION = eval $VERSION;
 
 has fastadir    => ( is => 'ro', isa => 'Path::Class::File', required => 1, coerce  => 1 );
