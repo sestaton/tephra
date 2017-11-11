@@ -1,8 +1,10 @@
 Revision history for Tephra
 
 Version	Date	Location
-0.09.5 10/17/2017	Vancouver, BC
+0.09.5 11/11/2017	Vancouver, BC
 
+- Add report attribute definition to 'sololtr' command class so the attribute is defined 
+  and set properly.
 - Change argument name of input file for 'reannotate' command from 'fasta' to 'infile' to
   follow conventions of other commands.
 - Fix bug with input arguments to BLAST method in Tephra::Annotation::Transfer class that
