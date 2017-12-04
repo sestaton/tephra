@@ -17,7 +17,7 @@ sub opt_spec {
 	[ "repeatdb|d=s",   "The file of repeat sequences in FASTA format used to query the genome "               ], 
 	[ "outfile|o=s",    "The GFF3 file of non-overlapping transposon fragments "                               ],         
 	[ "percentid|p=i",  "The percent identity cutoff for BLAST hits to the repeat database (Default: 80) "     ],
-	[ "hitlen|l=i",     "The minimum length BLAST hits to the repeat database (Default: 200) "                 ],
+	[ "hitlen|l=i",     "The minimum length BLAST hits to the repeat database (Default: 100) "                 ],
 	[ "threads|t=i",    "The number of threads to use for parallel BLAST searches (Default: 1) "               ],
     );
 }
@@ -52,7 +52,7 @@ sub _find_transposon_fragments {
     my $repeatdb  = $opt->{repeatdb};
     my $outfile   = $opt->{outfile};
     my $hpid      = $opt->{percentid} // 80;
-    my $hlen      = $opt->{hitlen} // 200;
+    my $hlen      = $opt->{hitlen} // 100;
     my $threads   = $opt->{threads} // 1;
     
     my $ff_obj = Tephra::Genome::FragmentSearch->new( 
@@ -85,8 +85,8 @@ Required:
     
 Options:
     -t|threads    :   The number of threads to use for parallel BLAST searches (Default: 1).
-    -p|percentid  :   The percent identity cutoff for BLAST hits to the genome (Default: 80).
-    -l|hitlen     :   The minimum length BLAST hits to the genome (Default: 200).
+    -p|percentid  :   The percent identity cutoff for BLAST alignments to the genome (Default: 80).
+    -l|hitlen     :   The minimum length BLAST alignments to the genome (Default: 100).
 
 END
 }
@@ -147,7 +147,7 @@ S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =item -l, --hitlen
 
- The minimum length BLAST hits to the repeat database (Default: 200).
+ The minimum length BLAST hits to the repeat database (Default: 100).
 
 =item -h, --help
 
