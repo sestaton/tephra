@@ -8,7 +8,6 @@ use Cwd                 qw(abs_path);
 use IPC::System::Simple qw(capture system);
 use Time::HiRes         qw(gettimeofday);
 use Sort::Naturally;
-use Set::IntervalTree;
 use Parallel::ForkManager;
 use Carp 'croak';
 use Tephra::Config::Exe;
@@ -65,7 +64,7 @@ has matchlen => (
     isa       => 'Num',
     predicate => 'has_matchlen',
     lazy      => 1,
-    default   => 200,
+    default   => 100,
 );
 
 has threads => (
@@ -145,61 +144,88 @@ sub find_transposon_fragments {
 sub collapse_overlaps {
     my $self = shift;
     my ($file) = @_;
+    my $matchlen = $self->matchlen;
 
-    my $tree = Set::IntervalTree->new;
     my %windows;
 
     open my $l, '<', $file or die "\nERROR: Could not open file: $file\n";
-
-    my $line = <$l>;
-    chomp $line;
-    my @f = split /\t/, $line;
-
-    my %trees;
-    $tree->insert({ match => $f[0], start => $f[8], end => $f[9], len => $f[3] }, 
-                  $f[8], $f[9]);
     
+    my (@f, $prev_start, $prev_end, $prev_strand, $prev_len);
+    line : { 
+	my $line = <$l>;
+	chomp $line;
+	@f = split /\t/, $line;
+
+	redo line unless $f[3] >= $matchlen;
+	
+	#if ($f[8] > $f[9]) {
+            #$prev_len = $f[8] - $f[9] + 1;
+            #$prev_strand = '-';
+            #($prev_start, $prev_end) = @f[9,8];
+        #}
+        #else {
+            #$prev_len = $f[9] - $f[8] + 1;
+            #$prev_strand = '+';
+	$prev_len = $f[3];
+	$prev_strand = $f[12];
+	($prev_start, $prev_end) = @f[8,9];
+        #}
+    }
+    
+    redo line unless defined $prev_start && defined $prev_end;
     $windows{$f[8]} =
-        { match => $f[0], start => $f[8], end => $f[9], len => $f[3], evalue => $f[10], strand => $f[12] };
-    
+        { match => $f[0], start => $prev_start, end => $prev_end, len => $prev_len, evalue => $f[10], strand => $prev_strand };
+
     while (my $line = <$l>) {
         chomp $line;
         
         my ($queryId, $subjectId, $percIdentity, $alnLength, $mismatchCount, $gapOpenCount, $queryStart, 
             $queryEnd, $subjectStart, $subjectEnd, $eVal, $bitScore, $strand) = split /\t/, $line;
-        
-        my $res = $tree->fetch($subjectStart, $subjectEnd);
+     
+	next unless $alnLength >= $matchlen;
 
-        if (@$res) {
-            #dd $res and exit
-                #if @$res > 1;
-            for my $overlap (@$res) {
-                my ($ostart, $oend, $match, $subj, $olen) = @{$overlap}{qw(start end match id len)};
-                my $overl = $subjectEnd - $oend;
-                next if $subjectStart >= $ostart && $subjectEnd <= $oend;
-                my $nlen = $subjectEnd - $ostart + 1;
-                
-                $windows{$ostart} =
-                    { match => $queryId, start => $ostart, end => $subjectEnd, len => $nlen, evalue => $eVal, strand => $strand};
-                
-                $tree->remove($ostart, $oend);
-                $tree->insert({ id => $subjectId, match => $queryId, start => $ostart, end => $subjectEnd, len => $nlen }, 
-                              $ostart, $subjectEnd);
-                #$tree->remove($ostart, $oend); 
-            }
-        }
-	else {
-            $tree->insert({ match => $queryId, start => $subjectStart, end => $subjectEnd, len => $alnLength }, 
-                          $subjectStart, $subjectEnd);
-            
-            $windows{$subjectStart} =
-                { match => $queryId, start => $subjectStart, end => $subjectEnd, len => $alnLength, 
-                  evalue => $eVal, strand => $strand };
+	#my ($qstrand, $sstrand, $qaln_len, $saln_len);
+	#my ($qaln_start, $qaln_end, $saln_start, $saln_end);
+
+	#if ($subjectStart > $subjectEnd) {
+	    #$saln_len = $subjectEnd - $subjectEnd + 1;
+	    #$sstrand = '-';
+	    #($saln_start, $saln_end) = ($subjectEnd, $subjectStart);
+	#}
+	#else { 
+	    #$saln_len = $subjectEnd - $subjectStart + 1;
+	    #$sstrand = '+';
+	    #($saln_start, $saln_end) = ($subjectStart, $subjectEnd);
+	#}
+	#if ($queryStart > $queryEnd) {
+	    #$qaln_len = $queryStart - $queryEnd + 1;
+	    #$qstrand = '-';
+	    #($qaln_start, $qaln_end) = ($queryEnd, $queryStart);
+	#}
+	#else {
+	    #$qaln_len = $queryEnd - $queryStart + 1;
+	    #$qstrand = '+';
+	    #($qaln_start, $qaln_end) = ($queryStart, $queryEnd);
+	#}
+
+	#if ($saln_start > $prev_end) { 
+	if ($subjectStart > $prev_end) { 
+            #$windows{$saln_start} =
+                #{ match => $queryId, start => $saln_start, end => $saln_end, len => $alnLength, 
+                #  evalue => $eVal, strand => $sstrand };
+
+	    #($prev_start, $prev_end) = ($saln_start, $saln_end);
+	    $windows{$subjectStart} =
+	    { match => $queryId, start => $subjectStart, end => $subjectEnd, len => $alnLength,
+	      evalue => $eVal, strand => $strand };
+
+            ($prev_start, $prev_end) = ($subjectStart, $subjectEnd);
+
         }
     }
     close $l;
 
-    undef $tree;
+    #undef $tree;
     my $src = $file;
     $src =~ s/_tmp.*//;
     unlink $file;
