@@ -88,10 +88,15 @@ sub find_transposon_fragments {
     my $blast_files  = $self->split_refs($blast_report);
     my $seqlen       = $self->_get_seq_len($genome);
 
+    my $index = $self->index_ref($genome);
     my ($gname, $gpath, $gsuffix) = fileparse($genome, qr/\.[^.]*/);
+    my ($oname, $opath, $osuffix) = fileparse($outfile, qr/\.[^.]*/);
     my $logfile = File::Spec->catfile($gpath, 'tephra_fragment_searches.log');
+    my $fafile  = File::Spec->catfile($opath, $oname.'.fasta');
+
     open my $log, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
     open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    open my $faout, '>>', $fafile or die "\nERROR: Could not open file: $fafile\n";
 
     if (! -s $outfile) {
 	say $out '##gff-version 3';
@@ -110,7 +115,7 @@ sub find_transposon_fragments {
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			      for my $src (nsort keys %$data_ref) {
 				  my $windows = $data_ref->{$src};
-				  $self->write_fragment_gff($src, $windows, $out);
+				  $self->write_fragment_gff($index, $src, $windows, $out, $faout);
 				  undef $windows;
 			      }
 			      my $t1 = gettimeofday();
@@ -235,13 +240,19 @@ sub collapse_overlaps {
 
 sub write_fragment_gff {
     my $self = shift;
-    my ($src, $windows, $out) = @_;
+    my ($index, $src, $windows, $out, $faout) = @_;
 
     my $filt = 0;
     for my $s (sort { $a <=> $b } keys %$windows) {
         $filt++;
         my ($match, $sstart, $send, $slen, $seval, $sstr) = @{$windows->{$s}}{qw(match start end len evalue strand)};
-        say $out join "\t", $src, 'BLASTN', 'similarity', $sstart, $send, $seval, $sstr, '.', "ID=$match"."_fragment_$src-$filt"; 
+	my $id = join "_", $match, 'fragment', "$src-$filt";
+        say $out join "\t", $src, 'BLASTN', 'similarity', $sstart, $send, $seval, $sstr, '.', "ID=$id"; 
+
+	my $seq = $self->get_full_seq($index, $src, $sstart, $send);
+	$seq =~ s/.{60}\K/\n/g;
+	my $seqid = join "_", $id, $src, $sstart, $send;
+	say $faout join "\n", ">".$seqid, $seq;
     }
 
     return;
