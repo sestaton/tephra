@@ -1,7 +1,16 @@
 Revision history for Tephra
 
 Version	Date	Location
-0.09.5 11/11/2017	Vancouver, BC
+0.09.6	12/04/2017	Vancouver, BC
+
+- Bug fix for 'findfragments' command with very short intervals not being filtered properly.
+- Change 'findfragments' length threshold from 200 bp to 100 bp for detecting small TEs
+  such as MITEs.
+- Refactor overlap detection method for 'findfragments' command to use range-based detection
+  based on sorted coordinates. This is more efficient and less error-prone than the previous
+  interval tree approach.
+
+0.09.5	11/11/2017	Vancouver, BC
 
 - Add report attribute definition to 'sololtr' command class so the attribute is defined 
   and set properly.
