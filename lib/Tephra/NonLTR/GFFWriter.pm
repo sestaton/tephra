@@ -148,7 +148,7 @@ sub _fasta_to_gff {
 		my $elem = "non_LTR_retrotransposon$ct";
                 my $tmp = $elem.'.fasta';
 		
-		my $seq = $self->_get_full_seq($index, $seqname, $start, $end);
+		my $seq = $self->get_full_seq($index, $seqname, $start, $end);
 		
 		my ($filtered_seq, $adj_start, $adj_end) = $self->_filterNpercent($seq, $start, $end);
 		if (defined $filtered_seq) {
@@ -195,14 +195,14 @@ sub _get_seq_region {
     return (\%lens, $combined);
 }
 
-sub _get_full_seq {
-    my $self = shift;
-    my ($index, $chromosome, $start, $end) = @_;
-    my $location = "$chromosome:$start-$end";
-    my ($seq, $length) = $index->get_sequence($location);
+#sub _get_full_seq {
+#    my $self = shift;
+#    my ($index, $chromosome, $start, $end) = @_;
+#    my $location = "$chromosome:$start-$end";
+#    my ($seq, $length) = $index->get_sequence($location);
 
-    return $seq;
-}
+#    return $seq;
+#}
 
 sub _filterNpercent {
     my $self = shift;
