@@ -26,6 +26,15 @@ sub index_ref {
     return $index;
 }
 
+sub get_full_seq {
+    my $self = shift;
+    my ($index, $chromosome, $start, $end) = @_;
+    my $location = "$chromosome:$start-$end";
+    my ($seq, $length) = $index->get_sequence($location);
+
+    return $seq;
+}
+
 =head1 AUTHOR
 
 S. Evan Staton, C<< <evan at evanstaton.com> >>
