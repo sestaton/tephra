@@ -9,6 +9,9 @@ Version	Date	Location
 - Refactor overlap detection method for 'findfragments' command to use range-based detection
   based on sorted coordinates. This is more efficient and less error-prone than the previous
   interval tree approach.
+- Add method to automatically generate FASTA of fragments with 'findfragments' command, as
+  with other commands when the output is GFF3.
+- Move 'get_full_sequence' method from *NonLTR::GFFWriter class to *Util role. 
 
 0.09.5	11/11/2017	Vancouver, BC
 
