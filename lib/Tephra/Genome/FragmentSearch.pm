@@ -15,6 +15,7 @@ use namespace::autoclean;
 #use Data::Dump::Color;
 
 with 'Tephra::Role::Util',
+     'Tephra::Role::Run::Any',
      'Tephra::Role::Run::Blast';
 
 =head1 NAME
@@ -98,13 +99,6 @@ sub find_transposon_fragments {
     open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     open my $faout, '>>', $fafile or die "\nERROR: Could not open file: $fafile\n";
 
-    if (! -s $outfile) {
-	say $out '##gff-version 3';
-	for my $id (nsort keys %$seqlen) {
-	    say $out join q{ }, '##sequence-region', $id, '1', $seqlen->{$id};
-	}
-    }
-
     my $pm = Parallel::ForkManager->new($threads);
     local $SIG{INT} = sub {
         warn "Caught SIGINT; Waiting for child processes to finish.";
@@ -112,11 +106,10 @@ sub find_transposon_fragments {
         exit 1;
     };
 
+    my %window_refs;
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			      for my $src (nsort keys %$data_ref) {
-				  my $windows = $data_ref->{$src};
-				  $self->write_fragment_gff($index, $src, $windows, $out, $faout);
-				  undef $windows;
+				  $window_refs{$src} = $data_ref->{$src};
 			      }
 			      my $t1 = gettimeofday();
 			      my $elapsed = $t1 - $t0;
@@ -137,7 +130,29 @@ sub find_transposon_fragments {
 
     $pm->wait_all_children;
 
+    ## write output
+    if (! -s $outfile) {
+        say $out '##gff-version 3';
+        for my $id (nsort keys %$seqlen) {
+            say $out join q{ }, '##sequence-region', $id, '1', $seqlen->{$id};
+        }
+    }
+
+    for my $src (nsort keys %window_refs) {
+	$self->write_fragment_gff($index, $src, $window_refs{$src}, $out, $faout);
+    }
+
+    ## clean up
+    my $exe_conf = Tephra::Config::Exe->new->get_config_paths;
+    my $vmatchbin = $exe_conf->{vmatchbin};
+    my $gt = $exe_conf->{gt};
+    my $clean_vmidx = File::Spec->catfile($vmatchbin, 'cleanpp.sh');
+
+    $self->capture_cmd($clean_vmidx);
+    $self->capture_cmd($gt, 'clean');
+    unlink $genome.'.fai';
     unlink $blast_report;
+
     my $t2 = gettimeofday();
     my $total_elapsed = $t2 - $t0;
     my $final_time = sprintf("%.2f",$total_elapsed/60);
@@ -163,18 +178,9 @@ sub collapse_overlaps {
 
 	redo line unless $f[3] >= $matchlen;
 	
-	#if ($f[8] > $f[9]) {
-            #$prev_len = $f[8] - $f[9] + 1;
-            #$prev_strand = '-';
-            #($prev_start, $prev_end) = @f[9,8];
-        #}
-        #else {
-            #$prev_len = $f[9] - $f[8] + 1;
-            #$prev_strand = '+';
-	$prev_len = $f[3];
+	$prev_len = $f[9] - $f[8] + 1;
 	$prev_strand = $f[12];
 	($prev_start, $prev_end) = @f[8,9];
-        #}
     }
     
     redo line unless defined $prev_start && defined $prev_end;
@@ -187,72 +193,41 @@ sub collapse_overlaps {
         my ($queryId, $subjectId, $percIdentity, $alnLength, $mismatchCount, $gapOpenCount, $queryStart, 
             $queryEnd, $subjectStart, $subjectEnd, $eVal, $bitScore, $strand) = split /\t/, $line;
      
-	next unless $alnLength >= $matchlen;
+	my $aln_length = $subjectEnd - $subjectStart + 1;
+	next unless $aln_length >= $matchlen;
 
-	#my ($qstrand, $sstrand, $qaln_len, $saln_len);
-	#my ($qaln_start, $qaln_end, $saln_start, $saln_end);
-
-	#if ($subjectStart > $subjectEnd) {
-	    #$saln_len = $subjectEnd - $subjectEnd + 1;
-	    #$sstrand = '-';
-	    #($saln_start, $saln_end) = ($subjectEnd, $subjectStart);
-	#}
-	#else { 
-	    #$saln_len = $subjectEnd - $subjectStart + 1;
-	    #$sstrand = '+';
-	    #($saln_start, $saln_end) = ($subjectStart, $subjectEnd);
-	#}
-	#if ($queryStart > $queryEnd) {
-	    #$qaln_len = $queryStart - $queryEnd + 1;
-	    #$qstrand = '-';
-	    #($qaln_start, $qaln_end) = ($queryEnd, $queryStart);
-	#}
-	#else {
-	    #$qaln_len = $queryEnd - $queryStart + 1;
-	    #$qstrand = '+';
-	    #($qaln_start, $qaln_end) = ($queryStart, $queryEnd);
-	#}
-
-	#if ($saln_start > $prev_end) { 
 	if ($subjectStart > $prev_end) { 
-            #$windows{$saln_start} =
-                #{ match => $queryId, start => $saln_start, end => $saln_end, len => $alnLength, 
-                #  evalue => $eVal, strand => $sstrand };
-
-	    #($prev_start, $prev_end) = ($saln_start, $saln_end);
 	    $windows{$subjectStart} =
-	    { match => $queryId, start => $subjectStart, end => $subjectEnd, len => $alnLength,
-	      evalue => $eVal, strand => $strand };
+	        { match => $queryId, start => $subjectStart, end => $subjectEnd, len => $aln_length, evalue => $eVal, strand => $strand };
 
             ($prev_start, $prev_end) = ($subjectStart, $subjectEnd);
-
         }
     }
     close $l;
 
-    #undef $tree;
     my $src = $file;
     $src =~ s/_tmp.*//;
     unlink $file;
-
+    
     return ($src, \%windows);
 }
 
 sub write_fragment_gff {
     my $self = shift;
     my ($index, $src, $windows, $out, $faout) = @_;
+    my $matchlen = $self->matchlen;
 
     my $filt = 0;
     for my $s (sort { $a <=> $b } keys %$windows) {
         $filt++;
         my ($match, $sstart, $send, $slen, $seval, $sstr) = @{$windows->{$s}}{qw(match start end len evalue strand)};
-	my $id = join "_", $match, 'fragment', "$src-$filt";
-        say $out join "\t", $src, 'BLASTN', 'similarity', $sstart, $send, $seval, $sstr, '.', "ID=$id"; 
-
 	my $seq = $self->get_full_seq($index, $src, $sstart, $send);
 	$seq =~ s/.{60}\K/\n/g;
+	my $id = join "_", $match, 'fragment', "$src-$filt";
 	my $seqid = join "_", $id, $src, $sstart, $send;
+
 	say $faout join "\n", ">".$seqid, $seq;
+	say $out join "\t", $src, 'BLASTN', 'similarity', $sstart, $send, $seval, $sstr, '.', "ID=$id";
     }
 
     return;
@@ -285,9 +260,7 @@ sub split_refs {
 
     open my $b, '<', $blast or die "\nERROR: Could not open file: $blast\n";
 
-    my (%refs, %coords, @outfiles);
-
-    my (%ofhs); #, $ofh);
+    my (%refs, %coords, @outfiles, %ofhs);
     while (my $line = <$b>) {
         chomp $line;
         my @f = $self->_format_hits($line);
@@ -301,8 +274,8 @@ sub split_refs {
         else {
             my $outf = $f[1].'_tmp.bln';
             # hits have to be sorted by reference for interval tree to work
-            #open my $ofh, '|-', "sort -nk9,9 >$outf" or die $!;
-	    open my $ofh, '>', $outf or die "\nERROR: Could not open file: $outf\n";
+            open my $ofh, '|-', "sort -nk9,9 >$outf" or die $!;
+	    #open my $ofh, '>', $outf or die "\nERROR: Could not open file: $outf\n";
             push @outfiles, $outf;
             $ofhs{$f[1]} = $ofh;
             say $ofh join "\t", @f;
@@ -370,7 +343,7 @@ reached at the email address listed above to resolve any questions.
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Tephra::Genome::SoloLTRSearch
+    perldoc Tephra::Genome::FragmentSearch
 
 
 =head1 LICENSE AND COPYRIGHT
