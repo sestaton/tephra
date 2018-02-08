@@ -19,6 +19,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] include measure of similarity within/between families
  - [ ] use BLAST role to run searches for 'search_unclassified' method in Tephra::Classify::LTRSfams
  - [ ] investigate why UBN2* domains are being used to classify Gypsy
+ - [ ] add DIRS and PLE so we are describing all orders in Wicker's scheme
 
 ## Command `tephra findtirs`
  - [x] Find all non-overlapping TIR elements passing thresholds
