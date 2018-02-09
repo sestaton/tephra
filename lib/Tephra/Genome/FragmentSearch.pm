@@ -24,11 +24,11 @@ Tephra::Genome::FragmentSearch - Find fragmented transposons in a refence genome
 
 =head1 VERSION
 
-Version 0.09.6
+Version 0.09.7
 
 =cut
 
-our $VERSION = '0.09.6';
+our $VERSION = '0.09.7';
 $VERSION = eval $VERSION;
 
 has genome => (
@@ -83,54 +83,80 @@ sub find_transposon_fragments {
     my $repeatdb = $self->repeatdb->absolute->resolve;
     my $outfile  = $self->outfile; 
 
-    my %reports;
-    my $t0 = gettimeofday();
-    my $blast_report = $self->search_genome($threads);
-    my $blast_files  = $self->split_refs($blast_report);
-    my $seqlen       = $self->_get_seq_len($genome);
-
-    my $index = $self->index_ref($genome);
     my ($gname, $gpath, $gsuffix) = fileparse($genome, qr/\.[^.]*/);
-    my ($oname, $opath, $osuffix) = fileparse($outfile, qr/\.[^.]*/);
+    #my ($oname, $opath, $osuffix) = fileparse($outfile, qr/\.[^.]*/);
     my $logfile = File::Spec->catfile($gpath, 'tephra_fragment_searches.log');
-    my $fafile  = File::Spec->catfile($opath, $oname.'.fasta');
+    #my $fafile  = File::Spec->catfile($opath, $oname.'.fasta');
 
     open my $log, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
+
+    my (%reports, %window_refs);
+    my $t0 = gettimeofday();
+    ## This check is to address #23. The method will halt if we encounter a draft genome that 
+    ## has at least 500 contigs. I can't think of a biological reason to perform this analysis 
+    ## on a draft genome so the best approach for now is to warn and exit.
+    #my $draft_status = $self->_check_genome_status($genome);
+    #my $blastdb = $self->make_blastdb($genome);
+    my $index = $self->index_ref($genome);
+
+    my ($seqlen, $genome_parts) = $self->split_genome($genome);
+
+    for my $part (@$genome_parts) { 
+	my $blastdb = $self->make_blastdb($part);
+	my $blast_report = $self->search_genome($blastdb, $threads);
+	my $blast_files  = $self->split_refs($blast_report);
+	#my $seqlen       = $self->_get_seq_len($genome);
+	
+	#my $index = $self->index_ref($genome);
+	#my ($gname, $gpath, $gsuffix) = fileparse($genome, qr/\.[^.]*/);
+	#my ($oname, $opath, $osuffix) = fileparse($outfile, qr/\.[^.]*/);
+	#my $logfile = File::Spec->catfile($gpath, 'tephra_fragment_searches.log');
+	#my $fafile  = File::Spec->catfile($opath, $oname.'.fasta');
+	
+	#open my $log, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
+	#open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+	#open my $faout, '>>', $fafile or die "\nERROR: Could not open file: $fafile\n";
+	
+	my $pm = Parallel::ForkManager->new($threads);
+	local $SIG{INT} = sub {
+	    warn "Caught SIGINT; Waiting for child processes to finish.";
+	    $pm->wait_all_children;
+	    exit 1;
+	};
+	
+	#my %window_refs;
+	$pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
+				  for my $src (nsort keys %$data_ref) {
+				      $window_refs{$src} = $data_ref->{$src};
+				  }
+				  my $t1 = gettimeofday();
+				  my $elapsed = $t1 - $t0;
+				  my $time = sprintf("%.2f",$elapsed/60);
+				  say $log basename($ident),
+				  " just finished with PID $pid and exit code: $exit_code in $time minutes";
+			    } );
+	
+	for my $file (nsort @$blast_files) {
+	    $pm->start($file) and next;
+	    $SIG{INT} = sub { $pm->finish };
+	    
+	    my ($src, $windows) = $self->collapse_overlaps($file);
+	    $reports{$src} = $windows;
+	    
+	    $pm->finish(0, \%reports);
+	}
+	
+	$pm->wait_all_children;
+	unlink $blastdb, $blast_report;
+    }
+
+    ## write output
+    my ($oname, $opath, $osuffix) = fileparse($outfile, qr/\.[^.]*/);
+    my $fafile  = File::Spec->catfile($opath, $oname.'.fasta');
+
     open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
     open my $faout, '>>', $fafile or die "\nERROR: Could not open file: $fafile\n";
 
-    my $pm = Parallel::ForkManager->new($threads);
-    local $SIG{INT} = sub {
-        warn "Caught SIGINT; Waiting for child processes to finish.";
-        $pm->wait_all_children;
-        exit 1;
-    };
-
-    my %window_refs;
-    $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
-			      for my $src (nsort keys %$data_ref) {
-				  $window_refs{$src} = $data_ref->{$src};
-			      }
-			      my $t1 = gettimeofday();
-			      my $elapsed = $t1 - $t0;
-			      my $time = sprintf("%.2f",$elapsed/60);
-			      say $log basename($ident),
-			          " just finished with PID $pid and exit code: $exit_code in $time minutes";
-			} );
-
-    for my $file (nsort @$blast_files) {
-	$pm->start($file) and next;
-	$SIG{INT} = sub { $pm->finish };
-	
-	my ($src, $windows) = $self->collapse_overlaps($file);
-	$reports{$src} = $windows;
-
-	$pm->finish(0, \%reports);
-    }
-
-    $pm->wait_all_children;
-
-    ## write output
     if (! -s $outfile) {
         say $out '##gff-version 3';
         for my $id (nsort keys %$seqlen) {
@@ -142,6 +168,9 @@ sub find_transposon_fragments {
 	$self->write_fragment_gff($index, $src, $window_refs{$src}, $out, $faout);
     }
 
+    close $out;
+    close $faout;
+
     ## clean up
     my $exe_conf = Tephra::Config::Exe->new->get_config_paths;
     my $vmatchbin = $exe_conf->{vmatchbin};
@@ -151,13 +180,14 @@ sub find_transposon_fragments {
     $self->capture_cmd($clean_vmidx);
     $self->capture_cmd($gt, 'clean');
     unlink $genome.'.fai';
-    unlink $blast_report;
+    #unlink $blast_report;
+    unlink $_ for @$genome_parts;
 
     my $t2 = gettimeofday();
     my $total_elapsed = $t2 - $t0;
     my $final_time = sprintf("%.2f",$total_elapsed/60);
 
-    say $log "\n========> Finished searching ",scalar(@$blast_files)," sequence in $genome in $final_time minutes.";
+    say $log "\n========> Finished searching ",scalar(keys %$seqlen)," sequence in $genome in $final_time minutes.";
     close $log;
 }
 
@@ -233,9 +263,55 @@ sub write_fragment_gff {
     return;
 }
 
+sub split_genome {
+    my $self = shift; 
+    my ($genome) = @_;
+
+    my $numreads = 500;
+    my $num    = 0;
+    my $count  = 0;
+    my $fcount = 1;
+
+    my ($iname, $ipath, $isuffix) = fileparse($genome, qr/\.[^.]*/);
+    if ($iname =~ /\.fa.*/) {
+	($iname, $ipath, $isuffix) = fileparse($iname, qr/\.[^.]*/);
+    }
+
+    my ($out, @split_files, %len);
+    
+    my $fname = $iname."_".$fcount.$isuffix;
+    open $out, '>', $fname or die "\nERROR: Could not open file: $fname\n";
+    
+    push @split_files, $fname;
+
+    my $kseq = Bio::DB::HTS::Kseq->new($genome);
+    my $iter = $kseq->iterator();
+
+    while ( my $seqobj = $iter->next_seq() ) {
+        my $id  = $seqobj->name;
+        my $seq = $seqobj->seq;
+	$len{$id} = length($seq);
+
+	if ($count % $numreads == 0 && $count > 0) {
+	    $fcount++;
+	    $fname = $iname."_".$fcount.$isuffix;
+	    open $out, '>', $fname or die "\nERROR: Could not open file: $fname\n";
+	    
+	    push @split_files, $fname;
+	}
+	else {
+	    say $out join "\n", ">".$id, $seq;
+	}
+	$count++;
+    }
+    close $out;
+
+    return (\%len, \@split_files);
+}
+
 sub search_genome {
     my $self = shift;
-    my ($thr) = @_;
+    my ($blastdb, $thr) = @_;
     my $genome   = $self->genome->absolute->resolve;
     my $repeatdb = $self->repeatdb->absolute->resolve;
 
@@ -243,7 +319,7 @@ sub search_genome {
     my ($qname, $qpath, $qsuffix)    = fileparse($genome, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile( abs_path($qpath), $qname."_$dbname".'.bln' );
 
-    my $blastdb = $self->make_blastdb($genome);
+    #my $blastdb = $self->make_blastdb($genome);
     my $blast_report = $self->run_blast({ query => $repeatdb, db => $blastdb, outfile => $outfile, 
 					  threads => $thr, evalue => 1e-10, sort => 'coordinate' });
     my @dbfiles = glob "$blastdb*";

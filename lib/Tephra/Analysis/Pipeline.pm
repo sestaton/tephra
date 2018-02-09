@@ -25,11 +25,11 @@ Tephra::Analysis::Pipeline - Methods for running the 'tephra all' command
 
 =head1 VERSION
 
-Version 0.09.6
+Version 0.09.7
 
 =cut
 
-our $VERSION = '0.09.6';
+our $VERSION = '0.09.7';
 $VERSION = eval $VERSION;
 
 has global_options => ( is => 'ro', isa => 'HashRef', required => 1 );
