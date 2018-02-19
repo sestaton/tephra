@@ -341,24 +341,6 @@ sub split_refs {
     return \@outfiles;
 }
 
-sub _get_seq_len {
-    my $self = shift;
-    my ($genome) = @_;
-    
-    my %len;
-
-    my $kseq = Bio::DB::HTS::Kseq->new($genome);
-    my $iter = $kseq->iterator();
-
-    while ( my $seq = $iter->next_seq() ) {
-	my $id  = $seq->name;
-	my $seq = $seq->seq;
-	$len{$id} = length($seq);
-    }       
-
-    return \%len;
-}
-
 sub _format_hits {
     my $self = shift;
     my ($line) = @_;
