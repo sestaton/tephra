@@ -30,8 +30,8 @@ The next two commands install BioPerl, and these can be skipped if BioPerl is in
 
 Finally, download the [latest release](https://github.com/sestaton/tephra/releases/latest) and run the following commands:
 
-    wget https://github.com/sestaton/tephra/archive/v0.09.6.tar.gz
-    tar xzf v0.09.6.tar.gz && cd tephra-0.09.6
+    wget https://github.com/sestaton/tephra/archive/v0.09.7.tar.gz
+    tar xzf v0.09.6.tar.gz && cd tephra-0.09.7
     cpanm --installdeps .
     perl Makefile.PL
     make test
@@ -151,7 +151,7 @@ Part of this project uses code from [MGEScan-nonLTR](http://darwin.informatics.i
 
 The license for Tephra is below:
 
-Copyright (C) 2015-2017 S. Evan Staton
+Copyright (C) 2015-2018 S. Evan Staton
 
 This program is distributed under the MIT (X11) License, which should be distributed with the package.
 If not, it can be found here: http://www.opensource.org/licenses/mit-license.php
