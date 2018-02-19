@@ -1,6 +1,12 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.09.7	02/19/2018	Vancouver, BC
+
+- Modify 'findfragments' command processing to deal with draft genomes that may have hundreds
+  of thousands of contigs. The output is the same as with the previous version. This satisfies
+  issue #23.
+
 0.09.6	12/04/2017	Vancouver, BC
 
 - Bug fix for 'findfragments' command with very short intervals not being filtered properly.
