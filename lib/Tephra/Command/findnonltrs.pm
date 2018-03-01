@@ -58,7 +58,9 @@ sub execute {
         $self->app->global_options->{help};
 
     my ($nonltr_obj, $sf_elem_map) = _run_nonltr_search($opt);
-    _find_nonltr_families($opt, $nonltr_obj, $sf_elem_map);
+    if (defined $nonltr_obj && defined $sf_elem_map) { 
+	_find_nonltr_families($opt, $nonltr_obj, $sf_elem_map);
+    }
 }
 
 sub _run_nonltr_search {
@@ -78,15 +80,21 @@ sub _run_nonltr_search {
     
     my ($genomedir, $outputdir) = $nonltr_obj->find_nonltrs;
 
-    my $gff_obj = Tephra::NonLTR::GFFWriter->new(
-	genome   => $genome,
-        fastadir => $genomedir,
-	outdir   => $outputdir,
-	gff      => $gff );
+    if (defined $genomedir && defined $outputdir) {
+	my $gff_obj = Tephra::NonLTR::GFFWriter->new(
+	    genome   => $genome,
+	    fastadir => $genomedir,
+	    outdir   => $outputdir,
+	    gff      => $gff );
+	
+	my ($obj, $sf_elem_map) = $gff_obj->write_gff;
 
-    my ($obj, $sf_elem_map) = $gff_obj->write_gff;
-
-    return ($obj, $sf_elem_map);
+	return ($obj, $sf_elem_map);
+    }
+    else {
+	say STDERR "\nWARNING: No non-LTR elements were found so none will be reported.\n";
+	return (undef, undef);
+    }
 }
 
 sub _find_nonltr_families {
@@ -111,7 +119,7 @@ sub _find_nonltr_families {
         my ($gname, $gpath, $gsuffix) = fileparse($opt->{genome}, qr/\.[^.]*/);
         $logfile = File::Spec->catfile( abs_path($gpath), $gname.'_tephra_findnonltrs.log' );
         $log = $anno_obj->get_tephra_logger($logfile);
-        say STDERR "\nWARNING: '--logfile' option not given so results will be appended to: $logfile.";
+        say STDERR "\nWARNING: '--logfile' option not given so results will be appended to: $logfile.\n";
     }
 
     my $blast_report = $anno_obj->process_blast_args;
@@ -136,7 +144,7 @@ sub _find_nonltr_families {
 	unlink @{$obj}{qw(fasta gff)};
     }
     else {
-	say "\nWARNING: No BLAST hits were found so no non-LTR families could be determined.\n";
+	say STDERR "\nWARNING: No BLAST hits were found so no non-LTR families could be determined.\n";
         move $obj->{fasta}, $fasta or die "move failed: $!";
         move $obj->{gff}, $opt->{gff} or die "move failed: $!";
     }
