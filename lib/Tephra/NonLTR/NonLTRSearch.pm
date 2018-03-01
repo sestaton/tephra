@@ -5,7 +5,7 @@ use Moose;
 use File::Spec;
 use File::Find;
 use File::Basename;
-use File::Path qw(make_path);
+use File::Path qw(make_path remove_tree);
 use Cwd        qw(abs_path);
 use Bio::DB::HTS::Kseq;
 use Tephra::NonLTR::RunHMM;
@@ -81,7 +81,11 @@ sub find_nonltrs {
 	fastadir => $genome_dir, 
 	outdir   => $plus_out_dir, 
 	reverse  => 0 );
-    $pp->postprocess;
+    my $fpp_result = $pp->postprocess;
+
+    unless ($fpp_result) {
+	say STDERR "\nWARNING: No non-LTR elements were found on the forward strand. Will search reverse strand.\n";
+    }
 
     # Backward strand
     say STDERR "Running backward..." if $self->verbose;
@@ -105,18 +109,28 @@ sub find_nonltrs {
 	fastadir => $minus_dna_dir, 
 	outdir   => $minus_out_dir, 
 	reverse  => 1 );
+    my $bpp_result = $pp_rev->postprocess;
 
-    $pp_rev->postprocess;
-    
-    # Validation for Q value
-    my $pp2 = Tephra::NonLTR::QValidation->new( 
-	outdir  => $main_data_dir, 
-	phmmdir => $phmm_dir, 
-	fasta   => $genome_dir );
-
-    $pp2->validate_q_score;
-
-    return ($genome_dir, $main_data_dir);
+    unless ($bpp_result) {
+        say STDERR "\nWARNING: No non-LTR elements were found on the reverse strand.\n";
+    }
+ 
+    if (!$fpp_result && !$bpp_result) { 
+	remove_tree( $main_data_dir, { safe => 1} );
+	remove_tree( $genome_dir, { safe => 1} );
+	remove_tree( $minus_dna_dir, { safe => 1} );
+	return (undef, undef);
+    }
+    else {
+	# Validation for Q value
+	my $pp2 = Tephra::NonLTR::QValidation->new( 
+	    outdir  => $main_data_dir, 
+	    phmmdir => $phmm_dir, 
+	    fasta   => $genome_dir );
+	$pp2->validate_q_score;
+	
+	return ($genome_dir, $main_data_dir);
+    }
 }
 
 sub _split_genome {

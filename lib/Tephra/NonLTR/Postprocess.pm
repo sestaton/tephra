@@ -40,16 +40,22 @@ sub postprocess {
     my $outr_dir = File::Spec->catdir($out_dir, 'out2');
     my $outr_full_file = File::Spec->catfile($out_dir, 'out2', 'full');   # full-length
     my $outr_frag_file = File::Spec->catfile($out_dir, 'out2', 'frag');   # fragmented
-    $self->merge_thmm($outf_dir, $outr_dir, $outr_full_file, $outr_frag_file, $dna_dir);
+    ($outr_full_file, $outr_frag_file) = $self->merge_thmm($outf_dir, $outr_dir, $outr_full_file, $outr_frag_file, $dna_dir);
     
-    # convert minus coordinates to plus coordinates
-    if ($rev == 1) {
-	my $full_result = $outr_full_file.'_converted';
-	my $frag_result = $outr_frag_file.'_converted';
-	$self->convert_minus_to_plus($outr_full_file, $full_result, $dna_dir);
-	$self->convert_minus_to_plus($outr_frag_file, $frag_result, $dna_dir);
-    }    
- }   
+    if (-s $outr_full_file && -s $outr_frag_file) {
+	# convert minus coordinates to plus coordinates
+	if ($rev == 1) {
+	    my $full_result = $outr_full_file.'_converted';
+	    my $frag_result = $outr_frag_file.'_converted';
+	    $self->convert_minus_to_plus($outr_full_file, $full_result, $dna_dir);
+	    $self->convert_minus_to_plus($outr_frag_file, $frag_result, $dna_dir);
+	}    
+	return 1;
+    }   
+    else {
+	return 0;
+    }
+}
 
 sub convert_minus_to_plus {
     my $self = shift;
@@ -65,8 +71,8 @@ sub convert_minus_to_plus {
 	$len{$filename} = length($genome);
     }
 
-    open my $out, '>', $result_file or die "\nERROR: Could not open file: $result_file";
-    open my $in, '<', $out_file or die "\nERROR: Could not open file: $out_file";
+    open my $out, '>', $result_file or die "\nERROR: Could not open file: $result_file\n";
+    open my $in, '<', $out_file or die "\nERROR: Could not open file: $out_file\n";
 
     ## Output: seqname start end length clade
     #Ha1.fasta 172342043 172344615 2572 L1
@@ -81,6 +87,8 @@ sub convert_minus_to_plus {
     }
     close $in;
     close $out;
+
+    return;
 }
 
 sub merge_thmm {
@@ -105,8 +113,8 @@ sub merge_thmm {
 	make_path( $outf_dir, {verbose => 0, mode => 0771,} );
     }
 
-    open my $out, '>', $outr_full_file or die "\nERROR: Could not open file: $outr_full_file";
-    open my $frag, '>', $outr_frag_file or die "\nERROR: Could not open file: $outr_frag_file";
+    open my $out, '>', $outr_full_file or die "\nERROR: Could not open file: $outr_full_file\n";
+    open my $frag, '>', $outr_frag_file or die "\nERROR: Could not open file: $outr_frag_file\n";
 
     my @resfiles;
     find( sub { push @resfiles, $File::Find::name if -f }, $outf_dir );
@@ -121,7 +129,7 @@ sub merge_thmm {
 	my $te    = -1;
 	my $te_name;
 	my $count = 0;
-	open my $in, '<', $file or die "\nERROR: Could not open file: $file";
+	open my $in, '<', $file or die "\nERROR: Could not open file: $file\n";
 	
 	## Input: 
 	#303624192 24 26.225023
@@ -180,7 +188,7 @@ sub merge_thmm {
 		    }
 		    
 		    my $seq_file = File::Spec->catfile($outr_dir, $te_name.'_full'); #$_[1].$te_name."_full";
-		    open my $out1, '>>', $seq_file or die "\nERROR: Could not open file: $seq_file";
+		    open my $out1, '>>', $seq_file or die "\nERROR: Could not open file: $seq_file\n";
 		    my $header = '>'.$filename.'_'.$temp[0].'_'.$end;
 
 		    my ($genome, $head) = $self->get_sequence_id($chr_file);
@@ -241,7 +249,7 @@ sub merge_thmm {
 		    }
 		    
 		    my $seq_file = File::Spec->catfile($outr_dir, $te_name.'_frag'); #$_[1].$te_name."_frag";
-		    open my $out1, '>>', $seq_file or die "\nERROR: Could not open file: $seq_file";
+		    open my $out1, '>>', $seq_file or die "\nERROR: Could not open file: $seq_file\n";
 		    my $header = '>'.$filename.'_'.$temp[0].'_'.$end; ;
 
 		    my ($genome, $head) = $self->get_sequence_id($chr_file);
@@ -268,8 +276,7 @@ sub merge_thmm {
     close $out;
     close $frag;
 
-    unlink $outr_full_file unless -s $outr_full_file;
-    unlink $outr_frag_file unless -s $outr_frag_file;
+    return ($outr_full_file, $outr_frag_file);
 }
 
 sub get_sequence_id {
