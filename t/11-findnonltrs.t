@@ -80,13 +80,12 @@ if ($devtests) {
 	}
     }
     close $lin;
-
-    say STDERR "DEBUG: tot -> $tot";
+    
     ok( -e $log, 'findnonltrs log created' );
     ok( $tot == $seqct, 'Correct number of elements logged and written');
 }
 
-say STDERR "DEBUG: $tot -> $exp_tot";
+#say STDERR "DEBUG: $tot -> $exp_tot";
 ok( $seqct == $exp_seqct, 'Correct number of non-LTRs found' );
 ok( $gct == $exp_gct, 'Correct number of non-LTRs found' );
 ok( $tot == $exp_tot, 'Correct number of elements logged' );
