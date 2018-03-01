@@ -1,6 +1,14 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.09.8	03/01/2018	Vancouver, BC
+
+- Add checks to 'findnonltrs' command to test whether any elements were found prior to postprocessing
+  steps. This will fix the errors (issue #22) that were thrown in the case where no elements are
+  discovered. Now, warnings are raised but the command proceeds and cleans up intermediate files.
+- Redesign 'findnonltrs' tests to always run and test the output, or optionally run on a larger input file
+  in dev mode. Previously the full command was only tested in dev mode.
+
 0.09.7	02/19/2018	Vancouver, BC
 
 - Modify 'findfragments' command processing to deal with draft genomes that may have hundreds
