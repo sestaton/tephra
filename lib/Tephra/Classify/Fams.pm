@@ -31,11 +31,11 @@ Tephra::Classify::Fams - Classify LTR/TIR transposons into families
 
 =head1 VERSION
 
-Version 0.09.7
+Version 0.09.8
 
 =cut
 
-our $VERSION = '0.09.7';
+our $VERSION = '0.09.8';
 $VERSION = eval $VERSION;
 
 =head1 SYNOPSIS

@@ -19,11 +19,11 @@ Tephra::Role::Run::Blast - Helper role for running NCBI BLAST
 
 =head1 VERSION
 
-Version 0.09.7
+Version 0.09.8
 
 =cut
 
-our $VERSION = '0.09.7';
+our $VERSION = '0.09.8';
 $VERSION = eval $VERSION;
 
 has blast_hit_pid => (
