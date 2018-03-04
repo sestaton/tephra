@@ -1,7 +1,7 @@
 Revision history for Tephra
 
 Version	Date	Location
-0.09.8	03/01/2018	Vancouver, BC
+0.09.8	03/04/2018	Vancouver, BC
 
 - Add checks to 'findnonltrs' command to test whether any elements were found prior to postprocessing
   steps. This will fix the errors (issue #22) that were thrown in the case where no elements are
