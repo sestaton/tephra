@@ -711,7 +711,7 @@ sub sort_features {
 	}
 	close $in;
 
-	move $gff, $outfile or die "Move failed: $!";
+	move $gff, $outfile or die "\nERROR: move failed: $!\n";
 	#say STDERR "\nTotal elements written: $elem_tot";
 	#$log->info("Results - Total elements written: $elem_tot");
 	my $pad = ' ' x 51;

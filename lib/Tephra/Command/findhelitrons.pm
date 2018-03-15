@@ -135,8 +135,8 @@ sub _find_helitron_families {
     }
     else {
 	say "\nWARNING: No BLAST hits were found so no Helitron families could be determined.\n";
-	move $hel_obj->{fasta}, $fasta or die "move failed: $!";
-	move $hel_obj->{gff}, $opt->{gff} or die "move failed: $!";
+	move $hel_obj->{fasta}, $fasta or die "\nERROR: move failed: $!\n";
+	move $hel_obj->{gff}, $opt->{gff} or die "\nERROR: move failed: $!\n";
     }
 }
 

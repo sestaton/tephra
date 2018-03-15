@@ -135,7 +135,7 @@ sub _filter_tir_gff {
     }
     close $out;
 
-    move $outfile, $gff or die "ERROR: move failed: $!";
+    move $outfile, $gff or die "\nERROR: move failed: $!\n";
     return $outfile;
 }
 

@@ -170,7 +170,7 @@ sub fetch_gt_exes {
 		
 		system("tar xzf $dist") == 0 or die $!;
 		
-		move $ldist, $ldir or die "Move failed: $!";
+		move $ldist, $ldir or die "\nERROR: move failed: $!\n";
 		unlink $dist;
 	    }
 	}
@@ -210,7 +210,7 @@ sub fetch_vmatch_exes {
 		
 		system("tar xzf $dist") == 0 or die $!;
 		
-		move $ldist, $ldir or die "Move failed: $!";
+		move $ldist, $ldir or die "\nERROR: move failed: $!\n";
 		unlink $dist;
 	    }
 	}
@@ -243,7 +243,7 @@ sub fetch_hscan {
     my $hscan = File::Spec->catfile($cwd, 'HelitronScanner', 'HelitronScanner.jar');
     chdir $wd;
     
-     return $hscan;
+    return $hscan;
 }
 
 sub fetch_blast {
@@ -280,7 +280,7 @@ sub fetch_blast {
     my $bdir = 'ncbi-blast+';
     system("tar xzf $file 2>&1 > /dev/null") == 0 or die $!;
     unlink $file if -e $file;
-    move $ldir, $bdir or die "Move failed: $!";
+    move $ldir, $bdir or die "\nERROR: move failed: $!\n";
     chdir $bdir or die $!;
 
     my $cwd = getcwd();

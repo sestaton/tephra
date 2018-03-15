@@ -145,8 +145,8 @@ sub _find_nonltr_families {
     }
     else {
 	say STDERR "\nWARNING: No BLAST hits were found so no non-LTR families could be determined.\n";
-        move $obj->{fasta}, $fasta or die "move failed: $!";
-        move $obj->{gff}, $opt->{gff} or die "move failed: $!";
+        move $obj->{fasta}, $fasta or die "\nERROR: move failed: $!\n";
+        move $obj->{gff}, $opt->{gff} or die "\nERROR: move failed: $!\n";
     }
 }
 
