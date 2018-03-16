@@ -1,6 +1,15 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.09.9
+
+- Add Tephra::Genome::Unmask class for unmasking all transposons that were found by searching a
+  masked genome.
+- Modify output of the 'all' command to use the unmasking methods described above for corrected
+  masked bases in FASTA output.
+- Remove custom repeat map building approach from 'maskref' method in favor the reusable method
+  by the same name that is now in the Tephra::Annotation::Util class.
+
 0.09.8	03/04/2018	Vancouver, BC
 
 - Add checks to 'findnonltrs' command to test whether any elements were found prior to postprocessing
