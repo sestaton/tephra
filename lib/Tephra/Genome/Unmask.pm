@@ -59,9 +59,6 @@ sub unmask_repeatdb {
     my $repeatdb = $self->repeatdb;
     my $outfile  = $self->outfile // $repeatdb;
 
-    say STDERR "GENOME: $genome";
-    say STDERR "REPEATDB: $repeatdb";
-    say STDERR "OUTFILE: $outfile";
     my $index = $self->index_ref($genome);
     my $store = $self->store_seq_coords($repeatdb);
 
