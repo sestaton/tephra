@@ -198,13 +198,13 @@ sub merge_thmm {
 		    if ($temp[0] < 2000) {
 			$start_pos = 0;
 		    }
-		    else{
+		    else {
 			$start_pos = $temp[0]-2000;
 		    }
 		    if ($end+2000 > length($genome)){
 			$end_pos = length($genome)-1;
 		    }
-		    else{
+		    else {
 			$end_pos = $end + 2000;
 		    }
 		    
