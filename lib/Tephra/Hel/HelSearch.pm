@@ -14,7 +14,6 @@ use Bio::DB::HTS::Kseq;
 use Sort::Naturally;
 use Try::Tiny;
 use namespace::autoclean;
-
 #use Data::Dump::Color;
 
 with 'Tephra::Role::Run::HelitronScanner',
