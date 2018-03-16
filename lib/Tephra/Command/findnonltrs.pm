@@ -18,15 +18,16 @@ use Tephra::Classify::Any;
 
 sub opt_spec {
     return (    
-	[ "genome|g=s",  "The genome sequences in FASTA format to search for non-LTR-RTs " ],
-	[ "pdir|d=s",    "The directory to search for HMMs (configured automatically) "    ],
-	[ "outdir|d=s",  "The location to place the results "                              ],
-	[ "gff|o=s",     "The GFF3 outfile to place the non-LTRs found in <genome> "       ],
-	[ "threads|t=i", "The number of threads to use for BLAST searches (Default: 1)  "  ],
-	[ "logfile|l=s", "The file to use for logging results in addition to the screen "  ],
-	[ "verbose|v",   "Display progress for each chromosome (Default: no) "             ],
-	[ "help|h",      "Display the usage menu and exit. "                               ],
-        [ "man|m",       "Display the full manual. "                                       ],
+	[ "genome|g=s",    "The genome sequences in FASTA format to search for non-LTR-RTs " ],
+	[ "reference|r=s", "The non-masked reference genome for base correction "            ], 
+	[ "pdir|d=s",      "The directory to search for HMMs (configured automatically) "    ],
+	[ "outdir|d=s",    "The location to place the results "                              ],
+	[ "gff|o=s",       "The GFF3 outfile to place the non-LTRs found in <genome> "       ],
+	[ "threads|t=i",   "The number of threads to use for BLAST searches (Default: 1)  "  ],
+	[ "logfile|l=s",   "The file to use for logging results in addition to the screen "  ],
+	[ "verbose|v",     "Display progress for each chromosome (Default: no) "             ],
+	[ "help|h",        "Display the usage menu and exit. "                               ],
+        [ "man|m",         "Display the full manual. "                                       ],
     );
 }
 
@@ -66,11 +67,12 @@ sub execute {
 sub _run_nonltr_search {
     my ($opt) = @_;
     
-    my $genome  = $opt->{genome};
-    my $outdir  = $opt->{outdir};
-    my $gff     = $opt->{gff};
-    my $pdir    = $opt->{pdir} // $ENV{TEPHRA_DIR} // File::Spec->catdir($ENV{HOME}, '.tephra');
-    my $verbose = $opt->{verbose} // 0;
+    my $genome    = $opt->{genome};
+    my $reference = $opt->{reference};
+    my $outdir    = $opt->{outdir};
+    my $gff       = $opt->{gff};
+    my $pdir      = $opt->{pdir} // $ENV{TEPHRA_DIR} // File::Spec->catdir($ENV{HOME}, '.tephra');
+    my $verbose   = $opt->{verbose} // 0;
 
     my $nonltr_obj = Tephra::NonLTR::NonLTRSearch->new(
 	genome  => $genome,
@@ -81,6 +83,7 @@ sub _run_nonltr_search {
     my ($genomedir, $outputdir) = $nonltr_obj->find_nonltrs;
 
     if (defined $genomedir && defined $outputdir) {
+	$genome = defined $reference ? $reference : $genome;
 	my $gff_obj = Tephra::NonLTR::GFFWriter->new(
 	    genome   => $genome,
 	    fastadir => $genomedir,
@@ -167,6 +170,7 @@ Required:
     -o|gff        :   The GFF3 outfile to place the non-LTRs found in <genome>.
 
 Options:
+    -r|reference  :   The non-masked reference genome for base correction.
     -d|outdir     :   The location to place the results.
     -p|pdir       :   Location of the HMM models (Default: configured automatically).
     -t|threads    :   The number of threads to use for BLAST searches (Default: 1).
@@ -215,6 +219,11 @@ The genome sequences in FASTA format to search for non-LTR-RTs.
 =head1 OPTIONS
 
 =over 2
+
+=item -r, --reference
+
+ The non-masked reference genome for base correction. If a masked genome was used to search for non-LTRs,
+ it is desirable to correct the bases using the original non-masked reference sequence.
 
 =item -o, --outdir
 
