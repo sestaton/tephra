@@ -12,6 +12,7 @@ use Sort::Naturally;
 use Bio::DB::HTS::Kseq;
 use Tephra::Config::Exe;
 use Tephra::Annotation::Util;
+use Tephra::Genome::Unmask;
 use namespace::autoclean;
 #use Data::Dump::Color;
 
@@ -86,6 +87,9 @@ sub find_trims {
     my $final_time = sprintf("%.2f",$total_elapsed/60);
     my $ft = strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findtrims' completed at: $ft.");
+
+    my $unmask = Tephra::Genome::Unmask->new(genome => $global_opts->{genome}, repeatdb => $trims_fas); 
+    $unmask->unmask_repeatdb;
 
     return ($trims_fas, $trims_gff);
 }
@@ -176,8 +180,8 @@ sub classify_ltrs {
     my $classifyltrs_opts = ['-g', $global_opts->{genome}, '-d', $global_opts->{repeatdb}, '-i', $ltr_trim_gff, 
                              '-o', $ltrc_gff, '-r', $ltrc_dir, '-t', $global_opts->{threads}, 
                              '--logfile', $global_opts->{logfile}];
-        push @$classifyltrs_opts, '--debug'
-            if $global_opts->{debug};
+    push @$classifyltrs_opts, '--debug'
+	if $global_opts->{debug};
     $self->run_tephra_cmd('classifyltrs', $classifyltrs_opts, $global_opts->{debug}); 
         
     my $t1 = gettimeofday();
@@ -304,6 +308,9 @@ sub find_helitrons {
     my $ft = strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findhelitrons' completed at: $ft.");
 
+    my $unmask = Tephra::Genome::Unmask->new(genome => $global_opts->{genome}, repeatdb => $hel_fas);
+    $unmask->unmask_repeatdb;
+
     return ($hel_fas, $hel_gff);
 }
 
@@ -318,6 +325,7 @@ sub find_tirs {
 
     my ($name, $path, $suffix) = fileparse($global_opts->{genome}, qr/\.[^.]*/);
     my $tir_gff = File::Spec->catfile( abs_path($path), $name.'_tephra_tirs.gff3' );
+    #my $tir_fas = File::Spec->catfile( abs_path($path), $name.'_tephra_tirs.fasta' );
 
     my $findtirs_opts = ['-g', $tir_ref, '-o', $tir_gff];
     push @$findtirs_opts, '--debug'
@@ -347,7 +355,7 @@ sub classify_tirs {
     my $st = strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra classifytirs' started at: $st.");
 
-    my $classifytirs_opts = ['-g', $tir_ref, '-i', $tir_gff, '-o', $tirc_gff, '-r', $tirc_dir, 
+    my $classifytirs_opts = ['-g', $global_opts->{genome}, '-i', $tir_gff, '-o', $tirc_gff, '-r', $tirc_dir, 
                              '-t', $global_opts->{threads}, '-d', $global_opts->{repeatdb}, 
                              '--logfile', $global_opts->{logfile}];
     $self->run_tephra_cmd('classifytirs', $classifytirs_opts, $global_opts->{debug});
@@ -405,7 +413,7 @@ sub find_nonltrs {
     my $nonltr_gff = File::Spec->catfile( abs_path($path), $name.'_tephra_nonLTRs.gff3' );
     my $nonltr_fas = File::Spec->catfile( abs_path($path), $name.'_tephra_nonLTRs.fasta' );
 
-    my $findnonltrs_opts = ['-g', $nonltr_ref, '-o', $nonltr_gff, '--logfile', $global_opts->{logfile}];
+    my $findnonltrs_opts = ['-g', $nonltr_ref, '-r', $global_opts->{genome}, '-o', $nonltr_gff, '--logfile', $global_opts->{logfile}];
     $self->capture_tephra_cmd('findnonltrs', $findnonltrs_opts, $global_opts->{debug});
     
     my $t1 = gettimeofday();
@@ -413,6 +421,9 @@ sub find_nonltrs {
     my $final_time = sprintf("%.2f",$total_elapsed/60);
     my $ft = strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findnonltrs' completed at: $ft.");
+
+    #my $unmask = Tephra::Genome::Unmask->new(genome => $global_opts->{genome}, repeatdb => $nonltr_fas);
+    #$unmask->unmask_repeatdb;
 
     return ($nonltr_fas, $nonltr_gff);
 }
