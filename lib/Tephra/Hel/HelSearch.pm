@@ -130,7 +130,7 @@ sub make_hscan_outfiles {
     
     my ($name, $seq, %hel, %sfmap);
     my $helct = 0;
-    open my $hin, '<', $full or die "\nERROR: Could not open file: $full\n";
+    open my $hin, '<', $full or die "\n[ERROR]: Could not open file: $full\n";
     while (($name, $seq) = $self->read_seq(\*$hin)) {
 	$helct++;
 	my ($ref, $start, $stop) = ($name =~ /(^\S+)_\#SUB_(\d+)-(\d+)/);

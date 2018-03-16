@@ -136,7 +136,7 @@ sub find_soloLTRs {
 
     my @sfs;
     find( sub { push @sfs, $File::Find::name if -d && /_copia\z|_gypsy\z/ }, $anno_dir);
-    croak "\nERROR: Could not find the expected sub-directories ending in 'copia' and 'gypsy' please ".
+    croak "\n[ERROR]: Could not find the expected sub-directories ending in 'copia' and 'gypsy' please ".
 	"check input. Exiting.\n" unless @sfs; #== 2;
 
     my $forks = @sfs;
@@ -172,7 +172,7 @@ sub find_soloLTRs {
 	$self->write_sololtr_gff($report);
     }
     else {
-	say STDERR "WARNING: No solo-LTRs were found so none will be reported.";
+	say STDERR "[WARNING]: No solo-LTRs were found so none will be reported.";
 	unlink $report, $seqfile;
     }
 
@@ -192,7 +192,7 @@ sub run_sf_search {
 
     ## need masked genome here
     if (!defined $ltr_aln_files || @$ltr_aln_files < 1 || ! -e $genome) {
-	croak "\nERROR: No genome was found or the expected alignments files were not found for ",
+	croak "\n[ERROR]: No genome was found or the expected alignments files were not found for ",
 	    ucfirst($sf),". Exiting.";
     }
         
@@ -239,7 +239,7 @@ sub do_parallel_search {
 
     my ($gname, $gpath, $gsuffix) = fileparse($genome, qr/\.[^.]*/);
     my $logfile = File::Spec->catfile($model_dir, 'all_solo-ltr_searches.log');
-    open my $log, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
+    open my $log, '>>', $logfile or die "\n[ERROR]: Could not open file: $logfile\n";
 
     my $thr;
     if ($threads % 2 == 0) {
@@ -297,8 +297,8 @@ sub write_sololtr_gff {
     my $outfile = $self->outfile;;
 
     my $seqlen = $self->_get_seq_len($genome);
-    open my $in, '<', $hmmsearch_summary or die "\nERROR: Could not open file: $hmmsearch_summary\n";
-    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    open my $in, '<', $hmmsearch_summary or die "\n[ERROR]: Could not open file: $hmmsearch_summary\n";
+    open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 
     if (! -s $outfile) {
 	say $out '##gff-version 3';
@@ -323,7 +323,7 @@ sub write_sololtr_gff {
 	        '.', '?', '.', "ID=solo_LTR$ct;match_id=$query;Name=solo_LTR;Ontology_term=SO:0001003";
 	}
 	else {
-	    croak "\nERROR: $hit_name not found in $genome. This should not happen. Exiting.\n";
+	    croak "\n[ERROR]: $hit_name not found in $genome. This should not happen. Exiting.\n";
 	}
     }
     close $in;
@@ -383,12 +383,12 @@ sub write_hmmsearch_report {
     my ($gname, $gpath, $gsuffix) = fileparse($genome, qr/\.[^.]*/);
     my ($name, $path, $suffix)    = fileparse($search_report, qr/\.[^.]*/);
     $element =~ s/_$gname*//;
-    open my $out, '>>', $parsed or die "\nERROR: Could not open file: $parsed\n";
+    open my $out, '>>', $parsed or die "\n[ERROR]: Could not open file: $parsed\n";
 
     my ($seq, $seqfile);
     if ($self->seqfile) {
 	$seqfile = $self->seqfile;
-	open $seq, '>>', $seqfile or die "\nERROR: Could not open file: $seqfile";
+	open $seq, '>>', $seqfile or die "\n[ERROR]: Could not open file: $seqfile";
     }
 
     my $hmmerin = Bio::SearchIO->new(-file => $search_report, -format => 'hmmer');
@@ -398,7 +398,7 @@ sub write_hmmsearch_report {
 	my $query    = $result->query_name();
 	my $num_hits = $result->num_hits();
 	my $qlen     = $aln_stats->{$query};
-	die "\nERROR: Could not determine query length for: $query" 
+	die "\n[ERROR]: Could not determine query length for: $query" 
 	    unless defined $qlen;
 	while ( my $hit = $result->next_hit() ) {
 	    my $hitid = $hit->name();
@@ -488,12 +488,12 @@ sub _get_exemplar_ltrs {
     my ($ltrfile, @ltrseqs, %ltrfams);
     find( sub { $ltrfile = $File::Find::name if -f and /exemplar_repeats.fasta$/ }, $dir);
     unless (defined $ltrfile) {
-	say STDERR "\nWARNING: Exemplar LTR file not found in $dir.\n";
+	say STDERR "\n[WARNING]: Exemplar LTR file not found in $dir.\n";
 	return;
     }
 	    
     if ($ltrfile =~ /^RL|family\d+/) {
-	croak "\nERROR: Expecting a single file of LTR exemplar sequences but it appears this command has ".
+	croak "\n[ERROR]: Expecting a single file of LTR exemplar sequences but it appears this command has ".
 	    "been run before. This will cause problems. Please re-run 'classifyltrs' or report this issue. Exiting.\n";
     }
 
@@ -511,7 +511,7 @@ sub _get_exemplar_ltrs {
 
     for my $family (keys %ltrfams) {
 	my $outfile = File::Spec->catfile($dir, $family.'_exemplar_ltrseqs.fasta');
-	open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+	open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 	for my $pair (@{$ltrfams{$family}}) {
 	    say $out join "\n", ">".$pair->{id}, $pair->{seq};
 	}
@@ -529,7 +529,7 @@ sub _collate {
     ##TODO: use lexical vars instead for array indexes
     my (%seen, %parsed_alns);
     for my $file (@$files) {
-	open my $fh_in, '<', $file or die "\nERROR: Could not open file: $file\n";
+	open my $fh_in, '<', $file or die "\n[ERROR]: Could not open file: $file\n";
 	while (my $line = <$fh_in>) {
 	    chomp $line;
 	    next if $line =~ /^#/;
@@ -546,7 +546,7 @@ sub _collate {
 	close $fh_in;
     }
    
-    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
     if (! -s $outfile) { 
 	say $out join "\t", "#query", "query_length", "number_of_hits", "hit_name",
             "perc_coverage","hsp_length", "hsp_perc_ident","hsp_query_start", "hsp_query_end",
@@ -569,7 +569,7 @@ sub _check_report_summary {
     my $self = shift;
     my ($hmmsearch_summary) = @_;
 
-    open my $in, '<', $hmmsearch_summary or die "\nERROR: Could not open file: $hmmsearch_summary\n";
+    open my $in, '<', $hmmsearch_summary or die "\n[ERROR]: Could not open file: $hmmsearch_summary\n";
     my $ct = 0;
 
     while (my $line = <$in>) {
@@ -594,7 +594,7 @@ sub _find_hmmer {
 	return ($hmmbuild, $hmmsearch);
     }
     else {
-	croak "\nERROR: Could not get HMMERv2 PATH. This indicates that Tephra was not configured correctly. Exiting.\n";
+	croak "\n[ERROR]: Could not get HMMERv2 PATH. This indicates that Tephra was not configured correctly. Exiting.\n";
     }
 }
 

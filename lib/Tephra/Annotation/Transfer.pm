@@ -101,7 +101,7 @@ sub parse_blast {
     my $perc_cov = sprintf("%.2f",$blast_hcov/100);
 
     my %matches;
-    open my $in, '<', $blast_report or die "\nERROR: Could not open file: $blast_report\n";
+    open my $in, '<', $blast_report or die "\n[ERROR]: Could not open file: $blast_report\n";
     while (my $line = <$in>) {
 	chomp $line;
 	my ($queryid, $hitid, $pid, $hitlen, $mmatchct, $gapct, 
@@ -192,7 +192,7 @@ sub write_annotations {
     my $kseq = Bio::DB::HTS::Kseq->new($fasta);
     my $iter = $kseq->iterator;
 
-    open my $outfh, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    open my $outfh, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 
     #{
 	#"DTC_ZM00004_consensus" => ["RLX_singleton_family2330"],

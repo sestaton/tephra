@@ -104,7 +104,7 @@ sub make_families {
     
     my $t0 = gettimeofday();
     my $logfile = File::Spec->catfile($outdir, $tetype.'_superfamilies_thread_report.log');
-    open my $fmlog, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
+    open my $fmlog, '>>', $logfile or die "\n[ERROR]: Could not open file: $logfile\n";
 
     my $pm = Parallel::ForkManager->new(3);
     local $SIG{INT} = sub {
@@ -239,7 +239,7 @@ sub make_fasta_from_dom_orgs {
     my $dir  = basename($cpath);
     my ($sf) = ($dir =~ /_((?:\w+\d+\-)?\w+)$/);
     unless (defined $sf) {
-	say STDERR "\nERROR: Can't get sf from $clsfile at $.";
+	say STDERR "\n[ERROR]: Can't get sf from $clsfile at $.";
     }
 
     my $sfname;
@@ -264,7 +264,7 @@ sub make_fasta_from_dom_orgs {
 
     my $famfile = $sfname.'_families.fasta';
     my $foutfile = File::Spec->catfile($cpath, $famfile);
-    open my $out, '>>', $foutfile or die "\nERROR: Could not open file: $foutfile\n";
+    open my $out, '>>', $foutfile or die "\n[ERROR]: Could not open file: $foutfile\n";
 
     my %fam_map;
     my ($idx, $famtot) = (0, 0);
@@ -281,7 +281,7 @@ sub make_fasta_from_dom_orgs {
 		push @{$fam_map{$famnum}}, $elem;
             }
             else {
-                croak "\nERROR: $elem not found in store. Exiting.";
+                croak "\n[ERROR]: $elem not found in store. Exiting.";
             }
         }
         $idx++;
@@ -293,7 +293,7 @@ sub make_fasta_from_dom_orgs {
     my $reduc = (keys %$seqstore);
     my $singfile = $sfname.'_singletons.fasta';
     my $soutfile = File::Spec->catfile( abs_path($cpath), $singfile );
-    open my $outx, '>>', $soutfile or die "\nERROR: Could not open file: $soutfile\n";
+    open my $outx, '>>', $soutfile or die "\n[ERROR]: Could not open file: $soutfile\n";
 
     if (%$seqstore) {
         for my $k (nsort keys %$seqstore) {
@@ -369,7 +369,7 @@ sub parse_blast {
     my $perc_cov   = sprintf("%.2f", $blast_hcov/100);
 
     my (%matches, %seen);
-    open my $in, '<', $blast_report or die "\nERROR: Could not open file: $blast_report\n";
+    open my $in, '<', $blast_report or die "\n[ERROR]: Could not open file: $blast_report\n";
     while (my $line = <$in>) {
 	chomp $line;
 	my ($queryid, $hitid, $pid, $hitlen, $mmatchct, $gapct, 
@@ -404,7 +404,7 @@ sub write_families {
     #my ($sf) = ($dir =~ /_(\w+)$/);
     my ($sf) = ($dir =~ /_((?:\w+\d+\-)?\w+)$/);
     unless (defined $sf) {
-        say STDERR "\nERROR: Can't get sf from $clsfile at $.";
+        say STDERR "\n[ERROR]: Can't get sf from $clsfile at $.";
     }
 
     my $sfname;
@@ -439,7 +439,7 @@ sub write_families {
     for my $str (reverse sort { @{$fam_id_map->{$a}} <=> @{$fam_id_map->{$b}} } keys %$fam_id_map) {
 	my $famfile = $sf."_family$idx".".fasta";
 	my $outfile = File::Spec->catfile( abs_path($cpath), $famfile );
-	open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+	open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 	for my $elem (@{$fam_id_map->{$str}}) {
 	    my $query = $elem =~ s/\w{3}_singleton_family\d+_//r;
 	    if (exists $seqstore->{$query}) {
@@ -452,7 +452,7 @@ sub write_families {
 		$annot_ids{$query} = $sfname."_family$idx";
 	    }
 	    else {
-		croak "\nERROR: $query not found in store. Exiting.";
+		croak "\n[ERROR]: $query not found in store. Exiting.";
 	    }
 	}
 	close $out;
@@ -465,7 +465,7 @@ sub write_families {
     if (%$seqstore) {
 	my $famxfile = $sf.'_singleton_families.fasta';
 	my $xoutfile = File::Spec->catfile( abs_path($cpath), $famxfile );
-	open my $outx, '>', $xoutfile or die "\nERROR: Could not open file: $xoutfile\n";
+	open my $outx, '>', $xoutfile or die "\n[ERROR]: Could not open file: $xoutfile\n";
 	for my $k (nsort keys %$seqstore) {
 	    my $coordsh = $seqstore->{$k};
 	    my $coords  = (keys %$coordsh)[0];
@@ -497,7 +497,7 @@ sub combine_families {
     my ($name, $path, $suffix) = fileparse($outgff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name.'.fasta');
 
-    open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 
     for my $file (nsort keys %$outfiles) {
 	unlink $file && next unless -s $file;
@@ -522,8 +522,8 @@ sub annotate_gff {
     my $outdir = $self->outdir->absolute->resolve;
     my $outgff = $self->gff;
 
-    open my $in, '<', $ingff or die "\nERROR: Could not open file: $ingff\n";
-    open my $out, '>', $outgff or die "\nERROR: Could not open file: $outgff\n";
+    open my $in, '<', $ingff or die "\n[ERROR]: Could not open file: $ingff\n";
+    open my $out, '>', $outgff or die "\n[ERROR]: Could not open file: $outgff\n";
 
     while (my $line = <$in>) {
 	chomp $line;
@@ -568,7 +568,7 @@ sub _compare_merged_nonmerged {
 		$famtot++;
 	    }
 	    else {
-		croak "\nERROR: $query not found in store. Exiting.";
+		croak "\n[ERROR]: $query not found in store. Exiting.";
 	    }
 	    
 	}

@@ -82,9 +82,9 @@ sub find_tc1_mariner {
     my $outfile    = File::Spec->catfile($path, $name.'_tc1-mariner.gff3');
     my $fas        = File::Spec->catfile($path, $name.'_tc1-mariner.fasta');
     my $domoutfile = File::Spec->catfile($path, $name.'_tc1-mariner_domain_org.tsv');
-    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-    open my $faout, '>>', $fas or die "\nERROR: Could not open file: $fas\n";
-    open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";;
+    open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
+    open my $faout, '>>', $fas or die "\n[ERROR]: Could not open file: $fas\n";
+    open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";;
     say $out $header;
 
     my ($len, $lines, $seq_id, $source, $start, $end, $strand, @tirs);
@@ -195,9 +195,9 @@ sub find_hat {
     my $outfile    = File::Spec->catfile($path, $name.'_hAT.gff3');
     my $fas        = File::Spec->catfile($path, $name.'_hAT.fasta');
     my $domoutfile = File::Spec->catfile($path, $name.'_hAT_domain_org.tsv');
-    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-    open my $faout, '>>', $fas or die "\nERROR: Could not open file: $fas\n";
-    open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";
+    open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
+    open my $faout, '>>', $fas or die "\n[ERROR]: Could not open file: $fas\n";
+    open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
     say $out $header;
 
     my ($len, $lines, $seq_id, $source, $start, $end, $strand, @tirs);
@@ -307,9 +307,9 @@ sub find_mutator {
     my $outfile    = File::Spec->catfile($path, $name.'_mutator.gff3');
     my $fas        = File::Spec->catfile($path, $name.'_mutator.fasta');
     my $domoutfile = File::Spec->catfile($path, $name.'_mutator_domain_org.tsv');
-    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-    open my $faout, '>>', $fas or die "\nERROR: Could not open file: $fas\n";
-    open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";
+    open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
+    open my $faout, '>>', $fas or die "\n[ERROR]: Could not open file: $fas\n";
+    open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
     say $out $header;
 
     my ($len, $lines, $seq_id, $source, $start, $end, $strand, @tirs);
@@ -422,9 +422,9 @@ sub find_cacta {
     my $outfile    = File::Spec->catfile($path, $name.'_cacta.gff3');
     my $fas        = File::Spec->catfile($path, $name.'_cacta.fasta');
     my $domoutfile = File::Spec->catfile($path, $name.'_cacta_domain_org.tsv');
-    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-    open my $faout, '>>', $fas or die "\nERROR: Could not open file: $fas\n";
-    open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";
+    open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
+    open my $faout, '>>', $fas or die "\n[ERROR]: Could not open file: $fas\n";
+    open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
     say $out $header;
 
     my ($len, $lines, $seq_id, $source, $start, $end, $strand, $tir_len, @tirs);
@@ -544,9 +544,9 @@ sub write_unclassified_tirs {
     my $outfile    = File::Spec->catfile($path, $name.'_unclassified.gff3');
     my $fas        = File::Spec->catfile($path, $name.'_unclassified.fasta');
     my $domoutfile = File::Spec->catfile($path, $name.'_unclassified_domain_org.tsv');
-    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-    open my $faout, '>>', $fas or die "\nERROR: Could not open file: $fas\n";
-    open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";
+    open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
+    open my $faout, '>>', $fas or die "\n[ERROR]: Could not open file: $fas\n";
+    open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
     say $out $header;
 
     my ($len, $lines, $seq_id, $source, $start, $end, $strand);
@@ -632,12 +632,12 @@ sub write_combined_output {
 
     my ($name, $path, $suffix) = fileparse($outfile, qr/\.[^.]*/);
     my $fasout = File::Spec->catfile($path, $name.'.fasta');
-    open my $out, '>', $fasout or die "\nERROR: Could not open file: $fasout\n";
+    open my $out, '>', $fasout or die "\n[ERROR]: Could not open file: $fasout\n";
 
     for my $file (@{$outfiles->{fastas}}) {
 	my $lines = do { 
 	    local $/ = undef; 
-	    open my $fh_in, '<', $file or die "\nERROR: Could not open file: $file\n";
+	    open my $fh_in, '<', $file or die "\n[ERROR]: Could not open file: $file\n";
 	    <$fh_in>;
 	};
 	print $out $lines;
@@ -659,7 +659,7 @@ sub subseq {
 
     my $location = "$loc:$start-$end";
     my ($seq, $length) = $index->get_sequence($location);
-    croak "\nERROR: Something went wrong. This is a bug, please report it.\n"
+    croak "\n[ERROR]: Something went wrong. This is a bug, please report it.\n"
         unless $length;
 
     $seq =~ s/.{60}\K/\n/g;

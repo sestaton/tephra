@@ -193,7 +193,7 @@ sub find_unclassified {
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfast = File::Spec->catfile($path, $name.'_unclassified.fasta');
 
-    open my $ofas, '>>', $outfast or die "\nERROR: Could not open file: $outfast\n";
+    open my $ofas, '>>', $outfast or die "\n[ERROR]: Could not open file: $outfast\n";
 
     for my $rep_region (keys %$features) {
 	for my $ltr_feature (@{$features->{$rep_region}}) {
@@ -245,7 +245,7 @@ sub annotate_unclassified {
     my ($blast_out, $gypsy, $copia, $features, $ltr_rregion_map) = @_;
 
     my $family_map = $self->_map_repeat_types();
-    open my $in, '<', $blast_out or die "\nERROR: Could not open file: $blast_out\n";
+    open my $in, '<', $blast_out or die "\n[ERROR]: Could not open file: $blast_out\n";
     my (%gypsy_re, %copia_re);
 
     while (my $line = <$in>) {
@@ -286,8 +286,8 @@ sub write_gypsy {
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile    = File::Spec->catfile($path, $name.'_gypsy.gff3');
     my $domoutfile = File::Spec->catfile($path, $name.'_gypsy_domain_org.tsv');
-    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-    open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";
+    open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
+    open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
     say $out $header;
     
     my ($seq_id, $source, $start, $end, $strand);
@@ -371,8 +371,8 @@ sub write_copia {
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name.'_copia.gff3');
     my $domoutfile = File::Spec->catfile($path, $name.'_copia_domain_org.tsv');
-    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-    open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";
+    open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
+    open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
     say $out $header;
 
     my ($seq_id, $source, $start, $end, $strand);
@@ -457,8 +457,8 @@ sub write_unclassified {
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name.'_unclassified.gff3');
     my $domoutfile = File::Spec->catfile($path, $name.'_unclassified_domain_org.tsv');
-    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-    open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";
+    open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
+    open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
     say $out $header;
 
     my ($seq_id, $source, $start, $end, $strand);
@@ -532,7 +532,7 @@ sub _map_repeat_types {
     my $repeatdb = $self->repeatdb->absolute->resolve;
     my %family_map;
 
-    open my $in, '<', $repeatdb or die "\nERROR: Could not open file: $repeatdb\n";
+    open my $in, '<', $repeatdb or die "\n[ERROR]: Could not open file: $repeatdb\n";
 
     while (my $line = <$in>) {
         chomp $line;

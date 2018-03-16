@@ -43,11 +43,11 @@ sub validate_args {
 	$self->help and exit(0);
     }
     elsif (!$opt->{config}) {
-	say STDERR "\nERROR: Required arguments not given.\n";
+	say STDERR "\n[ERROR]: Required arguments not given.\n";
 	$self->help and exit(0);
     }
     elsif (! -e $opt->{config}) { 
-	say STDERR "\nERROR: '--config' file given but does not appear to exist. Check input.\n";
+	say STDERR "\n[ERROR]: '--config' file given but does not appear to exist. Check input.\n";
 	$self->help and exit(0);
     }
 } 
@@ -93,7 +93,7 @@ sub _refine_ltr_predictions {
 	unlink $relaxed_gff, $strict_gff;
     }
     elsif ($relaxed_gff && !$strict_gff) {
-	say STDERR "\nWARNING: No LTR retrotransposons were found under strict conditions. ".                  
+	say STDERR "\n[WARNING]: No LTR retrotransposons were found under strict conditions. ".                  
             "Skipping refinement step.\n";
 	$refine_obj->sort_features({ gff               => $relaxed_gff,
                                      combined_features => undef });
@@ -101,7 +101,7 @@ sub _refine_ltr_predictions {
 	unlink $relaxed_gff;
     }
     else {
-	say STDERR "\nWARNING: No LTR retrotransposons were found with the given parameters.\n";
+	say STDERR "\n[WARNING]: No LTR retrotransposons were found with the given parameters.\n";
     }
 }
     

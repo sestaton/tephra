@@ -69,7 +69,7 @@ sub unmask_repeatdb {
 
     my $tmp_outfile  = File::Spec->catfile( abs_path($path), $name.'_tmp_unmasked.fas' );
 
-    open my $out, '>', $tmp_outfile or die "\nERROR: Could not open file: $tmp_outfile\n";
+    open my $out, '>', $tmp_outfile or die "\n[ERROR]: Could not open file: $tmp_outfile\n";
 
     for my $id (keys %$store) {
 	my $seq = $store->{$id}{seq};
@@ -81,7 +81,7 @@ sub unmask_repeatdb {
     }
     close $out;
 
-    move $tmp_outfile, $outfile or die "\nERROR: move failed: $!\n";
+    move $tmp_outfile, $outfile or die "\n[ERROR]: move failed: $!\n";
 
     return;
 }

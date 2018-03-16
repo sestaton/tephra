@@ -36,8 +36,8 @@ my $masked    = File::Spec->catfile($testdir, 'ref_masked.fas');
 
 SKIP: {
     skip 'skip development tests', 8 unless $devtests;
-    copy $ctestfile, $cresdir or die "\nERROR: copy failed $!";
-    copy $gtestfile, $gresdir or die "\nERROR: copy failed $!";
+    copy $ctestfile, $cresdir or die "\n[ERROR]: copy failed $!";
+    copy $gtestfile, $gresdir or die "\n[ERROR]: copy failed $!";
 
     {
         my @help_args = ($cmd, 'sololtr', '-h');

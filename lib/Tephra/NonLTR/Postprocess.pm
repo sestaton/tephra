@@ -71,8 +71,8 @@ sub convert_minus_to_plus {
 	$len{$filename} = length($genome);
     }
 
-    open my $out, '>', $result_file or die "\nERROR: Could not open file: $result_file\n";
-    open my $in, '<', $out_file or die "\nERROR: Could not open file: $out_file\n";
+    open my $out, '>', $result_file or die "\n[ERROR]: Could not open file: $result_file\n";
+    open my $in, '<', $out_file or die "\n[ERROR]: Could not open file: $out_file\n";
 
     ## Output: seqname start end length clade
     #Ha1.fasta 172342043 172344615 2572 L1
@@ -113,8 +113,8 @@ sub merge_thmm {
 	make_path( $outf_dir, {verbose => 0, mode => 0771,} );
     }
 
-    open my $out, '>', $outr_full_file or die "\nERROR: Could not open file: $outr_full_file\n";
-    open my $frag, '>', $outr_frag_file or die "\nERROR: Could not open file: $outr_frag_file\n";
+    open my $out, '>', $outr_full_file or die "\n[ERROR]: Could not open file: $outr_full_file\n";
+    open my $frag, '>', $outr_frag_file or die "\n[ERROR]: Could not open file: $outr_frag_file\n";
 
     my @resfiles;
     find( sub { push @resfiles, $File::Find::name if -f }, $outf_dir );
@@ -129,7 +129,7 @@ sub merge_thmm {
 	my $te    = -1;
 	my $te_name;
 	my $count = 0;
-	open my $in, '<', $file or die "\nERROR: Could not open file: $file\n";
+	open my $in, '<', $file or die "\n[ERROR]: Could not open file: $file\n";
 	
 	## Input: 
 	#303624192 24 26.225023
@@ -188,7 +188,7 @@ sub merge_thmm {
 		    }
 		    
 		    my $seq_file = File::Spec->catfile($outr_dir, $te_name.'_full'); #$_[1].$te_name."_full";
-		    open my $out1, '>>', $seq_file or die "\nERROR: Could not open file: $seq_file\n";
+		    open my $out1, '>>', $seq_file or die "\n[ERROR]: Could not open file: $seq_file\n";
 		    my $header = '>'.$filename.'_'.$temp[0].'_'.$end;
 
 		    my ($genome, $head) = $self->get_sequence_id($chr_file);
@@ -249,7 +249,7 @@ sub merge_thmm {
 		    }
 		    
 		    my $seq_file = File::Spec->catfile($outr_dir, $te_name.'_frag'); #$_[1].$te_name."_frag";
-		    open my $out1, '>>', $seq_file or die "\nERROR: Could not open file: $seq_file\n";
+		    open my $out1, '>>', $seq_file or die "\n[ERROR]: Could not open file: $seq_file\n";
 		    my $header = '>'.$filename.'_'.$temp[0].'_'.$end; ;
 
 		    my ($genome, $head) = $self->get_sequence_id($chr_file);

@@ -89,8 +89,8 @@ sub _filter_tir_gff {
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile( abs_path($path), $name.'_filtered.gff3' );
-    open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-    open my $faout, '>>', $fas or die "\nERROR: Could not open file: $fas\n";
+    open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
+    open my $faout, '>>', $fas or die "\n[ERROR]: Could not open file: $fas\n";
     
     my %tirs;
     my ($header, $features) = $self->collect_gff_features($gff);
@@ -135,7 +135,7 @@ sub _filter_tir_gff {
     }
     close $out;
 
-    move $outfile, $gff or die "\nERROR: move failed: $!\n";
+    move $outfile, $gff or die "\n[ERROR]: move failed: $!\n";
     return $outfile;
 }
 
@@ -145,7 +145,7 @@ sub subseq {
 
     my $location = "$loc:$start-$end";
     my ($seq, $length) = $index->get_sequence($location);
-    croak "\nERROR: Something went wrong. This is a bug, please report it.\n"
+    croak "\n[ERROR]: Something went wrong. This is a bug, please report it.\n"
         unless $length;
 
     my $id = join "_", $elem, $loc, $start, $end;

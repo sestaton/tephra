@@ -57,7 +57,7 @@ sub extract_ltr_features {
 
     my ($name, $path, $suffix) = fileparse($infile, qr/\.[^.]*/);
     my $type = ($name =~ /(?:gypsy|copia|unclassified)$/i);
-    croak "\nERROR: Unexpected input. Should match /gypsy|copia|unclassified$/i. Exiting."
+    croak "\n[ERROR]: Unexpected input. Should match /gypsy|copia|unclassified$/i. Exiting."
         unless defined $type;
 
     my $resdir = File::Spec->catdir($dir, $name);
@@ -71,13 +71,13 @@ sub extract_ltr_features {
     my $five_pr_ltrs  = File::Spec->catfile($resdir, $name.'_5prime-ltrs.fasta');
     my $three_pr_ltrs = File::Spec->catfile($resdir, $name.'_3prime-ltrs.fasta');
 
-    open my $allfh, '>>', $comp or die "\nERROR: Could not open file: $comp\n";
-    open my $pptfh, '>>', $ppts or die "\nERROR: Could not open file: $ppts\n";
-    open my $pbsfh, '>>', $pbs or die "\nERROR: Could not open file: $pbs\n";
-    open my $fivefh, '>>', $five_pr_ltrs or die "\nERROR: Could not open file: $five_pr_ltrs\n";
-    open my $threfh, '>>', $three_pr_ltrs or die "\nERROR: Could not open file: $three_pr_ltrs\n";
+    open my $allfh, '>>', $comp or die "\n[ERROR]: Could not open file: $comp\n";
+    open my $pptfh, '>>', $ppts or die "\n[ERROR]: Could not open file: $ppts\n";
+    open my $pbsfh, '>>', $pbs or die "\n[ERROR]: Could not open file: $pbs\n";
+    open my $fivefh, '>>', $five_pr_ltrs or die "\n[ERROR]: Could not open file: $five_pr_ltrs\n";
+    open my $threfh, '>>', $three_pr_ltrs or die "\n[ERROR]: Could not open file: $three_pr_ltrs\n";
 
-    open my $gffio, '<', $infile or die "\nERROR: Could not open file: $infile\n";
+    open my $gffio, '<', $infile or die "\n[ERROR]: Could not open file: $infile\n";
 
     my (%feature, %ltrs, %coord_map, %seen);
     while (my $line = <$gffio>) {
@@ -201,7 +201,7 @@ sub extract_tir_features {
 
     my ($name, $path, $suffix) = fileparse($infile, qr/\.[^.]*/);
     my $type = ($name =~ /(?:cacta|mariner|mutator|hat|unclassified)$/i);
-    croak "\nERROR: Unexpected input. Should match /cacta|mariner|mutator|hat|unclassified$/i. Exiting."
+    croak "\n[ERROR]: Unexpected input. Should match /cacta|mariner|mutator|hat|unclassified$/i. Exiting."
         unless defined $type;
 
     my $resdir = File::Spec->catdir($dir, $name);
@@ -213,11 +213,11 @@ sub extract_tir_features {
     my $five_pr_tirs  = File::Spec->catfile($resdir, $name.'_5prime-tirs.fasta');
     my $three_pr_tirs = File::Spec->catfile($resdir, $name.'_3prime-tirs.fasta');
 
-    open my $allfh, '>>', $comp or die "\nERROR: Could not open file: $comp\n";
-    open my $fivefh, '>>', $five_pr_tirs or die "\nERROR: Could not open file: $five_pr_tirs\n";
-    open my $threfh, '>>', $three_pr_tirs or die "\nERROR: Could not open file: $three_pr_tirs\n";
+    open my $allfh, '>>', $comp or die "\n[ERROR]: Could not open file: $comp\n";
+    open my $fivefh, '>>', $five_pr_tirs or die "\n[ERROR]: Could not open file: $five_pr_tirs\n";
+    open my $threfh, '>>', $three_pr_tirs or die "\n[ERROR]: Could not open file: $three_pr_tirs\n";
 
-    open my $gffio, '<', $infile or die "\nERROR: Could not open file: $infile\n";
+    open my $gffio, '<', $infile or die "\n[ERROR]: Could not open file: $infile\n";
 
     my (%feature, %tirs, %coord_map, %seen);
     while (my $line = <$gffio>) {
@@ -315,7 +315,7 @@ sub merge_overlapping_hits {
             for my $pdom_type (keys %{$pdoms->{$src}{$element}}) {
                 my (%lrange, %seqs, $union);
                 my $pdom_file = File::Spec->catfile( abs_path($resdir), $pdom_type.'_pdom.fasta' );
-                open my $fh, '>>', $pdom_file or die "\nERROR: Could not open file: $pdom_file\n";
+                open my $fh, '>>', $pdom_file or die "\n[ERROR]: Could not open file: $pdom_file\n";
                 for my $split_dom (@{$pdoms->{$src}{$element}{$pdom_type}}) {
                     ($pdom_s, $pdom_e, $str) = split /\|\|/, $split_dom;
                     push @{$lrange{$src}{$element}{$pdom_type}}, "$pdom_s..$pdom_e";
@@ -358,7 +358,7 @@ sub subseq_pdoms {
 
     my $location = "$loc:$start-$end";
     my ($seq, $length) = $index->get_sequence($location);
-    croak "\nERROR: Something went wrong. This is a bug, please report it.\n"
+    croak "\n[ERROR]: Something went wrong. This is a bug, please report it.\n"
         unless $length;
     return $seq;
 }
@@ -461,8 +461,8 @@ sub cluster_features {
     my %reports;
     my $outfile = File::Spec->catfile( abs_path($dir), 'all_vmatch_reports.txt' );
     my $logfile = File::Spec->catfile( abs_path($dir), 'all_vmatch_reports.log' );
-    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-    open my $log, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
+    open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
+    open my $log, '>>', $logfile or die "\n[ERROR]: Could not open file: $logfile\n";
     
     my $thr; 
     if ($threads % 3 == 0) {
@@ -484,7 +484,7 @@ sub cluster_features {
 
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
                               for my $bl (sort keys %$data_ref) {
-                                  open my $report, '<', $bl or die "\nERROR: Could not open file: $bl\n";
+                                  open my $report, '<', $bl or die "\n[ERROR]: Could not open file: $bl\n";
                                   print $out $_ while <$report>;
                                   close $report;
                                   unlink $bl;
@@ -558,7 +558,7 @@ sub subseq {
 
     my $location = "$loc:$start-$end";
     my ($seq, $length) = $index->get_sequence($location);
-    croak "\nERROR: Something went wrong. This is a bug, please report it.\n"
+    croak "\n[ERROR]: Something went wrong. This is a bug, please report it.\n"
         unless $length;
 
     my $id = join "_", $elem, $loc, $start, $end;
@@ -578,7 +578,7 @@ sub parse_clusters {
     }
 
     my (%cls, %all_seqs, %all_pdoms, $clusnum, $dom);
-    open my $in, '<', $clsfile or die "\nERROR: Could not open file: $clsfile\n";
+    open my $in, '<', $clsfile or die "\n[ERROR]: Could not open file: $clsfile\n";
 
     while (my $line = <$in>) {
         chomp $line;

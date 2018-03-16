@@ -110,7 +110,7 @@ sub calculate_ltr_ages {
     my $t0 = gettimeofday();
     my $ltrrts  = 0;
     my $logfile = File::Spec->catfile($resdir, 'all_aln_reports.log');
-    open my $logfh, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
+    open my $logfh, '>>', $logfile or die "\n[ERROR]: Could not open file: $logfile\n";
     
     my $pm = Parallel::ForkManager->new($threads);
     local $SIG{INT} = sub {
@@ -144,7 +144,7 @@ sub calculate_ltr_ages {
     my @agefiles;
     find( sub { push @agefiles, $File::Find::name if -f and /divergence.txt$/ and -s }, $resdir );
 
-    open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
     say $out join "\t", "LTR-ID", "Divergence", "Age", "Ts:Tv";
 
     for my $file (@agefiles) {
@@ -193,11 +193,11 @@ sub collect_feature_args {
 	}
 	else {
 	    unless (-e $self->gff) {
-		croak "\nERROR: No exemplar files were found in the input directory ".
+		croak "\n[ERROR]: No exemplar files were found in the input directory ".
 		    "and the input GFF file does not appear to exist. Exiting.\n";
 	    }
 
-	    warn "\nWARNING: No exemplar files were found in the input directory. LTR age will be ".
+	    warn "\n[WARNING]: No exemplar files were found in the input directory. LTR age will be ".
 		"calculated from LTR-RT elements in the input GFF.\n";
 
 	    my ($files, $wdir) = $self->extract_ltr_features;
@@ -259,10 +259,10 @@ sub extract_ltr_features {
 	my ($seq_id, $type, $start, $end) = split /\|\|/, $ltrs{$ltr}{'full'};
 	my $ltr_file = join "_", $family, $element, $seq_id, $start, $end, 'ltrs.fasta';
 	my $ltrs_out = File::Spec->catfile($dir, $ltr_file);
-	die "\nERROR: $ltrs_out exists. This will cause problems downstream. Please remove the previous ".
+	die "\n[ERROR]: $ltrs_out exists. This will cause problems downstream. Please remove the previous ".
 	    "results and try again. Exiting.\n" if -e $ltrs_out;
 	push @files, $ltrs_out;
-	open my $ltrs_outfh, '>>', $ltrs_out or die "\nERROR: Could not open file: $ltrs_out\n";
+	open my $ltrs_outfh, '>>', $ltrs_out or die "\n[ERROR]: Could not open file: $ltrs_out\n";
 
 	for my $ltr_repeat (@{$ltrs{$ltr}{'ltrs'}}) {
 	    #ltr: Contig57_HLAC-254L24||long_terminal_repeat||60101||61950||+
@@ -312,11 +312,11 @@ sub process_baseml_args {
     else {
 	my $element = basename($phy);
 	$element =~ s/_ltrs_muscle-out.*//;
-	open my $divout, '>', $divfile or die "\nERROR: Could not open divergence file: $divfile\n";
+	open my $divout, '>', $divfile or die "\n[ERROR]: Could not open divergence file: $divfile\n";
 	say $divout join "\t", $element, $divergence , '0', '0';
 	close $divout;
 	my $dest_file = File::Spec->catfile($resdir, $divfile);
-	copy($divfile, $dest_file) or die "\nERROR: Copy failed: $!";
+	copy($divfile, $dest_file) or die "\n[ERROR]: Copy failed: $!";
 	unlink $divfile;
     }
 }
@@ -330,7 +330,7 @@ sub process_align_args {
     make_path( $pdir, {verbose => 0, mode => 0771,} );
 
     my $fas = File::Spec->catfile($pdir, $name.$suffix);
-    copy($db, $fas) or die "\nERROR: Copy failed: $!";
+    copy($db, $fas) or die "\n[ERROR]: Copy failed: $!";
     unlink $db;
 
     my $tre  = File::Spec->catfile($pdir, $name.'.dnd');
@@ -390,7 +390,7 @@ sub subseq {
     my $location = "$loc:$start-$end";
     my ($seq, $length) = $index->get_sequence($location);
 
-    croak "\nERROR: Something went wrong, this is a bug. Please report it.\n"
+    croak "\n[ERROR]: Something went wrong, this is a bug. Please report it.\n"
         unless $length;
 
     my $id;
@@ -406,7 +406,7 @@ sub collate {
     my ($file_in, $fh_out) = @_;
     my $lines = do { 
 	local $/ = undef; 
-	open my $fh_in, '<', $file_in or die "\nERROR: Could not open file: $file_in\n";
+	open my $fh_in, '<', $file_in or die "\n[ERROR]: Could not open file: $file_in\n";
 	<$fh_in>;
     };
     print $fh_out $lines;
@@ -418,14 +418,14 @@ sub _get_exemplar_ltrs {
 
     my (@dirs, @ltrseqs);
     find( sub { push @dirs, $File::Find::name if -d && /_copia\z|_gypsy\z|_unclassified\z/ }, $dir);
-    croak "\nERROR: Could not find the expected sub-directories ending in 'copia', 'gypsy' and 'unclassified'. Please ".
+    croak "\n[ERROR]: Could not find the expected sub-directories ending in 'copia', 'gypsy' and 'unclassified'. Please ".
         "check input. Exiting.\n" unless @dirs;
 
     for my $sfdir (@dirs) {
 	my ($ltrfile, %ltrfams);
 	find( sub { $ltrfile = $File::Find::name if -f and /exemplar_repeats.fasta$/ }, $sfdir);
 	unless (defined $ltrfile) {
-	    say STDERR "\nWARNING: No exemplar LTR file was found in: $sfdir.";
+	    say STDERR "\n[WARNING]: No exemplar LTR file was found in: $sfdir.";
 	    say STDERR "This is likely because there were no families identified by the 'classifyltrs' command for this superfamily.";
 	    say STDERR "You can try the 'ltrage' command again with the --all flag to process all LTR-RTs.\n";
 	    next;
@@ -445,7 +445,7 @@ sub _get_exemplar_ltrs {
 	
 	for my $family (keys %ltrfams) {
 	    my $outfile = File::Spec->catfile($dir, $family.'_exemplar_ltrseqs.fasta');
-	    open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+	    open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 	    for my $pair (@{$ltrfams{$family}}) {
 		say $out join "\n", ">".$pair->{id}, $pair->{seq};
 	    }

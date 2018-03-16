@@ -43,11 +43,11 @@ sub validate_args {
         $self->help and exit(0);
     }
     elsif (!$opt->{genome} || !$opt->{gff}) {
-	say STDERR "\nERROR: Required arguments not given.\n";
+	say STDERR "\n[ERROR]: Required arguments not given.\n";
 	$self->help and exit(0);
     }
     elsif (! -e $opt->{genome}) {
-        say STDERR "\nERROR: The genome file does not exist. Check arguments.\n";
+        say STDERR "\n[ERROR]: The genome file does not exist. Check arguments.\n";
         $self->help and exit(0);
     }
 } 
@@ -95,7 +95,7 @@ sub _run_nonltr_search {
 	return ($obj, $sf_elem_map);
     }
     else {
-	say STDERR "\nWARNING: No non-LTR elements were found so none will be reported.\n";
+	say STDERR "\n[WARNING]: No non-LTR elements were found so none will be reported.\n";
 	return (undef, undef);
     }
 }
@@ -122,7 +122,7 @@ sub _find_nonltr_families {
         my ($gname, $gpath, $gsuffix) = fileparse($opt->{genome}, qr/\.[^.]*/);
         $logfile = File::Spec->catfile( abs_path($gpath), $gname.'_tephra_findnonltrs.log' );
         $log = $anno_obj->get_tephra_logger($logfile);
-        say STDERR "\nWARNING: '--logfile' option not given so results will be appended to: $logfile.\n";
+        say STDERR "\n[WARNING]: '--logfile' option not given so results will be appended to: $logfile.\n";
     }
 
     my $blast_report = $anno_obj->process_blast_args;
@@ -147,9 +147,9 @@ sub _find_nonltr_families {
 	unlink @{$obj}{qw(fasta gff)};
     }
     else {
-	say STDERR "\nWARNING: No BLAST hits were found so no non-LTR families could be determined.\n";
-        move $obj->{fasta}, $fasta or die "\nERROR: move failed: $!\n";
-        move $obj->{gff}, $opt->{gff} or die "\nERROR: move failed: $!\n";
+	say STDERR "\n[WARNING]: No BLAST hits were found so no non-LTR families could be determined.\n";
+        move $obj->{fasta}, $fasta or die "\n[ERROR]: move failed: $!\n";
+        move $obj->{gff}, $opt->{gff} or die "\n[ERROR]: move failed: $!\n";
     }
 }
 

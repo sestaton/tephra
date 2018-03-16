@@ -99,7 +99,7 @@ sub _fasta_to_gff {
     my %regions;
     for my $file (@$seqs) {
 	my ($name, $path, $suffix) = fileparse($file, qr/\.[^.]*/);
-	open my $in, '<', $file or die "\nERROR: Could not open file: $file\n";
+	open my $in, '<', $file or die "\n[ERROR]: Could not open file: $file\n";
 	while (my $line = <$in>) {
 	    chomp $line;
 	    if ($line =~ /^>/) {
@@ -108,7 +108,7 @@ sub _fasta_to_gff {
 		    $regions{$name}{$id}{$start} = join "||", $start, $end, $strand;
 		}
 		else {
-		    warn "\nERROR: Could not parse sequence ID for header: '$line'. ".
+		    warn "\n[ERROR]: Could not parse sequence ID for header: '$line'. ".
 			"This is a bug, please report it.\n";
 		}
 	    }
@@ -129,7 +129,7 @@ sub _fasta_to_gff {
 	    }
 	}
 	else {
-	    say STDERR "\nERROR: Could not find $name in map.\n";
+	    say STDERR "\n[ERROR]: Could not find $name in map.\n";
 	}
     }
 
@@ -177,7 +177,7 @@ sub _get_seq_region {
     my (@seqs, %lens);
     find( sub { push @seqs, $File::Find::name if -f and /\.fa.*$/ }, $fasdir );
     my $combined = File::Spec->catfile( abs_path($fasdir), 'tephra_all_genome_seqs.fas' );
-    open my $out, '>', $combined or die "\nERROR: Could not open file: $combined\n";
+    open my $out, '>', $combined or die "\n[ERROR]: Could not open file: $combined\n";
     
     for my $seq (nsort @seqs) {
 	$self->_collate($seq, $out);
@@ -252,7 +252,7 @@ sub _collate {
     my ($file_in, $fh_out) = @_;
     my $lines = do { 
         local $/ = undef; 
-        open my $fh_in, '<', $file_in or die "\nERROR: Could not open file: $file_in\n";
+        open my $fh_in, '<', $file_in or die "\n[ERROR]: Could not open file: $file_in\n";
         <$fh_in>;
     };
     print $fh_out $lines;

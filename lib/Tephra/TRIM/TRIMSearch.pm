@@ -70,7 +70,7 @@ sub trim_search {
 	@ltrh_args = ("yes","4","6","70","500","280","1500","85","10",$index,$ltrh_gff);
     }
     else {
-	say STDERR "\nERROR: Could not get 'mode' for TRIM search. This is a bug, please report it. Exiting.\n";
+	say STDERR "\n[ERROR]: Could not get 'mode' for TRIM search. This is a bug, please report it. Exiting.\n";
 	exit(1);
     }
 

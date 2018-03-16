@@ -47,8 +47,8 @@ SKIP: {
     make_path( $ltrcdir, {verbose => 0, mode => 0771,} );
     make_path( $cresdir, {verbose => 0, mode => 0771,} );
     make_path( $gresdir, {verbose => 0, mode => 0771,} );
-    copy $ctestfile, $cresdir or die "\nERROR: copy failed $!";
-    copy $gtestfile, $gresdir or die "\nERROR: copy failed $!";
+    copy $ctestfile, $cresdir or die "\n[ERROR]: copy failed $!";
+    copy $gtestfile, $gresdir or die "\n[ERROR]: copy failed $!";
 
     my @all_cmd = ($cmd, 'all', '-c', $config);
     say STDERR join q{ }, @all_cmd;

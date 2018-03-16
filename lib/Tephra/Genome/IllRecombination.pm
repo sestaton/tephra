@@ -119,7 +119,7 @@ sub align_features {
 
     my ($name, $path, $suffix) = fileparse($infile, qr/\.[^.]*/);
     my $logfile = File::Spec->catfile( abs_path($path), 'all_illrecomb_muscle_reports.log' );
-    open my $log, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
+    open my $log, '>>', $logfile or die "\n[ERROR]: Could not open file: $logfile\n";
 
     my $pm = Parallel::ForkManager->new($threads);
     local $SIG{INT} = sub {
@@ -131,7 +131,7 @@ sub align_features {
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			      unlink $data_ref->{data}{seqs}, unlink $data_ref->{data}{log};
 			      if ($data_ref->{status} =~ /failed/i) {
-				  say $log "WARNING: ",basename($ident), " failed with exit code: $exit_code";
+				  say $log "[WARNING]: ",basename($ident), " failed with exit code: $exit_code";
 			      }
 			      else {
 				  my $t1 = gettimeofday();
@@ -201,8 +201,8 @@ sub find_align_gaps {
     my (@indels, @flanking_seqs);
 
     my $cwd = getcwd();
-    open my $illrecstat_fh, '>>', $illrecstatsfile or die "\nERROR: Could not open file: $!";
-    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    open my $illrecstat_fh, '>>', $illrecstatsfile or die "\n[ERROR]: Could not open file: $!";
+    open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 
     my ($seqs_in_aln, $count) = $self->split_aln($aln_file);
 
@@ -211,7 +211,7 @@ sub find_align_gaps {
 
 	my ($fname, $fpath, $fsuffix) = fileparse($fas, qr/\.[^.]*/);
 	my $seq_out = File::Spec->catfile( abs_path($fpath), $fname.'_gap_flanking_sequences.fasta' );
-	open my $each_out, '>>', $seq_out or die "\nERROR: Could not open file: $seq_out\n";
+	open my $each_out, '>>', $seq_out or die "\n[ERROR]: Could not open file: $seq_out\n";
 
 	while ( my $aln = $aln_in->next_aln() ) {
 	    my $aln_len = $aln->length;
@@ -246,11 +246,11 @@ sub find_align_gaps {
 		my $downstream_epos = $indel_epos + 20;
 
 		if ($upstream_spos < 1 || $upstream_epos > $aln_len) {
-		    #say STDERR "WARNING: Deletion $del has a flanking repeat out of bounds.";
+		    #say STDERR "[WARNING]: Deletion $del has a flanking repeat out of bounds.";
 		    next;
 		}
 		if ($downstream_epos > $aln_len) {
-		    #say STDERR "WARNING: Deletion $del has the downstream flanking repeat out of bounds.";
+		    #say STDERR "[WARNING]: Deletion $del has the downstream flanking repeat out of bounds.";
 		    last;
 		}
 
@@ -314,7 +314,7 @@ sub split_aln {
 				 UNLINK   => 0,
 				 SUFFIX   => '.fasta');
 
-    open my $out, '>', $fname or die "\nERROR: Could not open file: $fname\n";
+    open my $out, '>', $fname or die "\n[ERROR]: Could not open file: $fname\n";
 
     push @split_files, $fname;
     while (my $seq = $iter->next_seq) {
@@ -326,7 +326,7 @@ sub split_aln {
 				      UNLINK   => 0,
 				      SUFFIX   => '.fasta');
 
-	    open $out, '>', $fname or die "\nERROR: Could not open file: $fname\n";
+	    open $out, '>', $fname or die "\n[ERROR]: Could not open file: $fname\n";
 	    push @split_files, $fname;
 	}
 	say $out join "\n", '>'.$seq->name, $seq->seq;
@@ -400,7 +400,7 @@ sub bl2seq_compare {
     
     while ( my $result = $bl2seq_report->next_result ) {
 	if ($result->num_hits == 0) {
-	    #warn "WARNING: No hits found.";
+	    #warn "[WARNING]: No hits found.";
 	    unlink $outfile;
 	    return;
 	}
@@ -490,7 +490,7 @@ sub collate {
     my $self = shift;
     my ($file_in, $fh_out) = @_;
     
-    open my $fh_in, '<', $file_in or die "\nERROR: Could not open file: $file_in\n";
+    open my $fh_in, '<', $file_in or die "\n[ERROR]: Could not open file: $file_in\n";
 
     while (my $line = <$fh_in>) {
 	chomp $line;
@@ -502,7 +502,7 @@ sub collate_gap_stats {
     my $self = shift;
     my ($gap_stats, $statsfile) = @_;
 
-    open my $gap_stats_fh_out, '>', $statsfile or die "\nERROR: Could not open file: $statsfile\n";
+    open my $gap_stats_fh_out, '>', $statsfile or die "\n[ERROR]: Could not open file: $statsfile\n";
     
     say $gap_stats_fh_out join "\t", "Family_name", "Total_fam_gap_count", "Total_length_of_gaps", 
         "Mean_fam_gap_count (stddev)", "Mean_fam_gap_size (stddev)", "Mean_fam_gap_perc (stdev)", 
@@ -594,7 +594,7 @@ sub _filter_families_by_size {
                 say $fout join "\n",">$id", $seq;
             }
             else {
-                open $fout, '>', $foutfile or die "\nERROR: Could not open file: $foutfile\n";
+                open $fout, '>', $foutfile or die "\n[ERROR]: Could not open file: $foutfile\n";
                 say $fout join "\n", ">$id", $seq;
                 push @seqs, $foutfile;
             }

@@ -42,7 +42,7 @@ sub validate_args {
         $self->help and exit(0);
     }
     elsif (!$opt->{genome} || !$opt->{gff}) {
-	say STDERR "\nERROR: Required arguments not given.\n";
+	say STDERR "\n[ERROR]: Required arguments not given.\n";
 	$self->help and exit(0);
     }
 } 
@@ -109,7 +109,7 @@ sub _find_helitron_families {
         my ($gname, $gpath, $gsuffix) = fileparse($opt->{genome}, qr/\.[^.]*/);
         $logfile = File::Spec->catfile( abs_path($gpath), $gname.'_tephra_findhelitrons.log' );
         $log = $anno_obj->get_tephra_logger($logfile);
-        say STDERR "\nWARNING: '--logfile' option not given so results will be appended to: $logfile.";
+        say STDERR "\n[WARNING]: '--logfile' option not given so results will be appended to: $logfile.";
     }
 
     my $blast_report = $anno_obj->process_blast_args;
@@ -134,9 +134,9 @@ sub _find_helitron_families {
 	unlink @{$hel_obj}{qw(fasta gff)};
     }
     else {
-	say "\nWARNING: No BLAST hits were found so no Helitron families could be determined.\n";
-	move $hel_obj->{fasta}, $fasta or die "\nERROR: move failed: $!\n";
-	move $hel_obj->{gff}, $opt->{gff} or die "\nERROR: move failed: $!\n";
+	say "\n[WARNING]: No BLAST hits were found so no Helitron families could be determined.\n";
+	move $hel_obj->{fasta}, $fasta or die "\n[ERROR]: move failed: $!\n";
+	move $hel_obj->{gff}, $opt->{gff} or die "\n[ERROR]: move failed: $!\n";
     }
 }
 

@@ -82,15 +82,15 @@ sub make_exemplars {
     #my ($sf) = ($dir =~ /_(\w+)$/);
     my ($sf) = ($dir =~ /_((?:\w+\d+\-)?\w+)$/);
     unless (defined $sf) {
-        say STDERR "\nERROR: Can't get sf from $dir $.";
+        say STDERR "\n[ERROR]: Can't get sf from $dir $.";
     }
 
     my $exemcomp = File::Spec->catfile($dir, $sf.'_exemplar_complete.fasta');
     my $ltrs_out = File::Spec->catfile($dir, $sf.'_exemplar_repeats.fasta');
 
-    open my $allfh, '>>', $exemcomp or die "\nERROR: Could not open file: $exemcomp\n";
-    open my $ltrs_outfh, '>>', $ltrs_out or die "\nERROR: Could not open file: $ltrs_out\n";
-    open my $gffio, '<', $gff or die "\nERROR: Could not open file: $gff\n";
+    open my $allfh, '>>', $exemcomp or die "\n[ERROR]: Could not open file: $exemcomp\n";
+    open my $ltrs_outfh, '>>', $ltrs_out or die "\n[ERROR]: Could not open file: $ltrs_out\n";
+    open my $gffio, '<', $gff or die "\n[ERROR]: Could not open file: $gff\n";
 
     my ($source_id, $type, $strand, $exemplar_id_form, 
 	$start, $end, $source, $elem_id, $key, $full_feats, 
@@ -241,7 +241,7 @@ sub parse_vmatch {
     my ($vmerSearchOut) = @_;
 
     my %matches;
-    open my $in, '<', $vmerSearchOut or die "\nERROR: Could not open file: $vmerSearchOut\n";
+    open my $in, '<', $vmerSearchOut or die "\n[ERROR]: Could not open file: $vmerSearchOut\n";
     while (my $line = <$in>) {
 	chomp $line;
 	next if $line =~ /^#/;
@@ -262,7 +262,7 @@ sub subseq {
     my $location = "$loc:$start-$end";
     my ($seq, $length) = $index->get_sequence($location);
 
-    croak "\nERROR: Something went wrong, this is a bug. Please report it.\n"
+    croak "\n[ERROR]: Something went wrong, this is a bug. Please report it.\n"
 	unless $length;
 
     my $id;

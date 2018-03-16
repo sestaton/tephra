@@ -93,7 +93,7 @@ sub ltr_search {
 		      $swmis,$swins,$swdel,$ltrh_gff);
     }
     else {
-	say STDERR "\nERROR: Could not get 'mode' for LTR search. This is a bug, please report it. Exiting.\n";
+	say STDERR "\n[ERROR]: Could not get 'mode' for LTR search. This is a bug, please report it. Exiting.\n";
         exit(1);
     }
 

@@ -28,7 +28,7 @@ sub run_cmd {
         system([0..5], $cmd);
     }
     catch {
-        die "\nERROR: $cmd failed. Here is the exception: $_\n";
+        die "\n[ERROR]: $cmd failed. Here is the exception: $_\n";
     };
 }
 
@@ -44,7 +44,7 @@ sub capture_cmd {
         if ($err =~ /SEGV/) {
             return 'failed';
         }
-        die "\nERROR: $cmd failed. Here is the exception: $_\n";
+        die "\n[ERROR]: $cmd failed. Here is the exception: $_\n";
     };
 }
 

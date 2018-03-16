@@ -445,12 +445,12 @@ sub make_combined_repeatdb {
                                           SUFFIX   => '.gff3',
                                           UNLINK   => 0);
     my $customRepGFF = $customRepGFFfh->filename;
-    open my $out, '>', $customRepDB or die "\nERROR: Could not open file: $customRepDB\n";
+    open my $out, '>', $customRepDB or die "\n[ERROR]: Could not open file: $customRepDB\n";
 
     for my $file (@$fas_files) {
         my $lines = do { 
             local $/ = undef; 
-            open my $fh_in, '<', $file or die "\nERROR: Could not open file: $file\n";
+            open my $fh_in, '<', $file or die "\n[ERROR]: Could not open file: $file\n";
             <$fh_in>;
         };
         print $out $lines;
@@ -562,7 +562,7 @@ sub combine_age_files {
 
     my ($famname, %families, %ages);
     for my $fasta (@$fastas) {
-        open my $in, '<', $fasta or die "\nERROR: Could not open file: $fasta\n";
+        open my $in, '<', $fasta or die "\n[ERROR]: Could not open file: $fasta\n";
         
         while (my $line = <$in>) {
             chomp $line;
@@ -576,7 +576,7 @@ sub combine_age_files {
     }
 
     for my $agefile (@$ages) { 
-        open my $tab, '<', $agefile or die "\nERROR: Could not open file: $agefile\n";
+        open my $tab, '<', $agefile or die "\n[ERROR]: Could not open file: $agefile\n";
         
         while (my $line = <$tab>) {
             chomp $line;
@@ -594,7 +594,7 @@ sub combine_age_files {
         close $tab;
     }
 
-    open my $out, '>', $age_sum or die "\nERROR: Could not open file: $age_sum\n";
+    open my $out, '>', $age_sum or die "\n[ERROR]: Could not open file: $age_sum\n";
     say $out join "\t", 'Superfamily', 'Family', 'Family_size', 'ElementID', 'Divergence', 'Age', 'Ts:Tv';
 
     my $ct = 0;
@@ -637,7 +637,7 @@ sub make_temp_reference_for_masking {
                                  SUFFIX   => '.fasta',
                                  UNLINK   => 0);
     my $tmp_file = $tmpfh->filename;
-    open my $out, '>', $tmpfh or die "\nERROR: Could not open file: $tmp_file\n";
+    open my $out, '>', $tmpfh or die "\n[ERROR]: Could not open file: $tmp_file\n";
 
     my $kseq = Bio::DB::HTS::Kseq->new($ltr_fas);
     my $iter = $kseq->iterator;

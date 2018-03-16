@@ -103,7 +103,7 @@ sub collect_features {
     my (%features, %intervals, %coord_map);
     my ($source, $seq_id, $start, $end, $length, $region);
 
-    open my $gffio, '<', $gff or die "\nERROR: Could not open file: $gff\n";
+    open my $gffio, '<', $gff or die "\n[ERROR]: Could not open file: $gff\n";
 
     while (my $line = <$gffio>) {
 	chomp $line;
@@ -336,7 +336,7 @@ sub summarize_features {
 	$has_pdoms++ if $feat->{type} eq 'protein_match';
     }
 
-    croak "\nERROR: 'ltr_similarity' is not defined in GFF3. This is a bug, please report it.\n"
+    croak "\n[ERROR]: 'ltr_similarity' is not defined in GFF3. This is a bug, please report it.\n"
 	unless defined $ltr_sim;
     $tsd_eq = 1 if $five_pr_tsd == $three_pr_tsd;
 
@@ -409,7 +409,7 @@ sub get_ltr_score_dups {
 		$best_element{$source}{$best_score_key} = $allfeatures->{$source}{$best_score_key};
 	    }
 	    else {
-		croak "\nERROR: Something went wrong....'$best_score_key' not found in hash. This is a bug, please report it.";
+		croak "\n[ERROR]: Something went wrong....'$best_score_key' not found in hash. This is a bug, please report it.";
 	    }
 	}
 	elsif (@{$sccounts{ $scores->{$source}{$best_score_key} }} >= 1 && 
@@ -423,7 +423,7 @@ sub get_ltr_score_dups {
 		$best_element{$source}{$best} = $allfeatures->{$source}{$best};
 	    }
 	    else {
-		croak "\nERROR: Something went wrong....'$best' not found in hash. This is a bug, please report it.";
+		croak "\n[ERROR]: Something went wrong....'$best' not found in hash. This is a bug, please report it.";
 	    }
 	}
     }
@@ -475,7 +475,7 @@ sub reduce_features {
 	my $lname = $self->is_trim ? 'tephra_findtrims.log' : 'tephra_findltrs.log';
 	$logfile = File::Spec->catfile( abs_path($path), $name.'_'.$lname );
 	$log = $self->get_tephra_logger($logfile);
-	say STDERR "\nWARNING: '--logfile' option not given so results will be appended to: $logfile.";
+	say STDERR "\n[WARNING]: '--logfile' option not given so results will be appended to: $logfile.";
     }
 
     my ($relaxed_features, $strict_features, $best_elements)
@@ -600,18 +600,18 @@ sub sort_features {
         $logfile = File::Spec->catfile( abs_path($path), $name.'_'.$lname );
         $log = $self->get_tephra_logger($logfile);
 	#no need to print warning twice
-        #say STDERR "\nWARNING: '--logfile' option not given so results will be appended to: $logfile.";
+        #say STDERR "\n[WARNING]: '--logfile' option not given so results will be appended to: $logfile.";
     }
 
-    open my $ofas, '>>', $outfasta or die "\nERROR: Could not open file: $outfasta\n";
+    open my $ofas, '>>', $outfasta or die "\n[ERROR]: Could not open file: $outfasta\n";
 
     my ($elem_tot, $count) = (0, 1);
     if (defined $combined_features) {
 	#dd $combined_features;
-	open my $ogff, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+	open my $ogff, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 
 	my ($header, %features);
-	open my $in, '<', $gff or die "\nERROR: Could not open file: $gff\n";
+	open my $in, '<', $gff or die "\n[ERROR]: Could not open file: $gff\n";
 	while (my $line = <$in>) {
 	    chomp $line;
 	    if ($line =~ /^##\w+/) {
@@ -624,7 +624,7 @@ sub sort_features {
 	close $in;
 
 	if (not defined $header) {
-	    say STDERR "\nWARNING: Could not get sequence region from $gff.\n";
+	    say STDERR "\n[WARNING]: Could not get sequence region from $gff.\n";
 	}
 	else {
 	    chomp $header;
@@ -688,7 +688,7 @@ sub sort_features {
 	$log->info("Results - Total elements written:$pad",$elem_tot);
     }
     else {
-	open my $in, '<', $gff, or die "\nERROR: Could not open file: $gff\n";
+	open my $in, '<', $gff, or die "\n[ERROR]: Could not open file: $gff\n";
 	while (my $line = <$in>) {
 	    chomp $line;
 	    next if $line =~ /^#/;
@@ -711,7 +711,7 @@ sub sort_features {
 	}
 	close $in;
 
-	move $gff, $outfile or die "\nERROR: move failed: $!\n";
+	move $gff, $outfile or die "\n[ERROR]: move failed: $!\n";
 	#say STDERR "\nTotal elements written: $elem_tot";
 	#$log->info("Results - Total elements written: $elem_tot");
 	my $pad = ' ' x 51;

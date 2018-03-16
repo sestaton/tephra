@@ -55,7 +55,7 @@ sub find_hmmsearch {
                         return $hmmsearch;
                     }
                     else {
-                        croak "\nERROR: HMMER version 2 is required but was not found. Exiting.\n";
+                        croak "\n[ERROR]: HMMER version 2 is required but was not found. Exiting.\n";
                     }
                 }
             }

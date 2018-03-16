@@ -111,7 +111,7 @@ sub calculate_tir_ages {
     my $t0 = gettimeofday();
     my $tirts = 0;
     my $logfile = File::Spec->catfile( abs_path($resdir), 'all_aln_reports.log' );
-    open my $logfh, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
+    open my $logfh, '>>', $logfile or die "\n[ERROR]: Could not open file: $logfile\n";
     
     my $pm = Parallel::ForkManager->new($threads);
     local $SIG{INT} = sub {
@@ -145,7 +145,7 @@ sub calculate_tir_ages {
     my @agefiles;
     find( sub { push @agefiles, $File::Find::name if -f and /divergence.txt$/ and -s }, $resdir );
 
-    open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
     say $out join "\t", "TIR-ID", "Divergence", "Age", "Ts:Tv";
 
     for my $file (@agefiles) {
@@ -195,11 +195,11 @@ sub collect_feature_args {
 	}
 	else {
 	    unless (-e $self->gff) {
-		croak "\nERROR: No exemplar files were found in the input directory ".
+		croak "\n[ERROR]: No exemplar files were found in the input directory ".
 		    "and the input GFF file does not appear to exist. Exiting.\n";
 	    }
 
-	    warn "\nWARNING: No exemplar files were found in the input directory. TIR age will be ".
+	    warn "\n[WARNING]: No exemplar files were found in the input directory. TIR age will be ".
 		"calculated from TIR elements in the input GFF.\n";
 
 	    my ($files, $wdir) = $self->extract_tir_features;
@@ -264,10 +264,10 @@ sub extract_tir_features {
 	my ($seq_id, $type, $start, $end) = split /\|\|/, $tirs{$tir}{'full'};
 	my $tir_file = join "_", $family, $element, $seq_id, $start, $end, 'tirs.fasta';
 	my $tirs_out = File::Spec->catfile($dir, $tir_file);
-	die "\nERROR: $tirs_out exists. This will cause problems downstream. Please remove the previous ".
+	die "\n[ERROR]: $tirs_out exists. This will cause problems downstream. Please remove the previous ".
 	    "results and try again. Exiting.\n" if -e $tirs_out;
 	push @files, $tirs_out;
-	open my $tirs_outfh, '>>', $tirs_out or die "\nERROR: Could not open file: $tirs_out\n";
+	open my $tirs_outfh, '>>', $tirs_out or die "\n[ERROR]: Could not open file: $tirs_out\n";
 
 	for my $tir_repeat (@{$tirs{$tir}{'tirs'}}) {
 	    #Contig57_HLAC-254L24||terminal_inverted_repeat||60101||61950||+
@@ -317,11 +317,11 @@ sub process_baseml_args {
     else {
 	my $element = basename($phy);
 	$element =~ s/_tirs_muscle-out.*//;
-	open my $divout, '>', $divfile or die "\nERROR: Could not open divergence file: $divfile\n";
+	open my $divout, '>', $divfile or die "\n[ERROR]: Could not open divergence file: $divfile\n";
 	say $divout join "\t", $element, $divergence , '0', '0';
 	close $divout;
 	my $dest_file = File::Spec->catfile( abs_path($resdir), $divfile );
-	copy($divfile, $dest_file) or die "\nERROR: Copy failed: $!";
+	copy($divfile, $dest_file) or die "\n[ERROR]: Copy failed: $!";
 	unlink $divfile;
     }
 }
@@ -338,7 +338,7 @@ sub process_align_args {
     make_path( $pdir, {verbose => 0, mode => 0771,} );
 	
     my $fas = File::Spec->catfile( abs_path($pdir), $name.$suffix );
-    copy($db, $fas) or die "\nERROR: Copy failed: $!";
+    copy($db, $fas) or die "\n[ERROR]: Copy failed: $!";
     my $tre  = File::Spec->catfile( abs_path($pdir), $name.'.dnd' );
     my $aln  = File::Spec->catfile( abs_path($pdir), $name.'_muscle-out.aln' );
     my $dnd  = File::Spec->catfile( abs_path($pdir), $name.'_muscle-out.dnd' );
@@ -396,7 +396,7 @@ sub subseq {
     my $location = "$loc:$start-$end";
     my ($seq, $length) = $index->get_sequence($location);
 
-    croak "\nERROR: Something went wrong, this is a bug. Please report it.\n"
+    croak "\n[ERROR]: Something went wrong, this is a bug. Please report it.\n"
         unless $length;
 
     # need to reverse-complement the inverted seq
@@ -415,7 +415,7 @@ sub collate {
     my ($file_in, $fh_out) = @_;
     my $lines = do { 
 	local $/ = undef; 
-	open my $fh_in, '<', $file_in or die "\nERROR: Could not open file: $file_in\n";
+	open my $fh_in, '<', $file_in or die "\n[ERROR]: Could not open file: $file_in\n";
 	<$fh_in>;
     };
     print $fh_out $lines;
@@ -446,7 +446,7 @@ sub _revcom {
 	return $revcom;
     }
     else {
-	say STDERR "\nWARNING: Not going to reverse protein sequence.";
+	say STDERR "\n[WARNING]: Not going to reverse protein sequence.";
 	return $seq;
     }
 }

@@ -36,11 +36,11 @@ sub validate_args {
         $self->help and exit(0);
     }
     elsif (!$opt->{infile} || !$opt->{outfile} || !$opt->{statsfile}) {
-	say STDERR "\nERROR: Required arguments not given.\n";
+	say STDERR "\n[ERROR]: Required arguments not given.\n";
 	$self->help and exit(0);
     }
     elsif (! -e $opt->{infile}) {
-	say STDERR "\nERROR: Input file does not exist. Check arguments.\n";
+	say STDERR "\n[ERROR]: Input file does not exist. Check arguments.\n";
 	$self->help and exit(0);
     }
 }

@@ -314,7 +314,7 @@ sub _errorlog_to_string {
 
     my $lines = do {
 	local $/ = undef;
-	open my $in, '<', $log or die "\nERROR: Could not open file: $log\n";
+	open my $in, '<', $log or die "\n[ERROR]: Could not open file: $log\n";
 	<$in>;
     };
     unlink $log;
@@ -349,7 +349,7 @@ sub _build_gt_exec {
     }
     else {
         #$log->error("Unable to find 'gt' executable. Make sure genometools is installed. Exiting.");
-	say STDERR "\nERROR: Unable to find 'gt' executable. Make sure genometools is installed. Exiting.\n";
+	say STDERR "\n[ERROR]: Unable to find 'gt' executable. Make sure genometools is installed. Exiting.\n";
         exit(1);
     }
 }

@@ -35,7 +35,7 @@ sub validate_args {
         $self->help and exit(0);
     }
     elsif (!$opt->{infile} || !$opt->{repeatdb} || !$opt->{outfile}) {
-	say STDERR "\nERROR: Required arguments not given.\n";
+	say STDERR "\n[ERROR]: Required arguments not given.\n";
 	$self->help and exit(0);
     }
 } 

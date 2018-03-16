@@ -234,7 +234,7 @@ sub _validate_params {
 	    elsif (not defined $v) {
 	    #if ($cmd ne 'all' && ! defined $v) {
 		#elsif (not defined $v && $cmd ne 'all') {
-		die "[ERROR]: '$opt' under '$cmd' is not defined after parsing configuration file.\n".
+		die "[[ERROR]]: '$opt' under '$cmd' is not defined after parsing configuration file.\n".
 		    "         This indicates there may be a blank line in your configuration file.\n".
 		    "         Please check your configuration file and try again. Exiting.\n";
 	    }
@@ -255,7 +255,7 @@ sub get_all_opts {
         $genome = $config->{all}{genome};
     }
     else {
-        say STDERR "\nERROR: genome file was not defined in configuration or does not exist. Check input. Exiting.\n";
+        say STDERR "\n[ERROR]: genome file was not defined in configuration or does not exist. Check input. Exiting.\n";
         exit(1);
     }
 
@@ -263,7 +263,7 @@ sub get_all_opts {
         $repeatdb = $config->{all}{repeatdb};
     }   
     else {
-        say STDERR "\nERROR: repeatdb file was not defined in configuration or does not exist. Check input. Exiting.\n";
+        say STDERR "\n[ERROR]: repeatdb file was not defined in configuration or does not exist. Check input. Exiting.\n";
         exit(1);
     }
 

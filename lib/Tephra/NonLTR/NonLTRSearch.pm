@@ -63,7 +63,7 @@ sub find_nonltrs {
 
     # Forward strand
     my $fasfiles = $self->_split_genome($genome, $genome_dir);
-    die "\nERROR: No FASTA files found in genome directory. Sequences must be over 50kb and less than 50% gaps. Exiting.\n" 
+    die "\n[ERROR]: No FASTA files found in genome directory. Sequences must be over 50kb and less than 50% gaps. Exiting.\n" 
 	if @$fasfiles == 0;
 
     say STDERR "Running forward..." if $self->verbose;
@@ -84,7 +84,7 @@ sub find_nonltrs {
     my $fpp_result = $pp->postprocess;
 
     unless ($fpp_result) {
-	say STDERR "\nWARNING: No non-LTR elements were found on the forward strand. Will search reverse strand.\n";
+	say STDERR "\n[WARNING]: No non-LTR elements were found on the forward strand. Will search reverse strand.\n";
     }
 
     # Backward strand
@@ -92,7 +92,7 @@ sub find_nonltrs {
 
     my $sequtils = Tephra::NonLTR::SeqUtils->new;
     my $revfasfiles = $sequtils->invert_seq($genome_dir, $minus_dna_dir);
-    die "\nERROR: No FASTA files found in genome directory. Sequences must be over 50kb and less than 50% gaps. Exiting.\n"
+    die "\n[ERROR]: No FASTA files found in genome directory. Sequences must be over 50kb and less than 50% gaps. Exiting.\n"
         if @$revfasfiles == 0;
     
     for my $file (sort @$revfasfiles) {
@@ -112,7 +112,7 @@ sub find_nonltrs {
     my $bpp_result = $pp_rev->postprocess;
 
     unless ($bpp_result) {
-        say STDERR "\nWARNING: No non-LTR elements were found on the reverse strand.\n";
+        say STDERR "\n[WARNING]: No non-LTR elements were found on the reverse strand.\n";
     }
  
     if (!$fpp_result && !$bpp_result) { 
@@ -154,7 +154,7 @@ sub _split_genome {
 	my $n_perc = sprintf("%.2f",($n_count/$seqlength)*100);
 	if ($seqlength >= $length_thresh && $n_perc <= $nperc_thresh) {
 	    my $outfile = File::Spec->catfile($genome_dir, $id.'.fasta');
-	    open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+	    open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 	    say $out join "\n", ">".$id, $seq;
 	    close $out;
 	    push @fasfiles, $outfile;

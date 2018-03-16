@@ -38,15 +38,15 @@ sub validate_args {
         $self->help and exit(0);
     }
     elsif (!$opt->{genome} || !$opt->{repeatdb}) {
-	say STDERR "\nERROR: Required arguments not given.\n";
+	say STDERR "\n[ERROR]: Required arguments not given.\n";
 	$self->help and exit(0);
     }
     elsif (! -e $opt->{genome}) {
-	say STDERR "\nERROR: The genome file does not exist. Check arguments.\n";
+	say STDERR "\n[ERROR]: The genome file does not exist. Check arguments.\n";
         $self->help and exit(0);
     }
     elsif (! -e $opt->{repeatdb}) {
-	say STDERR "\nERROR: The repeat database file does not exist. Check arguments.\n";
+	say STDERR "\n[ERROR]: The repeat database file does not exist. Check arguments.\n";
         $self->help and exit(0);
     }
 } 

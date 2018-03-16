@@ -170,7 +170,7 @@ sub fetch_gt_exes {
 		
 		system("tar xzf $dist") == 0 or die $!;
 		
-		move $ldist, $ldir or die "\nERROR: move failed: $!\n";
+		move $ldist, $ldir or die "\n[ERROR]: move failed: $!\n";
 		unlink $dist;
 	    }
 	}
@@ -210,7 +210,7 @@ sub fetch_vmatch_exes {
 		
 		system("tar xzf $dist") == 0 or die $!;
 		
-		move $ldist, $ldir or die "\nERROR: move failed: $!\n";
+		move $ldist, $ldir or die "\n[ERROR]: move failed: $!\n";
 		unlink $dist;
 	    }
 	}
@@ -280,7 +280,7 @@ sub fetch_blast {
     my $bdir = 'ncbi-blast+';
     system("tar xzf $file 2>&1 > /dev/null") == 0 or die $!;
     unlink $file if -e $file;
-    move $ldir, $bdir or die "\nERROR: move failed: $!\n";
+    move $ldir, $bdir or die "\n[ERROR]: move failed: $!\n";
     chdir $bdir or die $!;
 
     my $cwd = getcwd();
@@ -379,7 +379,7 @@ sub fetch_paml {
     my @results = capture { system('make', '-j4') };
     for my $l (split /^/, @results) {
         if ($l =~ /error/i) {
-            say STDERR "\nERROR: 'make' failed for PAML. Please report the error below. Exiting.\n";
+            say STDERR "\n[ERROR]: 'make' failed for PAML. Please report the error below. Exiting.\n";
             say STDERR @results;
         }
     }
@@ -482,7 +482,7 @@ sub fetch_htslib {
 
     $ENV{HTSLIB_DIR} = $libdir;
     #system("cpanm -q Bio::DB::HTS") == 0
-	#or die "Installing Bio::DB::HTS failed. Here is the HTSLIB_DIR: $libdir. ERROR: $!\n";
+	#or die "Installing Bio::DB::HTS failed. Here is the HTSLIB_DIR: $libdir. [ERROR]: $!\n";
     #system('cpanm', '-q', '-n', 'Bio::Root::Version') == 0
         #or die "BioPerl install failed: $!";
     #my @results = capture { system('cpanm', '-q', '-n', 'Bio::Root::Version') };

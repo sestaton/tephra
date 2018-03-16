@@ -105,7 +105,7 @@ Tephra is a command-line program only for now. The command `tephra` itself contr
 Typing a subcommand will show the usage of that command, for example:
 
     $ tephra findnonltrs
-    ERROR: Required arguments not given.
+    [ERROR]: Required arguments not given.
     
     USAGE: tephra findnonltrs [-h] [-m]
         -m --man      :   Get the manual entry for a command.

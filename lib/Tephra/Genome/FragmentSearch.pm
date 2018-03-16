@@ -86,7 +86,7 @@ sub find_transposon_fragments {
     my ($gname, $gpath, $gsuffix) = fileparse($genome, qr/\.[^.]*/);
     my $logfile = File::Spec->catfile($gpath, 'tephra_fragment_searches.log');
 
-    open my $log, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
+    open my $log, '>>', $logfile or die "\n[ERROR]: Could not open file: $logfile\n";
 
     my (%reports, %window_refs);
     my $t0 = gettimeofday();
@@ -135,8 +135,8 @@ sub find_transposon_fragments {
     my ($oname, $opath, $osuffix) = fileparse($outfile, qr/\.[^.]*/);
     my $fafile  = File::Spec->catfile($opath, $oname.'.fasta');
 
-    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-    open my $faout, '>>', $fafile or die "\nERROR: Could not open file: $fafile\n";
+    open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
+    open my $faout, '>>', $fafile or die "\n[ERROR]: Could not open file: $fafile\n";
 
     if (! -s $outfile) {
         say $out '##gff-version 3';
@@ -178,7 +178,7 @@ sub collapse_overlaps {
 
     my %windows;
 
-    open my $l, '<', $file or die "\nERROR: Could not open file: $file\n";
+    open my $l, '<', $file or die "\n[ERROR]: Could not open file: $file\n";
     
     my (@f, $prev_start, $prev_end, $prev_strand, $prev_len);
     line : { 
@@ -260,7 +260,7 @@ sub split_genome {
     my ($out, @split_files, %len);
     
     my $fname = $iname."_".$fcount.$isuffix;
-    open $out, '>', $fname or die "\nERROR: Could not open file: $fname\n";
+    open $out, '>', $fname or die "\n[ERROR]: Could not open file: $fname\n";
     
     push @split_files, $fname;
 
@@ -275,7 +275,7 @@ sub split_genome {
 	if ($count % $numreads == 0 && $count > 0) {
 	    $fcount++;
 	    $fname = $iname."_".$fcount.$isuffix;
-	    open $out, '>', $fname or die "\nERROR: Could not open file: $fname\n";
+	    open $out, '>', $fname or die "\n[ERROR]: Could not open file: $fname\n";
 	    
 	    push @split_files, $fname;
 	}
@@ -313,7 +313,7 @@ sub split_refs {
     my $matchlen  = $self->matchlen;
     my $percentid = $self->percentid;
 
-    open my $b, '<', $blast or die "\nERROR: Could not open file: $blast\n";
+    open my $b, '<', $blast or die "\n[ERROR]: Could not open file: $blast\n";
 
     my (%refs, %coords, @outfiles, %ofhs);
     while (my $line = <$b>) {
@@ -330,7 +330,7 @@ sub split_refs {
             my $outf = $f[1].'_tmp.bln';
             # hits have to be sorted by reference for interval tree to work
             open my $ofh, '|-', "sort -nk9,9 >$outf" or die $!;
-	    #open my $ofh, '>', $outf or die "\nERROR: Could not open file: $outf\n";
+	    #open my $ofh, '>', $outf or die "\n[ERROR]: Could not open file: $outf\n";
             push @outfiles, $outf;
             $ofhs{$f[1]} = $ofh;
             say $ofh join "\t", @f;

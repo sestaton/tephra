@@ -34,7 +34,7 @@ sub calculate_family_similarity {
     my $self = shift;
     my ($fasta, $outfile, $threads) = @_;
     
-    open my $outfh, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    open my $outfh, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
     my $kseq = Bio::DB::HTS::Kseq->new($fasta);
     my $iter = $kseq->iterator;
     
@@ -51,7 +51,7 @@ sub calculate_family_similarity {
 	    push @{$lengths{$famname}}, length($seq);
 	}
 	else {
-	    say STDERR "\nWARNING: '$id' does not match pattern.\n";
+	    say STDERR "\n[WARNING]: '$id' does not match pattern.\n";
 	}
     }
 
@@ -96,7 +96,7 @@ sub map_superfamily_name {
 
     my ($sfamily_code) = ($id =~ /(^[A-Z]{3})_?/);
     unless (defined $sfamily_code) {
-	say STDERR "\n[WARNING]: Could not get 3-letter code from: $id. Skipping.\n"
+	say STDERR "\n[[WARNING]]: Could not get 3-letter code from: $id. Skipping.\n"
 	    if $self->debug;
 	return 0;
     }
@@ -154,7 +154,7 @@ sub map_superfamily_name {
 	return $sfcode_table{$sfamily_code};
     }
     else {
-	say STDERR "\n[WARNING]: No 3-letter code could be found for: $sfamily_code\n"
+	say STDERR "\n[[WARNING]]: No 3-letter code could be found for: $sfamily_code\n"
 	    if $self->debug;
 	return 0;
     }
@@ -234,7 +234,7 @@ sub map_superfamily_name_to_code {
 	return $name_table{$name};
     }
     else {
-	say STDERR "\n[WARNING]: No 3-letter code could be found for: $name\n"
+	say STDERR "\n[[WARNING]]: No 3-letter code could be found for: $name\n"
 	    if $self->debug;
 	return 0;
     }
@@ -344,7 +344,7 @@ sub _do_blast_search {
 					  evalue  => 1e-10,
 					  sort    => 'bitscore' });
 
-    open my $in, '<', $blast_report or die "\nERROR: Could not open file: $blast_report\n";
+    open my $in, '<', $blast_report or die "\n[ERROR]: Could not open file: $blast_report\n";
 
     my (%hits, @pid, @lengths, %uniq);
     while (my $line = <$in>) {

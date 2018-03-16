@@ -111,18 +111,18 @@ sub mask_reference {
 
     my $outfile  = $self->outfile // File::Spec->catfile( abs_path($path), $name.'_masked.fas' );
     if (-e $outfile) {
-	say STDERR "\nERROR: '$outfile' already exists. Please delete this or rename it before proceeding. Exiting.\n";
+	say STDERR "\n[ERROR]: '$outfile' already exists. Please delete this or rename it before proceeding. Exiting.\n";
         exit(1);
     }
     my $logfile = $outfile.'.log';
 
-    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-    open my $log, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
+    open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
+    open my $log, '>>', $logfile or die "\n[ERROR]: Could not open file: $logfile\n";
 
     my $genome_dir = File::Spec->catfile( abs_path($path), $name.'_tephra_masked_tmp' );
 
     if (-d $genome_dir) {
-	say STDERR "\nERROR: '$genome_dir' already exists. Please delete this or rename it before proceeding. Exiting.\n";
+	say STDERR "\n[ERROR]: '$genome_dir' already exists. Please delete this or rename it before proceeding. Exiting.\n";
 	exit(1);
     }
     else {
@@ -130,7 +130,7 @@ sub mask_reference {
     }
 
     my $files = $self->_split_genome($genome, $genome_dir);
-    die "\nERROR: No FASTA files found in genome directory. Exiting.\n" if @$files == 0;
+    die "\n[ERROR]: No FASTA files found in genome directory. Exiting.\n" if @$files == 0;
 
     my $thr;
     if ($threads % 2 == 0) {
@@ -276,7 +276,7 @@ sub get_masking_results {
     my $util = Tephra::Annotation::Util->new;
     my $repeat_map = $util->build_repeat_map;
 
-    open my $in, '<', $voutfile or die "\nERROR: Could not open file: $voutfile\n";
+    open my $in, '<', $voutfile or die "\n[ERROR]: Could not open file: $voutfile\n";
     
     my (%windows, %refs, %hits, %aligns, %report, %final_rep);
 
@@ -458,7 +458,7 @@ sub write_masking_results {
     my $final_time = sprintf("%.2f",$total_elapsed/60);
 
     unless (defined $classlen && defined $orderlen && defined $namelen) {
-	say STDERR "\nERROR: Could not get classification for masking results, which likely means an issue with the input.\n".
+	say STDERR "\n[ERROR]: Could not get classification for masking results, which likely means an issue with the input.\n".
 	    "       Please check input genome and database. If this issue persists please report it. Exiting.\n";
 	exit(1);
     }
@@ -548,7 +548,7 @@ sub _split_genome {
 	my $dir = File::Spec->catdir($genome_dir, $id);
 	make_path( $dir, {verbose => 0, mode => 0771,} );
 	my $outfile = File::Spec->catfile($dir, $id.'.fasta');
-	open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+	open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 	say $out join "\n", ">".$id, $seqobj->seq;
 	close $out;
 	push @files, $outfile;
@@ -590,7 +590,7 @@ sub _split_chr_windows {
                 my $seq_part = substr $seq, $start, $chunk_size;
                 $seq_part =~ s/.{60}\K/\n/g;
                 my $outfile = File::Spec->catfile($path, $id."_$i.fasta");
-                open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+                open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
                 say $out join "\n", ">".$id."_$i"."_".$start."_$end", $seq_part;
                 close $out;
                 $split_files{$i} = $outfile;
@@ -614,7 +614,7 @@ sub _split_chr_windows {
                 my $seq_part = substr $seq, $start, $chunk_size;
                 $seq_part =~ s/.{60}\K/\n/g;
                 my $outfile = File::Spec->catfile($path, $id."_$i.fasta");
-                open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+                open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 		# The next line is a small adjustment to show that the first window starts at 1 and not 0,
 		# which is just to make it human-readable (even though to Perl, it really does start at 0).
                 $start = $i > 0 ? $start : $start+1;

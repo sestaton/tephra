@@ -82,7 +82,7 @@ sub process_blast_args {
     my $threads = $self->threads;
     my ($query, $db) = ($self->fasta, $self->fasta);
     unless (-s $query) {
-	say STDERR "\nWARNING: Input FASTA is empty so the BLAST analysis will be skipped.\n";
+	say STDERR "\n[WARNING]: Input FASTA is empty so the BLAST analysis will be skipped.\n";
 	#unlink $query;
 	return undef;
     }
@@ -130,7 +130,7 @@ sub parse_blast {
     my $perc_cov   = sprintf("%.2f", $blast_hcov/100);
 
     my (%matches, %seen);
-    open my $in, '<', $blast_report or die "\nERROR: Could not open file: $blast_report\n";
+    open my $in, '<', $blast_report or die "\n[ERROR]: Could not open file: $blast_report\n";
     while (my $line = <$in>) {
 	chomp $line;
 	my ($queryid, $hitid, $pid, $hitlen, $mmatchct, $gapct, 
@@ -168,7 +168,7 @@ sub write_families {
     #my ($sf) = ($dir =~ /_(\w+)$/);
     #my ($sf) = ($dir =~ /_((?:\w+\d+-)?\w+)$/);
     #unless (defined $sf) {
-        #say STDERR "\nERROR: Can't get sf from $dir $.";
+        #say STDERR "\n[ERROR]: Can't get sf from $dir $.";
     #}
 
     my $seqstore = $self->_store_seq($tefas);
@@ -181,7 +181,7 @@ sub write_families {
     for my $str (reverse sort { @{$matches->{$a}} <=> @{$matches->{$b}} } keys %$matches) {
 	my $famfile = $sf."_family$idx".".fasta";
 	my $outfile = File::Spec->catfile( abs_path($path), $famfile );
-	open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+	open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 	for my $elem (@{$matches->{$str}}) {
 	    if (exists $seqstore->{$elem}) {
 		$famtot++;
@@ -199,7 +199,7 @@ sub write_families {
 		delete $seqstore->{$elem};
 	    }
 	    else {
-		croak "\nERROR: $elem not found in store. Exiting.";
+		croak "\n[ERROR]: $elem not found in store. Exiting.";
 	    }
 	}
 	close $out;
@@ -213,7 +213,7 @@ sub write_families {
     if (%$seqstore) {
 	my $famxfile = $sf.'_singleton_families.fasta';
 	my $xoutfile = File::Spec->catfile( abs_path($path), $famxfile );
-	open my $outx, '>', $xoutfile or die "\nERROR: Could not open file: $xoutfile\n";
+	open my $outx, '>', $xoutfile or die "\n[ERROR]: Could not open file: $xoutfile\n";
 	for my $k (nsort keys %$seqstore) {
 	    $seqstore->{$k} =~ s/.{60}\K/\n/g;
 	    my $chr = $k;
@@ -245,7 +245,7 @@ sub combine_families {
     my ($outfiles, $outfile) = @_; #$sf_elem_map) = @_;
     
     #dd $sf_elem_map;
-    open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 
     my $ct = 0;
     for my $file (nsort keys %$outfiles) {
@@ -272,8 +272,8 @@ sub annotate_gff {
     my ($annot_ids, $ingff, $sf_elem_map) = @_;
     my $outgff = $self->gff;
 
-    open my $in, '<', $ingff or die "\nERROR: Could not open file: $ingff\n";
-    open my $out, '>', $outgff or die "\nERROR: Could not open file: $outgff\n";
+    open my $in, '<', $ingff or die "\n[ERROR]: Could not open file: $ingff\n";
+    open my $out, '>', $outgff or die "\n[ERROR]: Could not open file: $outgff\n";
 
     while (my $line = <$in>) {
 	chomp $line;

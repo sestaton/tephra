@@ -46,19 +46,19 @@ sub validate_args {
         $self->help and exit(0);
     }
      elsif (!$opt->{genome} || !$opt->{repeatdb} || !$opt->{ingff} || !$opt->{outgff} || !$opt->{outdir}) {
-        say STDERR "\nERROR: Required arguments not given.\n";
+        say STDERR "\n[ERROR]: Required arguments not given.\n";
         $self->help and exit(0);
     }
     elsif (! -e $opt->{genome}) {
-        say STDERR "\nERROR: The genome file does not exist. Check arguments.\n";
+        say STDERR "\n[ERROR]: The genome file does not exist. Check arguments.\n";
         $self->help and exit(0);
     }
     elsif (! -e $opt->{repeatdb}) {
-        say STDERR "\nERROR: The repeat database file does not exist. Check arguments.\n";
+        say STDERR "\n[ERROR]: The repeat database file does not exist. Check arguments.\n";
         $self->help and exit(0);
     }
     elsif (! -e $opt->{ingff}) {
-        say STDERR "\nERROR: The input GFF3 file does not exist. Check arguments.\n";
+        say STDERR "\n[ERROR]: The input GFF3 file does not exist. Check arguments.\n";
         $self->help and exit(0);
     }
 } 
@@ -93,7 +93,7 @@ sub _classify_tir_superfamilies {
         my ($name, $path, $suffix) = fileparse($opt->{genome}, qr/\.[^.]*/);
         $logfile = File::Spec->catfile( abs_path($path), $name.'_tephra_classifytirs.log' );
         $log = $classify_obj->get_tephra_logger($logfile);
-        say STDERR "\nWARNING: '--logfile' option not given so results will be appended to: $logfile.";
+        say STDERR "\n[WARNING]: '--logfile' option not given so results will be appended to: $logfile.";
     }
 
     my $index = $classify_obj->index_ref($opt->{genome});
@@ -147,7 +147,7 @@ sub _classify_tir_superfamilies {
 	return (\%gffs, $log);
     }
     else {
-	say STDERR "\nWARNING: No TIR elements were classified. Check input.\n";
+	say STDERR "\n[WARNING]: No TIR elements were classified. Check input.\n";
     }
     return;
 }

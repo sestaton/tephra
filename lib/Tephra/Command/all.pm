@@ -39,11 +39,11 @@ sub validate_args {
         $self->help and exit(0);
     }
     elsif (! $opt->{config}) {
-	say STDERR "\nERROR: Required arguments not given.\n";
+	say STDERR "\n[ERROR]: Required arguments not given.\n";
 	$self->help and exit(0);
     }
     elsif (! -e $opt->{config}) {
-	say STDERR "\nERROR: The configuration file does not exist. Check arguments.\n";
+	say STDERR "\n[ERROR]: The configuration file does not exist. Check arguments.\n";
         $self->help and exit(0);
     }
 } 
@@ -370,7 +370,7 @@ sub _get_all_opts {
     }
     else {
 	#dd $config->{all};
-        say STDERR "\nERROR: genome file was not defined in configuration or does not exist. Check input. Exiting.\n";
+        say STDERR "\n[ERROR]: genome file was not defined in configuration or does not exist. Check input. Exiting.\n";
         exit(1);
     }
 
@@ -378,7 +378,7 @@ sub _get_all_opts {
         $repeatdb = $config->{all}{repeatdb};
     }   
     else {
-        say STDERR "\nERROR: repeatdb file was not defined in configuration or does not exist. Check input. Exiting.\n";
+        say STDERR "\n[ERROR]: repeatdb file was not defined in configuration or does not exist. Check input. Exiting.\n";
         exit(1);
     }
 

@@ -44,11 +44,11 @@ sub validate_args {
         $self->help and exit(0);
     }
     elsif (!$opt->{genome} || !$opt->{outfile}) {
-	say STDERR "\nERROR: Required arguments not given.\n";
+	say STDERR "\n[ERROR]: Required arguments not given.\n";
 	$self->help and exit(0);
     }
     elsif (! -e $opt->{genome}) {
-        say STDERR "\nERROR: The genome file does not exist. Check arguments.\n";
+        say STDERR "\n[ERROR]: The genome file does not exist. Check arguments.\n";
         $self->help and exit(0);
     }
 } 
@@ -64,7 +64,7 @@ sub execute {
 	_write_unrefined_trims($opt, $relaxed_gff);
     }
     elsif (!$relaxed_gff && !$strict_gff) {
-	say STDERR "\nWARNING: No TRIMs were found, so there will be no output.\n";
+	say STDERR "\n[WARNING]: No TRIMs were found, so there will be no output.\n";
 	exit(1);
     }
 }

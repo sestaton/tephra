@@ -6,7 +6,7 @@ use lib qw(lib);
 use Tephra::Config::Install;
 
 if (eval ($ExtUtils::MakeMaker::VERSION) <= 6.55) {
-    print "\n[ERROR]: ExtUtils::MakeMaker >= 6.5503 is required to build the package correctly.\n";
+    print "\n[[ERROR]]: ExtUtils::MakeMaker >= 6.5503 is required to build the package correctly.\n";
     print "The installed version is $ExtUtils::MakeMaker::VERSION.\n";
     print "Install the latest ExtUtils::MakeMaker and try again. Exiting.\n";
     exit(1);

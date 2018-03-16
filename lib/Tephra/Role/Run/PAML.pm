@@ -64,7 +64,7 @@ sub run_baseml {
     my $self = shift;
     my ($args) = @_;
     my $wd = $args->{working_dir};
-    chdir $wd or die "\nERROR: Could not change directories: $!";
+    chdir $wd or die "\n[ERROR]: Could not change directories: $!";
     
     my $baseml = $self->get_baseml_exec;
     my ($stdout, $stderr, $exit);
@@ -121,7 +121,7 @@ sub create_baseml_files {
        method = 0  * Optimization method 0: simultaneous; 1: one branch a time";
 
     my $control_file = File::Spec->catfile( abs_path($ppath), 'baseml.ctl' );
-    open my $out, '>', $control_file or die "\nERROR: Could not open file: $control_file\n";
+    open my $out, '>', $control_file or die "\n[ERROR]: Could not open file: $control_file\n";
     print $out $ctl_file;
     close $out;
 
@@ -148,8 +148,8 @@ sub parse_baseml {
     my $dirobj = Path::Class::Dir->new($wd);
     my $parent = $dirobj->parent;
 
-    open my $divin, '<', $outfile or die "ERROR: Could not open outfile: $outfile\n";
-    open my $divout, '>', $divergence_file or die "ERROR: Could not open divergence file: $divergence_file\n";
+    open my $divin, '<', $outfile or die "[ERROR]: Could not open outfile: $outfile\n";
+    open my $divout, '>', $divergence_file or die "[ERROR]: Could not open divergence file: $divergence_file\n";
 
     while (my $line = <$divin>) {
 	chomp $line;
@@ -170,7 +170,7 @@ sub parse_baseml {
 
     my $resdir = basename($results_dir);
     my $dest_file = File::Spec->catfile($parent, $resdir, $divergence_file);
-    copy($divergence_file, $dest_file) or die "\nERROR: move failed: $!\n";
+    copy($divergence_file, $dest_file) or die "\n[ERROR]: move failed: $!\n";
     chdir $parent or die $!;
     remove_tree($wd, { safe => 1 });
     

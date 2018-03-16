@@ -37,19 +37,19 @@ sub validate_args {
         $self->help and exit(0);
     }
     elsif (! $opt->{genome} || ! -e $opt->{genome}) {
-        say STDERR "\nERROR: The '--genome' argument was not given or the file does not exist. Check input.\n";
+        say STDERR "\n[ERROR]: The '--genome' argument was not given or the file does not exist. Check input.\n";
         $self->help and exit(0);
     }
     elsif (! $opt->{outfile}) {
-	say STDERR "\nERROR: The '--outfile' argument is missing. Check input.\n";
+	say STDERR "\n[ERROR]: The '--outfile' argument is missing. Check input.\n";
         $self->help and exit(0);
     }
     elsif ($opt->{all} && ! -e $opt->{gff}) {
-        say STDERR "\nERROR: The '--gff' file does not appear to exist. Check input.\n";
+        say STDERR "\n[ERROR]: The '--gff' file does not appear to exist. Check input.\n";
         $self->help and exit(0);
     }
     elsif (! $opt->{indir} && ! $opt->{all}) {
-        say STDERR "\nERROR: The '--indir' option must be given if no gff file and '--all' option is given. Check input.\n";
+        say STDERR "\n[ERROR]: The '--indir' option must be given if no gff file and '--all' option is given. Check input.\n";
         $self->help and exit(0);
     }
 }

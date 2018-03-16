@@ -74,12 +74,12 @@ sub run_mgescan {
     if (-e $domain_rt_pos_file || -e $domain_ape_pos_file ){
 	print $dna_name."\n" if $self->verbose;	
 	if (! -e $domain_rt_pos_file){
-	    open my $out, '>', $domain_rt_pos_file or die "\nERROR: Could not open file: $domain_rt_pos_file\n";
+	    open my $out, '>', $domain_rt_pos_file or die "\n[ERROR]: Could not open file: $domain_rt_pos_file\n";
 	    print $out "";
 	    close $out;
 	}
 	elsif (! -e $domain_ape_pos_file){
-	    open my $out, '>', $domain_ape_pos_file or die "\nERROR: Could not open file: $domain_ape_pos_file\n";
+	    open my $out, '>', $domain_ape_pos_file or die "\n[ERROR]: Could not open file: $domain_ape_pos_file\n";
 	    print $out "";
 	    close $out;
 	}
@@ -116,7 +116,7 @@ sub translate_forward {
 	system($cmd);
     }
     catch {
-	say STDERR "\nERROR: tephra-translate died. Here is the exception: $_\n";
+	say STDERR "\n[ERROR]: tephra-translate died. Here is the exception: $_\n";
 	exit(1);
     };
 
@@ -142,12 +142,12 @@ sub translate_forward {
     #$pm->wait_all_children;
     
     #find( sub { push @parts, $File::Find::name if -f and /frame[012]$/ }, $path);
-    #open my $seqout, '>>', $out or die "\nERROR: Could not open file: $out\n";
+    #open my $seqout, '>>', $out or die "\n[ERROR]: Could not open file: $out\n";
     #for my $part (sort @parts) {
 	#say "writing $part ...";
 	#my $lines = do { 
 	    #local $/ = undef; 
-	    #open my $fh_in, '<', $part or die "\nERROR: Could not open file: $part\n";
+	    #open my $fh_in, '<', $part or die "\n[ERROR]: Could not open file: $part\n";
 	    #<$fh_in>;
 	#};
 	#chomp $lines;
@@ -182,8 +182,8 @@ sub get_signal_domain {
 	$self->_sort_matches($temp_file, $stemp_file);
         my ($start, $end) = (-1, -1);
         my @pre = (-1000, -1000, -1000, -1000, -1000, -1000);
-        open my $in, '<', $stemp_file or die "\nERROR: Could not open file: $stemp_file\n";
-        open my $out, '>', $output_file or die "\nERROR: Could not open file: $output_file\n";
+        open my $in, '<', $stemp_file or die "\n[ERROR]: Could not open file: $stemp_file\n";
+        open my $out, '>', $output_file or die "\n[ERROR]: Could not open file: $output_file\n";
 
 	## NB hard thresholds: length = 300, evalue = 1e-5 
         while (my $each_line = <$in>) {
@@ -217,12 +217,12 @@ sub _parse_hmmsearch {
     my $self = shift;
     my ($hmm_results, $signal_out, $outfile) = @_;
 
-    open my $o, '>', $signal_out or die "\nERROR: Could not open file: $signal_out\n";
+    open my $o, '>', $signal_out or die "\n[ERROR]: Could not open file: $signal_out\n";
     print $o @$hmm_results;
     close $o;
 
     if (-s $signal_out) {
-	open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+	open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 	my $hmmer_in = Bio::SearchIO->new(-file => $signal_out, -format => 'hmmer');
 	
 	my @evalues;
@@ -260,8 +260,8 @@ sub _sort_matches {
     #46927035 469284511492 -87.4 3.9e-08
     #84073929 840751081492 -115.7 6.1e-07
 
-    open my $in, '<', $unsorted or die "\nERROR: Could not open file: $unsorted\n";
-    open my $out, '>', $sorted or die "\nERROR: Could not open file: $sorted\n";
+    open my $in, '<', $unsorted or die "\n[ERROR]: Could not open file: $unsorted\n";
+    open my $out, '>', $sorted or die "\n[ERROR]: Could not open file: $sorted\n";
 
     while (my $l = <$in>) {
 	chomp $l;
