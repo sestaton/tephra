@@ -23,8 +23,8 @@ if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
 
 my $cmd       = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir   = File::Spec->catdir('t', 'test_data');
-my $ctestfile = File::Spec->catfile($testdir, 'tephra_copia_exemplar_ltrs.fasta');
-my $gtestfile = File::Spec->catfile($testdir, 'tephra_gypsy_exemplar_ltrs.fasta');
+my $ctestfile = File::Spec->catfile($testdir, 'tephra_copia_exemplar_repeats.fasta');
+my $gtestfile = File::Spec->catfile($testdir, 'tephra_gypsy_exemplar_repeats.fasta');
 my $outdir    = File::Spec->catdir($testdir,  't_family_domains');
 my $cresdir   = File::Spec->catdir($outdir,   'ref_tephra_ltrs_combined_filtered_copia');
 my $gresdir   = File::Spec->catdir($outdir,   'ref_tephra_ltrs_combined_filtered_gypsy');
