@@ -1,4 +1,4 @@
-package Tephra::Genome::MaskRef;
+package Tephra::Genome::Unmask;
 
 use 5.014;
 use Moose;
@@ -39,12 +39,12 @@ has repeatdb => (
       coerce   => 0,
 );
 
-#has outfile => (
-#    is       => 'ro',
-#    isa      => 'Maybe[Str]',
-#    required => 1,
-#    coerce   => 0,
-#);
+has outfile => (
+    is       => 'ro',
+    isa      => 'Maybe[Str]',
+    required => 0,
+    coerce   => 0,
+);
 
 has clean => (
     is       => 'ro',
@@ -57,8 +57,11 @@ sub unmask_repeatdb {
     my $self = shift;
     my $genome   = $self->genome;
     my $repeatdb = $self->repeatdb;
-    my $outfile  = $repeatdb;
+    my $outfile  = $self->outfile // $repeatdb;
 
+    say STDERR "GENOME: $genome";
+    say STDERR "REPEATDB: $repeatdb";
+    say STDERR "OUTFILE: $outfile";
     my $index = $self->index_ref($genome);
     my $store = $self->store_seq_coords($repeatdb);
 
@@ -82,7 +85,6 @@ sub unmask_repeatdb {
     close $out;
 
     move $tmp_outfile, $outfile or die "\nERROR: move failed: $!\n";
-
 
     return;
 }
