@@ -29,11 +29,11 @@ Tephra::Classify::Any - Classify any transposons into families based on similari
 
 =head1 VERSION
 
-Version 0.09.8
+Version 0.09.9
 
 =cut
 
-our $VERSION = '0.09.8';
+our $VERSION = '0.09.9';
 $VERSION = eval $VERSION;
 
 has fasta => (
