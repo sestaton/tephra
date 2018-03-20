@@ -14,6 +14,7 @@ use Capture::Tiny;
 use Tephra -command;
 use Tephra::Config::Reader;
 use Tephra::Config::Exe;
+use Tephra::Genome::Unmask;
 use Tephra::Analysis::Pipeline;
 #use Data::Dump::Color;
 
@@ -109,6 +110,8 @@ sub _run_all_commands {
 
     if (-e $trims_fas && -e $trims_gff) {
 	$has_trims = 1;
+	my $unmask = Tephra::Genome::Unmask->new(genome => $global_opts->{genome}, repeatdb => $trims_fas);
+	$unmask->unmask_repeatdb;
     }
 
     ## combine LTRs and TRIMs
@@ -119,31 +122,43 @@ sub _run_all_commands {
 	## classifyltrs on combined LTRs and TRIMs
 	($ltrc_fas, $ltrc_gff, $ltrc_dir) = $tephra_obj->classify_ltrs($log, $ltr_trim_gff);
 
-	if (-e $ltrc_gff && -e $ltrc_fas) {
-	    $log->info("Output files - $ltrc_gff");
-	    $log->info("Output files - $ltrc_fas");
-	    push @fas_files, $ltrc_fas;
-	    push @gff_files, $ltrc_gff;
-	    push @classified_fastas, $ltrc_fas;
-	}
+	#if (-e $ltrc_gff && -e $ltrc_fas) {
+	    #$log->info("Output files - $ltrc_gff");
+	    #$log->info("Output files - $ltrc_fas");
+	    ##push @fas_files, $ltrc_fas;
+	    #push @gff_files, $ltrc_gff;
+	    #push @classified_fastas, $ltrc_fas;
+	#}
     }
-    elsif (!$has_trims && $has_ltrs) {
-	$log->info("Output files - $trims_gff");
-        $log->info("Output files - $trims_fas");
-        push @fas_files, $trims_fas;
-        push @gff_files, $trims_gff;
+    elsif ($has_ltrs && !$has_trims) {
+	#$log->info("Output files - $trims_gff");
+        #$log->info("Output files - $trims_fas");
+        #push @fas_files, $trims_fas;
+        #push @gff_files, $trims_gff;
 
 	## classifyltrs on LTRs only
         ($ltrc_fas, $ltrc_gff, $ltrc_dir) = $tephra_obj->classify_ltrs($log, $ltr_gff);
 
-	if (-e $ltrc_gff && -e $ltrc_fas) {
-            $log->info("Output files - $ltrc_gff");
-            $log->info("Output files - $ltrc_fas");
-            push @fas_files, $ltrc_fas;
-            push @gff_files, $ltrc_gff;
-            push @classified_fastas, $ltrc_fas;
-        }
+	#if (-e $ltrc_gff && -e $ltrc_fas) {
+            #$log->info("Output files - $ltrc_gff");
+            #$log->info("Output files - $ltrc_fas");
+            #push @fas_files, $ltrc_fas;
+            #push @gff_files, $ltrc_gff;
+            #push @classified_fastas, $ltrc_fas;
+        #}
     }
+    elsif (!$has_ltrs && $has_trims) {
+	($ltrc_fas, $ltrc_gff, $ltrc_dir) = $tephra_obj->classify_ltrs($log, $trims_gff);
+    }
+
+    if (-e $ltrc_gff && -e $ltrc_fas) {
+	$log->info("Output files - $ltrc_gff");
+	$log->info("Output files - $ltrc_fas");
+	push @fas_files, $ltrc_fas;
+	push @gff_files, $ltrc_gff;
+	push @classified_fastas, $ltrc_fas;
+    }
+
 
     ## ltrage
     if (defined $ltrc_gff && -e $ltrc_gff && -s $ltrc_gff) {
@@ -164,7 +179,7 @@ sub _run_all_commands {
             config      => $config,
             reference   => $genome_mask1,
             database    => $ltrc_fas,
-            dbtype      => 'TRIMs',
+            dbtype      => 'classified LTRs/TRIMs',
             ref_count   => $refct });
 
 	if (defined $genome_mask2 && -e $genome_mask2) { 
@@ -208,6 +223,8 @@ sub _run_all_commands {
     my ($hel_fas, $hel_gff) = $tephra_obj->find_helitrons($log, $hel_ref);
 
     if (-e $hel_gff && -e $hel_fas) {
+	my $unmask = Tephra::Genome::Unmask->new(genome => $global_opts->{genome}, repeatdb => $hel_fas);
+	$unmask->unmask_repeatdb;
 	$log->info("Output files - $hel_gff");
 	$log->info("Output files - $hel_fas");
 	push @fas_files, $hel_fas;
