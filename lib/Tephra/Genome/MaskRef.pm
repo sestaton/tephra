@@ -16,7 +16,7 @@ use Parallel::ForkManager;
 use Tephra::Config::Exe;
 use Tephra::Annotation::Util;
 use namespace::autoclean;
-#use Data::Dump::Color qw(dump dd);
+#use Data::Dump::Color;
 
 with 'Tephra::Role::Run::Any',
      'Tephra::Role::Run::GT';
@@ -178,7 +178,7 @@ sub mask_reference {
     }
 
     $pm->wait_all_children;
-
+    
     $self->write_masking_results(\@reports, \%seqs, $out, $outfile, $t0);
     remove_tree( $genome_dir, { safe => 1 } ) if $self->clean;
     close $log;
@@ -236,6 +236,7 @@ sub run_masking {
     $pm->wait_all_children;
 
     my $mask_struct = $self->get_masking_results($wchr, $report, $sub_chr_length, $seq_index, $chr_windows);
+    #dd $mask_struct;
 
     $self->clean_index_files($index);
     my ($id, $seq) = $self->_get_seq($outpart);
@@ -459,7 +460,7 @@ sub write_masking_results {
 
     unless (defined $classlen && defined $orderlen && defined $namelen) {
 	say STDERR "\n[ERROR]: Could not get classification for masking results, which likely means an issue with the input.\n".
-	    "       Please check input genome and database. If this issue persists please report it. Exiting.\n";
+	    "         Please check input genome and database. If this issue persists, please report it. Exiting.\n";
 	exit(1);
     }
 
