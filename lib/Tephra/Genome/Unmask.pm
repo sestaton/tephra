@@ -5,10 +5,10 @@ use Moose;
 use File::Spec;
 use File::Basename;
 use Cwd         qw(abs_path);
-use File::Copy  qw(move);
+use File::Copy  qw(move copy);
 use Tephra::Annotation::Util;
 use namespace::autoclean;
-#use Data::Dump::Color qw(dump dd);
+#use Data::Dump::Color;
 
 with 'Tephra::Role::Util';
 
@@ -81,7 +81,9 @@ sub unmask_repeatdb {
     }
     close $out;
 
-    move $tmp_outfile, $outfile or die "\n[ERROR]: move failed: $!\n";
+    say STDERR "WARN: outfile -> $outfile: tmp -> $tmp_outfile";
+    #move $tmp_outfile, $outfile or die "\n[ERROR]: move failed: $!\n";
+    copy $tmp_outfile, $outfile or die "\n[ERROR]: move failed: $!\n"; 
 
     return;
 }
