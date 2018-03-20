@@ -22,17 +22,18 @@ if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
 
 my $cmd       = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir   = File::Spec->catdir('t', 'test_data');
-my $outdir    = File::Spec->catdir($testdir,  't_family_domains');
-my $genome    = File::Spec->catfile($testdir, 'ref.fas');
+#my $outdir    = File::Spec->catdir($testdir,  't_family_domains');
+#my $genome    = File::Spec->catfile($testdir, 'ref.fas');
+#my $genome    = File::Spec->catfile($testdir, 'Ha1.fa');
 my $log       = File::Spec->catfile($testdir, 'tephra_full.log');
 my $gff       = File::Spec->catfile($testdir, 'tephra_transposons.gff3');
 my $fas       = File::Spec->catfile($testdir, 'tephra_transposons.fasta');
-my $ctestfile = File::Spec->catfile($testdir, 'tephra_copia_exemplar_ltrs.fasta');
-my $gtestfile = File::Spec->catfile($testdir, 'tephra_gypsy_exemplar_ltrs.fasta');
-my $ltrcdir   = File::Spec->catdir($testdir,  'ref_tephra_ltrs_classified_results');
+my $ctestfile = File::Spec->catfile($testdir, 'tephra_copia_exemplar_repeats.fasta');
+my $gtestfile = File::Spec->catfile($testdir, 'tephra_gypsy_exemplar_repeats.fasta');
+my $ltrcdir   = File::Spec->catdir($testdir,  'ref_tephra_ltrs_trims_classified_results');
 my $cresdir   = File::Spec->catdir($ltrcdir,  'ref_tephra_ltrs_copia');
 my $gresdir   = File::Spec->catdir($ltrcdir,  'ref_tephra_ltrs_gypsy');
-
+#ref_tephra_ltrs_trims_classified_results/ref_tephra_ltrs_gypsy
 {
     my @help_args = ($cmd, 'all', '-h');
     my ($stdout, $stderr, $exit) = capture { system(@help_args) };
@@ -60,16 +61,16 @@ SKIP: {
     ok( -e $log, 'Can run full tephra pipeline and log results' );
 
     ## clean up
-    unlink $gff, $fas, $log, $config;
+    #unlink $gff, $fas, $log, $config;
 
     my @outfiles;
     find( sub { push @outfiles, $File::Find::name if /^ref_|\.fai$/ }, $testdir);
-    for my $res (@outfiles) {
-	unlink $res 
-	    if -f $res;
-	remove_tree( $res, { safe => 1 } ) 
-	    if -d $res;
-    }
+    #for my $res (@outfiles) {
+	#unlink $res 
+	#    if -f $res;
+	#remove_tree( $res, { safe => 1 } ) 
+	#    if -d $res;
+    #}
 }
     
 done_testing();
@@ -131,9 +132,9 @@ illrecomb:
 ltrage:
   - all:              NO
 maskref:
-  - percentid:        40
-  - hitlength:        20
-  - splitsize:        50000
+  - percentid:        50
+  - hitlength:        50
+  - splitsize:        5000
   - overlap:          100
 sololtr:
   - percentid:        39
