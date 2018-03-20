@@ -12,7 +12,6 @@ use Sort::Naturally;
 use Bio::DB::HTS::Kseq;
 use Tephra::Config::Exe;
 use Tephra::Annotation::Util;
-use Tephra::Genome::Unmask;
 use namespace::autoclean;
 #use Data::Dump::Color;
 
@@ -88,8 +87,8 @@ sub find_trims {
     my $ft = strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findtrims' completed at: $ft.");
 
-    my $unmask = Tephra::Genome::Unmask->new(genome => $global_opts->{genome}, repeatdb => $trims_fas); 
-    $unmask->unmask_repeatdb;
+    #my $unmask = Tephra::Genome::Unmask->new(genome => $global_opts->{genome}, repeatdb => $trims_fas); 
+    #$unmask->unmask_repeatdb;
 
     return ($trims_fas, $trims_gff);
 }
@@ -123,8 +122,8 @@ sub mask_reference {
     my $st = strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra maskref' for $type started at: $st.");
     
-    my $mask_opts = ['-g', $ref, '-d', $db, '-o', $masked_ref, '-s', $config->{maskref}{splitsize}, 
-                     '-v', $config->{maskref}{overlap}, '-t', $global_opts->{threads}];
+    my $mask_opts = ['-g', $ref, '-d', $db, '-o', $masked_ref, '-s', $config->{maskref}{splitsize}, '-v', $config->{maskref}{overlap}, 
+		     '-p', $config->{maskref}{percentid}, '-l', $config->{maskref}{hitlength}, '-t', $global_opts->{threads}];
 
     if ($log_results) {
 	$self->run_tephra_cmd('maskref', $mask_opts, $global_opts->{debug});
@@ -308,8 +307,8 @@ sub find_helitrons {
     my $ft = strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findhelitrons' completed at: $ft.");
 
-    my $unmask = Tephra::Genome::Unmask->new(genome => $global_opts->{genome}, repeatdb => $hel_fas);
-    $unmask->unmask_repeatdb;
+    #my $unmask = Tephra::Genome::Unmask->new(genome => $global_opts->{genome}, repeatdb => $hel_fas);
+    #$unmask->unmask_repeatdb;
 
     return ($hel_fas, $hel_gff);
 }
