@@ -5,7 +5,11 @@ use Moose;
 use File::Spec;
 use File::Find;
 use File::Basename;
-use File::Temp;
+use File::Temp   qw(tempfile);
+use Time::HiRes  qw(gettimeofday);
+use Log::Any     qw($log);
+use Scalar::Util qw(openhandle);
+use Cwd          qw(getcwd abs_path);
 use Path::Class::File;
 use Bio::Seq;
 use Bio::SeqIO;
@@ -15,10 +19,6 @@ use Bio::SearchIO;
 use Sort::Naturally;
 use Parallel::ForkManager;
 use Statistics::Descriptive;
-use Time::HiRes  qw(gettimeofday);
-use Log::Any     qw($log);
-use Scalar::Util qw(openhandle);
-use Cwd          qw(getcwd abs_path);
 use Tephra::Config::Exe;
 #use Data::Dump::Color;
 use namespace::autoclean;
@@ -105,6 +105,8 @@ sub find_illegitimate_recombination {
     }
 
     $self->collate_gap_stats($all_gap_stats, $statsfile);
+
+    return;
 }
 
 
@@ -309,27 +311,17 @@ sub split_aln {
     my $cwd = getcwd();
     
     my $tmpiname = $iname.'_'.$fcount.'_XXXX';
-    my $fname = File::Temp->new( TEMPLATE => $tmpiname,
-				 DIR      => $ipath,
-				 UNLINK   => 0,
-				 SUFFIX   => '.fasta');
+    my ($tmp_fh, $tmp_filename) = tempfile( TEMPLATE => $tmpiname, DIR => $ipath, SUFFIX => '.fasta', UNLINK => 0 );
+    push @split_files, $tmp_filename;
 
-    open my $out, '>', $fname or die "\n[ERROR]: Could not open file: $fname\n";
-
-    push @split_files, $fname;
     while (my $seq = $iter->next_seq) {
 	if ($count % 1 == 0 && $count > 0) {
 	    $fcount++;
 	    $tmpiname = $iname.'_'.$fcount.'_XXXX';
-	    $fname = File::Temp->new( TEMPLATE => $tmpiname,
-				      DIR      => $ipath,
-				      UNLINK   => 0,
-				      SUFFIX   => '.fasta');
-
-	    open $out, '>', $fname or die "\n[ERROR]: Could not open file: $fname\n";
-	    push @split_files, $fname;
+	    ($tmp_fh, $tmp_filename) = tempfile( TEMPLATE => $tmpiname, DIR => $ipath, SUFFIX => '.fasta', UNLINK => 0 );
+	    push @split_files, $tmp_filename;
 	}
-	say $out join "\n", '>'.$seq->name, $seq->seq;
+	say $tmp_fh join "\n", ">".$seq->name, $seq->seq;
 	$count++;
     }
 
@@ -364,44 +356,33 @@ sub bl2seq_compare {
     my ($indel_len, $upstr_seq, $downstr_seq, $upstr_id, $downstr_id, $fname, $fpath, $each_out, $illrecstat_fh) =
 	@{$args}{qw(indel_length upstream_seq downstream_seq upstream_id downstream_id fas_name fas_path seqs_fh stats_fh)};
 
-    my $qname = File::Temp->new( TEMPLATE => $fname.'_XXXX',
-				 DIR      => $fpath,
-				 UNLINK   => 0,
-				 SUFFIX   => '.fasta');
+    my $tmpiname = $fname.'_XXXX';
+    my ($qtmp_fh, $qtmp_filename) = tempfile( TEMPLATE => $tmpiname, DIR => $fpath, SUFFIX => '.fasta', UNLINK => 0 );
+    my ($rtmp_fh, $rtmp_filename) = tempfile( TEMPLATE => $tmpiname, DIR => $fpath, SUFFIX => '.fasta', UNLINK => 0 );
+    my ($tmp_outfh, $tmp_outfile) = tempfile( TEMPLATE => $tmpiname, DIR => $fpath, SUFFIX => '.blo',   UNLINK => 0 );
 
-    my $rname = File::Temp->new( TEMPLATE => $fname.'_XXXX',
-				 DIR      => $fpath,
-				 UNLINK   => 0,
-				 SUFFIX   => '.fasta');
-
-    my $out = File::Temp->new( TEMPLATE => $fname.'_XXXX',
-			       DIR      => $fpath,
-			       UNLINK   => 0,
-			       SUFFIX   => '.blo');
-
-    my $outfile = $out->filename;
-    my $qfile   = $qname->filename;
-    my $rfile   = $rname->filename;
     my $config  = Tephra::Config::Exe->new->get_config_paths;
     my ($blastbin) = @{$config}{qw(blastpath)};
     my $blastn  = File::Spec->catfile($blastbin, 'blastn');
 
-    say $qname join "\n", ">".$upstr_id, $upstr_seq;
-    say $rname join "\n", ">".$downstr_id, $downstr_seq;
+    say $qtmp_fh join "\n", ">".$upstr_id, $upstr_seq;
+    say $rtmp_fh join "\n", ">".$downstr_id, $downstr_seq;
+    close $qtmp_fh;
+    close $rtmp_fh;
 
-    my $blcmd = "$blastn -query $qfile -subject $rfile -word_size 4 -outfmt 5 -out $outfile 2>&1 | ";
+    my $blcmd = "$blastn -query $qtmp_filename -subject $rtmp_filename -word_size 4 -outfmt 5 -out $tmp_outfile 2>&1 | ";
     $blcmd .= "egrep -v \"CFastaReader|Error\" | ";
     $blcmd .= "sed \'/^ *\$/d\'"; ## This is a hack for these warnings. I'm throwing away the errors which is why it's a hack but
                                   ## they are not informative. Need to find a workaround for this.
     $self->run_cmd($blcmd);
-    unlink $qfile, $rfile;
+    unlink $qtmp_filename, $rtmp_filename;
 
-    my $bl2seq_report = Bio::SearchIO->new(-file => $outfile, -format => 'blastxml');
+    my $bl2seq_report = Bio::SearchIO->new(-file => $tmp_outfile, -format => 'blastxml');
     
     while ( my $result = $bl2seq_report->next_result ) {
 	if ($result->num_hits == 0) {
 	    #warn "[WARNING]: No hits found.";
-	    unlink $outfile;
+	    unlink $tmp_outfile;
 	    return;
 	}
 	else {
@@ -461,7 +442,9 @@ sub bl2seq_compare {
 	    }
 	}
     }
-    unlink $outfile;
+    unlink $tmp_outfile;
+
+    return;
 }
 
 sub get_stats {
@@ -484,6 +467,8 @@ sub get_stats {
 
 	push @{$gap_stats->{$fasname}}, join "||", $gap, $count, $gap_percent, $mean, $min, $max, $sum;
     }
+
+    return;
 }
 
 sub collate {
@@ -496,6 +481,8 @@ sub collate {
 	chomp $line;
 	say $fh_out $line;
     }
+
+    return;
 }
 
 sub collate_gap_stats {
@@ -571,6 +558,8 @@ sub collate_gap_stats {
 	    $grand_gap_size_max.' ('.$grand_gap_size_max_sd.')';
     }
     close $gap_stats_fh_out;
+
+    return;
 }
 
 sub _filter_families_by_size {
@@ -647,6 +636,8 @@ sub _remove_singletons {
     }
 
     delete $args->{$_} for @singles;
+
+    return;
 }
 
 =head1 AUTHOR
