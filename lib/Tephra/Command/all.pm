@@ -129,8 +129,9 @@ sub _run_all_commands {
 	$ltr_trim_gff = undef;
     }
 
+    my ($ltrc_fas, $ltrc_gff, $ltrc_dir);
     if (defined $ltr_trim_gff) {
-	my ($ltrc_fas, $ltrc_gff, $ltrc_dir) = $tephra_obj->classify_ltrs($log, $ltr_trim_gff);
+	($ltrc_fas, $ltrc_gff, $ltrc_dir) = $tephra_obj->classify_ltrs($log, $ltr_trim_gff);
 
 	if (-e $ltrc_gff && -e $ltrc_fas) {
 	    $log->info("Output files - $ltrc_gff");
