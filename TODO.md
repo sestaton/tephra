@@ -130,6 +130,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Add correct sequence IDs to report
  - [ ] Investigate the apparent disagreement between the query/subject string and homology strings
  - [ ] Summarize the stats in a more intuitive way so it is clear what the gap summaries mean
+ - [ ] Calculate stats from complete repeat database instead of just with LTRs
 
 ## Command `tephra tirage`
 
