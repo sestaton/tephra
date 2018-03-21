@@ -30,7 +30,7 @@ my $hslog   = File::Spec->catfile($testdir, 'ref_tephra_findhelitrons.log');
 {
     my @help_args = ($cmd, 'findhelitrons', '-h');
     my ($stdout, $stderr, $exit) = capture { system(@help_args) };
-        #say STDERR "stderr: $stderr";
+    #say STDERR "stderr: $stderr";
     ok($stderr, 'Can execute findhelitrons subcommand');
 }
 
