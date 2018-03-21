@@ -5,9 +5,9 @@ use Moose;
 use Cwd         qw(abs_path);
 use Time::HiRes qw(gettimeofday);
 use POSIX       qw(strftime);
+use File::Temp  qw(tempfile);
 use File::Basename;
 use File::Spec;
-use File::Temp;
 use Sort::Naturally;
 use Bio::DB::HTS::Kseq;
 use Tephra::Config::Exe;
@@ -87,9 +87,6 @@ sub find_trims {
     my $ft = strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findtrims' completed at: $ft.");
 
-    #my $unmask = Tephra::Genome::Unmask->new(genome => $global_opts->{genome}, repeatdb => $trims_fas); 
-    #$unmask->unmask_repeatdb;
-
     return ($trims_fas, $trims_gff);
 }
 
@@ -122,8 +119,9 @@ sub mask_reference {
     my $st = strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra maskref' for $type started at: $st.");
     
-    my $mask_opts = ['-g', $ref, '-d', $db, '-o', $masked_ref, '-s', $config->{maskref}{splitsize}, '-v', $config->{maskref}{overlap}, 
-		     '-p', $config->{maskref}{percentid}, '-l', $config->{maskref}{hitlength}, '-t', $global_opts->{threads}];
+    my $mask_opts = ['-g', $ref, '-d', $db, '-o', $masked_ref, '-s', $config->{maskref}{splitsize}, 
+		     '-v', $config->{maskref}{overlap}, '-p', $config->{maskref}{percentid}, 
+		     '-l', $config->{maskref}{hitlength}, '-t', $global_opts->{threads}];
 
     if ($log_results) {
 	$self->run_tephra_cmd('maskref', $mask_opts, $global_opts->{debug});
@@ -307,9 +305,6 @@ sub find_helitrons {
     my $ft = strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findhelitrons' completed at: $ft.");
 
-    #my $unmask = Tephra::Genome::Unmask->new(genome => $global_opts->{genome}, repeatdb => $hel_fas);
-    #$unmask->unmask_repeatdb;
-
     return ($hel_fas, $hel_gff);
 }
 
@@ -365,7 +360,7 @@ sub classify_tirs {
     my $ft = strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra classifytirs' completed at: $ft.");
 
-    return ($tirc_fas, $tirc_gff);
+    return ($tirc_fas, $tirc_gff, $tirc_dir);
 }
 
 sub calculate_tirage {
@@ -374,7 +369,7 @@ sub calculate_tirage {
     my $global_opts = $self->global_options;
 
     my ($name, $path, $suffix) = fileparse($global_opts->{genome}, qr/\.[^.]*/);
-    my $tirage_out  = File::Spec->catfile( abs_path($path), $name.'_tephra_tirages.tsv' );
+    my $tirage_out = File::Spec->catfile( abs_path($path), $name.'_tephra_tirages.tsv' );
     
     my $t0 = gettimeofday();
     my $st = strftime('%d-%m-%Y %H:%M:%S', localtime);
@@ -412,7 +407,8 @@ sub find_nonltrs {
     my $nonltr_gff = File::Spec->catfile( abs_path($path), $name.'_tephra_nonLTRs.gff3' );
     my $nonltr_fas = File::Spec->catfile( abs_path($path), $name.'_tephra_nonLTRs.fasta' );
 
-    my $findnonltrs_opts = ['-g', $nonltr_ref, '-r', $global_opts->{genome}, '-o', $nonltr_gff, '--logfile', $global_opts->{logfile}];
+    my $findnonltrs_opts = ['-g', $nonltr_ref, '-r', $global_opts->{genome}, '-o', $nonltr_gff, 
+			    '--logfile', $global_opts->{logfile}];
     $self->capture_tephra_cmd('findnonltrs', $findnonltrs_opts, $global_opts->{debug});
     
     my $t1 = gettimeofday();
@@ -420,9 +416,6 @@ sub find_nonltrs {
     my $final_time = sprintf("%.2f",$total_elapsed/60);
     my $ft = strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findnonltrs' completed at: $ft.");
-
-    #my $unmask = Tephra::Genome::Unmask->new(genome => $global_opts->{genome}, repeatdb => $nonltr_fas);
-    #$unmask->unmask_repeatdb;
 
     return ($nonltr_fas, $nonltr_gff);
 }
@@ -436,14 +429,7 @@ sub make_combined_repeatdb {
     my $st = strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - Generating combined FASTA file at: $st.");
     
-    my ($name, $path, $suffix) = fileparse($global_opts->{genome}, qr/\.[^.]*/);
     my $customRepDB = $global_opts->{outfile} =~ s/\.gff.*/.fasta/r;
-    my $tmpiname = $name.'_tephra_transposons_tmp_XXXX';
-    my $customRepGFFfh = File::Temp->new( TEMPLATE => $tmpiname,
-                                          DIR      => abs_path($path),
-                                          SUFFIX   => '.gff3',
-                                          UNLINK   => 0);
-    my $customRepGFF = $customRepGFFfh->filename;
     open my $out, '>', $customRepDB or die "\n[ERROR]: Could not open file: $customRepDB\n";
 
     for my $file (@$fas_files) {
@@ -462,7 +448,7 @@ sub make_combined_repeatdb {
     my $ft = strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Results - Finished generating combined FASTA file at: $ft. Final output files:");
 
-    return ($customRepDB, $customRepGFF);
+    return $customRepDB;
 }
 
 sub find_fragments {
@@ -491,23 +477,28 @@ sub find_fragments {
 
 sub combine_gff_files {
     my $self = shift;
-    my ($log, $customRepGFF, $gff_files, $hel_gff, $nonltr_gff, $fragments_gff) = @_;
+    my ($log, $gff_files, $hel_gff, $nonltr_gff, $fragments_gff) = @_;
     my $global_opts = $self->global_options;
 
     my $t0 = gettimeofday();
     my $st = strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - Generating combined GFF3 file at: $st.");
 
+    my ($name, $path, $suffix) = fileparse($global_opts->{genome}, qr/\.[^.]*/);
+    my $tmpiname = $name.'_tephra_transposons_tmp_XXXX';
+    my ($outfh, $customRepGFF) = tempfile( TEMPLATE => $tmpiname, DIR => abs_path($path), SUFFIX => '.gff3', UNLINK => 0 );
+    close $outfh;
     @$gff_files = grep { -s $_ } @$gff_files; # remove empty files
     my $exe_conf = Tephra::Config::Exe->new->get_config_paths;
     my $gt = $exe_conf->{gt};
     my $gff_cmd = "$gt gff3 -sort -retainids @$gff_files";
     $gff_cmd .= " | perl -ne 'print unless /^#\\w+\\d+?\$/' > $customRepGFF";
-    #say STDERR "debug: $gff_cmd";
+    $self->capture_cmd($gff_cmd);
 
     # this is so gt does not drop IDs
-    $self->capture_cmd($gff_cmd);
-    $gff_cmd = "$gt gff3 -sort -retainids $customRepGFF $hel_gff $nonltr_gff $fragments_gff > $global_opts->{outfile}";
+    my @final_gffs = grep { -s $_ } ($customRepGFF, $hel_gff, $nonltr_gff, $fragments_gff); # remove empty files
+    $gff_cmd = "$gt gff3 -sort -retainids @final_gffs > $global_opts->{outfile}";
+    say STDERR "debug: $gff_cmd";
     $self->capture_cmd($gff_cmd);
     unlink $customRepGFF;
 
@@ -631,21 +622,16 @@ sub make_temp_reference_for_masking {
     my ($name, $path, $suffix) = fileparse($ltr_fas, qr/\.[^.]*/);
     my $tmpiname = $name.'_tephra_'.$te_type.'_tmp_XXXX';
 
-    my $tmpfh = File::Temp->new( TEMPLATE => $tmpiname,
-                                 DIR      => abs_path($path),
-                                 SUFFIX   => '.fasta',
-                                 UNLINK   => 0);
-    my $tmp_file = $tmpfh->filename;
-    open my $out, '>', $tmpfh or die "\n[ERROR]: Could not open file: $tmp_file\n";
+    my ($outfh, $tmp_file) = tempfile( TEMPLATE => $tmpiname, DIR => abs_path($path), SUFFIX => '.fasta', UNLINK => 0 );
 
     my $kseq = Bio::DB::HTS::Kseq->new($ltr_fas);
     my $iter = $kseq->iterator;
 
     while (my $seqobj = $iter->next_seq) { 
         my $id = join "_", $code, $seqobj->name;
-        say $out join "\n", ">".$id, $seqobj->seq;
+        say $outfh join "\n", ">".$id, $seqobj->seq;
     }
-    close $out;
+    close $outfh;
 
     return $tmp_file;
 }
