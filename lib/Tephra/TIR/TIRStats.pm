@@ -196,11 +196,11 @@ sub collect_feature_args {
 	else {
 	    unless (-e $self->gff) {
 		croak "\n[ERROR]: No exemplar files were found in the input directory ".
-		    "and the input GFF file does not appear to exist. Exiting.\n";
+		    "and the input GFF file does not appear to exist. Exiting.\n\n";
 	    }
 
 	    warn "\n[WARNING]: No exemplar files were found in the input directory. TIR age will be ".
-		"calculated from TIR elements in the input GFF.\n";
+		"calculated from TIR elements in the input GFF.\n\n";
 
 	    my ($files, $wdir) = $self->extract_tir_features;
 	    $aln_args{tirs} = { seqs => $files };
