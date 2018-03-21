@@ -4,8 +4,9 @@ use 5.014;
 use Moose;
 use File::Spec;
 use File::Basename;
-use Cwd         qw(abs_path);
-use File::Copy  qw(move copy);
+use File::Temp qw(tempfile);
+use Cwd        qw(abs_path);
+use File::Copy qw(move);
 use Tephra::Annotation::Util;
 use namespace::autoclean;
 #use Data::Dump::Color;
@@ -67,23 +68,20 @@ sub unmask_repeatdb {
 	$name =~ s/$1//;
     }
 
-    my $tmp_outfile  = File::Spec->catfile( abs_path($path), $name.'_tmp_unmasked.fas' );
-
-    open my $out, '>', $tmp_outfile or die "\n[ERROR]: Could not open file: $tmp_outfile\n";
+    my $tmpfname = $name.'_unmasked_XXXX';
+    my ($outfh, $tmp_outfile) = tempfile( TEMPLATE => $tmpfname, DIR => $path, UNLINK => 0, SUFFIX => '.fasta' );
 
     for my $id (keys %$store) {
 	my $seq = $store->{$id}{seq};
-	my ($chr, $start, $end) = split /\|\|/, $store->{$id}{coords};
+	my $re = qr/helitron\d+|non_LTR_retrotransposon\d+|TRIM_retrotransposon\d+|terminal_inverted_repeat_element\d+/;
+	my ($chr, $start, $end) = ($id =~ /(?:\w{3}_)(?:singleton_)?(?:family\d+_)$re?_(\S+)_(\d+)[-_](\d+)/);
 	my $gseq = $self->get_full_seq($index, $chr, $start, $end);
 	$gseq =~ s/.{60}\K/\n/g;
-
-	say $out join "\n", ">".$id, $gseq;
+	say $outfh join "\n", ">".$id, $gseq;
     }
-    close $out;
+    close $outfh;
 
-    say STDERR "WARN: outfile -> $outfile: tmp -> $tmp_outfile";
-    #move $tmp_outfile, $outfile or die "\n[ERROR]: move failed: $!\n";
-    copy $tmp_outfile, $outfile or die "\n[ERROR]: move failed: $!\n"; 
+    move $tmp_outfile, $outfile or die "\n[ERROR]: move failed: $!\n";
 
     return;
 }
@@ -98,10 +96,10 @@ sub store_seq_coords {
 
     while (my $seqobj = $iter->next_seq) {
         my $id = $seqobj->name;
-        #my ($chr, $start, $end) = ($id =~ /_([A-Za-z0-9])_(\d+)_(\d+)$/);
         $id =~ s/_[+-]$//;
-        my ($chr, $start, $end) = (split /\_/, $id)[-3..-1];# say join q{ }, $chr, $start, $end'
-        my $coords = join "||", $chr, $start, $end;
+	my $re = qr/helitron\d+|non_LTR_retrotransposon\d+|TRIM_retrotransposon\d+|terminal_inverted_repeat_element\d+/;
+        my ($chr, $start, $end) = ($id =~ /(?:\w{3}_)(?:singleton_)?(?:family\d+_)$re?_(\S+)_(\d+)[-_](\d+)/);
+        my $coords = join "||", $id, $start, $end;
         my $seq = $seqobj->seq;
         $hash{$id} = { seq => $seq, coords => $coords };
     }
