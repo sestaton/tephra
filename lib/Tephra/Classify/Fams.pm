@@ -13,7 +13,6 @@ use List::Util  qw(min max);
 use Time::HiRes qw(gettimeofday);
 use File::Path  qw(make_path);
 use Cwd         qw(abs_path);         
-#use Log::Any    qw($log);
 use Parallel::ForkManager;
 use Carp 'croak';
 use Try::Tiny;
