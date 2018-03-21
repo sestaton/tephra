@@ -33,8 +33,7 @@ has 'debug' => (
 sub calculate_family_similarity {
     my $self = shift;
     my ($fasta, $outfile, $threads) = @_;
-    
-    open my $outfh, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
+
     my $kseq = Bio::DB::HTS::Kseq->new($fasta);
     my $iter = $kseq->iterator;
     
@@ -42,9 +41,7 @@ sub calculate_family_similarity {
     while (my $obj = $iter->next_seq) {
 	my $id = $obj->name;
 	my $seq = $obj->seq;
-	# TRIMs are not classified to the family level                                          
-	# so this comparison would make no sense here 
-	next if $id =~ /TRIM_retrotransposon/i;
+	#next if $id =~ /TRIM_retrotransposon/i;
 	if ($id =~ /^(\w{3}_(?:singleton_)?family\d+)_/) {
 	    $famname = $1;
 	    push @{$families{$famname}}, { seq => $seq, id => $id };
@@ -55,20 +52,33 @@ sub calculate_family_similarity {
 	}
     }
 
-    say $outfh join "\t", 'family', 'family_size', 'family_count_analyzed', 'similarity_mean', 'hit_length_mean', 'element_length_mean';
-
+    my @results;
     for my $fam (reverse sort { @{$families{$a}} <=> @{$families{$b}} } keys %families) {
 	my $famsize = @{$families{$fam}};
 	if (@{$families{$fam}} > 1) {
-	    my $outfile = $fam.'.fasta';
-	    open my $out, '>', $outfile;
+	    my $fas = $fam.'.fasta';
+	    open my $out, '>', $fas or die "\n[ERROR]: Could not open file: $fas\n";
 	    for my $seqobj (@{$families{$fam}}) {
 		say $out join "\n", ">".$seqobj->{id}, $seqobj->{seq};
 	    }
 	    close $out;
-	    $self->_do_blast_search($fam, $famsize, $outfile, $outfh, $threads, $lengths{$fam});
-	    unlink $outfile;
+	    my $result = $self->_do_blast_search($fam, $famsize, $fas, $threads, $lengths{$fam});
+	    push @results, $result;
+	    unlink $fas;
 	}
+    }
+
+    if (@results) {
+	open my $outfh, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
+	say $outfh join "\t", 'family', 'family_size', 'family_count_analyzed', 'similarity_mean', 'hit_length_mean', 'element_length_mean';
+	for my $result (@results) {
+	    say $outfh $result;
+	}
+	close $outfh;
+    }
+    else {
+	say STDERR "\n[WARNING]: No multi-member families discovered, so no family-level similarity will be reported.\n";
+	unlink $outfile if -e $outfile;
     }
 
     return;
@@ -333,7 +343,7 @@ sub get_SO_terms {
 
 sub _do_blast_search {
     my $self = shift;
-    my ($fam, $famsize, $fas, $outfh, $threads, $fam_lengths) = @_;
+    my ($fam, $famsize, $fas, $threads, $fam_lengths) = @_;
 
     my $out = $fas.'.bln';
     my $blastdb = $self->make_blastdb($fas);
@@ -378,9 +388,10 @@ sub _do_blast_search {
     my $fam_len_ct   = @$fam_lengths;
     my $fam_len_mean = sprintf("%.2f", $fam_len_sum/$fam_len_ct);
 
-    say $outfh join "\t", $fam, $famsize, $count, $pid_mean, $len_mean, $fam_len_mean;
+    #say $outfh join "\t", $fam, $famsize, $count, $pid_mean, $len_mean, $fam_len_mean;
+    my $results = join "\t", $fam, $famsize, $count, $pid_mean, $len_mean, $fam_len_mean;
 
-    return;
+    return $results;
 }
 
 =head1 AUTHOR
