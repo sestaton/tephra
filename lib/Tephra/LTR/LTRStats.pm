@@ -243,8 +243,8 @@ sub extract_ltr_features {
 			@{$ltr_feature}{qw(type start end strand)};
 		    $strand //= '?';
 		    my $ltrkey = join "||", $seq_id, $type, $start, $end, $strand;
-		    $pkey = join "||", $family, $pkey;
-		    push @{$ltrs{$pkey}{'ltrs'}}, $ltrkey unless exists $seen{$ltrkey};
+		    my $parent_key = join "||", $family, $pkey;
+		    push @{$ltrs{$parent_key}{'ltrs'}}, $ltrkey unless exists $seen{$ltrkey};
 		    $seen{$ltrkey} = 1;
 		}
 	    }
@@ -254,7 +254,7 @@ sub extract_ltr_features {
     my @files;
     my $ltrct = 0;
     my $orientation;
-    for my $ltr (sort keys %ltrs) {
+    for my $ltr (nsort keys %ltrs) {
 	my ($family, $element, $rstart, $rend) = split /\|\|/, $ltr;
 	my ($seq_id, $type, $start, $end) = split /\|\|/, $ltrs{$ltr}{'full'};
 	my $ltr_file = join "_", $family, $element, $seq_id, $start, $end, 'ltrs.fasta';
@@ -311,12 +311,12 @@ sub process_baseml_args {
     }
     else {
 	my $element = basename($phy);
-	$element =~ s/_ltrs_muscle-out.*//;
+	$element =~ s/_ltrs.*_muscle-out.*//;
 	open my $divout, '>', $divfile or die "\n[ERROR]: Could not open divergence file: $divfile\n";
 	say $divout join "\t", $element, $divergence , '0', '0';
 	close $divout;
 	my $dest_file = File::Spec->catfile($resdir, $divfile);
-	copy($divfile, $dest_file) or die "\n[ERROR]: Copy failed: $!";
+	copy($divfile, $dest_file) or die "\n[ERROR]: Copy failed: $!\n";
 	unlink $divfile;
     }
 }
@@ -330,7 +330,7 @@ sub process_align_args {
     make_path( $pdir, {verbose => 0, mode => 0771,} );
 
     my $fas = File::Spec->catfile($pdir, $name.$suffix);
-    copy($db, $fas) or die "\n[ERROR]: Copy failed: $!";
+    copy($db, $fas) or die "\n[ERROR]: Copy failed: $!\n";
     unlink $db;
 
     my $tre  = File::Spec->catfile($pdir, $name.'.dnd');
