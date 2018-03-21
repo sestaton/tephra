@@ -3,10 +3,10 @@ package Tephra::Role::Run::GT;
 use 5.014;
 use Moose::Role;
 use MooseX::Types::Path::Class;
-use File::Temp;
 use File::Spec;
 use File::Find;
 use File::Basename;
+use File::Temp          qw(tempfile);
 use Env                 qw(@PATH);
 use Cwd                 qw(getcwd abs_path);
 use IPC::System::Simple qw(system EXIT_ANY);
@@ -298,12 +298,7 @@ sub _make_gt_errorlog {
  
     my $dir = getcwd();
     my $tmpiname  = "tephra_$cmd"."_errors_XXXX";
-    my $tmp_hmmdbfh = File::Temp->new( TEMPLATE => $tmpiname,
-				       DIR      => $dir,
-				       SUFFIX   => '.err',
-				       UNLINK   => 0);
-    my $tmp_hmmdb = $tmp_hmmdbfh->filename;
-    
+    my ($tmp_hmmdbfh, $tmp_hmmdb) = tempfile( TEMPLATE => $tmpiname, DIR => $dir, SUFFIX => '.err', UNLINK => 0 );
     
     return $tmp_hmmdb;
 }
