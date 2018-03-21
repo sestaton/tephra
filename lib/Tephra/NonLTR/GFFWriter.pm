@@ -84,15 +84,8 @@ sub _fasta_to_gff {
     my $tmpfname = $gname.'_tephra_nonltr_fas_XXXX';
     my $tmpgname = $gname.'_tephra_nonltr_gff_XXXX';
 
-    my ($outf, $ffilename) = tempfile( TEMPLATE => $tmpfname,
-                                       DIR      => $gpath,
-                                       UNLINK   => 0,
-                                       SUFFIX => '.fasta');
-    
-    my ($outg, $gfilename) = tempfile( TEMPLATE => $tmpgname,
-                                       DIR      => $gpath,
-                                       UNLINK   => 0,
-                                       SUFFIX => '.gff3');
+    my ($outf, $ffilename) = tempfile( TEMPLATE => $tmpfname, DIR => $gpath, UNLINK => 0, SUFFIX => '.fasta' );
+    my ($outg, $gfilename) = tempfile( TEMPLATE => $tmpgname, DIR => $gpath, UNLINK => 0, SUFFIX => '.gff3' );
 
     my ($lens, $combined) = $self->_get_seq_region;
 
@@ -195,15 +188,6 @@ sub _get_seq_region {
     return (\%lens, $combined);
 }
 
-#sub _get_full_seq {
-#    my $self = shift;
-#    my ($index, $chromosome, $start, $end) = @_;
-#    my $location = "$chromosome:$start-$end";
-#    my ($seq, $length) = $index->get_sequence($location);
-
-#    return $seq;
-#}
-
 sub _filterNpercent {
     my $self = shift;
     my ($seq, $start, $end) = @_;
@@ -260,7 +244,7 @@ sub _collate {
 
 sub _build_clade_map {
     my $self = shift;
-
+    
     my %clade_map = (
 	'CR1'    => 'RIC', # CR1 clade
 	'I'      => 'RII', 
