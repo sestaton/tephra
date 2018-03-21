@@ -10,6 +10,7 @@ use Capture::Tiny qw(capture_merged);
 use Cwd           qw(abs_path getcwd);
 use File::Copy    qw(copy);
 use File::Path    qw(remove_tree);
+use File::Temp    qw(tempfile);
 use File::Spec;
 use File::Basename;
 use Tephra -command;
@@ -99,18 +100,15 @@ sub _run_trim_search {
     my ($tephra_hmmdb, $tephra_trnadb) = @{$config}{qw(hmmdb trnadb)};
 
     my $dir = getcwd();
-    my $tmp_hmmdb;
+    my ($tmp_fh, $tmp_hmmdb);
     my $using_tephra_db = 0;
     unless (defined $opt->{hmmdb} && -e $opt->{hmmdb}) { 
         $using_tephra_db = 1;
         my $dir = getcwd();
         my $tmpiname  = 'tephra_transposons_hmmdb_XXXX';
-        my $tmp_hmmdbfh = File::Temp->new( TEMPLATE => $tmpiname,
-                                           DIR      => $dir,
-                                           SUFFIX   => '.hmm',
-                                           UNLINK   => 0);
-        $tmp_hmmdb = $tmp_hmmdbfh->filename;
-        copy $tephra_hmmdb, $tmp_hmmdb or die "Copy failed: $!";
+	($tmp_fh, $tmp_hmmdb) = tempfile( TEMPLATE => $tmpiname, DIR => $dir, SUFFIX => '.hmm', UNLINK => 0 );
+	close $tmp_fh;
+        copy $tephra_hmmdb, $tmp_hmmdb or die "\n[ERROR]: Copy failed: $!\n";
 	#$hmmdb = $tmp_hmmdb;
     }
 
@@ -121,7 +119,7 @@ sub _run_trim_search {
     my $debug   = $opt->{debug} // 0;
     my $threads = $opt->{threads} // 1;
     my $logfile = $opt->{logfile} // File::Spec->catfile($dir, 'tephra_findtrims.log');
-
+    
     my $trim_search = Tephra::TRIM::TRIMSearch->new( 
 	genome  => $genome, 
 	hmmdb   => $hmmdb,
@@ -140,15 +138,12 @@ sub _run_trim_search {
     my $log = $trim_search->get_tephra_logger($logfile);
     $trim_search->create_index(\@suff_args, $log);
     
-    #my ($strict_gff, $strict_models) 
     my $strict_gff
 	= $trim_search->trim_search({ index => $index, mode => 'strict'  });
-    #my ($relaxed_gff, $relaxed_models) 
      my $relaxed_gff
 	 = $trim_search->trim_search({ index => $index, mode => 'relaxed' });
+
     unlink $tmp_hmmdb if $using_tephra_db;
-    #remove_tree($strict_models, { safe => 1 });
-    #remove_tree($relaxed_models, { safe => 1 });
     unlink $logfile unless -s $logfile;
 
     return ($relaxed_gff, $strict_gff);
