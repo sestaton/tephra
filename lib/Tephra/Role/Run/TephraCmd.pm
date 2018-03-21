@@ -27,7 +27,7 @@ sub run_tephra_cmd {
         if $debug;
 
     try {
-        my @makedbout = system([0..5], 'tephra', $subcmd, @$opts);
+        my @run_out = system([0..5], 'tephra', $subcmd, @$opts);
     }
     catch {
         say STDERR "Unable to run 'tephra $subcmd'. Here is the exception: $_.";
@@ -43,7 +43,7 @@ sub capture_tephra_cmd {
         if $debug;
 
     try {
-        my @makedbout = capture([0..5], 'tephra', $subcmd, @$opts);
+        my @run_out = capture([0..5], 'tephra', $subcmd, @$opts);
     }
     catch {
         say STDERR "Unable to run 'tephra $subcmd'. Here is the exception: $_.";
