@@ -115,50 +115,31 @@ sub _run_all_commands {
     }
 
     ## combine LTRs and TRIMs
-    my ($ltrc_gff, $ltrc_fas, $ltrc_dir, $ltr_trim_gff);
+    my $ltr_trim_gff;
     if ($has_ltrs && $has_trims) {
 	$ltr_trim_gff = $tephra_obj->combine_ltrs_trims($trims_gff, $ltr_gff);
-
-	## classifyltrs on combined LTRs and TRIMs
-	($ltrc_fas, $ltrc_gff, $ltrc_dir) = $tephra_obj->classify_ltrs($log, $ltr_trim_gff);
-
-	#if (-e $ltrc_gff && -e $ltrc_fas) {
-	    #$log->info("Output files - $ltrc_gff");
-	    #$log->info("Output files - $ltrc_fas");
-	    ##push @fas_files, $ltrc_fas;
-	    #push @gff_files, $ltrc_gff;
-	    #push @classified_fastas, $ltrc_fas;
-	#}
     }
     elsif ($has_ltrs && !$has_trims) {
-	#$log->info("Output files - $trims_gff");
-        #$log->info("Output files - $trims_fas");
-        #push @fas_files, $trims_fas;
-        #push @gff_files, $trims_gff;
-
-	## classifyltrs on LTRs only
-        ($ltrc_fas, $ltrc_gff, $ltrc_dir) = $tephra_obj->classify_ltrs($log, $ltr_gff);
-
-	#if (-e $ltrc_gff && -e $ltrc_fas) {
-            #$log->info("Output files - $ltrc_gff");
-            #$log->info("Output files - $ltrc_fas");
-            #push @fas_files, $ltrc_fas;
-            #push @gff_files, $ltrc_gff;
-            #push @classified_fastas, $ltrc_fas;
-        #}
+	$ltr_trim_gff = $ltr_gff;
     }
     elsif (!$has_ltrs && $has_trims) {
-	($ltrc_fas, $ltrc_gff, $ltrc_dir) = $tephra_obj->classify_ltrs($log, $trims_gff);
+	$ltr_trim_gff = $trims_gff;
+    }
+    else {
+	$ltr_trim_gff = undef;
     }
 
-    if (-e $ltrc_gff && -e $ltrc_fas) {
-	$log->info("Output files - $ltrc_gff");
-	$log->info("Output files - $ltrc_fas");
-	push @fas_files, $ltrc_fas;
-	push @gff_files, $ltrc_gff;
-	push @classified_fastas, $ltrc_fas;
-    }
+    if (defined $ltr_trim_gff) {
+	my ($ltrc_fas, $ltrc_gff, $ltrc_dir) = $tephra_obj->classify_ltrs($log, $ltr_trim_gff);
 
+	if (-e $ltrc_gff && -e $ltrc_fas) {
+	    $log->info("Output files - $ltrc_gff");
+	    $log->info("Output files - $ltrc_fas");
+	    push @fas_files, $ltrc_fas;
+	    push @gff_files, $ltrc_gff;
+	    push @classified_fastas, $ltrc_fas;
+	}
+    }
 
     ## ltrage
     if (defined $ltrc_gff && -e $ltrc_gff && -s $ltrc_gff) {
@@ -265,8 +246,7 @@ sub _run_all_commands {
     ## classifytirs
     my ($tirc_gff, $tirc_fas, $tirc_dir);
     if (-e $tir_gff && -s $tir_gff) {
-
-	($tirc_fas, $tirc_gff) = $tephra_obj->classify_tirs($log, $tir_ref, $tir_gff);
+	($tirc_fas, $tirc_gff, $tirc_dir) = $tephra_obj->classify_tirs($log, $tir_ref, $tir_gff);
 
 	if (-e $tirc_gff && -e $tirc_fas) {
 	    $log->info("Output files - $tirc_gff");
@@ -294,7 +274,7 @@ sub _run_all_commands {
             log         => $log,
 	    log_results => 0,
             config      => $config,
-            reference   => $genome_mask3,
+            reference   => $tir_ref,
             database    => $tirc_fas,
             dbtype      => 'TIRs',
             ref_count   => $refct });
@@ -323,7 +303,7 @@ sub _run_all_commands {
     }
 
     ## combine results
-    my  ($customRepDB, $customRepGFF) = $tephra_obj->make_combined_repeatdb($log, \@fas_files);
+    my  $customRepDB = $tephra_obj->make_combined_repeatdb($log, \@fas_files);
     if (-e $customRepDB) {
         $log->info("Output files - $customRepDB");
     }
@@ -348,7 +328,7 @@ sub _run_all_commands {
     }
 
     ## combine GFF3
-    $tephra_obj->combine_gff_files($log, $customRepGFF, \@gff_files, $hel_gff, $nonltr_gff, $fragments_gff);
+    $tephra_obj->combine_gff_files($log, \@gff_files, $hel_gff, $nonltr_gff, $fragments_gff);
 
     ## calculate family similarity
     $tephra_obj->calculate_global_te_similarity($log, $customRepDB);
