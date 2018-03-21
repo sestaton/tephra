@@ -109,7 +109,7 @@ sub mask_reference {
 	$name =~ s/$1//;
     }
 
-    my $outfile  = $self->outfile // File::Spec->catfile( abs_path($path), $name.'_masked.fas' );
+    my $outfile  = $self->outfile // File::Spec->catfile( abs_path($path), $name.'_masked.fasta' );
     if (-e $outfile) {
 	say STDERR "\n[ERROR]: '$outfile' already exists. Please delete this or rename it before proceeding. Exiting.\n";
         exit(1);
@@ -154,8 +154,10 @@ sub mask_reference {
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			      my ($report, $ref, $id, $seq, $path) 
 				  = @{$data_ref}{qw(masked ref id seq path)};
-			      push @reports, $report;
-			      $seqs{$ref}{$id} = $seq;
+			      if (defined $id && defined $seq) {
+				  push @reports, $report;
+				  $seqs{$ref}{$id} = $seq;
+			      }
 			      my $t1 = gettimeofday();
                               my $elapsed = $t1 - $t0;
                               my $time = sprintf("%.2f",$elapsed/60);
@@ -240,6 +242,7 @@ sub run_masking {
 
     $self->clean_index_files($index);
     my ($id, $seq) = $self->_get_seq($outpart);
+
     # each reference sequence is in a separate directory so we just need that directory name 
     my $ref = dirname($chr);
     $ref =~ s/.*\///;
@@ -441,11 +444,13 @@ sub write_masking_results {
     my %final_rep;
     my $util = Tephra::Annotation::Util->new;
     my $repeat_map = $util->build_repeat_map;
-    #my $repeat_map = $self->_build_repeat_map;
 
+    #dd $reports;
+    my $has_masking = 0;
     my ($classlen, $orderlen, $namelen, $masklen);
     for my $report (@$reports) {
 	next unless %$report;
+	$has_masking = 1;
 	for my $rep_type (keys %$report) {
             my $total = sum(@{$report->{$rep_type}});
             my ($class, $order, $name) = @{$repeat_map->{$rep_type}}{qw(class order repeat_name)};
@@ -458,10 +463,20 @@ sub write_masking_results {
     my $total_elapsed = $t2 - $t0;
     my $final_time = sprintf("%.2f",$total_elapsed/60);
 
+    unless ($has_masking) {
+	say STDERR "\n[WARNING]: No bases were masked in '$genome' under the specified conditions, so there will be no output.\n".
+	    "Check the input, or try relaxing the alignment constraints if you believe matches should be found. Exiting.\n";
+	unlink $outfile;
+	unlink $outfile.'.log';
+	return;
+    }
+
     unless (defined $classlen && defined $orderlen && defined $namelen) {
 	say STDERR "\n[ERROR]: Could not get classification for masking results, which likely means an issue with the input.\n".
-	    "         Please check input genome and database. If this issue persists, please report it. Exiting.\n";
-	exit(1);
+	    "Please check input genome and database. If this issue persists, please report it. Exiting.\n";
+	unlink $outfile;
+	unlink $outfile.'.log';
+	return;
     }
 
     ($classlen,$orderlen, $namelen) = ($classlen+10, $orderlen+10, $namelen+15);
