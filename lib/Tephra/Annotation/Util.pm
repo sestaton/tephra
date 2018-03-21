@@ -388,7 +388,6 @@ sub _do_blast_search {
     my $fam_len_ct   = @$fam_lengths;
     my $fam_len_mean = sprintf("%.2f", $fam_len_sum/$fam_len_ct);
 
-    #say $outfh join "\t", $fam, $famsize, $count, $pid_mean, $len_mean, $fam_len_mean;
     my $results = join "\t", $fam, $famsize, $count, $pid_mean, $len_mean, $fam_len_mean;
 
     return $results;
