@@ -100,15 +100,8 @@ sub make_hscan_outfiles {
     my $tmpfname = $gname.'_tephra_helsearch_fas_XXXX';
     my $tmpgname = $gname.'_tephra_helsearch_gff_XXXX';
 
-    my ($outf, $ffilename) = tempfile( TEMPLATE => $tmpfname,
-				       DIR      => $gpath,
-				       UNLINK   => 0,
-				       SUFFIX => '.fasta');
-    
-    my ($outg, $gfilename) = tempfile( TEMPLATE => $tmpgname,
-				       DIR      => $gpath,
-				       UNLINK   => 0,
-				       SUFFIX => '.gff3');
+    my ($outf, $ffilename) = tempfile( TEMPLATE => $tmpfname, DIR => $gpath, UNLINK => 0, SUFFIX => '.fasta' );
+    my ($outg, $gfilename) = tempfile( TEMPLATE => $tmpgname, DIR => $gpath, UNLINK => 0, SUFFIX => '.gff3' );
 
     my %refs;
     my $gkseq = Bio::DB::HTS::Kseq->new($genome);
@@ -120,10 +113,10 @@ sub make_hscan_outfiles {
 	$refs{$name} = length($seq);
     }
 
-    my $header = "##gff-version 3";
+    my $header = '##gff-version 3';
     say $outg $header;
     for my $ref (nsort keys %refs) {
-	say $outg join q{ }, "##sequence-region", $ref, '1', $refs{$ref};
+	say $outg join q{ }, '##sequence-region', $ref, '1', $refs{$ref};
     }
     
     my %strand = ( forward => '+', reverse => '-' );
