@@ -94,4 +94,4 @@ ok( $tot == $exp_tot, 'Correct number of elements logged' );
 unlink $gff, $fas, $log;
 remove_tree( $outdir, { safe => 1 } );
 
-done_testing();
+#done_testing();
