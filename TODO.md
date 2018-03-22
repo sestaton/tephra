@@ -28,6 +28,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] Add optional test for the presence of coding domains similar to 'LTRRefine' class. This should reduce the
        number of DTX elements. Add this to the configuration file for the 'all' command the same as for LTRs.
  - [ ] Mark short elements with no coding potential as MITEs
+ - [ ] Output FASTA along with GFF3 like other commands
 
 ## Command `tephra sololtr`
  - [x] Create HMM of LTRs for each LTR-RT
