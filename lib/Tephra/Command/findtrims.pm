@@ -7,7 +7,7 @@ use warnings;
 use Pod::Find     qw(pod_where);
 use Pod::Usage    qw(pod2usage);
 use Capture::Tiny qw(capture_merged);
-use Cwd           qw(abs_path getcwd);
+use Cwd           qw(abs_path);
 use File::Copy    qw(copy);
 use File::Path    qw(remove_tree);
 use File::Temp    qw(tempfile);
@@ -98,15 +98,14 @@ sub _run_trim_search {
 
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($tephra_hmmdb, $tephra_trnadb) = @{$config}{qw(hmmdb trnadb)};
+    my ($name, $path, $suffix) = fileparse($opt->{genome}, qr/\.[^.]*/);
 
-    my $dir = getcwd();
     my ($tmp_fh, $tmp_hmmdb);
     my $using_tephra_db = 0;
     unless (defined $opt->{hmmdb} && -e $opt->{hmmdb}) { 
         $using_tephra_db = 1;
-        my $dir = getcwd();
         my $tmpiname  = 'tephra_transposons_hmmdb_XXXX';
-	($tmp_fh, $tmp_hmmdb) = tempfile( TEMPLATE => $tmpiname, DIR => $dir, SUFFIX => '.hmm', UNLINK => 0 );
+	($tmp_fh, $tmp_hmmdb) = tempfile( TEMPLATE => $tmpiname, DIR => $path, SUFFIX => '.hmm', UNLINK => 0 );
 	close $tmp_fh;
         copy $tephra_hmmdb, $tmp_hmmdb or die "\n[ERROR]: Copy failed: $!\n";
 	#$hmmdb = $tmp_hmmdb;
@@ -118,7 +117,7 @@ sub _run_trim_search {
     my $clean   = $opt->{clean} // 0;
     my $debug   = $opt->{debug} // 0;
     my $threads = $opt->{threads} // 1;
-    my $logfile = $opt->{logfile} // File::Spec->catfile($dir, 'tephra_findtrims.log');
+    my $logfile = $opt->{logfile} // File::Spec->catfile($path, 'tephra_findtrims.log');
     
     my $trim_search = Tephra::TRIM::TRIMSearch->new( 
 	genome  => $genome, 
@@ -130,9 +129,7 @@ sub _run_trim_search {
 	logfile => $logfile,
     );
 
-    my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
     my $index = File::Spec->catfile( abs_path($path), $name.$suffix.'.index');
-
     $genome = abs_path($genome);
     my @suff_args = qq(-db $genome -indexname $index -tis -suf -lcp -ssp -sds -des -dna);
     my $log = $trim_search->get_tephra_logger($logfile);
