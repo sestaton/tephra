@@ -169,6 +169,8 @@ sub find_transposon_fragments {
 
     say $log "\n========> Finished searching ",scalar(keys %$seqlen)," sequence in $genome in $final_time minutes.";
     close $log;
+
+    return;
 }
 
 sub collapse_overlaps {
