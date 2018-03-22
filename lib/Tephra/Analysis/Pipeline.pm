@@ -498,7 +498,6 @@ sub combine_gff_files {
     # this is so gt does not drop IDs
     my @final_gffs = grep { -s $_ } ($customRepGFF, $hel_gff, $nonltr_gff, $fragments_gff); # remove empty files
     $gff_cmd = "$gt gff3 -sort -retainids @final_gffs > $global_opts->{outfile}";
-    say STDERR "debug: $gff_cmd";
     $self->capture_cmd($gff_cmd);
     unlink $customRepGFF;
 
