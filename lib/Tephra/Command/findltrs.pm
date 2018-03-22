@@ -7,10 +7,11 @@ use warnings;
 use Pod::Find     qw(pod_where);
 use Pod::Usage    qw(pod2usage);
 use Capture::Tiny qw(capture_merged);
+use Cwd           qw(abs_path);
 use File::Path    qw(remove_tree);
 use File::Copy    qw(copy);
-use Cwd           qw(getcwd);
 use File::Temp    qw(tempfile);
+use File::Spec;
 use File::Find;
 use File::Basename;
 use Tephra -command;
@@ -112,12 +113,8 @@ sub _run_ltr_search {
     my @indexfiles;
     if (defined $opt->{index}) {
 	my ($name, $path, $suffix) = fileparse($opt->{index}, qr/\.[^.]*/);
-	my @files;
-	for my $suf ('.des', '.lcp', '.llv', '.md5', '.prj', '.sds', '.suf')  {
-	    push @files, $opt->{index}.$suf;
-	}
-	
-	my $matchstr = join "|", @files;
+	my $matchstr = join "|", map { $opt->{index}.$_ } ('.des', '.lcp', '.llv', '.md5', '.prj', '.sds', '.suf');
+
 	find( sub { push @indexfiles, $File::Find::name if -f and /$matchstr/ }, $path );
     }
     
@@ -127,13 +124,14 @@ sub _run_ltr_search {
     my $config_obj    = Tephra::Config::Reader->new( config => $opt->{config} );
     my $search_config = $config_obj->get_configuration;
     my $global_opts   = $config_obj->get_all_opts($search_config);
-   
+
+    my ($name, $path, $suffix) = fileparse($global_opts->{genome}, qr/\.[^.]*/);
+
     my $using_tephra_db = 0;
     if ($global_opts->{hmmdb} =~ /TephraDB/) { 
 	$using_tephra_db = 1;
-	my $dir = getcwd();
 	my $tmpiname  = 'tephra_transposons_hmmdb_XXXX';
-	my ($tmp_fh, $tmp_hmmdb) = tempfile( TEMPLATE => $tmpiname, DIR => $dir, SUFFIX => '.hmm', UNLINK => 0 );
+	my ($tmp_fh, $tmp_hmmdb) = tempfile( TEMPLATE => $tmpiname, DIR => $path, SUFFIX => '.hmm', UNLINK => 0 );
 	copy $tephra_hmmdb, $tmp_hmmdb or die "Copy failed: $!";
 	$global_opts->{hmmdb} = $tmp_hmmdb;
     }
@@ -149,9 +147,8 @@ sub _run_ltr_search {
     );
 
     unless (defined $opt->{index} && @indexfiles == 7) {
-	my ($name, $path, $suffix) = fileparse($global_opts->{genome}, qr/\.[^.]*/);
-	$opt->{index} = $global_opts->{genome}.'.index';
-    
+	$opt->{index} = File::Spec->catfile( abs_path($path), $name.$suffix.'.index');
+
 	my @suff_args = qq(-db $global_opts->{genome} -indexname $opt->{index} -tis -suf -lcp -ssp -sds -des -dna);
 	my $log = $ltr_search_obj->get_tephra_logger($global_opts->{logfile});
 	$ltr_search_obj->create_index(\@suff_args, $log);
