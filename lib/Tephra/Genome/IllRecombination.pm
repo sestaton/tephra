@@ -209,7 +209,7 @@ sub find_align_gaps {
     my ($seqs_in_aln, $count) = $self->split_aln($aln_file);
 
     for my $fas (@$seqs_in_aln) {
-	my $aln_in = Bio::AlignIO->new(-fh => \*$fas, -format => 'fasta');
+	my $aln_in = Bio::AlignIO->new(-file => $fas, -format => 'fasta');
 
 	my ($fname, $fpath, $fsuffix) = fileparse($fas, qr/\.[^.]*/);
 	my $seq_out = File::Spec->catfile( abs_path($fpath), $fname.'_gap_flanking_sequences.fasta' );
