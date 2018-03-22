@@ -1,7 +1,7 @@
 Revision history for Tephra
 
 Version	Date	Location
-0.09.9
+0.09.9	03/22/2018	Vancouver, BC
 
 - Add Tephra::Genome::Unmask class for unmasking all transposons that were found by searching a
   masked genome.
@@ -9,6 +9,36 @@ Version	Date	Location
   masked bases in FASTA output.
 - Remove custom repeat map building approach from 'maskref' method in favor the reusable method
   by the same name that is now in the Tephra::Annotation::Util class.
+- Modify logging method for 'findltrs' and 'findtrims' methods to write log in the location of the
+  data instead of working directory.
+- Refactor search for index files in 'findltrs' command to use absolute paths and use map/join for
+  building search pattern instead of using a for-loop to build patterns.
+- Modify how temp files are created throughout the package to use File::Temp functional interface.
+  This makes creating filehandles cleaner since both file and filehandles are returned from the
+  function tempfile().
+- Add all possible masking options to masking command arguments with the 'all' command.
+- Rename variables in *LTRRefine class to not redefine hash keys (the previous approach worked but 
+  was unsafe).
+- Modify logic for classifying LTRs/TRIMs in 'all' command. Now, there is no code duplication and
+  all possibilies of whether both LTRs and TRIMs being found are handled.
+- Standardize exemplar file names for LTRs/TIRs and solo-LTR search.
+- Add explicit return from methods in *Illrecombination and *FragmentSearch classes.
+- Add checks if 'maskref' command returned results from subsequences before attempting to collate
+  results. This removes warnings that would be raised when there was no results.
+- Bug fix for not returning TIR classification directory in 'all' command. This is required by the
+  'tirage' command.
+- Bug fix for not setting correct reference for masking with classified TIRs in 'all' command.
+- Modify method for creating combined library to only return the FASTA instead of FASTA and GFF3.
+- Modify GFF3 combining method to not take temp GFF3 as an argument. 
+- Update family-level similarity calculation in *Annotation::Util class to not skip TRIMs since these 
+  are not classified to the family level.
+- Modify BLAST search method in *Annotation::Util class to return a string of results instead of writing 
+  results to file.
+- Refactor family similarity/length calculation method in *Annotation::Util class to check if there are 
+  multi-member families  before opening file. This avoids creating a report with only a header. 
+- Warn on family similarity/length calculation in *Annotation::Util class if no multi-member families are 
+  found and clean up file if it exists.
+- Add check in *Analysis::Pipeline class to see if all GFF3 files are non-empty before sorting and combining.
 
 0.09.8	03/04/2018	Vancouver, BC
 
