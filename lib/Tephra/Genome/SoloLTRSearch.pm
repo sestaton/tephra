@@ -172,7 +172,7 @@ sub find_soloLTRs {
 	$self->write_sololtr_gff($report);
     }
     else {
-	say STDERR "[WARNING]: No solo-LTRs were found so none will be reported.";
+	say STDERR "\n[WARNING]: No solo-LTRs were found so none will be reported.\n";
 	unlink $report, $seqfile;
     }
 
