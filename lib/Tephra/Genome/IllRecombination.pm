@@ -133,7 +133,7 @@ sub align_features {
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			      unlink $data_ref->{data}{seqs}, unlink $data_ref->{data}{log};
 			      if ($data_ref->{status} =~ /failed/i) {
-				  say $log "[WARNING]: ",basename($ident), " failed with exit code: $exit_code";
+				  say $log "\n[WARNING]: ",basename($ident), " failed with exit code: $exit_code\n";
 			      }
 			      else {
 				  my $t1 = gettimeofday();
