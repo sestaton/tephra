@@ -99,6 +99,8 @@ sub run_mgescan {
 	system($cmd);
     }
     unlink $pep_file if -e $pep_file;
+
+    return;
 }
 
 sub translate_forward {
@@ -155,6 +157,8 @@ sub translate_forward {
 	#unlink $part;
     #}
     #close $seqout;
+
+    return;
 }
 
 sub get_signal_domain {
@@ -211,6 +215,8 @@ sub get_signal_domain {
 	unlink $stemp_file;
     }
     unlink $temp_file;
+
+    return;
 }
 
 sub _parse_hmmsearch {
@@ -242,6 +248,8 @@ sub _parse_hmmsearch {
 	close $out;
     }
     unlink $signal_out;
+
+    return;
 }
 
 sub _sort_matches {
@@ -276,6 +284,8 @@ sub _sort_matches {
 	say $out join "\t", $sk, @doms;
     }
     close $out;
+
+    return;
 }
 
 =head1 AUTHOR
