@@ -233,7 +233,7 @@ sub write_fragment_gff {
     for my $s (sort { $a <=> $b } keys %$windows) {
         $filt++;
         my ($match, $sstart, $send, $slen, $seval, $sstr) = @{$windows->{$s}}{qw(match start end len evalue strand)};
-	my $seq = $self->get_full_seq($index, $src, $sstart, $send);
+	my ($seq, $length) = $self->get_full_seq($index, $src, $sstart, $send);
 	$seq =~ s/.{60}\K/\n/g;
 	my $id = join "_", $match, 'fragment', "$src-$filt";
 	my $seqid = join "_", $id, $src, $sstart, $send;

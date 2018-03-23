@@ -141,7 +141,7 @@ sub _fasta_to_gff {
 		my $elem = "non_LTR_retrotransposon$ct";
                 my $tmp = $elem.'.fasta';
 		
-		my $seq = $self->get_full_seq($index, $seqname, $start, $end);
+		my ($seq, $length) = $self->get_full_seq($index, $seqname, $start, $end);
 		
 		my ($filtered_seq, $adj_start, $adj_end) = $self->_filterNpercent($seq, $start, $end);
 		if (defined $filtered_seq) {

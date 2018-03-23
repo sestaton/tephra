@@ -75,7 +75,7 @@ sub unmask_repeatdb {
 	my $seq = $store->{$id}{seq};
 	my $re = qr/helitron\d+|non_LTR_retrotransposon\d+|TRIM_retrotransposon\d+|terminal_inverted_repeat_element\d+/;
 	my ($chr, $start, $end) = ($id =~ /(?:\w{3}_)(?:singleton_)?(?:family\d+_)$re?_(\S+)_(\d+)[-_](\d+)/);
-	my $gseq = $self->get_full_seq($index, $chr, $start, $end);
+	my ($gseq, $glength) = $self->get_full_seq($index, $chr, $start, $end);
 	$gseq =~ s/.{60}\K/\n/g;
 	say $outfh join "\n", ">".$id, $gseq;
     }

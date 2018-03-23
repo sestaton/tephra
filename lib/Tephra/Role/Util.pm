@@ -4,7 +4,7 @@ use 5.014;
 use Moose::Role;
 use File::Basename qw(fileparse);
 use File::Temp     qw(tempfile);
-use Bio::DB::HTS::Kseq;
+#use Bio::DB::HTS::Kseq;
 use Bio::DB::HTS::Faidx;
 use namespace::autoclean;
 
@@ -40,7 +40,7 @@ sub get_full_seq {
     my $location = "$chromosome:$start-$end";
     my ($seq, $length) = $index->get_sequence($location);
 
-    return $seq;
+    return ($seq, $length);
 }
 
 sub _adjust_identifiers {
