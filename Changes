@@ -39,6 +39,10 @@ Version	Date	Location
 - Warn on family similarity/length calculation in *Annotation::Util class if no multi-member families are 
   found and clean up file if it exists.
 - Add check in *Analysis::Pipeline class to see if all GFF3 files are non-empty before sorting and combining.
+- Refactor logging method in GT role to use standard interface. Log errors with the data being worked on instead 
+  of the working directory from which the command was launched
+- Use standard interface for all methods that use genometools by passing in a hash of arguments, a file, 
+  and a logging object.
 
 0.09.8	03/04/2018	Vancouver, BC
 
