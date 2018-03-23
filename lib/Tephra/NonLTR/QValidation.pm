@@ -85,6 +85,8 @@ sub validate_q_score {
 	    $self->vote_hmmsearch($seq, $hmm_dir, $domain, $validation_file, $evalue_file, \@all_clade);
 	}
     }
+
+    return;
 }
 
 sub get_domain_for_full_frag {
@@ -107,6 +109,8 @@ sub get_domain_for_full_frag {
 	    $self->_add_clade_to_header($clade, $result_pep_file);
 	}
     }
+
+    return;
 }
 
 sub get_full_frag {
@@ -127,7 +131,7 @@ sub get_full_frag {
 	if (-e $file_f) {
 	    my $of = File::Spec->catfile($clade_dir, $clade.'.dna');
 	    open my $fh_out, '>', $of or die"\n[ERROR]: Could not open file: $of";
-	    $self->collate($file_f, $fh_out, '+');
+	    $self->_add_strand_to_header($file_f, $fh_out, '+');
 	    close $fh_out;
 	}
 
@@ -135,7 +139,7 @@ sub get_full_frag {
 	if (-e $file_b) {
 	    my $of = File::Spec->catfile($clade_dir, $clade.'.dna');
             open my $fh_out, '>>', $of or die"\n[ERROR]: Could not open file: $of";
-            $self->collate($file_b, $fh_out, '-');
+            $self->_add_strand_to_header($file_b, $fh_out, '-');
 	    close $fh_out;
 	}
 
@@ -146,6 +150,8 @@ sub get_full_frag {
 	    system([0..5],"transeq", "-frame=f", "-sequence=$dna_file", "-outseq=$pep_file", "-auto");
 	}
     }
+
+    return;
 }
 
 
@@ -224,6 +230,8 @@ sub get_domain_pep_seq {
     }
     close $in;
     close $out;
+
+    return;
 }
 
 
@@ -308,6 +316,8 @@ sub get_domain_dna_seq {
     }
     close $in;
     close $out;
+
+    return;
 }
 
 sub vote_hmmsearch {
@@ -387,9 +397,11 @@ sub vote_hmmsearch {
 	printf $out "%.1e\n", $sig{$key};
     }
     close $out;
+
+    return;
 }
 
-sub collate {
+sub _add_strand_to_header {
     my $self = shift;
     my ($file_in, $fh_out, $strand) = @_;
     open my $fh_in, '<', $file_in or die "\n[ERROR]: Could not open file: $file_in\n";
@@ -405,6 +417,8 @@ sub collate {
 	}
     }
     close $fh_in;
+
+    return;
 }
 
 sub _add_clade_to_header {
@@ -427,6 +441,8 @@ sub _add_clade_to_header {
     }
     close $in;
     close $out;
+
+    return;
 }
 
 =head1 AUTHOR
