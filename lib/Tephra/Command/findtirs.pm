@@ -97,7 +97,7 @@ sub _run_tir_search {
 	$index = $genome.'.index';
 
 	my @suff_args = qq(-db $genome -indexname $index -tis -suf -lcp -des -ssp -dna -mirrored);
-	$tir_search->create_index(\@suff_args, $logfile);
+	$tir_search->create_index(\@suff_args, $index, $logfile);
     }
     
     my $gff = $tir_search->tir_search($index);

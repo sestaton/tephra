@@ -133,7 +133,7 @@ sub _run_trim_search {
     $genome = abs_path($genome);
     my @suff_args = qq(-db $genome -indexname $index -tis -suf -lcp -ssp -sds -des -dna);
     my $log = $trim_search->get_tephra_logger($logfile);
-    $trim_search->create_index(\@suff_args, $log);
+    $trim_search->create_index(\@suff_args, $index, $log);
     
     my $strict_gff
 	= $trim_search->trim_search({ index => $index, mode => 'strict'  });

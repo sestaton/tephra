@@ -76,7 +76,7 @@ sub trim_search {
 
     @ltrh_cmd{@ltrh_opts} = @ltrh_args;
     my $log = $self->get_tephra_logger($logfile);
-    my $ltrh_succ = $self->run_ltrharvest(\%ltrh_cmd, $log);
+    my $ltrh_succ = $self->run_ltrharvest(\%ltrh_cmd, $ltrh_gff, $log);
     my $gffh_sort = $self->sort_gff($ltrh_gff, $log) if -s $ltrh_gff;
 
     if ($ltrh_succ && defined $gffh_sort && -s $gffh_sort) {

@@ -100,7 +100,7 @@ sub ltr_search {
     my $log = $self->get_tephra_logger($logfile);
 
     @ltrh_cmd{@ltrh_opts} = @ltrh_args;
-    my $ltrh_succ = $self->run_ltrharvest(\%ltrh_cmd, $log);
+    my $ltrh_succ = $self->run_ltrharvest(\%ltrh_cmd, $ltrh_gff, $log);
 
     if ($ltrh_succ && -s $ltrh_gff) {
 	my $gffh_sort = $self->sort_gff($ltrh_gff, $log);

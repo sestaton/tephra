@@ -151,7 +151,7 @@ sub _run_ltr_search {
 
 	my @suff_args = qq(-db $global_opts->{genome} -indexname $opt->{index} -tis -suf -lcp -ssp -sds -des -dna);
 	my $log = $ltr_search_obj->get_tephra_logger($global_opts->{logfile});
-	$ltr_search_obj->create_index(\@suff_args, $log);
+	$ltr_search_obj->create_index(\@suff_args, $opt->{index}, $log);
     }
 
     my $strict_gff =
