@@ -20,7 +20,7 @@ Version	Date	Location
 - Rename variables in *LTRRefine class to not redefine hash keys (the previous approach worked but 
   was unsafe).
 - Modify logic for classifying LTRs/TRIMs in 'all' command. Now, there is no code duplication and
-  all possibilies of whether both LTRs and TRIMs being found are handled.
+  all possibilities of whether both LTRs and TRIMs being found are handled.
 - Standardize exemplar file names for LTRs/TIRs and solo-LTR search.
 - Add explicit return from methods in *Illrecombination and *FragmentSearch classes.
 - Add checks if 'maskref' command returned results from subsequences before attempting to collate
