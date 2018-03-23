@@ -84,14 +84,14 @@ has threads => (
 
 sub create_index {
     my $self = shift;
-    my ($args, $log) = @_;
+    my ($args, $index, $log) = @_;
     my $threads = $self->threads;
 
     my $gt = $self->get_gt_exec;
     unshift @$args, 'suffixerator';
     unshift @$args, "$gt -j $threads";
 
-    my $err = $self->_make_gt_errorlog('suffixerator');
+    my $err = $self->_make_gt_errorlog('suffixerator', $index);
     my $cmd = join qq{ }, @$args;
     $cmd .= " 2> $err";
     say STDERR "DEBUG: $cmd" if $self->debug;
@@ -109,7 +109,7 @@ sub create_index {
 
 sub run_ltrharvest {
     my $self = shift;
-    my ($args, $log) = @_;
+    my ($args, $gff, $log) = @_;
     my $debug   = $self->debug;
     my $threads = $self->threads;
 
@@ -123,7 +123,7 @@ sub run_ltrharvest {
 	}
     } 
 
-    my $err = $self->_make_gt_errorlog('ltrharvest');
+    my $err = $self->_make_gt_errorlog('ltrharvest', $gff);
     my $cmd = join qq{ }, @ltrh_args;
     $cmd .= " 2>&1 >$err";
     say STDERR "DEBUG: $cmd" if $self->debug; # and exit;
@@ -151,7 +151,7 @@ sub run_ltrdigest {
     #my $time = POSIX::strftime("%d-%m-%Y_%H-%M-%S", localtime);
     #my $model_dir = File::Spec->catdir($path, "tephra_hmm_modeldir_$time");
     #make_path( $model_dir, {verbose => 0, mode => 0771,} );
-    #$TMDIR = $model_dir; 
+    #$TMPDIR = $model_dir; 
 
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($hmmer3bin) = @{$config}{qw(hmmer3bin)};
@@ -171,7 +171,7 @@ sub run_ltrdigest {
 	}
     }
     
-    my $err = $self->_make_gt_errorlog('ltrdigest');
+    my $err = $self->_make_gt_errorlog('ltrdigest', $gff);
     my $cmd = join qq{ }, @ltrd_args, $gff;
     
     $cmd .= " 2>&1 >$err";
@@ -216,7 +216,7 @@ sub run_tirvish {
 	}
     }
     
-    my $err = $self->_make_gt_errorlog('tirvish');
+    my $err = $self->_make_gt_errorlog('tirvish', $gff);
     my $cmd = join qq{ }, @tirv_args, ">", $gff;
      $cmd .= " 2> $err";
     say STDERR "DEBUG: $cmd" if $self->debug;
@@ -243,7 +243,7 @@ sub sort_gff {
     my $gff_sort = File::Spec->catfile( abs_path($path), $name."_sort$suffix" );
     my $gt = $self->get_gt_exec;
 
-    my $err = $self->_make_gt_errorlog('gt-sort');
+    my $err = $self->_make_gt_errorlog('gt-sort', $gff);
     my $cmd = "$gt -j $threads gff3 -sort $gff > $gff_sort";
     $cmd .= " 2> $err";
     say STDERR "DEBUG: $cmd" if $self->debug;
@@ -294,11 +294,13 @@ sub clean_index_files {
 
 sub _make_gt_errorlog {
     my $self = shift;
-    my ($cmd) = @_;
+    my ($cmd, $file) = @_;
  
-    my $dir = getcwd();
+    #my $dir = getcwd();
+    my ($name, $path, $suffix) = fileparse($file, qr/\.[^.]*/);
+    #my $gff_sort = File::Spec->catfile( abs_path($path), $name."_sort$suffix" );
     my $tmpiname  = "tephra_$cmd"."_errors_XXXX";
-    my ($tmp_hmmdbfh, $tmp_hmmdb) = tempfile( TEMPLATE => $tmpiname, DIR => $dir, SUFFIX => '.err', UNLINK => 0 );
+    my ($tmp_hmmdbfh, $tmp_hmmdb) = tempfile( TEMPLATE => $tmpiname, DIR => $path, SUFFIX => '.err', UNLINK => 0 );
     
     return $tmp_hmmdb;
 }
