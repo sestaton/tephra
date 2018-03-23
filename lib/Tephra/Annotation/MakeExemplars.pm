@@ -141,25 +141,30 @@ sub make_exemplars {
 
 	# full element
 	my ($source, $prim_tag, $start, $end, $strand, $family) = split /\|\|/, $ltrs{$ltr}{'full'};
-	$self->subseq($index, $source, $element, $start, $end, $allfh, undef, $family);
+	my $fullid = join "_", $family, $element, $source, $start, $end;
+	$self->write_element_parts($index, $source, $start, $end, $allfh, $fullid);
 	
 	# ltrs/tirs
 	for my $ltr_repeat (@{$ltrs{$ltr}{'repeats'}}) {
 	    my ($src, $ltrtag, $s, $e, $strand, $fam) = split /\|\|/, $ltr_repeat;
 	    my $lfname = $element;
-	    my $orientation;
+	    my ($orientation, $partid);
+
 	    if ($ltrct) {
 		$orientation = '5prime' if $strand eq '+';
 		$orientation = '3prime' if $strand eq '-';
 		$orientation = 'unk-prime-r' if $strand eq '?';
-		$self->subseq($index, $src, $element, $s, $e, $ltrs_outfh, $orientation, $family);
+		$partid = join "_", $orientation, $family, $element, $src, $s, $e;
+		$self->write_element_parts($index, $src, $s, $e, $ltrs_outfh, $partid);
+		#$self->write_element_parts($index, $src, $element, $s, $e, $ltrs_outfh, $orientation, $family);
 		$ltrct = 0;
 	    }
 	    else {
 		$orientation = '3prime' if $strand eq '+';
 		$orientation = '5prime' if $strand eq '-';
 		$orientation = 'unk-prime-f' if $strand eq '?';
-		$self->subseq($index, $src, $element, $s, $e, $ltrs_outfh, $orientation, $family);
+		$partid = join "_", $orientation, $family, $element, $src, $s, $e;
+		$self->write_element_parts($index, $src, $s, $e, $ltrs_outfh, $partid);
 		$ltrct++;
 	    }
 	}
@@ -255,23 +260,23 @@ sub parse_vmatch {
     return $tophit;
 }
 
-sub subseq {
-    my $self = shift;
-    my ($index, $loc, $elem, $start, $end, $out, $orient, $family) = @_;
+#sub write_element_parts {
+#    my $self = shift;
+#    my ($index, $loc, $elem, $start, $end, $out, $orient, $family) = @_;
 
-    my $location = "$loc:$start-$end";
-    my ($seq, $length) = $index->get_sequence($location);
+    #my $location = "$loc:$start-$end";
+    #my ($seq, $length) = $index->get_sequence($location);
+#    my ($seq, $length) = $self->get_full_seq($index, $loc, $start, $end);
+#    croak "\n[ERROR]: Something went wrong, this is a bug. Please report it.\n"
+#	unless $length;
 
-    croak "\n[ERROR]: Something went wrong, this is a bug. Please report it.\n"
-	unless $length;
+#    my $id;
+#    $id = join "_", $family, $elem, $loc, $start, $end if !$orient;
+#    $id = join "_", $orient, $family, $elem, $loc, $start, $end if $orient; # for unique IDs with clustalw
 
-    my $id;
-    $id = join "_", $family, $elem, $loc, $start, $end if !$orient;
-    $id = join "_", $orient, $family, $elem, $loc, $start, $end if $orient; # for unique IDs with clustalw
-
-    $seq =~ s/.{60}\K/\n/g;
-    say $out join "\n", ">$id", $seq;
-}
+#    $seq =~ s/.{60}\K/\n/g;
+#    say $out join "\n", ">$id", $seq;
+#}
 
 =head1 AUTHOR
 
