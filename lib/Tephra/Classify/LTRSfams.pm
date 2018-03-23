@@ -14,14 +14,15 @@ use Cwd                 qw(getcwd abs_path);
 use Path::Class         qw(file);
 #use Log::Any            qw($log);
 use Try::Tiny;
-use Tephra::Config::Exe;
+#use Tephra::Config::Exe;
 #use Data::Dump::Color;
 use namespace::autoclean;
 
 with 'Tephra::Role::Logger',
      'Tephra::Role::GFF',
      'Tephra::Role::Util',
-     'Tephra::Role::Run::Any';
+     'Tephra::Role::Run::Blast';
+     #'Tephra::Role::Run::Any';
 
 =head1 NAME
 
@@ -143,7 +144,7 @@ sub find_gypsy_copia {
 	    #say STDERR join q{ }, "strand: $strand", $pdom_org;
 	    my ($gyp_org, $cop_org);
 	    my ($gyp_dom_ct, $cop_dom_ct) = (0, 0);
-	    if (grep { /rvt_2|ubn/i && ! /rvt_1|chromo/i } @all_pdoms) {
+	    if (grep { /rvt_2|ubn2/i && ! /rvt_1|chromo/i } @all_pdoms) {
 		for my $d (@cop_exp) {
 		    for my $p (@all_pdoms) {
 			$cop_dom_ct++ if $p =~ /$d/i;
@@ -151,7 +152,7 @@ sub find_gypsy_copia {
 		}
 	    }
 	    
-	    if (grep { /rvt_1|chromo/i && ! /rvt_2|ubn/i } @all_pdoms) {
+	    if (grep { /rvt_1|chromo/i && ! /rvt_2|ubn2/i } @all_pdoms) {
 		for my $d (@gyp_exp) {
 		    for my $p (@all_pdoms) {
 			$gyp_dom_ct++ if $p =~ /$d/i;
@@ -220,38 +221,45 @@ sub search_unclassified {
     my ($unc_fas) = @_;
     my $repeatdb = $self->repeatdb->absolute->resolve;
     my $threads  = $self->threads;
-    my $blastdb  = $self->_make_blastdb($repeatdb);
+    #my $blastdb  = $self->_make_blastdb($repeatdb);
+    my $blastdb = $self->make_blastdb($repeatdb);
 
-    my ($bname, $bpath, $bsuffix) = fileparse($unc_fas, qr/\.[^.]*/);
+    my ($bname, $bpath, $bsuffix) = fileparse($repeatdb, qr/\.[^.]*/);
     my ($fname, $fpath, $fsuffix) = fileparse($unc_fas, qr/\.[^.]*/);
-    my $outfile    = $fname.'_'.$bname.'.bln';
-    my $config     = Tephra::Config::Exe->new->get_config_paths;
-    my ($blastbin) = @{$config}{qw(blastpath)};
-    my $blastn     =  File::Spec->catfile($blastbin, 'blastn');
+    my $outfile = File::Spec->catfile($fpath, $fname.'_'.$bname.'.bln');
+    #my $config     = Tephra::Config::Exe->new->get_config_paths;
+    #my ($blastbin) = @{$config}{qw(blastpath)};
+    #my $blastn     =  File::Spec->catfile($blastbin, 'blastn');
+    my $blast_report = $self->run_blast({ query   => $unc_fas, 
+					  db      => $blastdb, 
+					  threads => $threads, 
+					  outfile => $outfile,
+					  sort    => 'bitscore' });
+    #my $blastcmd = "$blastn -dust no -query $unc_fas -evalue 10 -db $blastdb ".
+	#"-outfmt 6 -num_threads $threads | sort -nrk12,12 | sort -k1,1 -u > $outfile";
 
-    my $blastcmd = "$blastn -dust no -query $unc_fas -evalue 10 -db $blastdb ".
-	"-outfmt 6 -num_threads $threads | sort -nrk12,12 | sort -k1,1 -u > $outfile";
-
-    $self->run_cmd($blastcmd);
-    unlink glob("$blastdb*");
+    #$self->run_cmd($blastcmd);
+    my @dbfiles = glob "$blastdb*";
+    unlink @dbfiles;
 
     return $outfile;
 }
 
 sub annotate_unclassified {
     my $self = shift;
+    my ($blast_out, $gypsy, $copia, $features, $ltr_rregion_map) = @_;
     my $hit_length = $self->blast_hit_length;
     my $hit_pid    = $self->blast_hit_pid;
-    my ($blast_out, $gypsy, $copia, $features, $ltr_rregion_map) = @_;
 
     my $family_map = $self->_map_repeat_types();
     open my $in, '<', $blast_out or die "\n[ERROR]: Could not open file: $blast_out\n";
-    my (%gypsy_re, %copia_re);
+    my (%gypsy_re, %copia_re, %seen);
 
     while (my $line = <$in>) {
 	chomp $line;
 	my @f = split /\t/, $line;
- 
+	next if exists $seen{$f[0]}; # this is taking the best hit only, by bitscore
+
 	if ($f[2] >= $hit_pid && $f[3] >= $hit_length) {
 	    if (exists $family_map->{$f[1]}) {
 		my $sf = $family_map->{$f[1]};
@@ -265,6 +273,7 @@ sub annotate_unclassified {
 		}
 	    }
 	}
+	$seen{$f[0]} = 1;
     }
     close $in;
     unlink $blast_out;
@@ -552,32 +561,32 @@ sub _map_repeat_types {
     return \%family_map;
 }
 
-sub _make_blastdb {
-    my $self = shift;
-    my ($db_fas) = @_;
-    my ($dbname, $dbpath, $dbsuffix) = fileparse($db_fas, qr/\.[^.]*/);
+#sub _make_blastdb {
+#    my $self = shift;
+#    my ($db_fas) = @_;
+#    my ($dbname, $dbpath, $dbsuffix) = fileparse($db_fas, qr/\.[^.]*/);
 
-    my $db = $dbname.'_blastdb';
-    my $dir = getcwd();
-    my $db_path = file($dir, $db);
-    $db_path->remove if -e $db_path;
+#    my $db = $dbname.'_blastdb';
+#    my $dir = getcwd();
+#    my $db_path = file($dir, $db);
+#    $db_path->remove if -e $db_path;
 
-    my $config = Tephra::Config::Exe->new->get_config_paths;
-    my ($blastbin)  = @{$config}{qw(blastpath)};
-    my $makeblastdb = File::Spec->catfile($blastbin, 'makeblastdb');
+#    my $config = Tephra::Config::Exe->new->get_config_paths;
+#    my ($blastbin)  = @{$config}{qw(blastpath)};
+#    my $makeblastdb = File::Spec->catfile($blastbin, 'makeblastdb');
 
-    try {
-	my @makedbout = capture([0..5],"$makeblastdb -in $db_fas -dbtype nucl -title $db -out $db_path 2>&1 > /dev/null");
-    }
-    catch {
-	say STDERR "Unable to make blast database. Here is the exception: $_.";
-	say STDERR "Ensure you have removed non-literal characters (i.e., "*" or "-") in your repeat database file.";
-	say STDERR "These cause problems with BLAST+. Exiting.";
-	exit(1);
-    };
+#    try {
+#	my @makedbout = capture([0..5],"$makeblastdb -in $db_fas -dbtype nucl -title $db -out $db_path 2>&1 > /dev/null"#);
+#    }
+#    catch {
+#	say STDERR "Unable to make blast database. Here is the exception: $_.";
+#	say STDERR "Ensure you have removed non-literal characters (i.e., "*" or "-") in your repeat database file.";
+#	say STDERR "These cause problems with BLAST+. Exiting.";
+#	exit(1);
+#    };
 
-    return $db_path;
-}
+#    return $db_path;
+#}
 
 =head1 AUTHOR
 
