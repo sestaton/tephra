@@ -3,12 +3,10 @@ package Tephra::Role::Run::Blast;
 use 5.014;
 use Moose::Role;
 use MooseX::Types::Path::Class;
-use Log::Any            qw($log);
 use IPC::System::Simple qw(system capture);
 use Cwd                 qw(abs_path);
 use Try::Tiny;
 use File::Spec;
-use File::Find;
 use File::Basename;
 use Tephra::Config::Exe;
 use namespace::autoclean;
@@ -60,7 +58,7 @@ sub make_blastdb {
     my $makeblastdb = File::Spec->catfile($blastbin, 'makeblastdb');
 
     try {
-	my @makedbout = capture([0..5],"$makeblastdb -in $db_fas -dbtype nucl -title $db -out $db_path 2>&1 > /dev/null");
+	my @makedbout = capture([0..5], "$makeblastdb -in $db_fas -dbtype nucl -title $db -out $db_path 2>&1 > /dev/null");
     }
     catch {
 	say STDERR "Unable to make blast database. Here is the exception: $_.";
@@ -99,7 +97,7 @@ sub run_blast {
     }
 
     try {
-	my @makedbout = capture([0..5], $cmd);
+	my @runout = capture([0..5], $cmd);
     }
     catch {
 	say STDERR "Unable to run blast. Here is the exception: $_.";
