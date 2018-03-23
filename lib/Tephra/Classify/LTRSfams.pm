@@ -204,8 +204,9 @@ sub find_unclassified {
 		my $id = join "_", $elem, $seq_id, $start, $end;
 		$ltr_rregion_map{$id} = $rep_region;
 		
-		my $location = "$seq_id:$start-$end";
-		my ($seq, $length) = $index->get_sequence($location);
+		my ($seq, $length) = $self->get_full_seq($index, $seq_id, $start, $end);
+		#my $location = "$seq_id:$start-$end";
+		#my ($seq, $length) = $index->get_sequence($location);
 		$seq =~ s/.{60}\K/\n/g;
 		say $ofas join "\n", ">".$id, $seq;
 	    }
