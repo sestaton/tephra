@@ -6,6 +6,7 @@ use File::Basename qw(fileparse);
 use File::Temp     qw(tempfile);
 #use Bio::DB::HTS::Kseq;
 use Bio::DB::HTS::Faidx;
+use Carp 'croak';
 use namespace::autoclean;
 
 =head1 NAME
@@ -39,31 +40,45 @@ sub get_full_seq {
     my ($index, $chromosome, $start, $end) = @_;
     my $location = "$chromosome:$start-$end";
     my ($seq, $length) = $index->get_sequence($location);
+    croak "\n[ERROR]: Something went wrong fetching sequence for '$location'. Got zero length.\n"
+	unless $length;
 
     return ($seq, $length);
 }
 
-sub _adjust_identifiers {
+sub write_element_parts {
     my $self = shift;
-    my ($fasta) = @_;
+    my ($index, $chromosome, $start, $end, $out, $id) = @_;
 
-    my ($name, $path, $suffix) = fileparse($fasta, qr/\.[^.]*/);
-    my $tmpiname  = $name.'_XXXX';
-    my ($tmp_fh, $tmp_filename) = tempfile( TEMPLATE => $tmpiname, DIR => $path, SUFFIX => $suffix, UNLINK => 0 );
+    my ($seq, $length) = $self->get_full_seq($index, $chromosome, $start, $end);
 
-    my $kseq = Bio::DB::HTS::Kseq->new($fasta);
-    my $iter = $kseq->iterator;
+    $seq =~ s/.{60}\K/\n/g;
+    say $out join "\n", ">".$id, $seq;
 
-    while (my $seqo = $iter->next_seq) {
-	my $id = $seqo->name;
-	my $seq = $seqo->seq;
-	$id =~ s/-/_/g;
-	say $tmp_fh join "\n", ">$id", $seq;
-    }
-    close $tmp_fh;
-
-    return $tmp_filename;
+    return;
 }
+
+#sub _adjust_identifiers {
+#    my $self = shift;
+#    my ($fasta) = @_;
+
+#    my ($name, $path, $suffix) = fileparse($fasta, qr/\.[^.]*/);
+#    my $tmpiname  = $name.'_XXXX';
+#    my ($tmp_fh, $tmp_filename) = tempfile( TEMPLATE => $tmpiname, DIR => $path, SUFFIX => $suffix, UNLINK => 0 );
+
+#    my $kseq = Bio::DB::HTS::Kseq->new($fasta);
+#    my $iter = $kseq->iterator;
+
+#    while (my $seqo = $iter->next_seq) {
+#	my $id = $seqo->name;
+#	my $seq = $seqo->seq;
+#	$id =~ s/-/_/g;
+#	say $tmp_fh join "\n", ">$id", $seq;
+#    }
+#    close $tmp_fh;
+
+#    return $tmp_filename;
+#}
 
 
 =head1 AUTHOR
