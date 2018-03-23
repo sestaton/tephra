@@ -221,7 +221,6 @@ sub extract_ltr_features {
     }
 
     my ($header, $features) = $self->collect_gff_features($gff);
-
     my $index = $self->index_ref($fasta);
 
     my ($family, %ltrs, %seen, %coord_map);
@@ -267,19 +266,24 @@ sub extract_ltr_features {
 	for my $ltr_repeat (@{$ltrs{$ltr}{'ltrs'}}) {
 	    #ltr: Contig57_HLAC-254L24||long_terminal_repeat||60101||61950||+
             my ($src, $ltrtag, $s, $e, $strand) = split /\|\|/, $ltr_repeat;
+	    my $ltrid;
 
             if ($ltrct) {
 		$orientation = '5prime' if $strand eq '-';
                 $orientation = '3prime'  if $strand eq '+';
                 $orientation = 'unk-prime-r' if $strand eq '?';
-		$self->subseq($index, $src, $element, $s, $e, $ltrs_outfh, $orientation, $family);
+		$ltrid = join "_", $orientation, $family, $element, $src, $s, $e;
+		$self->write_element_parts($index, $src, $s, $e, $ltrs_outfh, $ltrid);
+		#$self->subseq($index, $src, $element, $s, $e, $ltrs_outfh, $orientation, $family);
                 $ltrct = 0;
             }
             else {
 		$orientation = '5prime' if $strand eq '+';
                 $orientation = '3prime' if $strand eq '-';
                 $orientation = 'unk-prime-f' if $strand eq '?';
-		$self->subseq($index, $src, $element, $s, $e, $ltrs_outfh, $orientation, $family);
+		$ltrid = join "_", $orientation, $family, $element, $src, $s, $e;
+		$self->write_element_parts($index, $src, $s, $e, $ltrs_outfh, $ltrid);
+		#$self->subseq($index, $src, $element, $s, $e, $ltrs_outfh, $orientation, $family);
                 $ltrct++;
             }
         }
@@ -383,23 +387,23 @@ sub parse_aln {
     return $phy;
 }
 
-sub subseq {
-    my $self = shift;
-    my ($index, $loc, $elem, $start, $end, $out, $orient, $family) = @_;
+#sub subseq {
+#    my $self = shift;
+#    my ($index, $loc, $elem, $start, $end, $out, $orient, $family) = @_;
 
-    my $location = "$loc:$start-$end";
-    my ($seq, $length) = $index->get_sequence($location);
+#    my $location = "$loc:$start-$end";
+#    my ($seq, $length) = $index->get_sequence($location);
 
-    croak "\n[ERROR]: Something went wrong, this is a bug. Please report it.\n"
-        unless $length;
+#    croak "\n[ERROR]: Something went wrong, this is a bug. Please report it.\n"
+#        unless $length;
 
-    my $id;
-    $id = join "_", $family, $elem, $loc, $start, $end if !$orient;
-    $id = join "_", $orient, $family, $elem, $loc, $start, $end if $orient; # for unique IDs with clustalw
+#    my $id;
+#    $id = join "_", $family, $elem, $loc, $start, $end if !$orient;
+#    $id = join "_", $orient, $family, $elem, $loc, $start, $end if $orient; # for unique IDs with clustalw
 
-    $seq =~ s/.{60}\K/\n/g;
-    say $out join "\n", ">$id", $seq;
-}
+#    $seq =~ s/.{60}\K/\n/g;
+#    say $out join "\n", ">$id", $seq;
+#}
 
 sub collate {
     my $self = shift;
