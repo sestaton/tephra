@@ -23,7 +23,8 @@ use Tephra::Config::Exe;
 #use Data::Dump::Color;
 use namespace::autoclean;
 
-with 'Tephra::Role::Run::Any';
+with 'Tephra::Role::Run::Any',
+     'Tephra::Role::Util';
 
 =head1 NAME
 
@@ -466,20 +467,6 @@ sub get_stats {
 	my $sum = $stat->sum;
 
 	push @{$gap_stats->{$fasname}}, join "||", $gap, $count, $gap_percent, $mean, $min, $max, $sum;
-    }
-
-    return;
-}
-
-sub collate {
-    my $self = shift;
-    my ($file_in, $fh_out) = @_;
-    
-    open my $fh_in, '<', $file_in or die "\n[ERROR]: Could not open file: $file_in\n";
-
-    while (my $line = <$fh_in>) {
-	chomp $line;
-	say $fh_out $line;
     }
 
     return;
