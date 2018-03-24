@@ -100,7 +100,7 @@ sub find_tc1_mariner {
 		($seq_id, $source, $start, $end, $strand) = @{$tir_feature}{qw(seq_id source start end strand)};
 		my $tsd_len = $end - $start + 1;
 		if ($tsd_len == 2) {
-		    my $seq = $self->subseq($index, $seq_id, undef, $start, $end, undef);
+		    my ($seq, $length) = $self->get_full_seq($index, $seq_id, $start, $end);
 		    $is_mariner = 1 if $seq =~ /ta/i;
 		}
 	    }
@@ -115,7 +115,7 @@ sub find_tc1_mariner {
 		    my $elem_id = $tir_feature->{attributes}{ID}[0];
 		    ($seq_id, $source, $start, $end, $strand) = 
 			@{$tir_feature}{qw(seq_id source start end strand)};
-		    my $seq = $self->subseq($index, $seq_id, $elem_id, $start, $end, undef);
+		    my ($seq, $length) = $self->get_full_seq($index, $seq_id, $start, $end);
 		    my $id = join "_", 'DTT', $elem_id, $seq_id, $start, $end;
 		    say $faout join "\n", ">".$id, $seq;
 
@@ -226,7 +226,7 @@ sub find_hat {
 		    my $elem_id = $tir_feature->{attributes}{ID}[0];
 		    ($seq_id, $source, $start, $end, $strand) = 
 			@{$tir_feature}{qw(seq_id source start end strand)};
-		    my $seq = $self->subseq($index, $seq_id, $elem_id, $start, $end, undef);
+		    my ($seq, $length) = $self->get_full_seq($index, $seq_id, $start, $end);
 		    my $id = join "_", 'DTA', $elem_id, $seq_id, $start, $end;
 		    say $faout join "\n", ">".$id, $seq;
 
@@ -341,7 +341,7 @@ sub find_mutator {
 		    my $elem_id = $tir_feature->{attributes}{ID}[0];
 		    ($seq_id, $source, $start, $end, $strand) = 
 			@{$tir_feature}{qw(seq_id source start end strand)};
-		    my $seq = $self->subseq($index, $seq_id, $elem_id, $start, $end, undef);
+		    my ($seq, $length) = $self->get_full_seq($index, $seq_id, $start, $end);
 		    my $id = join "_", 'DTM', $elem_id, $seq_id, $start, $end;
 		    say $faout join "\n", ">".$id, $seq;
 
@@ -445,7 +445,8 @@ sub find_cacta {
                 my $elem_id = $tir_feature->{attributes}{ID}[0];
                 ($seq_id, $source, $start, $end, $strand) = 
 		    @{$tir_feature}{qw(seq_id source start end strand)};
-                my $seq = $self->subseq($index, $seq_id, $elem_id, $start, $end, undef);
+		my ($seq, $length) = $self->get_full_seq($index, $seq_id, $start, $end);
+
 		if ($seq =~ /^cact(?:a|g)?|cact(?:a|g)?$/i) {
 		    # Lewin, 1997 http://www.plantphysiol.org/content/132/1/52.full
 		    # provides this TIR length definition, but it seems to remove all predictions
@@ -463,7 +464,7 @@ sub find_cacta {
 		    my $elem_id = $tir_feature->{attributes}{ID}[0];
 		    ($seq_id, $source, $start, $end, $strand) = 
 			@{$tir_feature}{qw(seq_id source start end strand)};
-		    my $seq = $self->subseq($index, $seq_id, $elem_id, $start, $end, undef);
+		    my ($seq, $length) = $self->get_full_seq($index, $seq_id, $start, $end);
 		    my $id = join "_", 'DTC', $elem_id, $seq_id, $start, $end;
 		    say $faout join "\n", ">".$id, $seq;
 
@@ -562,7 +563,7 @@ sub write_unclassified_tirs {
                 my $elem_id = $tir_feature->{attributes}{ID}[0];
                 ($seq_id, $source, $start, $end, $strand) = 
 		    @{$tir_feature}{qw(seq_id source start end strand)};
-                my $seq = $self->subseq($index, $seq_id, $elem_id, $start, $end, undef);
+		my ($seq, $length) = $self->get_full_seq($index, $seq_id, $start, $end);
                 my $id = join "_", 'DTX', $elem_id, $seq_id, $start, $end;
 		$tir_feature->{attributes}{superfamily} = 'DTX';
 
@@ -651,20 +652,6 @@ sub write_combined_output {
     unlink @{$outfiles->{fastas}}, @{$outfiles->{gffs}};
 
     return;
-}
-
-sub subseq {
-    my $self = shift;
-    my ($index, $loc, $elem, $start, $end, $out) = @_;
-
-    my $location = "$loc:$start-$end";
-    my ($seq, $length) = $index->get_sequence($location);
-    croak "\n[ERROR]: Something went wrong. This is a bug, please report it.\n"
-        unless $length;
-
-    $seq =~ s/.{60}\K/\n/g;
-
-    return $seq;
 }
 
 =head1 AUTHOR
