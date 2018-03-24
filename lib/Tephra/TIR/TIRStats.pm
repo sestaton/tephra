@@ -359,46 +359,11 @@ sub process_align_args {
     return;
 }
 
-#sub parse_aln {
-#    my $self = shift;
-#    my ($aln, $tre, $dnd) = @_;
-
-#    my ($name, $path, $suffix) = fileparse($aln, qr/\.[^.]*/);
-#    my $phy = File::Spec->catfile( abs_path($path), $name.'.phy' );
-    
-#    my $aln_in  = Bio::AlignIO->new(-file  => $aln,    -format => 'clustalw');
-#    my $aln_out = Bio::AlignIO->new(-file  => ">$phy", -format => 'phylip', -flag_SI => 1, -idlength => 20);
-
-#    while (my $alnobj = $aln_in->next_aln) {
-#	$aln_out->write_aln($alnobj);
-#    }
-
-#    my $tre_in  = Bio::TreeIO->new(-file => $tre,    -format => 'newick');
-#    my $tre_out = Bio::TreeIO->new(-file => ">$dnd", -format => 'newick');
-
-#    while (my $treobj = $tre_in->next_tree) {
-#	for my $node ($treobj->get_nodes) {
-#	    my $id = $node->id;
-#	    next unless defined $id;
-#	    my $newid = substr $id, 0, 20;
-#	    $node->id($newid);
-#	}
-#	$tre_out->write_tree($treobj);
-#    }
-#    unlink $tre;
-    
-#    return $phy;
-#}
-
 sub write_tir_parts {
     my $self = shift;
     my ($index, $loc, $elem, $start, $end, $out, $orient, $family) = @_;
 
-#    my $location = "$loc:$start-$end";
-#    my ($seq, $length) = $index->get_sequence($location);
     my ($seq, $length) = $self->get_full_seq($index, $loc, $start, $end);
-#    croak "\n[ERROR]: Something went wrong, this is a bug. Please report it.\n"
-#        unless $length;
 
     # need to reverse-complement the inverted seq
     $seq = $self->_revcom($seq) if $orient =~ /3prime|prime-r/;
@@ -407,23 +372,10 @@ sub write_tir_parts {
     $id = join "_", $family, $elem, $loc, $start, $end if !$orient;
     $id = join "_", $orient, $family, $elem, $loc, $start, $end if $orient; # for unique IDs with clustalw
 
-#    $seq =~ s/.{60}\K/\n/g;
-#    say $out join "\n", ">$id", $seq;
     $self->write_element_parts($index, $loc, $start, $end, $out, $id);
 
     return;
 }
-
-#sub collate {
-#    my $self = shift;
-#    my ($file_in, $fh_out) = @_;
-#    my $lines = do { 
-#	local $/ = undef; 
-#	open my $fh_in, '<', $file_in or die "\n[ERROR]: Could not open file: $file_in\n";
-#	<$fh_in>;
-#    };
-#    print $fh_out $lines;
-#}
 
 sub _check_tirct {
     my $self = shift;
@@ -454,18 +406,6 @@ sub _revcom {
 	return $seq;
     }
 }
-
-#sub _check_divergence {
-#    my $self = shift;
-#    my ($phy) = @_;
-
-#    my $alnio = Bio::AlignIO->new(-file => $phy, -format => 'phylip', -longid => 1); 
-#    my $aln = $alnio->next_aln;
-#    my $pid = $aln->overall_percentage_identity;
-#    my $div = 100 - $pid;
-
-#    return $div;
-#}
 
 =head1 AUTHOR
 
