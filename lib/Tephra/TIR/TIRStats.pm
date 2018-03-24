@@ -366,13 +366,15 @@ sub write_tir_parts {
     my ($seq, $length) = $self->get_full_seq($index, $loc, $start, $end);
 
     # need to reverse-complement the inverted seq
-    $seq = $self->_revcom($seq) if $orient =~ /3prime|prime-r/;
+    my $utils = Tephra::Alignment::Utils->new;
+    $seq = $utils->revcom($seq) if $orient =~ /3prime|prime-r/;
 
     my $id;
     $id = join "_", $family, $elem, $loc, $start, $end if !$orient;
     $id = join "_", $orient, $family, $elem, $loc, $start, $end if $orient; # for unique IDs with clustalw
 
-    $self->write_element_parts($index, $loc, $start, $end, $out, $id);
+    #$self->write_element_parts($index, $loc, $start, $end, $out, $id);
+    say $out join "\n", ">".$id, $seq;
 
     return;
 }
@@ -390,21 +392,6 @@ sub _check_tirct {
     }
 
     return $ct;
-}
-
-sub _revcom {
-    my $self = shift;
-    my ($seq) = @_;
-
-    if ($seq =~ /[atcg]/i) {
-	my $revcom = reverse $seq;
-	$revcom =~ tr/ACGTacgt/TGCAtgca/;
-	return $revcom;
-    }
-    else {
-	say STDERR "\n[WARNING]: Not going to reverse protein sequence.";
-	return $seq;
-    }
 }
 
 =head1 AUTHOR
