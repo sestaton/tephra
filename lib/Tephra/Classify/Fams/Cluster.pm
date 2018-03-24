@@ -140,27 +140,31 @@ sub extract_ltr_features {
         my ($element, $rstart, $rend) = split /\|\|/, $ltr;
         # full element
         my ($source, $prim_tag, $fstart, $fend) = split /\|\|/, $ltrs{$ltr}{'full'};
-        $self->subseq($index, $source, $element, $fstart, $fend, $allfh);
+	my $fullid = join "_", $element, $source, $fstart, $fend;
+	$self->write_element_parts($index, $source, $fstart, $fend, $allfh, $fullid);
 
         # pbs
         if ($ltrs{$ltr}{'pbs'}) {
             my ($pbssource, $pbstag, $trna, $pbsstart, $pbsend) = split /\|\|/, $ltrs{$ltr}{'pbs'};
-            $self->subseq($index, $pbssource, $element, $pbsstart, $pbsend, $pbsfh);
+	    my $pbsid = join "_", $element, $pbssource, $pbsstart, $pbsend;
+	    $self->write_element_parts($index, $pbssource, $pbsstart, $pbsend, $pbsfh, $pbsid);
         }
         # ppt
         if ($ltrs{$ltr}{'ppt'}) {
             my ($pptsource, $ppttag, $pptstart, $pptend) = split /\|\|/, $ltrs{$ltr}{'ppt'};
-            $self->subseq($index, $source, $element, $pptstart, $pptend, $pptfh);
+	    my $pptid = join "_", $element, $pptsource, $pptstart, $pptend;
+	    $self->write_element_parts($index, $pptsource, $pptstart, $pptend, $pptfh, $pptid);
 	}
 
 	for my $ltr_repeat (@{$ltrs{$ltr}{'ltrs'}}) {
             my ($src, $ltrtag, $s, $e, $strand) = split /\|\|/, $ltr_repeat;
+	    my $ltrid = join "_", $element, $src, $s, $e;
             if ($ltrct) {
-                $self->subseq($index, $src, $element, $s, $e, $fivefh);
+		$self->write_element_parts($index, $src, $s, $e, $fivefh, $ltrid);
                 $ltrct = 0;
             }
             else {
-                $self->subseq($index, $src, $element, $s, $e, $threfh);
+		$self->write_element_parts($index, $src, $s, $e, $threfh, $ltrid);
                 $ltrct++;
             }
         }
@@ -263,16 +267,20 @@ sub extract_tir_features {
         my ($element, $rstart, $rend) = split /\|\|/, $tir;
         # full element
         my ($source, $prim_tag, $fstart, $fend) = split /\|\|/, $tirs{$tir}{'full'};
-        $self->subseq($index, $source, $element, $fstart, $fend, $allfh);
+	my $fullid = join "_", $element, $source, $fstart, $fend;
+	$self->write_element_parts($index, $source, $fstart, $fend, $allfh, $fullid);
 
+	my $partid;
         for my $tir_repeat (@{$tirs{$tir}{'tirs'}}) {
             my ($src, $tirtag, $s, $e, $strand) = split /\|\|/, $tir_repeat;
+	    my $partid = join "_", $element, $src, $s, $e;
+
             if ($tirct) {
-                $self->subseq($index, $src, $element, $s, $e, $fivefh);
+		$self->write_element_parts($index, $src, $s, $e, $fivefh, $partid);
                 $tirct = 0;
             }
             else {
-                $self->subseq($index, $src, $element, $s, $e, $threfh);
+		$self->write_element_parts($index, $src, $s, $e, $threfh, $partid);
                 $tirct++;
             }
         }
@@ -330,7 +338,7 @@ sub merge_overlapping_hits {
                             
                     for my $r (split /\,/, $union) {
                         my ($ustart, $uend) = split /\.\./, $r;
-                        my $seq = $self->subseq_pdoms($index, $src, $ustart, $uend);
+			my ($seq, $length) = $self->get_full_seq($index, $src, $ustart, $uend);
                         my $k = join "_", $ustart, $uend;
                         $seqs{$k} = $seq;
                     }
@@ -339,7 +347,8 @@ sub merge_overlapping_hits {
                 }
                 else {
                     my ($nustart, $nuend, $str) = split /\|\|/, @{$pdoms->{$src}{$element}{$pdom_type}}[0];
-                    $self->subseq($index, $src, $element, $nustart, $nuend, $fh);
+		    my $id = join "_", $element, $src, $nustart, $nuend;
+		    $self->write_element_parts($index, $src, $nustart, $nuend, $fh, $id);
                 }
                 close $fh;
                 %seqs   = ();
@@ -350,17 +359,6 @@ sub merge_overlapping_hits {
     }
 
     return;
-}
-
-sub subseq_pdoms {
-    my $self = shift;
-    my ($index, $loc, $start, $end) = @_;
-
-    my $location = "$loc:$start-$end";
-    my ($seq, $length) = $index->get_sequence($location);
-    croak "\n[ERROR]: Something went wrong. This is a bug, please report it.\n"
-        unless $length;
-    return $seq;
 }
 
 sub concat_pdoms {
@@ -550,21 +548,6 @@ sub process_cluster_args {
     unlink $log;
 
     return $vmrep;
-}
-
-sub subseq {
-    my $self = shift;
-    my ($index, $loc, $elem, $start, $end, $out) = @_;
-
-    my $location = "$loc:$start-$end";
-    my ($seq, $length) = $index->get_sequence($location);
-    croak "\n[ERROR]: Something went wrong. This is a bug, please report it.\n"
-        unless $length;
-
-    my $id = join "_", $elem, $loc, $start, $end;
-
-    $seq =~ s/.{60}\K/\n/g;
-    say $out join "\n", ">$id", $seq;
 }
 
 sub parse_clusters {
