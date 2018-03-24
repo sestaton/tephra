@@ -69,6 +69,21 @@ sub check_divergence {
     return $div;
 }
 
+sub revcom {
+    my $self = shift;
+    my ($seq) = @_;
+
+    if ($seq =~ /[atcg]/i) {
+        my $revcom = reverse $seq;
+        $revcom =~ tr/ACGTacgt/TGCAtgca/;
+        return $revcom;
+    }
+    else {
+        say STDERR "\n[WARNING]: Not going to reverse protein sequence.\n";
+        return $seq;
+    }
+}
+
 =head1 AUTHOR
 
 S. Evan Staton, C<< <evan at evanstaton.com> >>
