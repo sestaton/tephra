@@ -15,11 +15,10 @@ use Time::HiRes     qw(gettimeofday);
 use Log::Any        qw($log);
 use Cwd             qw(getcwd abs_path);
 use Bio::DB::HTS::Kseq;
-use Bio::AlignIO;
-use Bio::TreeIO;
 use Parallel::ForkManager;
 use Carp 'croak';
 use Try::Tiny;
+use Tephra::Alignment::Utils;
 #use Data::Dump::Color;
 use namespace::autoclean;
 
@@ -274,7 +273,6 @@ sub extract_ltr_features {
                 $orientation = 'unk-prime-r' if $strand eq '?';
 		$ltrid = join "_", $orientation, $family, $element, $src, $s, $e;
 		$self->write_element_parts($index, $src, $s, $e, $ltrs_outfh, $ltrid);
-		#$self->subseq($index, $src, $element, $s, $e, $ltrs_outfh, $orientation, $family);
                 $ltrct = 0;
             }
             else {
@@ -283,7 +281,6 @@ sub extract_ltr_features {
                 $orientation = 'unk-prime-f' if $strand eq '?';
 		$ltrid = join "_", $orientation, $family, $element, $src, $s, $e;
 		$self->write_element_parts($index, $src, $s, $e, $ltrs_outfh, $ltrid);
-		#$self->subseq($index, $src, $element, $s, $e, $ltrs_outfh, $orientation, $family);
                 $ltrct++;
             }
         }
@@ -301,7 +298,8 @@ sub process_baseml_args {
     my $divfile = File::Spec->catfile( abs_path($ppath), $pname.'-divergence.txt' );
     $divfile = basename($divfile);
 
-    my $divergence = $self->_check_divergence($phy);
+    my $utils = Tephra::Alignment::Utils->new;
+    my $divergence = $utils->check_divergence($phy);
 
     if ($divergence > 0) {
 	my $baseml_args = $self->create_baseml_files({ phylip => $phy, treefile => $dnd });
@@ -350,70 +348,11 @@ sub process_align_args {
     $status = $self->capture_cmd($trecmd);
     unlink $db && return if $status =~ /failed/i;
 
-    my $phy = $self->parse_aln($aln, $tre, $dnd);
+    my $utils = Tephra::Alignment::Utils->new;
+    my $phy = $utils->parse_aln($aln, $tre, $dnd);
     $self->process_baseml_args($phy, $dnd, $resdir);
     
     return;
-}
-
-sub parse_aln {
-    my $self = shift;
-    my ($aln, $tre, $dnd) = @_;
-
-    my ($name, $path, $suffix) = fileparse($aln, qr/\.[^.]*/);
-    my $phy = File::Spec->catfile( abs_path($path), $name.'.phy' );
-    
-    my $aln_in  = Bio::AlignIO->new(-file  => $aln,    -format => 'clustalw');
-    my $aln_out = Bio::AlignIO->new(-file  => ">$phy", -format => 'phylip', -flag_SI => 1, -idlength => 20);
-
-    while (my $alnobj = $aln_in->next_aln) {
-	$aln_out->write_aln($alnobj);
-    }
-
-    my $tre_in  = Bio::TreeIO->new(-file => $tre,    -format => 'newick');
-    my $tre_out = Bio::TreeIO->new(-file => ">$dnd", -format => 'newick');
-
-    while (my $treobj = $tre_in->next_tree) {
-	for my $node ($treobj->get_nodes) {
-	    my $id = $node->id;
-	    next unless defined $id;
-	    my $newid = substr $id, 0, 20;
-	    $node->id($newid);
-	}
-	$tre_out->write_tree($treobj);
-    }
-    unlink $tre;
-    
-    return $phy;
-}
-
-#sub subseq {
-#    my $self = shift;
-#    my ($index, $loc, $elem, $start, $end, $out, $orient, $family) = @_;
-
-#    my $location = "$loc:$start-$end";
-#    my ($seq, $length) = $index->get_sequence($location);
-
-#    croak "\n[ERROR]: Something went wrong, this is a bug. Please report it.\n"
-#        unless $length;
-
-#    my $id;
-#    $id = join "_", $family, $elem, $loc, $start, $end if !$orient;
-#    $id = join "_", $orient, $family, $elem, $loc, $start, $end if $orient; # for unique IDs with clustalw
-
-#    $seq =~ s/.{60}\K/\n/g;
-#    say $out join "\n", ">$id", $seq;
-#}
-
-sub collate {
-    my $self = shift;
-    my ($file_in, $fh_out) = @_;
-    my $lines = do { 
-	local $/ = undef; 
-	open my $fh_in, '<', $file_in or die "\n[ERROR]: Could not open file: $file_in\n";
-	<$fh_in>;
-    };
-    print $fh_out $lines;
 }
 
 sub _get_exemplar_ltrs {
@@ -459,18 +398,6 @@ sub _get_exemplar_ltrs {
     }
 
     return \@ltrseqs;
-}
-
-sub _check_divergence {
-    my $self = shift;
-    my ($phy) = @_;
-
-    my $alnio = Bio::AlignIO->new(-file => $phy, -format => 'phylip', -longid => 1); 
-    my $aln = $alnio->next_aln;
-    my $pid = $aln->overall_percentage_identity;
-    my $div = 100 - $pid;
-
-    return $div;
 }
 
 =head1 AUTHOR
