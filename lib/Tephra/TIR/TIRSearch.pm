@@ -122,7 +122,8 @@ sub _filter_tir_gff {
 		my $elem_id = $tir_feature->{attributes}{ID}[0];
 		($seq_id, $source, $tir_start, $tir_end, $strand) 
 		    = @{$tir_feature}{qw(seq_id source start end strand)};
-		$self->subseq($index, $seq_id, $elem_id, $tir_start, $tir_end, $faout)
+		my $id = join "_", $elem_id, $seq_id, $tir_start, $tir_end;
+		$self->write_element_parts($index, $seq_id, $tir_start, $tir_end, $faout, $id);
             }
 	    my $gff3_str = gff3_format_feature($tir_feature);
 	    $tir_feats .= $gff3_str;
@@ -137,23 +138,6 @@ sub _filter_tir_gff {
 
     move $outfile, $gff or die "\n[ERROR]: move failed: $!\n";
     return $outfile;
-}
-
-sub subseq {
-    my $self = shift;
-    my ($index, $loc, $elem, $start, $end, $out) = @_;
-
-    my $location = "$loc:$start-$end";
-    my ($seq, $length) = $index->get_sequence($location);
-    croak "\n[ERROR]: Something went wrong. This is a bug, please report it.\n"
-        unless $length;
-
-    my $id = join "_", $elem, $loc, $start, $end;
-
-    if ($seq) {
-        $seq =~ s/.{60}\K/\n/g;
-        say $out join "\n", ">$id", $seq;
-    }
 }
 
 =head1 AUTHOR
