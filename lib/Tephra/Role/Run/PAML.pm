@@ -13,6 +13,7 @@ use File::Path          qw(remove_tree);
 use File::Copy          qw(move copy);
 use Log::Any            qw($log);
 use Cwd                 qw(getcwd abs_path);
+use Bio::AlignIO;
 use Tephra::Config::Exe;
 use namespace::autoclean;
 
