@@ -101,7 +101,7 @@ sub _fasta_to_gff {
 		    $regions{$name}{$id}{$start} = join "||", $start, $end, $strand;
 		}
 		else {
-		    warn "\n[ERROR]: Could not parse sequence ID for header: '$line'. ".
+		    say STDERR "\n[ERROR]: Could not parse sequence ID for header: '$line'. ".
 			"This is a bug, please report it.\n";
 		}
 	    }
@@ -146,7 +146,7 @@ sub _fasta_to_gff {
 		my ($filtered_seq, $adj_start, $adj_end) = $self->_filterNpercent($seq, $start, $end);
 		if (defined $filtered_seq) {
 		    my $id = join "_", $elem, $seqname, $adj_start, $adj_end;
-		    say $outf join "\n", ">$id", $filtered_seq;
+		    say $outf join "\n", ">".$id, $filtered_seq;
 		    say $outg join "\t", $name, 'Tephra', 'non_LTR_retrotransposon', $adj_start, $adj_end, '.', $strand, '.',
 		        "ID=$elem;Ontology_term=SO:0000189";
 		    my $sfcode = $util->map_superfamily_name_to_code($clade);
@@ -173,7 +173,7 @@ sub _get_seq_region {
     open my $out, '>', $combined or die "\n[ERROR]: Could not open file: $combined\n";
     
     for my $seq (nsort @seqs) {
-	$self->_collate($seq, $out);
+	$self->collate($seq, $out);
 	my $kseq = Bio::DB::HTS::Kseq->new($seq);
 	my $iter = $kseq->iterator();
 
@@ -229,17 +229,6 @@ sub _filterNpercent {
     else {
 	return (undef, undef, undef);
     }
-}
-
-sub _collate {
-    my $self = shift;
-    my ($file_in, $fh_out) = @_;
-    my $lines = do { 
-        local $/ = undef; 
-        open my $fh_in, '<', $file_in or die "\n[ERROR]: Could not open file: $file_in\n";
-        <$fh_in>;
-    };
-    print $fh_out $lines;
 }
 
 sub _build_clade_map {
