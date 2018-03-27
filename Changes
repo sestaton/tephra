@@ -1,6 +1,25 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.10.0	03/27/2018	Vancouver, BC
+
+- Remove redundant 'subseq' method from all classes in favor of reusable 'write_element_parts'
+  role-based methods.
+- Remove redundant 'collate' method from all classes to be now consumed by the *Util role.
+- Refactor logging classification and domain organization results from TIRSfams/LTRSfams classes 
+  and 'classifytirs' command to use logging role (*Classify::Role::LogResults).
+- Modify logging method for LTR/TIR classification results and domain architecture to use 
+  abstract sprintf-based string formatting instead of manual formatting.
+- Expand domain architecture reporting for 'classifytirs' command to also report a combined
+  summary for both strands.
+- Use BLAST role for searching unclassified elements in the *LTRSfams class.
+- Add *Alignment::Utils class for importing shared methods for manipulating alignments used
+  in calculation of LTR/TIR ages.
+- Modify 'revcom' method in *TIRStats class to ensure that features are parsed and written in
+  the correct context.
+- Add explicit return to methods for development tests and readability (in particular, there were
+  no explicit returns from many of the non-LTR classes, which have been now updated).
+
 0.09.9	03/22/2018	Vancouver, BC
 
 - Add Tephra::Genome::Unmask class for unmasking all transposons that were found by searching a
