@@ -17,7 +17,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] identify fragmented elements with refined full-length elements (handled in v0.08.0+ in 'getfragments'
        command)
  - [x] include measure of similarity within/between families
- - [ ] use BLAST role to run searches for 'search_unclassified' method in Tephra::Classify::LTRSfams
+ - [x] use BLAST role to run searches for 'search_unclassified' method in Tephra::Classify::LTRSfams
  - [ ] investigate why UBN2* domains are being used to classify Gypsy
  - [ ] add DIRS and PLE so we are describing all orders in Wicker's scheme
 
@@ -50,7 +50,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] in tests, skip if empty output (none found). This is not a good test honestly, need a new reference
  - [x] write fasta of each superfamily, and combined library
  - [x] identify	fragmented elements with refined full-length elements
- - [ ] report domain architecture, as for LTR elements
+ - [x] report domain architecture, as for LTR elements
 
 ## Command `tephra findltrs`
  - [x] Find all non-overlapping LTR-RTs under strict and relaxed conditions
