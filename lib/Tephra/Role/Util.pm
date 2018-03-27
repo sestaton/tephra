@@ -15,11 +15,11 @@ Tephra::Role::Util - Helper methods for running programs
 
 =head1 VERSION
 
-Version 0.09.9
+Version 0.10.00
 
 =cut
 
-our $VERSION = '0.09.9';
+our $VERSION = '0.10.00';
 $VERSION = eval $VERSION;
 
 sub index_ref {

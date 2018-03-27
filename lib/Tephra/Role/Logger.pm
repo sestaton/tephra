@@ -17,11 +17,11 @@ Tephra::Role::Logger - Helper methods for logging Tephra commands
 
 =head1 VERSION
 
-Version 0.09.9
+Version 0.10.00
 
 =cut
 
-our $VERSION = '0.09.9';
+our $VERSION = '0.10.00';
 #$VERSION = eval $VERSION;
 
 sub get_tephra_logger {
