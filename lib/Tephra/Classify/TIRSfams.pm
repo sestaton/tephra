@@ -24,7 +24,8 @@ use namespace::autoclean;
 with 'Tephra::Role::Logger',
      'Tephra::Role::GFF',
      'Tephra::Role::Util',
-     'Tephra::Role::Run::GT';
+     'Tephra::Role::Run::GT',
+     'Tephra::Classify::Role::LogResults';
 
 
 =head1 NAME
@@ -84,7 +85,6 @@ sub find_tc1_mariner {
     my $domoutfile = File::Spec->catfile($path, $name.'_tc1-mariner_domain_org.tsv');
     open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
     open my $faout, '>>', $fas or die "\n[ERROR]: Could not open file: $fas\n";
-    open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";;
     say $out $header;
 
     my ($len, $lines, $seq_id, $source, $start, $end, $strand, @tirs);
@@ -140,33 +140,12 @@ sub find_tc1_mariner {
     }
     close $out;
 
-    if (%pdom_index) {
-	say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
-	for my $strand (keys %pdom_index) {
-	    for my $org (keys %{$pdom_index{$strand}}) {
-		say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
-	    }
-	}
-    }
-    close $domf;
+    $self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) { 
 	delete $feature->{$_} for @tirs; 
-
-	my $stat = Statistics::Descriptive::Full->new;
-	$stat->add_data(@lengths);
-	my $min   = $stat->min;
-	my $max   = $stat->max;
-	my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
-	my $count = $stat->count;
-
-	my $pad = ' ' x 10;
-	$log->info("Results - Total number of Tc1-Mariner elements:$pad           $count");
-	$log->info("Results - Minimum length of Tc1-Mariner elements:$pad         $min");
-	$log->info("Results - Maximum length of Tc1-Mariner elements:$pad         $max");
-	$log->info("Results - Mean length of Tc1-Mariner elements:$pad            $mean");
-	$log->info("Results - Number of Tc1-Mariner elements protein matches:$pad $pdoms");
+	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'Tc1-Mariner', log => $log, pdom_ct => $pdoms });
 
 	return ($outfile, $fas, $count);
     }
@@ -197,7 +176,6 @@ sub find_hat {
     my $domoutfile = File::Spec->catfile($path, $name.'_hAT_domain_org.tsv');
     open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
     open my $faout, '>>', $fas or die "\n[ERROR]: Could not open file: $fas\n";
-    open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
     say $out $header;
 
     my ($len, $lines, $seq_id, $source, $start, $end, $strand, @tirs);
@@ -252,33 +230,12 @@ sub find_hat {
     close $out;
     close $faout;
 
-    if (%pdom_index) {
-	say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
-	for my $strand (keys %pdom_index) {
-	    for my $org (keys %{$pdom_index{$strand}}) {
-		say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
-	    }
-	}
-    }
-    close $domf;
-    unlink $domoutfile unless -s $domoutfile;    
+    $self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
+    unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) { 
 	delete $feature->{$_} for @tirs; 
-
-	my $stat = Statistics::Descriptive::Full->new;
-	$stat->add_data(@lengths);
-	my $min   = $stat->min;
-	my $max   = $stat->max;
-	my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
-	my $count = $stat->count;
-
-	my $pad = ' ' x 10;
-	$log->info("Results - Total number of hAT elements:$pad                   $count");
-        $log->info("Results - Minimum length of hAT elements:$pad                 $min");
-        $log->info("Results - Maximum length of hAT elements:$pad                 $max");
-        $log->info("Results - Mean length of hAT elements:$pad                    $mean");
-	$log->info("Results - Number of hAT elements protein matches:$pad         $pdoms");
+	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'hAT', log => $log, pdom_ct => $pdoms });
 
 	return ($outfile, $fas, $count);
     }
@@ -309,7 +266,6 @@ sub find_mutator {
     my $domoutfile = File::Spec->catfile($path, $name.'_mutator_domain_org.tsv');
     open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
     open my $faout, '>>', $fas or die "\n[ERROR]: Could not open file: $fas\n";
-    open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
     say $out $header;
 
     my ($len, $lines, $seq_id, $source, $start, $end, $strand, @tirs);
@@ -367,33 +323,12 @@ sub find_mutator {
     close $out;
     close $faout;
 
-    if (%pdom_index) {
-	say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
-	for my $strand (keys %pdom_index) {
-	    for my $org (keys %{$pdom_index{$strand}}) {
-		say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
-	    }
-	}
-    }
-    close $domf;
+    $self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) { 
 	delete $feature->{$_} for @tirs; 
-
-	my $stat = Statistics::Descriptive::Full->new;
-	$stat->add_data(@lengths);
-	my $min   = $stat->min;
-	my $max   = $stat->max;
-	my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
-	my $count = $stat->count;
-
-	my $pad = ' ' x 10;
-	$log->info("Results - Total number of Mutator elements:$pad               $count");
-        $log->info("Results - Minimum length of Mutator elements:$pad             $min");
-        $log->info("Results - Maximum length of Mutator elements:$pad             $max");
-        $log->info("Results - Mean length of Mutator elements:$pad                $mean");
-	$log->info("Results - Number of Mutator elements protein matches:$pad     $pdoms");
+	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'Mutator', log => $log, pdom_ct => $pdoms });
 
 	return ($outfile, $fas, $count);
     }
@@ -424,7 +359,6 @@ sub find_cacta {
     my $domoutfile = File::Spec->catfile($path, $name.'_cacta_domain_org.tsv');
     open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
     open my $faout, '>>', $fas or die "\n[ERROR]: Could not open file: $fas\n";
-    open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
     say $out $header;
 
     my ($len, $lines, $seq_id, $source, $start, $end, $strand, $tir_len, @tirs);
@@ -490,33 +424,12 @@ sub find_cacta {
     close $out;
     close $faout;
 
-    if (%pdom_index) {
-	say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
-	for my $strand (keys %pdom_index) {
-	    for my $org (keys %{$pdom_index{$strand}}) {
-		say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
-	    }
-	}
-    }
-    close $domf;
+    $self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) {
 	delete $feature->{$_} for @tirs; 
-
-	my $stat = Statistics::Descriptive::Full->new;
-	$stat->add_data(@lengths);
-	my $min   = $stat->min;
-	my $max   = $stat->max;
-	my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
-	my $count = $stat->count;
-	
-	my $pad = ' ' x 10;
-	$log->info("Results - Total number of CACTA elements:$pad                 $count");
-        $log->info("Results - Minimum length of CACTA elements:$pad               $min");
-        $log->info("Results - Maximum length of CACTA elements:$pad               $max");
-        $log->info("Results - Mean length of CACTA elements:$pad                  $mean");
-	$log->info("Results - Number of CACTA elements protein matches:$pad       $pdoms");
+	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'CACTA', log => $log, pdom_ct => $pdoms });
 
 	return ($outfile, $fas, $count);
     }
@@ -547,7 +460,6 @@ sub write_unclassified_tirs {
     my $domoutfile = File::Spec->catfile($path, $name.'_unclassified_domain_org.tsv');
     open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
     open my $faout, '>>', $fas or die "\n[ERROR]: Could not open file: $fas\n";
-    open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
     say $out $header;
 
     my ($len, $lines, $seq_id, $source, $start, $end, $strand);
@@ -592,31 +504,11 @@ sub write_unclassified_tirs {
     close $out;
     close $faout;
 
-    if (%pdom_index) {
-	say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
-	for my $strand (keys %pdom_index) {
-	    for my $org (keys %{$pdom_index{$strand}}) {            
-		say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
-	    }
-	}
-    }
-    close $domf;
+    $self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
     unlink $domoutfile unless -s $domoutfile;
     
     if (@lengths) { 
-	my $stat = Statistics::Descriptive::Full->new;
-	$stat->add_data(@lengths);
-	my $min   = $stat->min;
-	my $max   = $stat->max;
-	my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
-	my $count = $stat->count;
-
-	my $pad = ' ' x 10;
-	$log->info("Results - Total number of unclassified TIR elements:$pad      $count");
-        $log->info("Results - Minimum length of unclassified TIR elements:$pad    $min");
-        $log->info("Results - Maximum length of unclassified TIR elements:$pad    $max");
-        $log->info("Results - Mean length of unclassified TIR elements:$pad       $mean");
-	$log->info("Results - Number of unclas. TIR elements protein matches:$pad $pdoms");
+	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'unclassified TIR', log => $log, pdom_ct => $pdoms });
 
 	return ($outfile, $fas, $count);
     }
