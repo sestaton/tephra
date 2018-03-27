@@ -495,6 +495,7 @@ sub _get_exemplar_ltrs {
     if ($ltrfile =~ /^RL|family\d+/) {
 	croak "\n[ERROR]: Expecting a single file of LTR exemplar sequences but it appears this command has ".
 	    "been run before. This will cause problems. Please re-run 'classifyltrs' or report this issue. Exiting.\n";
+	return;
     }
 
     my $kseq = Bio::DB::HTS::Kseq->new($ltrfile);
