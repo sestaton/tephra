@@ -286,7 +286,6 @@ sub write_gypsy {
     my $outfile    = File::Spec->catfile($path, $name.'_gypsy.gff3');
     my $domoutfile = File::Spec->catfile($path, $name.'_gypsy_domain_org.tsv');
     open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
-    #open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
     say $out $header;
     
     my ($seq_id, $source, $start, $end, $strand);
@@ -322,37 +321,10 @@ sub write_gypsy {
     }
     close $out;
     
-    #my %tot_dom_ct;
-    #say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
-    #for my $strand (keys %pdom_index) {
-	#for my $org (keys %{$pdom_index{$strand}}) {
-	#    $tot_dom_ct{$org} += $pdom_index{$strand}{$org};
-	#    say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
-	#}
-    #}
-    
-    #say $domf "==========";
-    #say $domf join "\t", "Domain_organization", "Domain_count";
-    #for my $domorg (keys %tot_dom_ct) {
-	#say $domf join "\t", $domorg, $tot_dom_ct{$domorg};
-    #}
-    #close $domf;
     $self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) {
-	#my $stat = Statistics::Descriptive::Full->new;
-	#$stat->add_data(@lengths);
-	#my $min   = $stat->min;
-	#my $max   = $stat->max;
-	#my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
-	#my $count = $stat->count;
-	
-	#$log->info("Results - Total number of Gypsy elements:                           $count");
-	#$log->info("Results - Minimum length of Gypsy elements:                         $min");
-	#$log->info("Results - Maximum length of Gypsy elements:                         $max");
-	#$log->info("Results - Mean length of Gypsy elements:                            $mean");
-	#$log->info("Results - Number of Gypsy elements with protein matches:            $pdoms");
 	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'Gypsy', log => $log, pdom_ct => $pdoms });
 
 	return $outfile;
@@ -379,7 +351,6 @@ sub write_copia {
     my $outfile = File::Spec->catfile($path, $name.'_copia.gff3');
     my $domoutfile = File::Spec->catfile($path, $name.'_copia_domain_org.tsv');
     open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
-    #open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
     say $out $header;
 
     my ($seq_id, $source, $start, $end, $strand);
@@ -414,39 +385,10 @@ sub write_copia {
     }
     close $out;
 
-    #my %tot_dom_ct;
-    #say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
-    #for my $strand (keys %pdom_index) {
-	#for my $org (keys %{$pdom_index{$strand}}) {
-	#    $tot_dom_ct{$org} += $pdom_index{$strand}{$org};
-	#    say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
-	#}
-    #}
-
-    #say $domf "==========";
-    #say $domf join "\t", "Domain_organization", "Domain_count";
-    #for my $domorg (keys %tot_dom_ct) {
-	#say $domf join "\t", $domorg, $tot_dom_ct{$domorg};
-    #}
-    #close $domf;
     $self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) {
-	#my $stat = Statistics::Descriptive::Full->new;
-	#$stat->add_data(@lengths);
-	#my $min   = $stat->min;
-	#my $max   = $stat->max;
-	#my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
-	#my $count = $stat->count;
-
-	#if (defined $count && defined $min && defined $max && defined $mean) {
-	    #$log->info("Results - Total number of Copia elements:                           $count");
-	    #$log->info("Results - Minimum length of Copia elements:                         $min");
-	    #$log->info("Results - Maximum length of Copia elements:                         $max");
-	    #$log->info("Results - Mean length of Copia elements:                            $mean");
-	    #$log->info("Results - Number of Copia elements with protein matches:            $pdoms");
-	#}
 	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'Copia', log => $log, pdom_ct => $pdoms });
 
 	return $outfile;
@@ -473,7 +415,6 @@ sub write_unclassified {
     my $outfile = File::Spec->catfile($path, $name.'_unclassified.gff3');
     my $domoutfile = File::Spec->catfile($path, $name.'_unclassified_domain_org.tsv');
     open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
-    #open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
     say $out $header;
 
     my ($seq_id, $source, $start, $end, $strand);
@@ -510,37 +451,10 @@ sub write_unclassified {
     }
     close $out;
 
-    #my %tot_dom_ct;
-    #say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
-    #for my $strand (keys %pdom_index) {
-	#for my $org (keys %{$pdom_index{$strand}}) {
-	#    $tot_dom_ct{$org} += $pdom_index{$strand}{$org};
-	#    say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
-	#}
-    #}
-
-    #say $domf "==========";
-    #say $domf join "\t", "Domain_organization", "Domain_count";
-    #for my $domorg (keys %tot_dom_ct) {
-	#say $domf join "\t", $domorg, $tot_dom_ct{$domorg};
-    #}
-    #close $domf;
     $self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) {
-	#my $stat = Statistics::Descriptive::Full->new;
-	#$stat->add_data(@lengths);
-	#my $min   = $stat->min;
-	#my $max   = $stat->max;
-	#my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
-	#my $count = $stat->count;
-
-	#$log->info("Results - Total number of unclassified LTR-RT elements:             $count");
-	#$log->info("Results - Minimum length of unclassified LTR-RT elements:           $min");
-	#$log->info("Results - Maximum length of unclassified LTR-RT elements:           $max");
-	#$log->info("Results - Mean length of unclassified LTR-RT elements:              $mean");
-	#$log->info("Results - Number of unclas. LTR-RT elements with protein matches:   $pdoms");
 	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'unclassified LTR-RT', log => $log, pdom_ct => $pdoms });
 
 	return $outfile;
