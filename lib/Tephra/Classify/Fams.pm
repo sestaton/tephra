@@ -119,7 +119,6 @@ sub make_families {
 				  my ($sf, $elemct, $famct, $famtot, $singct) =
                                       @{$family_stats}{qw(superfamily total_elements families total_in_families singletons)};
 				  my ($sfam) = ($sf =~ /_?((?:\w+\d+\-)?\w+)\z/);
-				  #say STDERR "bef subs: $sfam";
 				  $sfam =~ s/.*hat.*/hAT/i;
 				  $sfam =~ s/.*tc1-mariner.*/Tc1-Mariner/i;
 				  $sfam =~ s/.*mutator.*/Mutator/i;
@@ -127,25 +126,16 @@ sub make_families {
 				  $sfam =~ s/.*gypsy.*/Gypsy/i;
 				  $sfam =~ s/.*copia.*/Copia/i;
 				  $sfam =~ s/.*unclassified.*/unclassified/i;
-				  #$sfam =~ s/tirs_|ltrs_|//i; # if $sfam =~ /^tirs_/;
-				  #$sfam =~ s///i;
-				  #say STDERR "aft subs: $sfam";
-				  my $pad = $sfam =~ /unclassified/i ? 0 : length('unclassified')-length($sfam);
-				  $pad = $pad > 0 ? $pad : 0;
-				  my $lpad = ' ' x $pad;
-				  #if ($sfam =~ /-/) {
-				      #my ($tc1, $mar) = split /-/, $sfam;
-				      #$sfam = join "-", ucfirst($tc1), ucfirst($mar);
-				  #}
-				  #else {
-				      #$sfam = ucfirst($sfam)
-					  #unless $sfam =~ /hAT/;
-				  #}
-				  #say STDERR "aft ucfirst: $sfam";
-				  $log->info("Results - Number of $sfam families:$lpad                          $famct");
-				  $log->info("Results - Number of $sfam elements in families:$lpad              $famtot");
-				  $log->info("Results - Number of $sfam singleton families/elements:$lpad       $singct");
-				  $log->info("Results - Number of $sfam elements (for debugging):$lpad          $elemct");
+
+				  my $tot_str = sprintf("%-70s %-10s", "Results - Number of $sfam families:", $famct);
+				  my $fam_str = sprintf("%-70s %-10s", "Results - Number of $sfam elements in families:", $famtot);
+				  my $sng_str = sprintf("%-70s %-10s", "Results - Number of $sfam singleton families/elements:", $singct);
+				  my $num_str = sprintf("%-70s %-10s", "Results - Number of $sfam elements (for debugging):", $elemct);
+
+				  $log->info($tot_str);
+				  $log->info($fam_str);
+				  $log->info($sng_str);
+				  $log->info($num_str);
 
 				  push @family_fastas, $data_ref->{$type}{family_fasta};
 				  push @annotated_ids, $data_ref->{$type}{annotated_ids};
