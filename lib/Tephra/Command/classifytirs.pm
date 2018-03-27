@@ -13,7 +13,6 @@ use File::Basename;
 use Tephra -command;
 use Tephra::Classify::TIRSfams;
 use Tephra::Classify::Fams;
-#use Log::Any qw($log);
 #use Data::Dump::Color;
 
 sub opt_spec {
@@ -129,20 +128,21 @@ sub _classify_tir_superfamilies {
     }
 
     if (@fastas && @gffs) {
-	#my %outfiles = (
-	    #fastas => \@fastas,
-	    #gffs   => \@gffs
-	 #);
-
-	#$classify_obj->write_combined_output(\%outfiles);
-	my $pad = ' ' x 20;
-	$log->info("Results - Total number of TIR elements:$pad         $all_ct");
-	$log->info("Results - Number of Tc1-Mariner elements:$pad       $tc1_ct");
-	$log->info("Results - Number of hAT elements:$pad               $hat_ct");
-	$log->info("Results - Number of Mutator elements:$pad           $mut_ct");
-	$log->info("Results - Number of CACTA elements:$pad             $cac_ct");
-	$log->info("Results - Number of unclassified TIR elements:$pad  $unc_ct");
 	unlink $_ for @fastas;
+
+	my $tot_str = sprintf("%-70s %-10s", "Results - Total number of TIR elements:", $all_ct);
+	my $tc1_str = sprintf("%-70s %-10s", "Results - Number of Tc1-Mariner elements:", $tc1_ct);
+	my $hat_str = sprintf("%-70s %-10s", "Results - Number of hAT elements:", $hat_ct);
+	my $mut_str = sprintf("%-70s %-10s", "Results - Number of Mutator elements:", $mut_ct);
+	my $cac_str = sprintf("%-70s %-10s", "Results - Number of CACTA elements:", $cac_ct);
+	my $unc_str = sprintf("%-70s %-10s", "Results - Number of unclassified TIR elements:", $unc_ct);
+
+	$log->info($tot_str);
+	$log->info($tc1_str);
+	$log->info($hat_str);
+	$log->info($mut_str);
+	$log->info($cac_str);
+	$log->info($unc_str);
 
 	return (\%gffs, $log);
     }
