@@ -12,17 +12,15 @@ use IPC::System::Simple qw(capture);
 use List::UtilsBy       qw(nsort_by);
 use Cwd                 qw(getcwd abs_path);
 use Path::Class         qw(file);
-#use Log::Any            qw($log);
 use Try::Tiny;
-#use Tephra::Config::Exe;
 #use Data::Dump::Color;
 use namespace::autoclean;
 
 with 'Tephra::Role::Logger',
      'Tephra::Role::GFF',
      'Tephra::Role::Util',
-     'Tephra::Role::Run::Blast';
-     #'Tephra::Role::Run::Any';
+     'Tephra::Role::Run::Blast',
+     'Tephra::Classify::Role::LogResults';
 
 =head1 NAME
 
@@ -205,8 +203,6 @@ sub find_unclassified {
 		$ltr_rregion_map{$id} = $rep_region;
 		
 		my ($seq, $length) = $self->get_full_seq($index, $seq_id, $start, $end);
-		#my $location = "$seq_id:$start-$end";
-		#my ($seq, $length) = $index->get_sequence($location);
 		$seq =~ s/.{60}\K/\n/g;
 		say $ofas join "\n", ">".$id, $seq;
 	    }
@@ -222,24 +218,17 @@ sub search_unclassified {
     my ($unc_fas) = @_;
     my $repeatdb = $self->repeatdb->absolute->resolve;
     my $threads  = $self->threads;
-    #my $blastdb  = $self->_make_blastdb($repeatdb);
     my $blastdb = $self->make_blastdb($repeatdb);
 
     my ($bname, $bpath, $bsuffix) = fileparse($repeatdb, qr/\.[^.]*/);
     my ($fname, $fpath, $fsuffix) = fileparse($unc_fas, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($fpath, $fname.'_'.$bname.'.bln');
-    #my $config     = Tephra::Config::Exe->new->get_config_paths;
-    #my ($blastbin) = @{$config}{qw(blastpath)};
-    #my $blastn     =  File::Spec->catfile($blastbin, 'blastn');
     my $blast_report = $self->run_blast({ query   => $unc_fas, 
 					  db      => $blastdb, 
 					  threads => $threads, 
-					  outfile => $outfile,
+					  outfile => $outfile, 
 					  sort    => 'bitscore' });
-    #my $blastcmd = "$blastn -dust no -query $unc_fas -evalue 10 -db $blastdb ".
-	#"-outfmt 6 -num_threads $threads | sort -nrk12,12 | sort -k1,1 -u > $outfile";
 
-    #$self->run_cmd($blastcmd);
     my @dbfiles = glob "$blastdb*";
     unlink @dbfiles;
 
@@ -297,7 +286,7 @@ sub write_gypsy {
     my $outfile    = File::Spec->catfile($path, $name.'_gypsy.gff3');
     my $domoutfile = File::Spec->catfile($path, $name.'_gypsy_domain_org.tsv');
     open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
-    open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
+    #open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
     say $out $header;
     
     my ($seq_id, $source, $start, $end, $strand);
@@ -333,40 +322,48 @@ sub write_gypsy {
     }
     close $out;
     
-    my %tot_dom_ct;
-    say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
-    for my $strand (keys %pdom_index) {
-	for my $org (keys %{$pdom_index{$strand}}) {
-	    $tot_dom_ct{$org} += $pdom_index{$strand}{$org};
-	    say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
-	}
-    }
+    #my %tot_dom_ct;
+    #say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
+    #for my $strand (keys %pdom_index) {
+	#for my $org (keys %{$pdom_index{$strand}}) {
+	#    $tot_dom_ct{$org} += $pdom_index{$strand}{$org};
+	#    say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
+	#}
+    #}
     
-    say $domf "==========";
-    say $domf join "\t", "Domain_organization", "Domain_count";
-    for my $domorg (keys %tot_dom_ct) {
-	say $domf join "\t", $domorg, $tot_dom_ct{$domorg};
-    }
-    close $domf;
-    
-    my $stat = Statistics::Descriptive::Full->new;
-    $stat->add_data(@lengths);
-    my $min   = $stat->min;
-    my $max   = $stat->max;
-    my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
-    my $count = $stat->count;
+    #say $domf "==========";
+    #say $domf join "\t", "Domain_organization", "Domain_count";
+    #for my $domorg (keys %tot_dom_ct) {
+	#say $domf join "\t", $domorg, $tot_dom_ct{$domorg};
+    #}
+    #close $domf;
+    $self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
+    unlink $domoutfile unless -s $domoutfile;
 
-    $log->info("Results - Total number of Gypsy elements:                           $count");
-    $log->info("Results - Minimum length of Gypsy elements:                         $min");
-    $log->info("Results - Maximum length of Gypsy elements:                         $max");
-    $log->info("Results - Mean length of Gypsy elements:                            $mean");
-    $log->info("Results - Number of Gypsy elements with protein matches:            $pdoms");
-    
-    return $outfile;
+    if (@lengths) {
+	#my $stat = Statistics::Descriptive::Full->new;
+	#$stat->add_data(@lengths);
+	#my $min   = $stat->min;
+	#my $max   = $stat->max;
+	#my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
+	#my $count = $stat->count;
+	
+	#$log->info("Results - Total number of Gypsy elements:                           $count");
+	#$log->info("Results - Minimum length of Gypsy elements:                         $min");
+	#$log->info("Results - Maximum length of Gypsy elements:                         $max");
+	#$log->info("Results - Mean length of Gypsy elements:                            $mean");
+	#$log->info("Results - Number of Gypsy elements with protein matches:            $pdoms");
+	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'Gypsy', log => $log, pdom_ct => $pdoms });
+
+	return $outfile;
+    }
+    else {
+	return undef;
+    }
 }
 
 sub write_copia {
-     my $self = shift;
+    my $self = shift;
     my ($copia, $header, $log) = @_;
     my $gff = $self->gff->absolute->resolve;
     
@@ -382,7 +379,7 @@ sub write_copia {
     my $outfile = File::Spec->catfile($path, $name.'_copia.gff3');
     my $domoutfile = File::Spec->catfile($path, $name.'_copia_domain_org.tsv');
     open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
-    open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
+    #open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
     say $out $header;
 
     my ($seq_id, $source, $start, $end, $strand);
@@ -417,38 +414,46 @@ sub write_copia {
     }
     close $out;
 
-    my %tot_dom_ct;
-    say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
-    for my $strand (keys %pdom_index) {
-	for my $org (keys %{$pdom_index{$strand}}) {
-	    $tot_dom_ct{$org} += $pdom_index{$strand}{$org};
-	    say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
-	}
-    }
+    #my %tot_dom_ct;
+    #say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
+    #for my $strand (keys %pdom_index) {
+	#for my $org (keys %{$pdom_index{$strand}}) {
+	#    $tot_dom_ct{$org} += $pdom_index{$strand}{$org};
+	#    say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
+	#}
+    #}
 
-    say $domf "==========";
-    say $domf join "\t", "Domain_organization", "Domain_count";
-    for my $domorg (keys %tot_dom_ct) {
-	say $domf join "\t", $domorg, $tot_dom_ct{$domorg};
-    }
-    close $domf;
-    
-    my $stat = Statistics::Descriptive::Full->new;
-    $stat->add_data(@lengths);
-    my $min   = $stat->min;
-    my $max   = $stat->max;
-    my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
-    my $count = $stat->count;
+    #say $domf "==========";
+    #say $domf join "\t", "Domain_organization", "Domain_count";
+    #for my $domorg (keys %tot_dom_ct) {
+	#say $domf join "\t", $domorg, $tot_dom_ct{$domorg};
+    #}
+    #close $domf;
+    $self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
+    unlink $domoutfile unless -s $domoutfile;
 
-    if (defined $count && defined $min && defined $max && defined $mean) {
-	$log->info("Results - Total number of Copia elements:                           $count");
-	$log->info("Results - Minimum length of Copia elements:                         $min");
-	$log->info("Results - Maximum length of Copia elements:                         $max");
-	$log->info("Results - Mean length of Copia elements:                            $mean");
-	$log->info("Results - Number of Copia elements with protein matches:            $pdoms");
-    }
+    if (@lengths) {
+	#my $stat = Statistics::Descriptive::Full->new;
+	#$stat->add_data(@lengths);
+	#my $min   = $stat->min;
+	#my $max   = $stat->max;
+	#my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
+	#my $count = $stat->count;
 
-    return $outfile;
+	#if (defined $count && defined $min && defined $max && defined $mean) {
+	    #$log->info("Results - Total number of Copia elements:                           $count");
+	    #$log->info("Results - Minimum length of Copia elements:                         $min");
+	    #$log->info("Results - Maximum length of Copia elements:                         $max");
+	    #$log->info("Results - Mean length of Copia elements:                            $mean");
+	    #$log->info("Results - Number of Copia elements with protein matches:            $pdoms");
+	#}
+	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'Copia', log => $log, pdom_ct => $pdoms });
+
+	return $outfile;
+    }
+    else {
+	return undef;
+    }
 }
 
 sub write_unclassified {
@@ -468,7 +473,7 @@ sub write_unclassified {
     my $outfile = File::Spec->catfile($path, $name.'_unclassified.gff3');
     my $domoutfile = File::Spec->catfile($path, $name.'_unclassified_domain_org.tsv');
     open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
-    open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
+    #open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
     say $out $header;
 
     my ($seq_id, $source, $start, $end, $strand);
@@ -505,36 +510,44 @@ sub write_unclassified {
     }
     close $out;
 
-    my %tot_dom_ct;
-    say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
-    for my $strand (keys %pdom_index) {
-	for my $org (keys %{$pdom_index{$strand}}) {
-	    $tot_dom_ct{$org} += $pdom_index{$strand}{$org};
-	    say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
-	}
+    #my %tot_dom_ct;
+    #say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
+    #for my $strand (keys %pdom_index) {
+	#for my $org (keys %{$pdom_index{$strand}}) {
+	#    $tot_dom_ct{$org} += $pdom_index{$strand}{$org};
+	#    say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
+	#}
+    #}
+
+    #say $domf "==========";
+    #say $domf join "\t", "Domain_organization", "Domain_count";
+    #for my $domorg (keys %tot_dom_ct) {
+	#say $domf join "\t", $domorg, $tot_dom_ct{$domorg};
+    #}
+    #close $domf;
+    $self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
+    unlink $domoutfile unless -s $domoutfile;
+
+    if (@lengths) {
+	#my $stat = Statistics::Descriptive::Full->new;
+	#$stat->add_data(@lengths);
+	#my $min   = $stat->min;
+	#my $max   = $stat->max;
+	#my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
+	#my $count = $stat->count;
+
+	#$log->info("Results - Total number of unclassified LTR-RT elements:             $count");
+	#$log->info("Results - Minimum length of unclassified LTR-RT elements:           $min");
+	#$log->info("Results - Maximum length of unclassified LTR-RT elements:           $max");
+	#$log->info("Results - Mean length of unclassified LTR-RT elements:              $mean");
+	#$log->info("Results - Number of unclas. LTR-RT elements with protein matches:   $pdoms");
+	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'unclassified LTR-RT', log => $log, pdom_ct => $pdoms });
+
+	return $outfile;
     }
-
-    say $domf "==========";
-    say $domf join "\t", "Domain_organization", "Domain_count";
-    for my $domorg (keys %tot_dom_ct) {
-	say $domf join "\t", $domorg, $tot_dom_ct{$domorg};
+    else { 
+	return undef;
     }
-    close $domf;
-    
-    my $stat = Statistics::Descriptive::Full->new;
-    $stat->add_data(@lengths);
-    my $min   = $stat->min;
-    my $max   = $stat->max;
-    my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
-    my $count = $stat->count;
-
-    $log->info("Results - Total number of unclassified LTR-RT elements:             $count");
-    $log->info("Results - Minimum length of unclassified LTR-RT elements:           $min");
-    $log->info("Results - Maximum length of unclassified LTR-RT elements:           $max");
-    $log->info("Results - Mean length of unclassified LTR-RT elements:              $mean");
-    $log->info("Results - Number of unclas. LTR-RT elements with protein matches:   $pdoms");
-
-    return $outfile;
 }
 
 sub _map_repeat_types {
@@ -561,33 +574,6 @@ sub _map_repeat_types {
 
     return \%family_map;
 }
-
-#sub _make_blastdb {
-#    my $self = shift;
-#    my ($db_fas) = @_;
-#    my ($dbname, $dbpath, $dbsuffix) = fileparse($db_fas, qr/\.[^.]*/);
-
-#    my $db = $dbname.'_blastdb';
-#    my $dir = getcwd();
-#    my $db_path = file($dir, $db);
-#    $db_path->remove if -e $db_path;
-
-#    my $config = Tephra::Config::Exe->new->get_config_paths;
-#    my ($blastbin)  = @{$config}{qw(blastpath)};
-#    my $makeblastdb = File::Spec->catfile($blastbin, 'makeblastdb');
-
-#    try {
-#	my @makedbout = capture([0..5],"$makeblastdb -in $db_fas -dbtype nucl -title $db -out $db_path 2>&1 > /dev/null"#);
-#    }
-#    catch {
-#	say STDERR "Unable to make blast database. Here is the exception: $_.";
-#	say STDERR "Ensure you have removed non-literal characters (i.e., "*" or "-") in your repeat database file.";
-#	say STDERR "These cause problems with BLAST+. Exiting.";
-#	exit(1);
-#    };
-
-#    return $db_path;
-#}
 
 =head1 AUTHOR
 
