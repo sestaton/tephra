@@ -147,7 +147,7 @@ This file is for logging feature requests and bugs during development. Hopefully
        (sesbio/transposon_annotation/count_families.pl) for starters.
  - [ ] Generate HTML output for all command. Will need to store JSON data for graphs and tables.
  - [x] Add tirage options to configuration file.
- - [ ] Remove FASTA/GFF3 files of unclassified elements once the classification process is complete. 
+ - [x] Remove FASTA/GFF3 files of unclassified elements once the classification process is complete. 
 
 ## Command `tephra reannotate`
 
