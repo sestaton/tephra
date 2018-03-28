@@ -512,6 +512,7 @@ sub write_masking_results {
     say "Window overlap size: $overlap";
     say "Total genome length: $genome_length";
     say "Total masked bases:  $masked% ($masked_total/$genome_length)";
+    say '=' x 80;
 
     return;
 }
