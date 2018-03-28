@@ -137,7 +137,8 @@ sub _filter_tir_gff {
     close $out;
 
     move $outfile, $gff or die "\n[ERROR]: move failed: $!\n";
-    return $outfile;
+
+    return ($outfile, $fas);
 }
 
 =head1 AUTHOR

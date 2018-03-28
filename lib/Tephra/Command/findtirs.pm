@@ -50,7 +50,7 @@ sub validate_args {
 sub execute {
     my ($self, $opt, $args) = @_;
 
-    my $gff = _run_tir_search($opt);
+    my ($gff, $fas) = _run_tir_search($opt);
 }
 
 sub _run_tir_search {
@@ -100,7 +100,7 @@ sub _run_tir_search {
 	$tir_search->create_index(\@suff_args, $index, $logfile);
     }
     
-    my $gff = $tir_search->tir_search($index);
+    my ($gff, $fas) = $tir_search->tir_search($index);
     unlink $logfile unless -s $logfile;
 
     return $gff;

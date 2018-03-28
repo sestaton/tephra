@@ -319,7 +319,7 @@ sub find_tirs {
 
     my ($name, $path, $suffix) = fileparse($global_opts->{genome}, qr/\.[^.]*/);
     my $tir_gff = File::Spec->catfile( abs_path($path), $name.'_tephra_tirs.gff3' );
-    #my $tir_fas = File::Spec->catfile( abs_path($path), $name.'_tephra_tirs.fasta' );
+    my $tir_fas = File::Spec->catfile( abs_path($path), $name.'_tephra_tirs.fasta' );
 
     my $findtirs_opts = ['-g', $tir_ref, '-o', $tir_gff];
     push @$findtirs_opts, '--debug'
@@ -332,7 +332,7 @@ sub find_tirs {
     my $ft = strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findtirs' completed at: $ft.");
 
-    return $tir_gff;
+    return ($tir_gff, $tir_fas);
 }
 
 sub classify_tirs {
