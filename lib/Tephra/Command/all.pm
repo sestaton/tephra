@@ -58,7 +58,7 @@ sub execute {
 sub _run_all_commands {
     my ($opt) = @_;
 
-    my (@mask_files, @fas_files, @gff_files, @age_files, @classified_fastas);
+    my (@mask_files, @fas_files, @gff_files, @age_files, @classified_fastas, @unclassified);
     my $config_obj  = Tephra::Config::Reader->new( config => $opt->{config} );
     my $config      = $config_obj->get_configuration;
     my $global_opts = $config_obj->get_all_opts($config);
@@ -140,6 +140,10 @@ sub _run_all_commands {
 	    push @fas_files, $ltrc_fas;
 	    push @gff_files, $ltrc_gff;
 	    push @classified_fastas, $ltrc_fas;
+	    push @unclassified, $ltr_fas;
+	    push @unclassified, $ltr_gff;
+	    push @unclassified, $trims_fas;
+	    push @unclassified, $trims_gff;
 	}
     }
 
@@ -257,6 +261,8 @@ sub _run_all_commands {
 	    push @gff_files, $tirc_gff;
 	    push @fas_files, $tirc_fas;
 	    push @classified_fastas, $tirc_fas;
+	    push @unclassified, $tir_fas;
+	    push @unclassified, $tir_gff;
 	}
     }
 
@@ -350,6 +356,12 @@ sub _run_all_commands {
     my @fais = glob "*.fai";
     unlink @fais;
     unlink @mask_files;
+    if (@unclassified) { 
+	for my $file (@unclassified) {
+	    $log->info("Clean up - Removing unannotated file - $file") if -e $file;
+	    unlink $file;
+	}
+    }
 
     # Log summary of results
     $tephra_obj->log_interval( $tzero, $log );
