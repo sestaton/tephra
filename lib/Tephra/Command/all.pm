@@ -79,6 +79,7 @@ sub _run_all_commands {
     if (defined $ltr_fas && -e $ltr_fas && -s $ltr_fas) {
 	$has_ltrs = 1;
 	$log->info("Output files - $ltr_gff");
+	$log->info("Output files - $ltr_fas");
 
 	# Need to add a 3-letter code ("RLX") to avoid warnings in masking.
 	# The LTRs/TRIMs will be classified in a later step and the proper codes will
@@ -238,10 +239,11 @@ sub _run_all_commands {
 	        : (defined $genome_mask1 && -s $genome_mask1) ? $genome_mask1 
 	        : $global_opts->{genome};
 
-    my $tir_gff = $tephra_obj->find_tirs($log, $tir_ref);
+    my ($tir_gff, $tir_fas) = $tephra_obj->find_tirs($log, $tir_ref);
 
-    if (-e $tir_gff) {
+    if (-e $tir_gff && -e $tir_fas) {
 	$log->info("Output files - $tir_gff");
+	$log->info("Output files - $tir_fas");
     }
 
     ## classifytirs
