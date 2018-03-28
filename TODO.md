@@ -148,6 +148,9 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] Generate HTML output for all command. Will need to store JSON data for graphs and tables.
  - [x] Add tirage options to configuration file.
  - [x] Remove FASTA/GFF3 files of unclassified elements once the classification process is complete. 
+ - [ ] Consider removing all FASTA/GFF3 files except the final annotated products. Could add a 'splitgff3' command
+       to produce separate FASTA/GFF3 files from a single GFF3 if going back to files split by TE type is 
+       of interest.
 
 ## Command `tephra reannotate`
 
