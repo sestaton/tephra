@@ -491,7 +491,7 @@ sub write_masking_results {
     say "=================== 'Tephra maskref' finished in $final_time minutes $closing_brace";
     printf "%-${classlen}s %-${classlen}s %-${orderlen}s %-${namelen}s\n", "Class", "Order", "Superfamily", "Percent Masked";
 
-    say "-" x 80;
+    say '-' x 80;
     for my $class (sort keys %final_rep) {
         for my $order (sort keys %{$final_rep{$class}}) {
             for my $name (sort keys %{$final_rep{$class}{$order}}) {
@@ -504,7 +504,7 @@ sub write_masking_results {
     }
 
     my $masked = sprintf("%.2f",($masked_total/$genome_length)*100);
-    say "=" x 80;
+    say '=' x 80;
     say "Input file:          $genome";
     say "Output file:         $outfile";
     say "Database file:       $repeatdb";
