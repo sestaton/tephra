@@ -19,6 +19,11 @@ Version	Date	Location
   the correct context.
 - Add explicit return to methods for development tests and readability (in particular, there were
   no explicit returns from many of the non-LTR classes, which have been now updated).
+- Return and log TIR FASTA file from 'findtirs' command. This file was generated previously but
+  not reported.
+- Log output file name of LTR FASTA file from 'findltrs' command.
+- Remove unclassifed FASTA/GFF3 files after all classification steps in the 'all' command. This process
+  is logged to make it clear these files are removed once the final annotated files have been produced.
 
 0.09.9	03/22/2018	Vancouver, BC
 
