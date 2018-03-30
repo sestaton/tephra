@@ -30,11 +30,6 @@ The next two commands install BioPerl, and these can be skipped if BioPerl is in
 
 Finally, download the [latest release](https://github.com/sestaton/tephra/releases/latest) and run the following commands from the root directory:
 
-<<<<<<< HEAD
-    wget https://github.com/sestaton/tephra/archive/v0.07.1.tar.gz
-    tar xzf v0.07.1.tar.gz && cd tephra-0.07.1
-=======
->>>>>>> c451712c04b8689e29af7429e3ae9cc0fb4399c9
     cpanm --installdeps .
     perl Makefile.PL
     make test
@@ -81,21 +76,36 @@ You can also look for information at:
 
 Tephra is a command-line program only for now. The command `tephra` itself controls all the action of the subcommands, which perform specific tasks. Typing the command `tephra` will show the available commands. Here is an example,
 
-    $ tephra <command> [-?h] [long options...]
-        -? -h --help  show help
+    $ tephra 
 
+    Tephra version 0.09.9
+    
+    Copyright (C) 2015-2018 S. Evan Staton
+    LICENSE -- MIT
+
+    Citation: Staton, SE. 2018. https://github.com/sestaton/tephra
+
+    Name:
+         Tephra - A tool for discovering transposable elements and describing
+         patterns of genome evolution
+    
+    Description:
+         This is an application to find transposable elements based on structural and sequence similarity features,
+         group those elements into recognized (superfamilies) and novel (families) taxonomic groups,
+         and infer patterns of evolution.
+    
+    -------------------------------------------------------------------------------------------
+    USAGE: tephra <command> [options]
+    
     Available commands:
-    
-           commands: list the application's commands
-               help: display a command's help screen
-    
+         
                 all: Run all subcommands and generate annotations for all transposon types.
        classifyltrs: Classify LTR retrotransposons into superfamilies and families.
        classifytirs: Classify TIR transposons into superfamilies.
       findfragments: Search a masked genome with a repeat database to find fragmented elements.
       findhelitrons: Find Helitons in a genome assembly.
            findltrs: Find LTR retrotransposons in a genome assembly.
-        findnonltrs: Find non-LTR retrotransposons in a genome assembly.
+        findnonltrs: Find non-LTR retrotransposons in a genome assembly.  
            findtirs: Find TIR transposons in a genome assembly.
           findtrims: Find TRIM retrotransposons in a genome assembly.
           illrecomb: Characterize the distribution of illegitimate recombination in a genome.
@@ -104,13 +114,39 @@ Tephra is a command-line program only for now. The command `tephra` itself contr
          reannotate: Transfer annotations from a reference set of repeats to Tephra annotations.
             sololtr: Find solo-LTRs in a genome assembly.
              tirage: Calculate the age distribution of TIR transposons.
-            version: display an app's version
+    
+    Most common usage:
+    
+        tephra all -c tephra_config.yml
+    
+     That will produce a FASTA and GFF3 of all intact and fragmented transposons in the genome,
+     and generate a table of annotation results.
+    
+    To get the configuration file, run:
+    
+        wget https://raw.githubusercontent.com/sestaton/tephra/master/config/tephra_config.yml
+    
+    To see information about a subcommand, run:
+    
+        tephra <command> --help
+    
+    To get more detailed information, run:
+    
+        tephra <command> --man
 
 
 Typing a subcommand will show the usage of that command, for example:
 
     $ tephra findnonltrs
+
     [ERROR]: Required arguments not given.
+    
+    Name:
+         tephra findnonltrs - Find non-LTRs retrotransposons in a genome assembly.
+    
+    Description:
+         Find non-LTR retrotransposons in a reference genome, classify them into known superfamilies, 
+         and generate a GFF file showing their locations and properties.
     
     USAGE: tephra findnonltrs [-h] [-m]
         -m --man      :   Get the manual entry for a command.
@@ -118,12 +154,16 @@ Typing a subcommand will show the usage of that command, for example:
     
     Required:
         -g|genome     :   The genome sequences in FASTA format to search for non-LTR-RTs. 
-
+        -o|gff        :   The GFF3 outfile to place the non-LTRs found in <genome>.
+    
     Options:
-        -o|outdir     :   The location to place the results.
+        -r|reference  :   The non-masked reference genome for base correction.
+        -d|outdir     :   The location to place the results.
         -p|pdir       :   Location of the HMM models (Default: configured automatically).
+        -t|threads    :   The number of threads to use for BLAST searches (Default: 1).
+        -v|verbose    :   Display progress for each chromosome (Default: no).
 
-
+ 
 **CITATION**
 
 A manuscript is in preparation, which includes a description of the all the methods and their uses, a comparison to other programs, and results from model systems. These will be provided in some form ahead of publication, as soon as they are available.
