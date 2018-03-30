@@ -12,14 +12,15 @@ use IPC::System::Simple qw(capture);
 use List::UtilsBy       qw(nsort_by);
 use Cwd                 qw(getcwd abs_path);
 use Path::Class         qw(file);
-#use Log::Any            qw($log);
 use Try::Tiny;
-use Tephra::Config::Exe;
 #use Data::Dump::Color;
 use namespace::autoclean;
 
-with 'Tephra::Role::GFF',
-     'Tephra::Role::Util';
+with 'Tephra::Role::Logger',
+     'Tephra::Role::GFF',
+     'Tephra::Role::Util',
+     'Tephra::Role::Run::Blast',
+     'Tephra::Classify::Role::LogResults';
 
 =head1 NAME
 
@@ -27,11 +28,11 @@ Tephra::Classify::LTRSFams - Classify LTR retrotransposons into superfamilies
 
 =head1 VERSION
 
-Version 0.07.1
+Version 0.10.00
 
 =cut
 
-our $VERSION = '0.07.1';
+our $VERSION = '0.10.00';
 $VERSION = eval $VERSION;
 
 has genome => (
@@ -141,7 +142,7 @@ sub find_gypsy_copia {
 	    #say STDERR join q{ }, "strand: $strand", $pdom_org;
 	    my ($gyp_org, $cop_org);
 	    my ($gyp_dom_ct, $cop_dom_ct) = (0, 0);
-	    if (grep { /rvt_2|ubn/i && ! /rvt_1|chromo/i } @all_pdoms) {
+	    if (grep { /rvt_2|ubn2/i && ! /rvt_1|chromo/i } @all_pdoms) {
 		for my $d (@cop_exp) {
 		    for my $p (@all_pdoms) {
 			$cop_dom_ct++ if $p =~ /$d/i;
@@ -149,7 +150,7 @@ sub find_gypsy_copia {
 		}
 	    }
 	    
-	    if (grep { /rvt_1|chromo/i && ! /rvt_2|ubn/i } @all_pdoms) {
+	    if (grep { /rvt_1|chromo/i && ! /rvt_2|ubn2/i } @all_pdoms) {
 		for my $d (@gyp_exp) {
 		    for my $p (@all_pdoms) {
 			$gyp_dom_ct++ if $p =~ /$d/i;
@@ -191,18 +192,17 @@ sub find_unclassified {
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfast = File::Spec->catfile($path, $name.'_unclassified.fasta');
 
-    open my $ofas, '>>', $outfast or die "\nERROR: Could not open file: $outfast\n";
+    open my $ofas, '>>', $outfast or die "\n[ERROR]: Could not open file: $outfast\n";
 
     for my $rep_region (keys %$features) {
 	for my $ltr_feature (@{$features->{$rep_region}}) {
-	    if ($ltr_feature->{type} eq 'LTR_retrotransposon') {
+	    if ($ltr_feature->{type} =~ /(?:LTR|TRIM)_retrotransposon/) {
 		my ($seq_id, $start, $end) = @{$ltr_feature}{qw(seq_id start end)};
 		my $elem = $ltr_feature->{attributes}{ID}[0];
 		my $id = join "_", $elem, $seq_id, $start, $end;
 		$ltr_rregion_map{$id} = $rep_region;
 		
-		my $location = "$seq_id:$start-$end";
-		my ($seq, $length) = $index->get_sequence($location);
+		my ($seq, $length) = $self->get_full_seq($index, $seq_id, $start, $end);
 		$seq =~ s/.{60}\K/\n/g;
 		say $ofas join "\n", ">".$id, $seq;
 	    }
@@ -218,38 +218,38 @@ sub search_unclassified {
     my ($unc_fas) = @_;
     my $repeatdb = $self->repeatdb->absolute->resolve;
     my $threads  = $self->threads;
-    my $blastdb  = $self->_make_blastdb($repeatdb);
+    my $blastdb = $self->make_blastdb($repeatdb);
 
-    my ($bname, $bpath, $bsuffix) = fileparse($unc_fas, qr/\.[^.]*/);
+    my ($bname, $bpath, $bsuffix) = fileparse($repeatdb, qr/\.[^.]*/);
     my ($fname, $fpath, $fsuffix) = fileparse($unc_fas, qr/\.[^.]*/);
-    my $outfile    = $fname.'_'.$bname.'.bln';
-    my $config     = Tephra::Config::Exe->new->get_config_paths;
-    my ($blastbin) = @{$config}{qw(blastpath)};
-    my $blastn     =  File::Spec->catfile($blastbin, 'blastn');
+    my $outfile = File::Spec->catfile($fpath, $fname.'_'.$bname.'.bln');
+    my $blast_report = $self->run_blast({ query   => $unc_fas, 
+					  db      => $blastdb, 
+					  threads => $threads, 
+					  outfile => $outfile, 
+					  sort    => 'bitscore' });
 
-    my $blastcmd = "$blastn -dust no -query $unc_fas -evalue 10 -db $blastdb ".
-	"-outfmt 6 -num_threads $threads | sort -nrk12,12 | sort -k1,1 -u > $outfile";
-
-    $self->run_cmd($blastcmd);
-    unlink glob("$blastdb*");
+    my @dbfiles = glob "$blastdb*";
+    unlink @dbfiles;
 
     return $outfile;
 }
 
 sub annotate_unclassified {
     my $self = shift;
+    my ($blast_out, $gypsy, $copia, $features, $ltr_rregion_map) = @_;
     my $hit_length = $self->blast_hit_length;
     my $hit_pid    = $self->blast_hit_pid;
-    my ($blast_out, $gypsy, $copia, $features, $ltr_rregion_map) = @_;
 
     my $family_map = $self->_map_repeat_types();
-    open my $in, '<', $blast_out or die "\nERROR: Could not open file: $blast_out\n";
-    my (%gypsy_re, %copia_re);
+    open my $in, '<', $blast_out or die "\n[ERROR]: Could not open file: $blast_out\n";
+    my (%gypsy_re, %copia_re, %seen);
 
     while (my $line = <$in>) {
 	chomp $line;
 	my @f = split /\t/, $line;
- 
+	next if exists $seen{$f[0]}; # this is taking the best hit only, by bitscore
+
 	if ($f[2] >= $hit_pid && $f[3] >= $hit_length) {
 	    if (exists $family_map->{$f[1]}) {
 		my $sf = $family_map->{$f[1]};
@@ -263,6 +263,7 @@ sub annotate_unclassified {
 		}
 	    }
 	}
+	$seen{$f[0]} = 1;
     }
     close $in;
     unlink $blast_out;
@@ -284,8 +285,7 @@ sub write_gypsy {
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile    = File::Spec->catfile($path, $name.'_gypsy.gff3');
     my $domoutfile = File::Spec->catfile($path, $name.'_gypsy_domain_org.tsv');
-    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-    open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";
+    open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
     say $out $header;
     
     my ($seq_id, $source, $start, $end, $strand);
@@ -297,7 +297,7 @@ sub write_gypsy {
 		my $pdom_name = $ltr_feature->{attributes}{name}[0];
 		push @all_pdoms, $pdom_name;
 	    }
-	    if ($ltr_feature->{type} eq 'LTR_retrotransposon') {
+	    if ($ltr_feature->{type} =~ /(?:LTR|TRIM)_retrotransposon/) {
 		($seq_id, $source, $start, $end, $strand) 
 		    = @{$ltr_feature}{qw(seq_id source start end strand)};
 		$strand //= '?';
@@ -321,36 +321,17 @@ sub write_gypsy {
     }
     close $out;
     
-    my %tot_dom_ct;
-    say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
-    for my $strand (keys %pdom_index) {
-	for my $org (keys %{$pdom_index{$strand}}) {
-	    $tot_dom_ct{$org} += $pdom_index{$strand}{$org};
-	    say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
-	}
-    }
-    
-    say $domf "==========";
-    say $domf join "\t", "Domain_organization", "Domain_count";
-    for my $domorg (keys %tot_dom_ct) {
-	say $domf join "\t", $domorg, $tot_dom_ct{$domorg};
-    }
-    close $domf;
-    
-    my $stat = Statistics::Descriptive::Full->new;
-    $stat->add_data(@lengths);
-    my $min   = $stat->min;
-    my $max   = $stat->max;
-    my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
-    my $count = $stat->count;
+    $self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
+    unlink $domoutfile unless -s $domoutfile;
 
-    $log->info("Results - Total number of Gypsy elements:                                   $count");
-    $log->info("Results - Minimum length of Gypsy elements:                                 $min");
-    $log->info("Results - Maximum length of Gypsy elements:                                 $max");
-    $log->info("Results - Mean length of Gypsy elements:                                    $mean");
-    $log->info("Results - Number of Gypsy elements with protein matches:                    $pdoms");
-    
-    return $outfile;
+    if (@lengths) {
+	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'Gypsy', log => $log, pdom_ct => $pdoms });
+
+	return $outfile;
+    }
+    else {
+	return undef;
+    }
 }
 
 sub write_copia {
@@ -369,8 +350,7 @@ sub write_copia {
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name.'_copia.gff3');
     my $domoutfile = File::Spec->catfile($path, $name.'_copia_domain_org.tsv');
-    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-    open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";
+    open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
     say $out $header;
 
     my ($seq_id, $source, $start, $end, $strand);
@@ -382,7 +362,7 @@ sub write_copia {
                 my $pdom_name = $ltr_feature->{attributes}{name}[0];
                 push @all_pdoms, $pdom_name;
             }
-            if ($ltr_feature->{type} eq 'LTR_retrotransposon') {
+            if ($ltr_feature->{type} =~ /(?:LTR|TRIM)_retrotransposon/) {
 		($seq_id, $source, $start, $end, $strand) 
 		    = @{$ltr_feature}{qw(seq_id source start end strand)};
                 my $ltrlen = $end - $start + 1;
@@ -405,38 +385,17 @@ sub write_copia {
     }
     close $out;
 
-    my %tot_dom_ct;
-    say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
-    for my $strand (keys %pdom_index) {
-	for my $org (keys %{$pdom_index{$strand}}) {
-	    $tot_dom_ct{$org} += $pdom_index{$strand}{$org};
-	    say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
-	}
-    }
+    $self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
+    unlink $domoutfile unless -s $domoutfile;
 
-    say $domf "==========";
-    say $domf join "\t", "Domain_organization", "Domain_count";
-    for my $domorg (keys %tot_dom_ct) {
-	say $domf join "\t", $domorg, $tot_dom_ct{$domorg};
-    }
-    close $domf;
-    
-    my $stat = Statistics::Descriptive::Full->new;
-    $stat->add_data(@lengths);
-    my $min   = $stat->min;
-    my $max   = $stat->max;
-    my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
-    my $count = $stat->count;
+    if (@lengths) {
+	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'Copia', log => $log, pdom_ct => $pdoms });
 
-    if (defined $count && defined $min && defined $max && defined $mean) {
-	$log->info("Results - Total number of Copia elements:                                   $count");
-	$log->info("Results - Minimum length of Copia elements:                                 $min");
-	$log->info("Results - Maximum length of Copia elements:                                 $max");
-	$log->info("Results - Mean length of Copia elements:                                    $mean");
-	$log->info("Results - Number of Copia elements with protein matches:                    $pdoms");
+	return $outfile;
     }
-
-    return $outfile;
+    else {
+	return undef;
+    }
 }
 
 sub write_unclassified {
@@ -455,8 +414,7 @@ sub write_unclassified {
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name.'_unclassified.gff3');
     my $domoutfile = File::Spec->catfile($path, $name.'_unclassified_domain_org.tsv');
-    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-    open my $domf, '>>', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";
+    open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
     say $out $header;
 
     my ($seq_id, $source, $start, $end, $strand);
@@ -468,7 +426,7 @@ sub write_unclassified {
                 my $pdom_name = $ltr_feature->{attributes}{name}[0];
                 push @all_pdoms, $pdom_name;
             }
-            if ($ltr_feature->{type} eq 'LTR_retrotransposon') {
+            if ($ltr_feature->{type} =~ /(?:LTR|TRIM)_retrotransposon/) {
 		($seq_id, $source, $start, $end, $strand) 
 		    = @{$ltr_feature}{qw(seq_id source start end strand)};
 		$strand //= '?';
@@ -493,36 +451,17 @@ sub write_unclassified {
     }
     close $out;
 
-    my %tot_dom_ct;
-    say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
-    for my $strand (keys %pdom_index) {
-	for my $org (keys %{$pdom_index{$strand}}) {
-	    $tot_dom_ct{$org} += $pdom_index{$strand}{$org};
-	    say $domf join "\t", $strand, $org, $pdom_index{$strand}{$org};
-	}
+    $self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
+    unlink $domoutfile unless -s $domoutfile;
+
+    if (@lengths) {
+	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'unclassified LTR-RT', log => $log, pdom_ct => $pdoms });
+
+	return $outfile;
     }
-
-    say $domf "==========";
-    say $domf join "\t", "Domain_organization", "Domain_count";
-    for my $domorg (keys %tot_dom_ct) {
-	say $domf join "\t", $domorg, $tot_dom_ct{$domorg};
+    else { 
+	return undef;
     }
-    close $domf;
-    
-    my $stat = Statistics::Descriptive::Full->new;
-    $stat->add_data(@lengths);
-    my $min   = $stat->min;
-    my $max   = $stat->max;
-    my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
-    my $count = $stat->count;
-
-    $log->info("Results - Total number of unclassified LTR-RT elements:                     $count");
-    $log->info("Results - Minimum length of unclassified LTR-RT elements:                   $min");
-    $log->info("Results - Maximum length of unclassified LTR-RT elements:                   $max");
-    $log->info("Results - Mean length of unclassified LTR-RT elements:                      $mean");
-    $log->info("Results - Number of unclassified LTR-RT elements with protein matches:      $pdoms");
-
-    return $outfile;
 }
 
 sub _map_repeat_types {
@@ -530,7 +469,7 @@ sub _map_repeat_types {
     my $repeatdb = $self->repeatdb->absolute->resolve;
     my %family_map;
 
-    open my $in, '<', $repeatdb or die "\nERROR: Could not open file: $repeatdb\n";
+    open my $in, '<', $repeatdb or die "\n[ERROR]: Could not open file: $repeatdb\n";
 
     while (my $line = <$in>) {
         chomp $line;
@@ -550,36 +489,9 @@ sub _map_repeat_types {
     return \%family_map;
 }
 
-sub _make_blastdb {
-    my $self = shift;
-    my ($db_fas) = @_;
-    my ($dbname, $dbpath, $dbsuffix) = fileparse($db_fas, qr/\.[^.]*/);
-
-    my $db = $dbname.'_blastdb';
-    my $dir = getcwd();
-    my $db_path = file($dir, $db);
-    $db_path->remove if -e $db_path;
-
-    my $config = Tephra::Config::Exe->new->get_config_paths;
-    my ($blastbin)  = @{$config}{qw(blastpath)};
-    my $makeblastdb = File::Spec->catfile($blastbin, 'makeblastdb');
-
-    try {
-	my @makedbout = capture([0..5],"$makeblastdb -in $db_fas -dbtype nucl -title $db -out $db_path 2>&1 > /dev/null");
-    }
-    catch {
-	say STDERR "Unable to make blast database. Here is the exception: $_.";
-	say STDERR "Ensure you have removed non-literal characters (i.e., "*" or "-") in your repeat database file.";
-	say STDERR "These cause problems with BLAST+. Exiting.";
-	exit(1);
-    };
-
-    return $db_path;
-}
-
 =head1 AUTHOR
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 BUGS
 

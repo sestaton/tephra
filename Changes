@@ -1,6 +1,219 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.10.0	03/27/2018	Vancouver, BC
+
+- Remove redundant 'subseq' method from all classes in favor of reusable 'write_element_parts'
+  role-based methods.
+- Remove redundant 'collate' method from all classes to be now consumed by the *Util role.
+- Refactor logging classification and domain organization results from TIRSfams/LTRSfams classes 
+  and 'classifytirs' command to use logging role (*Classify::Role::LogResults).
+- Modify logging method for LTR/TIR classification results and domain architecture to use 
+  abstract sprintf-based string formatting instead of manual formatting.
+- Expand domain architecture reporting for 'classifytirs' command to also report a combined
+  summary for both strands.
+- Use BLAST role for searching unclassified elements in the *LTRSfams class.
+- Add *Alignment::Utils class for importing shared methods for manipulating alignments used
+  in calculation of LTR/TIR ages.
+- Modify 'revcom' method in *TIRStats class to ensure that features are parsed and written in
+  the correct context.
+- Add explicit return to methods for development tests and readability (in particular, there were
+  no explicit returns from many of the non-LTR classes, which have been now updated).
+- Return and log TIR FASTA file from 'findtirs' command. This file was generated previously but
+  not reported.
+- Log output file name of LTR FASTA file from 'findltrs' command.
+- Remove unclassifed FASTA/GFF3 files after all classification steps in the 'all' command. This process
+  is logged to make it clear these files are removed once the final annotated files have been produced.
+
+0.09.9	03/22/2018	Vancouver, BC
+
+- Add Tephra::Genome::Unmask class for unmasking all transposons that were found by searching a
+  masked genome.
+- Modify output of the 'all' command to use the unmasking methods described above for corrected
+  masked bases in FASTA output.
+- Remove custom repeat map building approach from 'maskref' method in favor the reusable method
+  by the same name that is now in the Tephra::Annotation::Util class.
+- Modify logging method for 'findltrs' and 'findtrims' methods to write log in the location of the
+  data instead of working directory.
+- Refactor search for index files in 'findltrs' command to use absolute paths and use map/join for
+  building search pattern instead of using a for-loop to build patterns.
+- Modify how temp files are created throughout the package to use File::Temp functional interface.
+  This makes creating filehandles cleaner since both file and filehandles are returned from the
+  function tempfile().
+- Add all possible masking options to masking command arguments with the 'all' command.
+- Rename variables in *LTRRefine class to not redefine hash keys (the previous approach worked but 
+  was unsafe).
+- Modify logic for classifying LTRs/TRIMs in 'all' command. Now, there is no code duplication and
+  all possibilities of whether both LTRs and TRIMs being found are handled.
+- Standardize exemplar file names for LTRs/TIRs and solo-LTR search.
+- Add explicit return from methods in *Illrecombination and *FragmentSearch classes.
+- Add checks if 'maskref' command returned results from subsequences before attempting to collate
+  results. This removes warnings that would be raised when there was no results.
+- Bug fix for not returning TIR classification directory in 'all' command. This is required by the
+  'tirage' command.
+- Bug fix for not setting correct reference for masking with classified TIRs in 'all' command.
+- Modify method for creating combined library to only return the FASTA instead of FASTA and GFF3.
+- Modify GFF3 combining method to not take temp GFF3 as an argument. 
+- Update family-level similarity calculation in *Annotation::Util class to not skip TRIMs since these 
+  are not classified to the family level.
+- Modify BLAST search method in *Annotation::Util class to return a string of results instead of writing 
+  results to file.
+- Refactor family similarity/length calculation method in *Annotation::Util class to check if there are 
+  multi-member families  before opening file. This avoids creating a report with only a header. 
+- Warn on family similarity/length calculation in *Annotation::Util class if no multi-member families are 
+  found and clean up file if it exists.
+- Add check in *Analysis::Pipeline class to see if all GFF3 files are non-empty before sorting and combining.
+- Refactor logging method in GT role to use standard interface. Log errors with the data being worked on instead 
+  of the working directory from which the command was launched
+- Use standard interface for all methods that use genometools by passing in a hash of arguments, a file, 
+  and a logging object.
+
+0.09.8	03/04/2018	Vancouver, BC
+
+- Add checks to 'findnonltrs' command to test whether any elements were found prior to postprocessing
+  steps. This will fix the errors (issue #22) that were thrown in the case where no elements are
+  discovered. Now, warnings are raised but the command proceeds and cleans up intermediate files.
+- Redesign 'findnonltrs' tests to always run and test the output, or optionally run on a larger input file
+  in dev mode. Previously the full command was only tested in dev mode.
+
+0.09.7	02/19/2018	Vancouver, BC
+
+- Modify 'findfragments' command processing to deal with draft genomes that may have hundreds
+  of thousands of contigs. The output is the same as with the previous version. This satisfies
+  issue #23.
+
+0.09.6	12/04/2017	Vancouver, BC
+
+- Bug fix for 'findfragments' command with very short intervals not being filtered properly.
+- Change 'findfragments' length threshold from 200 bp to 100 bp for detecting small TEs
+  such as MITEs.
+- Refactor overlap detection method for 'findfragments' command to use range-based detection
+  based on sorted coordinates. This is more efficient and less error-prone than the previous
+  interval tree approach.
+- Add method to automatically generate FASTA of fragments with 'findfragments' command, as
+  with other commands when the output is GFF3.
+- Move 'get_full_sequence' method from *NonLTR::GFFWriter class to *Util role. 
+
+0.09.5	11/11/2017	Vancouver, BC
+
+- Add report attribute definition to 'sololtr' command class so the attribute is defined 
+  and set properly.
+- Change argument name of input file for 'reannotate' command from 'fasta' to 'infile' to
+  follow conventions of other commands.
+- Fix bug with input arguments to BLAST method in Tephra::Annotation::Transfer class that
+  was preventing 'reannotate' command from functioning properly.
+- Fix argument descriptions and documentation for 'reannotate' command to more accurately
+  reflect the use of the command.
+
+0.09.4	10/04/2017	Vancouver, BC
+
+- Log final masking results of complete TE library against the reference when the 'all' command
+  is executed.
+- Minor adjustment to final GFF3 sorting to ensure IDs are retained for all elements.
+
+0.09.3	09/09/2017	Vancouver, BC
+
+- Fix Vmatch clean command name for removing index files.
+- Add TRIM retrotransposons annotation to family-level classifications for
+  LTR retrotransposons.
+- Remove unclassified LTR retrotransposon FASTA file used for family-level classifications. This is essentially a temp file and keeping this along with the FASTA of classified elements is redundant and confusing.
+- Add separate roles for logging, command execution, and Tephra subcommand execution.
+- Add a parent class for running all Tephra commands in the 'all' subcommand.
+- Add Annotation::Util method to get repeat name and superfamily code from transposon ID.
+- Reduce method calls by passing log object to command execution methods instead of generating log
+ object for each method call.
+- Adjust logging method in family-level classification method for LTR/TIR elements in order align results in the log for different transposons types.
+- Clean up fai index after test completion.
+- Clean up masking log files from 'all' command at completion.
+- Document --verbose option for 'findnonltrs' command, and change logging behavior so all output goes
+to STDERR.
+
+
+0.09.2	08/08/2017	Vancouver, BC
+
+- Bug fixes for 'tirage' and 'all' commands to correctly parse family name from the TIR
+  GFF3 and add these to the summary file. The family-generation method for TIR elements 
+  was added in v0.09.0 and the parser in the Tephra::TIR::TIRStats class was not updated 
+  to parse the 'family' attribute.
+ 
+0.09.1	07/24/2017	Vancouver, BC
+
+- Bug fix for length/identity summary file with header being printed for each family.
+
+0.09.0	07/10/2017	Vancouver, BC
+
+- Add family-level classification methods for TIR, Helitron, and non-LTR retrotransposons.
+  These methods are now in the Tephra::Classify::Any class.
+- Standarize FASTA and GFF3 ID formats for TIR, Helitron and non-LTR retrotransposons. All TEs
+  now have the same FASTA header format (">familyNumber_elementID_chromosome_start_end"), and GFF3
+  ID format ("ID=elementID;family=familyNumber;...").
+- Move Tephra::LTR::MakeExemplars to Tephra::Annotation::MakeExemplars and add
+  some abstraction so the methods now work for finding TIR exemplars also.
+- Change Tephra::Classify::LTRFams and subclasses to the more abstract
+  Tephra::Classify::Fams and modify class methods to work for LTR and TIR elements.
+- The --all option to 'tirage' is no longer required since family annotations are 
+  modeled the same way as for LTR retrotransposons. It is now possible to omit the --all
+  option and only calculate age on the top N families.
+- Add method to calculate the global similarity within a TE family and log the results
+  when the 'all' command is run.
+- Add RIL clades to superfamily mapping method in Tephra::Annotation::Util class.
+- Adjust IDs of non-LTR and Helitron elements to be SO compliant and not require
+  and tricks for sorting. This standarizes ID formats for TE types.
+- Add method to install and configure Vmatch during the build process.
+- Remove development flag for tests involving Vmatch ('classifyltrs', 'classifytirs', and
+  'maskref'). Now these tests will be run on each build and not just manually.
+
+0.08.1	06/12/2017	Vancouver, BC
+
+- Bug fix for non_LTR_retrotransposon IDs getting dropped in final GFF3.
+
+0.08.0	06/07/2017	Vancouver, BC
+
+- Bug fix for Helitron IDs getting dropped in final GFF3 file.
+- Bug fix for sorting unclassified matches in LTRFams class. Hits are now sorted
+  and scored as expected.
+- Bug fix for not using output filename from the configuration file. A custom name was
+  being generated for the GFF3 and the configuration option was previously ignored.
+- Bug fix for leaving empty solo-LTR files when none are discovered. Now a warning is
+  logged when no solo-LTRs are found and the empty files are removed.
+- Bug fix for generating expected help menus with long and short options.
+- Bug fix for classifytirs test not testing the correct command for all tests.
+- Bug fix for not cleaning up all intermediate results from 'all' command as expected (this
+  only affected the 'findtrims' and 'ltrage' commands).
+- Bug fix for not getting substitution rate from configuration file and using default.
+- Bug fix for not cleaning up results from ltrage and tirage commands.
+- Modify behavior of 'run_blast' method in Tephra::Role::Run::Blast role. The sort
+  attribute now takes a string to specify how to sort: either by coordinate or bit score.
+  Also, the option to set the e-value threshold was added.
+- Add 'findfragments' command (and Tephra::Genome::FragmentSearch class with associated 
+  methods) for identifying truncated or fragmented elements.
+- Refactor 'trim_search' method in Tephra::TRIM::TRIMSearch class to take the mode for the
+  search ('relaxed' or 'strict') and set variables accordingly instead of duplicating
+  code across two separate methods.
+- Refactor 'ltr_search' method in Tephra::LTR::LTRSearch class to take the mode for the
+  search ('relaxed' or 'strict') and set variables accordingly instead of duplicating
+  code across two separate methods.
+- Refactor how genometools commands are run and evaluated.
+- Refactor all tests to avoid using the shell for running commands.
+- Refactor 'findltrs' and 'findtrims' tests to not retry failed tests.
+- Renumber test files so they are sequential with not numbers being skipped.
+- Add longer usage description to main program and all subcommands.
+- Document default thread level for all commands that can use more than one process.
+- Add the option to use more than one processor for 'findltrs', 'findtirs', and 'findtrims'
+  commands.
+- Change the default thread level for tests to 2 (was set much higher, 24, for local
+  testing).
+- Add 'tirage' command results to 'all' subcommand. 
+- Add method to combine and summarize TIR and LTR age results by family to 'all' command. 
+- Add Tephra::Annotation::Util class for working with transposon names.
+
+0.07.2	05/11/2017	Vancouver, BC
+
+- Add configuration option for 'findltrs' command to filter elements based on the 
+  lack of coding domains. This reduces the number of unclassifed elements.
+- Remove duplicated warning about missing logfile option in Tephra::LTR::LTRRefine
+  class.
+
 0.07.1	04/03/2017	Vancouver, BC
 
 - Add bug fix for genome attribute not being defined when refining TRIM elements.

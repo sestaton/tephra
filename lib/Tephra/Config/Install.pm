@@ -25,11 +25,11 @@ Tephra::Config::Install - Class for setting up Tephra dependencies
 
 =head1 VERSION
 
-Version 0.07.1
+Version 0.10.00
 
 =cut
 
-our $VERSION = '0.07.1';
+our $VERSION = '0.10.00';
 
 has basedir => (
     is       => 'ro',
@@ -57,6 +57,12 @@ sub configure_root {
     unless (-e $config->{gt} && -x $config->{gt}) {
 	#say STDERR "getting gt";
 	$config->{gt} = $self->fetch_gt_exes;
+	print STDERR ".";
+    }
+
+    unless (-e $config->{vmatchbin} && -x $config->{vmatchbin}) {
+	#say STDERR "getting vmatch";
+	$config->{vmatchbin} = $self->fetch_vmatch_exes;
 	print STDERR ".";
     }
     
@@ -164,7 +170,7 @@ sub fetch_gt_exes {
 		
 		system("tar xzf $dist") == 0 or die $!;
 		
-		move $ldist, $ldir or die "Move failed: $!";
+		move $ldist, $ldir or die "\n[ERROR]: move failed: $!\n";
 		unlink $dist;
 	    }
 	}
@@ -174,6 +180,46 @@ sub fetch_gt_exes {
     my $gt = File::Spec->catfile($ldir, 'bin', 'gt');
 
     return $gt
+}
+
+sub fetch_vmatch_exes {
+    my $self = shift;
+    my $root = $self->basedir->absolute->resolve;
+    my $wd   = $self->workingdir->absolute->resolve;
+    
+    my $host = 'http://vmatch.de';
+    my $dir  = 'distributions';
+    my $page = 'download.html';
+    my $file = 'vmatch_distlisting.html';
+    $self->fetch_file($file, $host."/".$page);
+    
+    my $tree = HTML::TreeBuilder->new;
+    $tree->parse_file($file);
+    
+    my ($dist, $ldist, $ldir);
+    for my $tag ($tree->look_down(_tag => 'a')) {
+	if ($tag->attr('href')) {
+	    if ($tag->as_text =~ /Linux_x86_64-64bit.tar.gz\z/) {
+		$dist = $tag->as_text;
+		my $archive = join "/", $host, $dir, $dist;
+		$self->fetch_file($dist, $archive);
+		
+		$ldist = $dist;
+		$ldist =~ s/\.tar.gz\z//;
+		$ldir = File::Spec->catdir($root, 'vmatch');
+		
+		system("tar xzf $dist") == 0 or die $!;
+		
+		move $ldist, $ldir or die "\n[ERROR]: move failed: $!\n";
+		unlink $dist;
+	    }
+	}
+    }
+    unlink $file;
+    
+    my $vmatchbin = File::Spec->catfile($ldir);
+
+    return $vmatchbin;
 }
 
 sub fetch_hscan {
@@ -197,7 +243,7 @@ sub fetch_hscan {
     my $hscan = File::Spec->catfile($cwd, 'HelitronScanner', 'HelitronScanner.jar');
     chdir $wd;
     
-     return $hscan;
+    return $hscan;
 }
 
 sub fetch_blast {
@@ -234,7 +280,7 @@ sub fetch_blast {
     my $bdir = 'ncbi-blast+';
     system("tar xzf $file 2>&1 > /dev/null") == 0 or die $!;
     unlink $file if -e $file;
-    move $ldir, $bdir or die "Move failed: $!";
+    move $ldir, $bdir or die "\n[ERROR]: move failed: $!\n";
     chdir $bdir or die $!;
 
     my $cwd = getcwd();
@@ -333,7 +379,7 @@ sub fetch_paml {
     my @results = capture { system('make', '-j4') };
     for my $l (split /^/, @results) {
         if ($l =~ /error/i) {
-            say STDERR "\nERROR: 'make' failed for PAML. Please report the error below. Exiting.\n";
+            say STDERR "\n[ERROR]: 'make' failed for PAML. Please report the error below. Exiting.\n";
             say STDERR @results;
         }
     }
@@ -436,7 +482,7 @@ sub fetch_htslib {
 
     $ENV{HTSLIB_DIR} = $libdir;
     #system("cpanm -q Bio::DB::HTS") == 0
-	#or die "Installing Bio::DB::HTS failed. Here is the HTSLIB_DIR: $libdir. ERROR: $!\n";
+	#or die "Installing Bio::DB::HTS failed. Here is the HTSLIB_DIR: $libdir. [ERROR]: $!\n";
     #system('cpanm', '-q', '-n', 'Bio::Root::Version') == 0
         #or die "BioPerl install failed: $!";
     #my @results = capture { system('cpanm', '-q', '-n', 'Bio::Root::Version') };
@@ -662,7 +708,7 @@ sub fetch_file {
 
 =head1 AUTHOR
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 BUGS
 

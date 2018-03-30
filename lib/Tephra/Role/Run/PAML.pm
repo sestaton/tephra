@@ -13,6 +13,7 @@ use File::Path          qw(remove_tree);
 use File::Copy          qw(move copy);
 use Log::Any            qw($log);
 use Cwd                 qw(getcwd abs_path);
+use Bio::AlignIO;
 use Tephra::Config::Exe;
 use namespace::autoclean;
 
@@ -22,11 +23,11 @@ Tephra::Role::Run::PAML - Helper role for running PAML
 
 =head1 VERSION
 
-Version 0.07.1
+Version 0.10.00
 
 =cut
 
-our $VERSION = '0.07.1';
+our $VERSION = '0.10.00';
 $VERSION = eval $VERSION;
 
 has baseml_exec => (
@@ -64,7 +65,7 @@ sub run_baseml {
     my $self = shift;
     my ($args) = @_;
     my $wd = $args->{working_dir};
-    chdir $wd or die "\nERROR: Could not change directories: $!";
+    chdir $wd or die "\n[ERROR]: Could not change directories: $!";
     
     my $baseml = $self->get_baseml_exec;
     my ($stdout, $stderr, $exit);
@@ -121,7 +122,7 @@ sub create_baseml_files {
        method = 0  * Optimization method 0: simultaneous; 1: one branch a time";
 
     my $control_file = File::Spec->catfile( abs_path($ppath), 'baseml.ctl' );
-    open my $out, '>', $control_file or die "\nERROR: Could not open file: $control_file\n";
+    open my $out, '>', $control_file or die "\n[ERROR]: Could not open file: $control_file\n";
     print $out $ctl_file;
     close $out;
 
@@ -141,15 +142,15 @@ sub parse_baseml {
     my $results_dir     = $args->{results_dir};
 
     my $element = basename($phylip);
-    $element =~ s/_ltrs_muscle-out.*//;
-    $element =~ s/_tirs_muscle-out.*//;
+    $element =~ s/_ltrs.*_muscle-out.*//;
+    $element =~ s/_tirs.*_muscle-out.*//;
     #my $out = basename($outfile);
     my $wd  = getcwd();
     my $dirobj = Path::Class::Dir->new($wd);
     my $parent = $dirobj->parent;
 
-    open my $divin, '<', $outfile or die "ERROR: Could not open outfile: $outfile\n";
-    open my $divout, '>', $divergence_file or die "ERROR: Could not open divergence file: $divergence_file\n";
+    open my $divin, '<', $outfile or die "[ERROR]: Could not open outfile: $outfile\n";
+    open my $divout, '>', $divergence_file or die "[ERROR]: Could not open divergence file: $divergence_file\n";
 
     while (my $line = <$divin>) {
 	chomp $line;
@@ -170,7 +171,7 @@ sub parse_baseml {
 
     my $resdir = basename($results_dir);
     my $dest_file = File::Spec->catfile($parent, $resdir, $divergence_file);
-    copy($divergence_file, $dest_file) or die "\nERROR: Move failed: $!";
+    copy($divergence_file, $dest_file) or die "\n[ERROR]: move failed: $!\n";
     chdir $parent or die $!;
     remove_tree($wd, { safe => 1 });
     
@@ -212,7 +213,7 @@ sub _build_baseml_exec { # this should probably be a separate role
 
 =head1 AUTHOR
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 BUGS
 

@@ -4,12 +4,15 @@ package Tephra::Command::classifyltrs;
 use 5.014;
 use strict;
 use warnings;
-use Cwd        qw(abs_path);
-use File::Path qw(make_path remove_tree);
+use Pod::Find     qw(pod_where);
+use Pod::Usage    qw(pod2usage);
+use Capture::Tiny qw(capture_merged);
+use Cwd           qw(abs_path);
+use File::Path    qw(make_path remove_tree);
 use File::Basename;
 use Tephra -command;
 use Tephra::Classify::LTRSfams;
-use Tephra::Classify::LTRFams;
+use Tephra::Classify::Fams;
 
 sub opt_spec {
     return (    
@@ -21,7 +24,7 @@ sub opt_spec {
 	[ "outgff|o=s",     "The output GFF3 file of classified LTR-RTs in <genome> "                                ],
 	[ "ingff|i=s",      "The input GFF3 file of LTR-RTs in <genome> "                                            ],
 	[ "outdir|r=s",     "The output directory for placing categorized elements "                                 ],
-	[ "threads|t=i",    "The number of threads to use for clustering coding domains "                            ],
+	[ "threads|t=i",    "The number of threads to use for clustering coding domains (Default: 1)  "              ],
 	[ "percentcov|c=i", "The percent coverage cutoff for the shorter element in pairwise matches (Default: 50) " ],
         [ "percentid|p=i",  "The percent identity cutoff for classification of pairwise matches (Default: 80) "      ],
         [ "hitlen|l=i",     "The minimum length for classifying pairwise BLAST hits (Default: 80) "                  ],
@@ -38,23 +41,22 @@ sub validate_args {
         exit(0);
     }
     elsif ($opt->{help}) {
-        $self->help;
-        exit(0);
+        $self->help and exit(0);
     }
     elsif (!$opt->{genome} || !$opt->{repeatdb} || !$opt->{ingff} || !$opt->{outgff} || !$opt->{outdir}) {
-	say STDERR "\nERROR: Required arguments not given.";
+	say STDERR "\n[ERROR]: Required arguments not given.\n";
 	$self->help and exit(0);
     }
     elsif (! -e $opt->{genome}) {
-        say STDERR "\nERROR: The genome file does not exist. Check arguments.";
+        say STDERR "\n[ERROR]: The genome file does not exist. Check arguments.\n";
         $self->help and exit(0);
     }
     elsif (! -e $opt->{repeatdb}) {
-        say STDERR "\nERROR: The repeat database file does not exist. Check arguments.";
+        say STDERR "\n[ERROR]: The repeat database file does not exist. Check arguments.\n";
         $self->help and exit(0);
     }
     elsif (! -e $opt->{ingff}) {
-        say STDERR "\nERROR: The input GFF3 file does not exist. Check arguments.";
+        say STDERR "\n[ERROR]: The input GFF3 file does not exist. Check arguments.\n";
         $self->help and exit(0);
     }
 } 
@@ -69,14 +71,10 @@ sub execute {
 sub _classify_ltr_superfamilies {
     my ($opt) = @_;
 
-    #my $genome   = $opt->{genome};
-    #my $repeatdb = $opt->{repeatdb};
-    #my $ingff    = $opt->{ingff};
-    my $outdir   = $opt->{outdir};
     my $threads = $opt->{threads} // 1;
 
-    unless ( -d $outdir ) {
-	make_path( $outdir, {verbose => 0, mode => 0771,} );
+    unless ( -d $opt->{outdir} ) {
+	make_path( $opt->{outdir}, {verbose => 0, mode => 0771,} );
     }
     
     my %classify_opts = (
@@ -99,7 +97,7 @@ sub _classify_ltr_superfamilies {
         #my $lname = $self->is_trim ? 'tephra_findtrims.log' : 'tephra_findltrs.log';
         $logfile = File::Spec->catfile( abs_path($path), $name.'_tephra_classifyltrs.log' );
         $log = $classify_obj->get_tephra_logger($logfile);
-        say STDERR "\nWARNING: '--logfile' option not given so results will be appended to: $logfile.";
+        say STDERR "\n[WARNING]: '--logfile' option not given so results will be appended to: $logfile.";
     }
 
     my ($header, $features) = $classify_obj->collect_gff_features($opt->{ingff});
@@ -108,6 +106,7 @@ sub _classify_ltr_superfamilies {
     my ($unc_fas, $ltr_rregion_map) = $classify_obj->find_unclassified($features);
     my $blast_out = $classify_obj->search_unclassified($unc_fas);
     $classify_obj->annotate_unclassified($blast_out, $gypsy, $copia, $features, $ltr_rregion_map);
+    unlink $unc_fas;
 
     my ($gyp_gff, $cop_gff, $unc_gff, %gffs);
     if (%$gypsy) {
@@ -125,57 +124,46 @@ sub _classify_ltr_superfamilies {
 	$gffs{'unclassified'} = $unc_gff;
     }
 
-    #my $cop_gff = $classify_obj->write_copia($copia, $header);
-    #my $unc_gff = $classify_obj->write_unclassified($features, $header);
-    
     return (\%gffs, $log);
-    #return ({ gypsy => $gyp_gff, copia => $cop_gff, unclassified => $unc_gff });
 }
 
 sub _classify_ltr_families {
     my ($opt, $gffs, $log) = @_;
 
-    my $genome   = $opt->{genome};
-    my $repeatdb = $opt->{repeatdb};
-    my $ingff    = $opt->{ingff};
-    my $outgff   = $opt->{outgff};
-    my $outdir   = $opt->{outdir};
-    my $threads  = $opt->{threads} // 1;
-    my $hpcov    = $opt->{percentcov} // 50;
-    my $hpid     = $opt->{percentid} // 80;
-    my $hlen     = $opt->{hitlen} // 80;
-    my $debug    = $opt->{debug} // 0;
+    my $threads = $opt->{threads} // 1;
+    my $hpcov   = $opt->{percentcov} // 50;
+    my $hpid    = $opt->{percentid} // 80;
+    my $hlen    = $opt->{hitlen} // 80;
+    my $debug   = $opt->{debug} // 0;
+    my $type    = 'LTR';
 
-    #my ($cop_gff, $gyp_gff, $unc_gff) = @{$gffs}{qw(copia gypsy unclassified)};
-
-    #for my $file ($cop_gff, $gyp_gff, $unc_gff) {
-	#unless (defined $file && -e $file) {
-	    #say STDERR "\nERROR: There was an error generating GFF3 for family level classification. Exiting.\n";
-	#}
-    #}
-
-    my $classify_fams_obj = Tephra::Classify::LTRFams->new(
-	genome        => $genome,
-	gff           => $outgff,
-	outdir        => $outdir,
+    my $classify_fams_obj = Tephra::Classify::Fams->new(
+	genome        => $opt->{genome},
+	gff           => $opt->{outgff},
+	outdir        => $opt->{outdir},
 	threads       => $threads,
 	blast_hit_cov => $hpcov,
         blast_hit_pid => $hpid,
         blast_hit_len => $hlen,
 	debug         => $debug,
+	type          => $type,
     );
 
-    my ($outfiles, $annot_ids) = $classify_fams_obj->make_ltr_families($gffs, $log);
+    my ($outfiles, $annot_ids) = $classify_fams_obj->make_families($gffs, $log);
     $classify_fams_obj->combine_families($outfiles);
-    $classify_fams_obj->annotate_gff($annot_ids, $ingff);
-    #unlink $gyp_gff, $cop_gff, $unc_gff;
+    $classify_fams_obj->annotate_gff($annot_ids, $opt->{ingff});
     
     unlink $_ for values %$gffs;
 }
 
 sub help {
+    my $desc = capture_merged {
+        pod2usage(-verbose => 99, -sections => "NAME|DESCRIPTION", -exitval => "noexit",
+		  -input => pod_where({-inc => 1}, __PACKAGE__));
+    };
+    chomp $desc;
     print STDERR<<END
-
+$desc
 USAGE: tephra classifyltrs [-h] [-m]
     -m --man      :   Get the manual entry for a command.
     -h --help     :   Print the command usage.
@@ -218,7 +206,7 @@ __END__
 
 =head1 AUTHOR 
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 REQUIRED ARGUMENTS
 

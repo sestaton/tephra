@@ -5,10 +5,12 @@ use Moose;
 use Bio::DB::HTS::Kseq;
 use File::Find;
 use File::Spec;
+use File::Temp qw(tempfile);
 use File::Path qw(make_path remove_tree);
 use Cwd        qw(abs_path);
 use File::Basename;
 use Sort::Naturally;
+use Tephra::Annotation::Util;
 use Tephra::Config::Exe;
 use namespace::autoclean;
 #use Data::Dump::Color;
@@ -21,11 +23,11 @@ Tephra::NonLTR::GFFWriter - Take results from non-LTR search and make an annotat
 
 =head1 VERSION
 
-Version 0.07.1
+Version 0.10.00
 
 =cut
 
-our $VERSION = '0.07.1';
+our $VERSION = '0.10.00';
 $VERSION = eval $VERSION;
 
 has genome      => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
@@ -52,8 +54,8 @@ sub write_gff {
         }
     }
 
-    $self->_fasta_to_gff(\@nonltrs);
-    say STDERR "Done with non-LTR search.";
+    my ($fas, $gff, $sf_elem_map) = $self->_fasta_to_gff(\@nonltrs);
+    #say STDERR "Done with non-LTR search.";
 
     ## clean up
     my $fdir  = File::Spec->catdir( abs_path($outdir), 'f' );
@@ -63,6 +65,8 @@ sub write_gff {
     for my $dir ($fdir, $rdir, $rgdir, $fastadir) {
 	remove_tree( $dir, { safe => 1 } );
     }
+
+    return ({ fasta => $fas, gff => $gff }, $sf_elem_map);
 }
 
 sub _fasta_to_gff {
@@ -72,19 +76,23 @@ sub _fasta_to_gff {
     my $genome = $self->genome;
     my $outgff = $self->gff;
 
+    my $util = Tephra::Annotation::Util->new;
     my $index = $self->index_ref($genome);
     my $clade_map = $self->_build_clade_map;
 
-    my ($name, $path, $suffix) = fileparse($outgff, qr/\.[^.]*/);
-    my $fas = File::Spec->catfile($path, $name.'.fasta' );
-    open my $out, '>', $outgff or die "\nERROR: Could not open file: $outgff\n";
-    open my $faout, '>', $fas or die "\nERROR: Could not open file: $fas\n";
+    my ($gname, $gpath, $gsuffix) = fileparse($outgff, qr/\.[^.]*/);
+    my $tmpfname = $gname.'_tephra_nonltr_fas_XXXX';
+    my $tmpgname = $gname.'_tephra_nonltr_gff_XXXX';
+
+    my ($outf, $ffilename) = tempfile( TEMPLATE => $tmpfname, DIR => $gpath, UNLINK => 0, SUFFIX => '.fasta' );
+    my ($outg, $gfilename) = tempfile( TEMPLATE => $tmpgname, DIR => $gpath, UNLINK => 0, SUFFIX => '.gff3' );
+
     my ($lens, $combined) = $self->_get_seq_region;
 
     my %regions;
     for my $file (@$seqs) {
 	my ($name, $path, $suffix) = fileparse($file, qr/\.[^.]*/);
-	open my $in, '<', $file or die "\nERROR: Could not open file: $file\n";
+	open my $in, '<', $file or die "\n[ERROR]: Could not open file: $file\n";
 	while (my $line = <$in>) {
 	    chomp $line;
 	    if ($line =~ /^>/) {
@@ -93,7 +101,7 @@ sub _fasta_to_gff {
 		    $regions{$name}{$id}{$start} = join "||", $start, $end, $strand;
 		}
 		else {
-		    warn "\nERROR: Could not parse sequence ID for header: '$line'. ".
+		    say STDERR "\n[ERROR]: Could not parse sequence ID for header: '$line'. ".
 			"This is a bug, please report it.\n";
 		}
 	    }
@@ -102,24 +110,25 @@ sub _fasta_to_gff {
     }
 
     my @ids = map { nsort keys %{$regions{$_}} } keys %regions;
-    say $out '##gff-version 3';
+    say $outg '##gff-version 3';
 
     my %seen;
     for my $seqid (@ids) {
 	my ($name, $path, $suffix) = fileparse($seqid, qr/\.[^.]*/);
 	if (exists $lens->{$name}) {
 	    unless (exists $seen{$name}) {
-		say $out join q{ }, '##sequence-region', $name, '1', $lens->{$name};
+		say $outg join q{ }, '##sequence-region', $name, '1', $lens->{$name};
 		$seen{$name} = 1;
 	    }
 	}
 	else {
-	    say STDERR "\nERROR: Could not find $name in map.\n";
+	    say STDERR "\n[ERROR]: Could not find $name in map.\n";
 	}
     }
 
     ##TODO: How to get the strand correct? Added in v0.03.0.
     my $ct = 0;
+    my %sf_elem_map;
     for my $clade (keys %regions) {
 	my $code = $clade_map->{$clade} // $clade;
 	for my $seqid (nsort keys %{$regions{$clade}}) {
@@ -128,26 +137,30 @@ sub _fasta_to_gff {
 	        my ($start, $end, $strand) = split /\|\|/, $regions{$clade}{$seqid}{$start};
 		my $seqname = $seqid;
 		$seqname =~ s/\.fa.*//;
-		my $elem = $code."_non_LTR_retrotransposon$ct";
+		#my $elem = $code."_non_LTR_retrotransposon$ct";
+		my $elem = "non_LTR_retrotransposon$ct";
                 my $tmp = $elem.'.fasta';
 		
-		my $seq = $self->_get_full_seq($index, $seqname, $start, $end);
+		my ($seq, $length) = $self->get_full_seq($index, $seqname, $start, $end);
 		
 		my ($filtered_seq, $adj_start, $adj_end) = $self->_filterNpercent($seq, $start, $end);
 		if (defined $filtered_seq) {
 		    my $id = join "_", $elem, $seqname, $adj_start, $adj_end;
-		    say $faout join "\n", ">$id", $filtered_seq;
-		    say $out join "\t", $name, 'Tephra', 'non_LTR_retrotransposon', $adj_start, $adj_end, '.', $strand, '.', 
-		        "ID=$elem;Name=$clade;Ontology_term=SO:0000189"; 
+		    say $outf join "\n", ">".$id, $filtered_seq;
+		    say $outg join "\t", $name, 'Tephra', 'non_LTR_retrotransposon', $adj_start, $adj_end, '.', $strand, '.',
+		        "ID=$elem;Ontology_term=SO:0000189";
+		    my $sfcode = $util->map_superfamily_name_to_code($clade);
+		    $sf_elem_map{$elem} = $sfcode;
 		    $ct++;
 		}
 	    }
 	} 
     }
-    close $faout;
+    close $outf;
+    close $outg;
     unlink $combined;
 
-    return;
+    return ($ffilename, $gfilename,\%sf_elem_map);
 }
 
 sub _get_seq_region {
@@ -157,10 +170,10 @@ sub _get_seq_region {
     my (@seqs, %lens);
     find( sub { push @seqs, $File::Find::name if -f and /\.fa.*$/ }, $fasdir );
     my $combined = File::Spec->catfile( abs_path($fasdir), 'tephra_all_genome_seqs.fas' );
-    open my $out, '>', $combined or die "\nERROR: Could not open file: $combined\n";
+    open my $out, '>', $combined or die "\n[ERROR]: Could not open file: $combined\n";
     
     for my $seq (nsort @seqs) {
-	$self->_collate($seq, $out);
+	$self->collate($seq, $out);
 	my $kseq = Bio::DB::HTS::Kseq->new($seq);
 	my $iter = $kseq->iterator();
 
@@ -173,15 +186,6 @@ sub _get_seq_region {
     }
 
     return (\%lens, $combined);
-}
-
-sub _get_full_seq {
-    my $self = shift;
-    my ($index, $chromosome, $start, $end) = @_;
-    my $location = "$chromosome:$start-$end";
-    my ($seq, $length) = $index->get_sequence($location);
-
-    return $seq;
 }
 
 sub _filterNpercent {
@@ -227,20 +231,9 @@ sub _filterNpercent {
     }
 }
 
-sub _collate {
-    my $self = shift;
-    my ($file_in, $fh_out) = @_;
-    my $lines = do { 
-        local $/ = undef; 
-        open my $fh_in, '<', $file_in or die "\nERROR: Could not open file: $file_in\n";
-        <$fh_in>;
-    };
-    print $fh_out $lines;
-}
-
 sub _build_clade_map {
     my $self = shift;
-
+    
     my %clade_map = (
 	'CR1'    => 'RIC', # CR1 clade
 	'I'      => 'RII', 
@@ -261,7 +254,7 @@ sub _build_clade_map {
 
 =head1 AUTHOR
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 BUGS
 

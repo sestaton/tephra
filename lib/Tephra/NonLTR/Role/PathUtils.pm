@@ -14,11 +14,11 @@ Tephra::NonLTR::Role::PathUtils - Helper role for setting proper paths to progra
 
 =head1 VERSION
 
-Version 0.07.1
+Version 0.10.00
 
 =cut
 
-our $VERSION = '0.07.1';
+our $VERSION = '0.10.00';
 $VERSION = eval $VERSION;
 
 sub find_hmmsearch {
@@ -55,7 +55,7 @@ sub find_hmmsearch {
                         return $hmmsearch;
                     }
                     else {
-                        croak "\nERROR: HMMER version 2 is required but was not found. Exiting.\n";
+                        croak "\n[ERROR]: HMMER version 2 is required but was not found. Exiting.\n";
                     }
                 }
             }
@@ -65,7 +65,7 @@ sub find_hmmsearch {
 
 =head1 AUTHOR
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 BUGS
 

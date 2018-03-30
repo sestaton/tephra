@@ -3,12 +3,10 @@ package Tephra::Role::Run::Blast;
 use 5.014;
 use Moose::Role;
 use MooseX::Types::Path::Class;
-use Log::Any            qw($log);
 use IPC::System::Simple qw(system capture);
 use Cwd                 qw(abs_path);
 use Try::Tiny;
 use File::Spec;
-use File::Find;
 use File::Basename;
 use Tephra::Config::Exe;
 use namespace::autoclean;
@@ -19,11 +17,11 @@ Tephra::Role::Run::Blast - Helper role for running NCBI BLAST
 
 =head1 VERSION
 
-Version 0.07.1
+Version 0.10.00
 
 =cut
 
-our $VERSION = '0.07.1';
+our $VERSION = '0.10.00';
 $VERSION = eval $VERSION;
 
 has blast_hit_pid => (
@@ -60,7 +58,7 @@ sub make_blastdb {
     my $makeblastdb = File::Spec->catfile($blastbin, 'makeblastdb');
 
     try {
-	my @makedbout = capture([0..5],"$makeblastdb -in $db_fas -dbtype nucl -title $db -out $db_path 2>&1 > /dev/null");
+	my @makedbout = capture([0..5], "$makeblastdb -in $db_fas -dbtype nucl -title $db -out $db_path 2>&1 > /dev/null");
     }
     catch {
 	say STDERR "Unable to make blast database. Here is the exception: $_.";
@@ -75,35 +73,44 @@ sub make_blastdb {
 sub run_blast {
     my $self = shift;
     my ($args) = @_;
-    my ($query, $db, $threads, $sort) = @{$args}{qw(query db threads sort)};
-    my ($dbname, $dbpath, $dbsuffix) = fileparse($db, qr/\.[^.]*/);
-    my ($qname, $qpath, $qsuffix) = fileparse($query, qr/\.[^.]*/);
-    my $blast_report = File::Spec->catfile( abs_path($qpath), $qname."_$dbname".'.bln' );
+    my ($query, $db, $threads, $sort, $outfile, $evalue) = @{$args}{qw(query db threads sort outfile evalue)};
+    $evalue //= 10;
+    #my ($dbname, $dbpath, $dbsuffix) = fileparse($db, qr/\.[^.]*/);
+    #my ($qname, $qpath, $qsuffix) = fileparse($query, qr/\.[^.]*/);
+    #my $blast_report = File::Spec->catfile( abs_path($qpath), $qname."_$dbname".'.bln' );
 
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($blastbin) = @{$config}{qw(blastpath)};
     my $blastn = File::Spec->catfile($blastbin, 'blastn');
     
-    my $cmd = "$blastn -query $query -db $db -out $blast_report -outfmt 6 -num_threads $threads";
+    my $cmd = "$blastn -query $query -db $db -evalue $evalue -outfmt 6 -num_threads $threads";
     if (defined $sort) {
-	$cmd .= " | sort -nrk12,12";
+	if ($sort eq 'bitscore') {
+	    $cmd .= " | sort -nrk12,12 >$outfile";
+	}
+	elsif ($sort eq 'coordinate') {
+	    $cmd .= " | sort -nk9,9 >$outfile";
+	}
+    }
+    else {
+	$cmd .= " -out $outfile";
     }
 
     try {
-	my @makedbout = capture([0..5], $cmd);
+	my @runout = capture([0..5], $cmd);
     }
     catch {
 	say STDERR "Unable to run blast. Here is the exception: $_.";
 	exit(1);
     };
 
-    return $blast_report;
+    return $outfile;
 }
 
 
 =head1 AUTHOR
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 BUGS
 

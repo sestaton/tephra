@@ -23,11 +23,11 @@ Tephra::NonLTR::RunHMM - Search for non-LTR coding domains (adapted from MGEScan
 
 =head1 VERSION
 
-Version 0.07.1
+Version 0.10.00
 
 =cut
 
-our $VERSION = '0.07.1';
+our $VERSION = '0.10.00';
 $VERSION = eval $VERSION;
 
 has fasta   => ( is => 'ro', isa => 'Path::Class::File', required => 1, coerce => 1 );
@@ -39,7 +39,7 @@ has verbose => ( is => 'ro', isa => 'Bool', predicate  => 'has_debug', lazy => 1
 sub run_mgescan {
     my $self = shift;
     my $dna_file = $self->fasta->absolute->resolve;
-    my $out_dir  = $self->outdir;;
+    my $out_dir  = $self->outdir;
     my $phmm_dir = $self->phmmdir->absolute->resolve;
     my $pdir     = $self->pdir->absolute->resolve;
 
@@ -55,17 +55,17 @@ sub run_mgescan {
     }
     
     # get signal for some state of ORF1, RT, and APE
-    print "Getting signal...\n" if $self->verbose;
-    print "    Protein sequence...\n" if $self->verbose;
+    say STDERR "Getting signal..." if $self->verbose;
+    say STDERR "    Protein sequence..." if $self->verbose;
     my $pep_file = File::Spec->catfile($out_dir, $dna_name.$dna_suffix.'.pep');
     $self->translate_forward($dna_file, $pep_file);
 
-    print "    RT signal...\n" if $self->verbose;
+    say STDERR "    RT signal..." if $self->verbose;
     my $phmm_file = File::Spec->catfile($phmm_dir, 'ebi_ds36752_seq.hmm');
     my $domain_rt_pos_file = File::Spec->catfile($pos_dir, $dna_name.$dna_suffix.'.rt.pos');
     $self->get_signal_domain($pep_file, $phmm_file, $domain_rt_pos_file);
     
-    print "    APE signal...\n" if $self->verbose;
+    say STDERR "    APE signal..." if $self->verbose;
     $phmm_file = File::Spec->catfile($phmm_dir, 'ebi_ds36736_seq.hmm');
     my $domain_ape_pos_file = File::Spec->catfile($pos_dir, $dna_name.$dna_suffix.'.ape.pos');
     $self->get_signal_domain($pep_file, $phmm_file, $domain_ape_pos_file);
@@ -74,18 +74,18 @@ sub run_mgescan {
     if (-e $domain_rt_pos_file || -e $domain_ape_pos_file ){
 	print $dna_name."\n" if $self->verbose;	
 	if (! -e $domain_rt_pos_file){
-	    open my $out, '>', $domain_rt_pos_file or die "\nERROR: Could not open file: $domain_rt_pos_file\n";
+	    open my $out, '>', $domain_rt_pos_file or die "\n[ERROR]: Could not open file: $domain_rt_pos_file\n";
 	    print $out "";
 	    close $out;
 	}
 	elsif (! -e $domain_ape_pos_file){
-	    open my $out, '>', $domain_ape_pos_file or die "\nERROR: Could not open file: $domain_ape_pos_file\n";
+	    open my $out, '>', $domain_ape_pos_file or die "\n[ERROR]: Could not open file: $domain_ape_pos_file\n";
 	    print $out "";
 	    close $out;
 	}
 
 	# run hmm
-	print "Running HMM...\n" if $self->verbose;
+	say STDERR "Running HMM..." if $self->verbose;
 
 	my $mgescan  = File::Spec->catfile($pdir, 'hmm', 'tephra-MGEScan');
 	my $out_file = File::Spec->catfile($outf_dir, $dna_name.$dna_suffix);
@@ -94,11 +94,13 @@ sub run_mgescan {
 	$outf_dir .= '/';
 	my $tephra_dir = $ENV{TEPHRA_DIR} // File::Spec->catfile($ENV{HOME}, '.tephra');
 	$ENV{PATH} = join ':', $ENV{PATH}, File::Spec->catfile($tephra_dir, 'EMBOSS-6.5.7', 'bin');
-	#my $cmd = "$mgescan -m $chrhmm -s $dna_file -r $domain_rt_pos_file -a $domain_ape_pos_file -o $out_file -p $ldir -d $outf_dir";
-	#say STDERR "CMD: $cmd"; ##TODO: add debug option
-	system("$mgescan -m $chrhmm -s $dna_file -r $domain_rt_pos_file -a $domain_ape_pos_file -o $out_file -p $ldir -d $outf_dir");
+	my $cmd = "$mgescan -m $chrhmm -s $dna_file -r $domain_rt_pos_file -a $domain_ape_pos_file -o $out_file -p $ldir -d $outf_dir";
+	say STDERR "CMD: $cmd" if $self->verbose;
+	system($cmd);
     }
     unlink $pep_file if -e $pep_file;
+
+    return;
 }
 
 sub translate_forward {
@@ -110,12 +112,13 @@ sub translate_forward {
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($translate) = @{$config}{qw(transcmd)};
     my $cmd = "$translate -d $in -h $name -p $out";
-    #say STDERR "CMD: $cmd"; #TODO: add debug option
+    say STDERR "CMD: $cmd" if $self->verbose;
+    
     try {
 	system($cmd);
     }
     catch {
-	say STDERR "\nERROR: tephra-translate died. Here is the exception: $_\n";
+	say STDERR "\n[ERROR]: tephra-translate died. Here is the exception: $_\n";
 	exit(1);
     };
 
@@ -141,12 +144,12 @@ sub translate_forward {
     #$pm->wait_all_children;
     
     #find( sub { push @parts, $File::Find::name if -f and /frame[012]$/ }, $path);
-    #open my $seqout, '>>', $out or die "\nERROR: Could not open file: $out\n";
+    #open my $seqout, '>>', $out or die "\n[ERROR]: Could not open file: $out\n";
     #for my $part (sort @parts) {
 	#say "writing $part ...";
 	#my $lines = do { 
 	    #local $/ = undef; 
-	    #open my $fh_in, '<', $part or die "\nERROR: Could not open file: $part\n";
+	    #open my $fh_in, '<', $part or die "\n[ERROR]: Could not open file: $part\n";
 	    #<$fh_in>;
 	#};
 	#chomp $lines;
@@ -154,6 +157,8 @@ sub translate_forward {
 	#unlink $part;
     #}
     #close $seqout;
+
+    return;
 }
 
 sub get_signal_domain {
@@ -181,8 +186,8 @@ sub get_signal_domain {
 	$self->_sort_matches($temp_file, $stemp_file);
         my ($start, $end) = (-1, -1);
         my @pre = (-1000, -1000, -1000, -1000, -1000, -1000);
-        open my $in, '<', $stemp_file or die "\nERROR: Could not open file: $stemp_file\n";
-        open my $out, '>', $output_file or die "\nERROR: Could not open file: $output_file\n";
+        open my $in, '<', $stemp_file or die "\n[ERROR]: Could not open file: $stemp_file\n";
+        open my $out, '>', $output_file or die "\n[ERROR]: Could not open file: $output_file\n";
 
 	## NB hard thresholds: length = 300, evalue = 1e-5 
         while (my $each_line = <$in>) {
@@ -210,18 +215,20 @@ sub get_signal_domain {
 	unlink $stemp_file;
     }
     unlink $temp_file;
+
+    return;
 }
 
 sub _parse_hmmsearch {
     my $self = shift;
     my ($hmm_results, $signal_out, $outfile) = @_;
 
-    open my $o, '>', $signal_out or die "\nERROR: Could not open file: $signal_out\n";
+    open my $o, '>', $signal_out or die "\n[ERROR]: Could not open file: $signal_out\n";
     print $o @$hmm_results;
     close $o;
 
     if (-s $signal_out) {
-	open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+	open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 	my $hmmer_in = Bio::SearchIO->new(-file => $signal_out, -format => 'hmmer');
 	
 	my @evalues;
@@ -241,6 +248,8 @@ sub _parse_hmmsearch {
 	close $out;
     }
     unlink $signal_out;
+
+    return;
 }
 
 sub _sort_matches {
@@ -259,8 +268,8 @@ sub _sort_matches {
     #46927035 469284511492 -87.4 3.9e-08
     #84073929 840751081492 -115.7 6.1e-07
 
-    open my $in, '<', $unsorted or die "\nERROR: Could not open file: $unsorted\n";
-    open my $out, '>', $sorted or die "\nERROR: Could not open file: $sorted\n";
+    open my $in, '<', $unsorted or die "\n[ERROR]: Could not open file: $unsorted\n";
+    open my $out, '>', $sorted or die "\n[ERROR]: Could not open file: $sorted\n";
 
     while (my $l = <$in>) {
 	chomp $l;
@@ -275,11 +284,13 @@ sub _sort_matches {
 	say $out join "\t", $sk, @doms;
     }
     close $out;
+
+    return;
 }
 
 =head1 AUTHOR
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 BUGS
 

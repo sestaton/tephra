@@ -13,10 +13,12 @@ use Time::HiRes qw(gettimeofday);
 use Sort::Naturally;
 use Set::IntervalTree;
 use Parallel::ForkManager;
+use Tephra::Config::Exe;
+use Tephra::Annotation::Util;
 use namespace::autoclean;
-#use Data::Dump::Color qw(dump dd);
+#use Data::Dump::Color;
 
-with 'Tephra::Role::Util',
+with 'Tephra::Role::Run::Any',
      'Tephra::Role::Run::GT';
 
 =head1 NAME
@@ -25,11 +27,11 @@ Tephra::Genome::MaskRef - Mask a reference with repeats to reduce false positive
 
 =head1 VERSION
 
-Version 0.07.1
+Version 0.10.00
 
 =cut
 
-our $VERSION = '0.07.1';
+our $VERSION = '0.10.00';
 $VERSION = eval $VERSION;
 
 has genome => (
@@ -107,20 +109,20 @@ sub mask_reference {
 	$name =~ s/$1//;
     }
 
-    my $outfile  = $self->outfile // File::Spec->catfile( abs_path($path), $name.'_masked.fas' );
+    my $outfile  = $self->outfile // File::Spec->catfile( abs_path($path), $name.'_masked.fasta' );
     if (-e $outfile) {
-	say STDERR "\nERROR: '$outfile' already exists. Please delete this or rename it before proceeding. Exiting.\n";
+	say STDERR "\n[ERROR]: '$outfile' already exists. Please delete this or rename it before proceeding. Exiting.\n";
         exit(1);
     }
     my $logfile = $outfile.'.log';
 
-    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-    open my $log, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
+    open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
+    open my $log, '>>', $logfile or die "\n[ERROR]: Could not open file: $logfile\n";
 
     my $genome_dir = File::Spec->catfile( abs_path($path), $name.'_tephra_masked_tmp' );
 
     if (-d $genome_dir) {
-	say STDERR "\nERROR: '$genome_dir' already exists. Please delete this or rename it before proceeding. Exiting.\n";
+	say STDERR "\n[ERROR]: '$genome_dir' already exists. Please delete this or rename it before proceeding. Exiting.\n";
 	exit(1);
     }
     else {
@@ -128,7 +130,7 @@ sub mask_reference {
     }
 
     my $files = $self->_split_genome($genome, $genome_dir);
-    die "\nERROR: No FASTA files found in genome directory. Exiting.\n" if @$files == 0;
+    die "\n[ERROR]: No FASTA files found in genome directory. Exiting.\n" if @$files == 0;
 
     my $thr;
     if ($threads % 2 == 0) {
@@ -152,8 +154,10 @@ sub mask_reference {
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			      my ($report, $ref, $id, $seq, $path) 
 				  = @{$data_ref}{qw(masked ref id seq path)};
-			      push @reports, $report;
-			      $seqs{$ref}{$id} = $seq;
+			      if (defined $id && defined $seq) {
+				  push @reports, $report;
+				  $seqs{$ref}{$id} = $seq;
+			      }
 			      my $t1 = gettimeofday();
                               my $elapsed = $t1 - $t0;
                               my $time = sprintf("%.2f",$elapsed/60);
@@ -176,7 +180,7 @@ sub mask_reference {
     }
 
     $pm->wait_all_children;
-
+    
     $self->write_masking_results(\@reports, \%seqs, $out, $outfile, $t0);
     remove_tree( $genome_dir, { safe => 1 } ) if $self->clean;
     close $log;
@@ -211,14 +215,19 @@ sub run_masking {
     local $SIG{INT} = sub {
         $log->warn("Caught SIGINT; Waiting for child processes to finish.");
         $pm->wait_all_children;
-         exit 1;
+	exit 1;
     };
 
-    my $mkvtree = "mkvtree -db $wchr -indexname $index -dna -allout -v -pl 2>&1 > $mkvtree_log";
-    my $vmatchm = "vmatch -p -d -q $repeatdb -qspeedup 2 -l $length -best 10000 -identity $pid -dbmaskmatch N $index 1> $outpart 2> $vmatch_mlog";
-    my $vmatchr = "vmatch -p -d -q $repeatdb -qspeedup 2 -l $length -best 10000 -sort ia -identity $pid -showdesc 0 $index 1> $report 2> $vmatch_rlog";
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($vmatchbin) = @{$config}{qw(vmatchbin)};
+    my $vmatch  = File::Spec->catfile($vmatchbin, 'vmatch');
+    my $mkvtree = File::Spec->catfile($vmatchbin, 'mkvtree');
 
-    $self->run_cmd($mkvtree); # need to warn here, not just log errors
+    my $mkvtreec = "$mkvtree -db $wchr -indexname $index -dna -allout -v -pl 2>&1 > $mkvtree_log";
+    my $vmatchm  = "$vmatch -p -d -q $repeatdb -qspeedup 2 -l $length -best 10000 -identity $pid -dbmaskmatch N $index 1> $outpart 2> $vmatch_mlog";
+    my $vmatchr  = "$vmatch -p -d -q $repeatdb -qspeedup 2 -l $length -best 10000 -sort ia -identity $pid -showdesc 0 $index 1> $report 2> $vmatch_rlog";
+
+    $self->run_cmd($mkvtreec); # need to warn here, not just log errors
     for my $run ($vmatchm, $vmatchr) {
 	$pm->start($run) and next;
 	$SIG{INT} = sub { $pm->finish };
@@ -229,9 +238,11 @@ sub run_masking {
     $pm->wait_all_children;
 
     my $mask_struct = $self->get_masking_results($wchr, $report, $sub_chr_length, $seq_index, $chr_windows);
+    #dd $mask_struct;
 
     $self->clean_index_files($index);
     my ($id, $seq) = $self->_get_seq($outpart);
+
     # each reference sequence is in a separate directory so we just need that directory name 
     my $ref = dirname($chr);
     $ref =~ s/.*\///;
@@ -266,9 +277,10 @@ sub get_masking_results {
 	$rep_end = $sub_chr_length;
     }
 
-    my $repeat_map = $self->_build_repeat_map;
+    my $util = Tephra::Annotation::Util->new;
+    my $repeat_map = $util->build_repeat_map;
 
-    open my $in, '<', $voutfile or die "\nERROR: Could not open file: $voutfile\n";
+    open my $in, '<', $voutfile or die "\n[ERROR]: Could not open file: $voutfile\n";
     
     my (%windows, %refs, %hits, %aligns, %report, %final_rep);
 
@@ -363,7 +375,7 @@ sub get_masking_results {
     }
 
     for my $s (sort { $a <=> $b } keys %windows) { 
-	my ($code) = ($windows{$s}{match} =~ /^(\w{3})-?_?/);         
+	my ($code) = ($windows{$s}{match} =~ /(^[A-Z]{3})_?\-?/);
 	if (defined $code && exists $repeat_map->{$code}) {
 	    push @{$report{ $code }}, $windows{$s}{len};
 	}
@@ -389,24 +401,18 @@ sub write_masking_results {
     # chromosomes. The only difference will be that the output chromosomes
     # are sorted by the ID (the only other option would be a random order, which
     # is not useful at all for comparison purposes or debugging).
-    # NB: This is a new method in v0.04.4, so I'm leaving the debugging statements
-    # in place for now.
     for my $id (nsort keys %$seqs) {
 	my $seq;
 	my @subsets = nsort keys %{$seqs->{$id}};
 	my $final = $subsets[-1];
-	#say STDERR "final: $final";
 	if (@subsets > 1) {
 	    for my $subs (@subsets) {
 		my $length = length($seqs->{$id}{$subs});
-		#say STDERR join q{ }, $id, $subs, $length;
 		if ($seqct > 0) {
 		    if ($subs eq $final) {
 			$length -= $overlap;
-			#say STDERR join q{ }, 'final: ', $subs, $overlap, $length;
 			my $seqpart = substr $seqs->{$id}{$subs}, $overlap, $length;
 			$seq .= $seqpart;
-			#say STDERR join q{ }, 'final: ', $id, $subs, length($seqpart);
 			$genome_length += length($seqpart);
 		    }
 		    else {
@@ -414,7 +420,6 @@ sub write_masking_results {
 			my $seqpart = substr $seqs->{$id}{$subs}, $overlap, $length;
 			$seq .= $seqpart;
 			$genome_length += length($seqpart);
-			#say STDERR join q{ }, $id, $subs, length($seqpart);
 		    }
 		}
 		else {
@@ -422,7 +427,6 @@ sub write_masking_results {
 		    my $seqpart = substr $seqs->{$id}{$subs}, 0, $length;
 		    $seq .= $seqpart;
 		    $genome_length += length($seqpart);
-		    #say STDERR join q{ }, $id, $subs, length($seqpart);
 		}
 		$seqct++;
 	    }
@@ -430,21 +434,23 @@ sub write_masking_results {
 	else {
 	    my ($subsetid) = keys %{$seqs->{$id}};
 	    $seq = $seqs->{$id}{$subsetid};
-	    #say STDERR join q{ }, $id, $subsetid, length($seq);
 	    $genome_length += length($seq);
 	}
 	$seq =~ s/.{60}\K/\n/g;
-	#say STDERR join q{ }, $id, length($seq);
 	say $out join "\n", ">$id", $seq;
 	$seqct = 0;
     }
 
     my %final_rep;
-    my $repeat_map = $self->_build_repeat_map;
+    my $util = Tephra::Annotation::Util->new;
+    my $repeat_map = $util->build_repeat_map;
 
+    #dd $reports;
+    my $has_masking = 0;
     my ($classlen, $orderlen, $namelen, $masklen);
     for my $report (@$reports) {
 	next unless %$report;
+	$has_masking = 1;
 	for my $rep_type (keys %$report) {
             my $total = sum(@{$report->{$rep_type}});
             my ($class, $order, $name) = @{$repeat_map->{$rep_type}}{qw(class order repeat_name)};
@@ -457,10 +463,20 @@ sub write_masking_results {
     my $total_elapsed = $t2 - $t0;
     my $final_time = sprintf("%.2f",$total_elapsed/60);
 
+    unless ($has_masking) {
+	say STDERR "\n[WARNING]: No bases were masked in '$genome' under the specified conditions, so there will be no output.\n".
+	    "Check the input, or try relaxing the alignment constraints if you believe matches should be found. Exiting.\n";
+	unlink $outfile;
+	unlink $outfile.'.log';
+	return;
+    }
+
     unless (defined $classlen && defined $orderlen && defined $namelen) {
-	say STDERR "\nERROR: Could not get classification for masking results, which likely means an issue with the input.\n".
-	    "       Please check input genome and database. If this issue persists please report it. Exiting.\n";
-	exit(1);
+	say STDERR "\n[ERROR]: Could not get classification for masking results, which likely means an issue with the input.\n".
+	    "Please check input genome and database. If this issue persists, please report it. Exiting.\n";
+	unlink $outfile;
+	unlink $outfile.'.log';
+	return;
     }
 
     ($classlen,$orderlen, $namelen) = ($classlen+10, $orderlen+10, $namelen+15);
@@ -475,7 +491,7 @@ sub write_masking_results {
     say "=================== 'Tephra maskref' finished in $final_time minutes $closing_brace";
     printf "%-${classlen}s %-${classlen}s %-${orderlen}s %-${namelen}s\n", "Class", "Order", "Superfamily", "Percent Masked";
 
-    say "-" x 80;
+    say '-' x 80;
     for my $class (sort keys %final_rep) {
         for my $order (sort keys %{$final_rep{$class}}) {
             for my $name (sort keys %{$final_rep{$class}{$order}}) {
@@ -488,7 +504,7 @@ sub write_masking_results {
     }
 
     my $masked = sprintf("%.2f",($masked_total/$genome_length)*100);
-    say "=" x 80;
+    say '=' x 80;
     say "Input file:          $genome";
     say "Output file:         $outfile";
     say "Database file:       $repeatdb";
@@ -496,6 +512,7 @@ sub write_masking_results {
     say "Window overlap size: $overlap";
     say "Total genome length: $genome_length";
     say "Total masked bases:  $masked% ($masked_total/$genome_length)";
+    say '=' x 80;
 
     return;
 }
@@ -548,7 +565,7 @@ sub _split_genome {
 	my $dir = File::Spec->catdir($genome_dir, $id);
 	make_path( $dir, {verbose => 0, mode => 0771,} );
 	my $outfile = File::Spec->catfile($dir, $id.'.fasta');
-	open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+	open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 	say $out join "\n", ">".$id, $seqobj->seq;
 	close $out;
 	push @files, $outfile;
@@ -590,7 +607,7 @@ sub _split_chr_windows {
                 my $seq_part = substr $seq, $start, $chunk_size;
                 $seq_part =~ s/.{60}\K/\n/g;
                 my $outfile = File::Spec->catfile($path, $id."_$i.fasta");
-                open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+                open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
                 say $out join "\n", ">".$id."_$i"."_".$start."_$end", $seq_part;
                 close $out;
                 $split_files{$i} = $outfile;
@@ -614,7 +631,7 @@ sub _split_chr_windows {
                 my $seq_part = substr $seq, $start, $chunk_size;
                 $seq_part =~ s/.{60}\K/\n/g;
                 my $outfile = File::Spec->catfile($path, $id."_$i.fasta");
-                open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+                open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 		# The next line is a small adjustment to show that the first window starts at 1 and not 0,
 		# which is just to make it human-readable (even though to Perl, it really does start at 0).
                 $start = $i > 0 ? $start : $start+1;
@@ -630,73 +647,9 @@ sub _split_chr_windows {
     return \%split_files; 
 }
 
-sub _build_repeat_map {
-    my $self = shift;
-
-    my %repeat_map = (
-	## Class I
-	# DIRS
-	'RLD' => { class => 'Class I', order => 'DIRS', repeat_name => 'DIRS' },
-	'RYN' => { class => 'Class I', order => 'DIRS', repeat_name => 'Ngaro' },
-	'RYX' => { class => 'Class I', order => 'DIRS', repeat_name => 'Unknown DIRS' },
-	'RYV' => { class => 'Class I', order => 'DIRS', repeat_name => 'VIPER' },
-	# LINE 
-	'RII' => { class => 'Class I', order => 'LINE', repeat_name => 'I' },
-	'RIJ' => { class => 'Class I', order => 'LINE', repeat_name => 'Jockey' },
-	'RIL' => { class => 'Class I', order => 'LINE', repeat_name => 'L1' },
-	'RIR' => { class => 'Class I', order => 'LINE', repeat_name => 'R2' },
-	'RIT' => { class => 'Class I', order => 'LINE', repeat_name => 'RTE' },
-	'RIX' => { class => 'Class I', order => 'LINE', repeat_name => 'Unknown LINE' },
-	'RIC' => { class => 'Class I', order => 'LINE', repeat_name => 'CR1' },
-	# LTR
-	'RLB' => { class => 'Class I', order => 'LTR', repeat_name => 'Bel/Pao' },
-	'RLC' => { class => 'Class I', order => 'LTR', repeat_name => 'Copia' },
-	'RLE' => { class => 'Class I', order => 'LTR', repeat_name => 'ERV' },
-	'RLG' => { class => 'Class I', order => 'LTR', repeat_name => 'Gypsy' },
-	'RLR' => { class => 'Class I', order => 'LTR', repeat_name => 'Retrovirus' },
-	'RLT' => { class => 'Class I', order => 'LTR', repeat_name => 'TRIM' },
-	'RLX' => { class => 'Class I', order => 'LTR', repeat_name => 'Unknown LTR' },
-	# PLE
-	'RPP' => { class => 'Class I', order => 'Penelope', repeat_name => 'Penelope' },
-	'RPX' => { class => 'Class I', order => 'Penelope', repeat_name => 'Unknown PLE' },
-	# SINE
-	'RSS' => { class => 'Class I', order => 'SINE', repeat_name => '5S' },
-	'RSL' => { class => 'Class I', order => 'SINE', repeat_name => '7SL' },
-	'RST' => { class => 'Class I', order => 'SINE', repeat_name => 'tRNA' },
-	'RSX' => { class => 'Class I', order => 'SINE', repeat_name => 'Unknown SINE' },
-	'RXX' => { class => 'Class I', order => 'SINE', repeat_name => 'Unknown retrotransposon' },
-	## Class II
-	# - Subclass 1
-	# Crypton
-	'DYC' => { class => 'Class II', order => 'Crypton', repeat_name => 'Crypton' },
-	'DYX' => { class => 'Class II', order => 'Crypton', repeat_name => 'Unknown Crypton' },
-	# TIR
-	'DTC' => { class => 'Class II', order => 'TIR', repeat_name => 'CACTA' },
-	'DTA' => { class => 'Class II', order => 'TIR', repeat_name => 'hAT' },
-	'DTE' => { class => 'Class II', order => 'TIR', repeat_name => 'Merlin' },
-	'DTM' => { class => 'Class II', order => 'TIR', repeat_name => 'Mutator' },
-	'DTP' => { class => 'Class II', order => 'TIR', repeat_name => 'P' },
-	'DTH' => { class => 'Class II', order => 'TIR', repeat_name => 'PIF/Harbinger' },
-	'DTB' => { class => 'Class II', order => 'TIR', repeat_name => 'PiggyBac' },
-	'DTT' => { class => 'Class II', order => 'TIR', repeat_name => 'Tc1/Mariner' },
-	'DTR' => { class => 'Class II', order => 'TIR', repeat_name => 'Transib' },
-	'DTX' => { class => 'Class II', order => 'TIR', repeat_name => 'Unknown TIR' },
-	'DXX' => { class => 'Class II', order => 'TIR', repeat_name => 'Unknown DNA transposon' },
-	# - Subclass 2
-	# Helitron
-	'DHH' => { class => 'Class II', order => 'Helitron', repeat_name => 'Helitron' },
-	'DHX' => { class => 'Class II', order => 'Helitron', repeat_name => 'Unknown Helitron' },
-	# Maverick
-	'DMM' => { class => 'Class II', order => 'Maverick', repeat_name => 'Maverick' },
-	'DMX' => { class => 'Class II', order => 'Maverick', repeat_name => 'Unknown Maverick' },
-	);
-
-    return \%repeat_map;
-}
-
 =head1 AUTHOR
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 BUGS
 

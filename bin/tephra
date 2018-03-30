@@ -3,31 +3,107 @@
 use 5.014;
 use strict;
 use warnings;
+use Pod::Find           qw(pod_where);
+use Pod::Usage          qw(pod2usage);
+use Capture::Tiny       qw(capture_merged);
+use IPC::System::Simple qw(system);
 use Tephra;
 
-our $VERSION = '0.07.1';
+our $VERSION = '0.10.00';
 
-my $cmd = Tephra->new({ show_version_cmd => 1, }); #no_help_plugin => 1 });
+if (!@ARGV || $ARGV[0] =~ /-h|help/) {
+    my $usage = usage();
+    say STDERR $usage;
+    exit(0);
+}
+elsif ($ARGV[0] =~ /-m|man/) {
+    my $command = __FILE__;
+    system('perldoc', $command) == 0 or die $!;
+    exit(0);
+}
+
+my $cmd = Tephra->new({ show_version_cmd => 1, no_help_plugin => 1 });
 $cmd->run;
+#Tephra->new->run;
 
+sub usage {
+    my $desc = capture_merged {
+        pod2usage(-verbose => 99, -sections => "NAME|SYNOPSIS|DESCRIPTION", -exitval => "noexit",
+            -input => pod_where({-inc => 1}, __PACKAGE__));
+    };
+    chomp $desc;
+    my $menu = 
+"
+Tephra version $VERSION
+
+Copyright (C) 2015-2018 S. Evan Staton
+LICENSE -- MIT
+
+Citation: Staton, SE. 2018. https://github.com/sestaton/tephra
+
+$desc
+-------------------------------------------------------------------------------------------
+USAGE: tephra <command> [options]
+
+Available commands:
+     
+            all: Run all subcommands and generate annotations for all transposon types.
+   classifyltrs: Classify LTR retrotransposons into superfamilies and families.
+   classifytirs: Classify TIR transposons into superfamilies.
+  findfragments: Search a masked genome with a repeat database to find fragmented elements.
+  findhelitrons: Find Helitons in a genome assembly.
+       findltrs: Find LTR retrotransposons in a genome assembly.
+    findnonltrs: Find non-LTR retrotransposons in a genome assembly.
+       findtirs: Find TIR transposons in a genome assembly.
+      findtrims: Find TRIM retrotransposons in a genome assembly.
+      illrecomb: Characterize the distribution of illegitimate recombination in a genome.
+         ltrage: Calculate the age distribution of LTR retrotransposons.
+        maskref: Mask a reference genome with transposons.
+     reannotate: Transfer annotations from a reference set of repeats to Tephra annotations.
+        sololtr: Find solo-LTRs in a genome assembly.
+         tirage: Calculate the age distribution of TIR transposons.
+
+Most common usage:
+
+    tephra all -c tephra_config.yml
+
+That will produce a FASTA and GFF3 of all intact and fragmented transposons in the genome,
+and generate a table of annotation results.
+
+To get the configuration file, run:
+
+    wget https://raw.githubusercontent.com/sestaton/tephra/master/config/tephra_config.yml
+
+To see information about a subcommand, run:
+
+    tephra <command> --help
+
+To get more detailed information, run:
+
+    tephra <command> --man\n";
+
+
+    return $menu;
+}
 
 __END__
 
 =head1 NAME
 
-Tephra - Transposable element paleontology
+Tephra - A tool for discovering transposable elements and describing patterns of genome evolution
 
 =head1 DESCRIPTION
 
  This is an application to find transposable elements based on structural and sequence similarity features,
- group those elements into recognized superfamilies and infer patterns of evolution.     
+ group those elements into recognized (superfamilies) and novel (families) taxonomic groups,
+ and infer patterns of evolution.     
 
 =head1 LICENSE
  
 The MIT License should included with the project. 
 If not, it can be found at: L<http://opensource.org/licenses/mit-license.php>
 
-Copyright (C) 2015-2016 S. Evan Staton
+Copyright (C) 2015-2018 S. Evan Staton
  
 =head1 TESTED WITH:
 
@@ -43,7 +119,7 @@ Perl 5.22.0 (Fedora 21; Cent OS 7)
 
 =head1 AUTHOR 
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 REQUIRED ARGUMENTS
 
@@ -51,17 +127,21 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =item The method to perform. Must be one of the following:
     
-    classifyltrs: Classify LTR retrotransposons into superfamilies and families.
+            all: Run all subcommands and generate annotations for all transposon types.
+   classifyltrs: Classify LTR retrotransposons into superfamilies and families.
    classifytirs: Classify TIR transposons into superfamilies.
+  findfragments: Search a masked genome with a repeat database to find fragmented elements.
   findhelitrons: Find Helitons in a genome assembly.
        findltrs: Find LTR retrotransposons in a genome assembly.
     findnonltrs: Find non-LTR retrotransposons in a genome assembly.
        findtirs: Find TIR transposons in a genome assembly.
       findtrims: Find TRIM retrotransposons in a genome assembly.
-      illrecomb: Characterize the distribution of illigetimate recombination in a genome.
+      illrecomb: Characterize the distribution of illegitimate recombination in a genome.
          ltrage: Calculate the age distribution of LTR retrotransposons.
         maskref: Mask a reference genome with transposons.
+     reannotate: Transfer annotations from a reference set of repeats to Tephra annotations.
         sololtr: Find solo-LTRs in a genome assembly.
+         tirage: Calculate the age distribution of TIR transposons
 
 =back
 

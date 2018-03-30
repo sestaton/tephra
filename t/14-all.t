@@ -22,19 +22,25 @@ if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
 
 my $cmd       = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir   = File::Spec->catdir('t', 'test_data');
-my $outdir    = File::Spec->catdir($testdir,  't_family_domains');
-my $genome    = File::Spec->catfile($testdir, 'ref.fas');
+#my $outdir    = File::Spec->catdir($testdir,  't_family_domains');
+#my $genome    = File::Spec->catfile($testdir, 'ref.fas');
+#my $genome    = File::Spec->catfile($testdir, 'Ha1.fa');
+my $thrlog    = File::Spec->catfile($testdir, 'tephra_fragment_searches.log');
 my $log       = File::Spec->catfile($testdir, 'tephra_full.log');
-my $gff       = File::Spec->catfile($testdir, 'ref_tephra_transposons.gff3');
-my $fas       = File::Spec->catfile($testdir, 'ref_tephra_transposons.fasta');
-my $ctestfile = File::Spec->catfile($testdir, 'tephra_copia_exemplar_ltrs.fasta');
-my $gtestfile = File::Spec->catfile($testdir, 'tephra_gypsy_exemplar_ltrs.fasta');
-my $ltrcdir   = File::Spec->catdir($testdir,  'ref_tephra_ltrs_classified_results');
+my $gff       = File::Spec->catfile($testdir, 'tephra_transposons.gff3');
+my $fas       = File::Spec->catfile($testdir, 'tephra_transposons.fasta');
+my $ctestfile = File::Spec->catfile($testdir, 'tephra_copia_exemplar_repeats.fasta');
+my $gtestfile = File::Spec->catfile($testdir, 'tephra_gypsy_exemplar_repeats.fasta');
+my $ltrcdir   = File::Spec->catdir($testdir,  'ref_tephra_ltrs_trims_classified_results');
 my $cresdir   = File::Spec->catdir($ltrcdir,  'ref_tephra_ltrs_copia');
 my $gresdir   = File::Spec->catdir($ltrcdir,  'ref_tephra_ltrs_gypsy');
 
-my @results = capture { system([0..5], "$cmd all -h") };
-ok( @results, 'Can execute all subcommand' );
+{
+    my @help_args = ($cmd, 'all', '-h');
+    my ($stdout, $stderr, $exit) = capture { system(@help_args) };
+    #say STDERR "stderr: $stderr";
+    ok($stderr, 'Can execute all subcommand');
+}
 
 SKIP: {
     skip 'skip lengthy tests', 3 unless $devtests;
@@ -43,24 +49,23 @@ SKIP: {
     make_path( $ltrcdir, {verbose => 0, mode => 0771,} );
     make_path( $cresdir, {verbose => 0, mode => 0771,} );
     make_path( $gresdir, {verbose => 0, mode => 0771,} );
-    copy $ctestfile, $cresdir or die "\nERROR: copy failed $!";
-    copy $gtestfile, $gresdir or die "\nERROR: copy failed $!";
+    copy $ctestfile, $cresdir or die "\n[ERROR]: copy failed $!";
+    copy $gtestfile, $gresdir or die "\n[ERROR]: copy failed $!";
 
-    my $all_cmd = "$cmd all -c $config";
-    #say STDERR $all_cmd;
-
+    my @all_cmd = ($cmd, 'all', '-c', $config);
+    say STDERR join q{ }, @all_cmd;
     #my ($astdout, $astderr, @aret) = capture { system([0..5], $all_cmd) };
-    system([0..5], $all_cmd);
+    system([0..5], @all_cmd);
 
     ok( -e $gff, 'Can run full tephra pipeline and generate combined GFF3' );
     ok( -e $fas, 'Can run full tephra pipeline and generate combined FASTA' );
     ok( -e $log, 'Can run full tephra pipeline and log results' );
 
     ## clean up
-    unlink $gff, $fas, $log, $config;
+    unlink $gff, $fas, $log, $thrlog, $config;
 
     my @outfiles;
-    find( sub { push @outfiles, $File::Find::name if /^ref_/ }, $testdir);
+    find( sub { push @outfiles, $File::Find::name if /^ref_|\.fai$/ }, $testdir);
     for my $res (@outfiles) {
 	unlink $res 
 	    if -f $res;
@@ -82,13 +87,14 @@ sub write_config {
   - repeatdb:         $testdir/repdb.fas 
   - trnadb:           TephraDB
   - hmmdb:            TephraDB
-  - threads:          24
+  - threads:          2
   - clean:            YES
   - debug:            NO
   - subs_rate:        1e-8
 findltrs:
   - dedup:            NO
   - tnpfilter:        NO
+  - domains_required: NO
     ltrharvest:
       - mintsd: 4
       - maxtsd: 6
@@ -125,11 +131,11 @@ classifyltrs:
 illrecomb:
   - repeat_pid:       10
 ltrage:
-  - all:              NO
+  - all:              YES
 maskref:
-  - percentid:        40
-  - hitlength:        20
-  - splitsize:        50000
+  - percentid:        50
+  - hitlength:        50
+  - splitsize:        5000
   - overlap:          100
 sololtr:
   - percentid:        39
@@ -138,7 +144,7 @@ sololtr:
   - numfamilies:      20
   - allfamilies:      NO
 tirage:
-  - all:              NO";
+  - all:              YES";
 
     open my $out, '>', $config;
     say $out $conf;

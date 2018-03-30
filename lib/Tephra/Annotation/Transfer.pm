@@ -20,14 +20,14 @@ Tephra::Annotation::Transfer - Transfer annotations from a reference set to Teph
 
 =head1 VERSION
 
-Version 0.07.1
+Version 0.10.00
 
 =cut
 
-our $VERSION = '0.07.1';
+our $VERSION = '0.10.00';
 $VERSION = eval $VERSION;
 
-has fasta => (
+has infile => (
     is       => 'ro',
     isa      => 'Path::Class::File',
     required => 1,
@@ -70,15 +70,21 @@ sub transfer_annotations {
 
 sub process_blast_args {
     my $self = shift;
-    my $fasta   = $self->fasta;
+    my $fasta   = $self->infile;
     my $rdb     = $self->repeatdb;
     my $out     = $self->outfile;
     my $threads = $self->threads;
 
-    my (@fams, %exemplars);
+    my ($dbname, $dbpath, $dbsuffix) = fileparse($rdb, qr/\.[^.]*/);
+    my ($faname, $fapath, $fasuffix) = fileparse($fasta, qr/\.[^.]*/);
+    my $outfile = File::Spec->catfile($fapath, $faname.'_'.$dbname.'.bln');
 
     my $blastdb = $self->make_blastdb($rdb);
-    my $blast_report = $self->run_blast({ query => $fasta, db => $blastdb, threads => $threads });
+    my $blast_report = $self->run_blast({ query   => $fasta, 
+					  db      => $blastdb, 
+					  threads => $threads, 
+					  outfile => $outfile,
+					  sort    => 'bitscore' });
     my @dbfiles = glob "$blastdb*";
     unlink @dbfiles;
 
@@ -95,7 +101,7 @@ sub parse_blast {
     my $perc_cov = sprintf("%.2f",$blast_hcov/100);
 
     my %matches;
-    open my $in, '<', $blast_report or die "\nERROR: Could not open file: $blast_report\n";
+    open my $in, '<', $blast_report or die "\n[ERROR]: Could not open file: $blast_report\n";
     while (my $line = <$in>) {
 	chomp $line;
 	my ($queryid, $hitid, $pid, $hitlen, $mmatchct, $gapct, 
@@ -178,7 +184,7 @@ sub parse_blast {
 
 sub write_annotations {
     my $self = shift;
-    my $fasta   = $self->fasta;
+    my $fasta   = $self->infile;
     my $outfile = $self->outfile;
     my ($combined, $id_map) = @_;
 
@@ -186,7 +192,7 @@ sub write_annotations {
     my $kseq = Bio::DB::HTS::Kseq->new($fasta);
     my $iter = $kseq->iterator;
 
-    open my $outfh, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    open my $outfh, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 
     #{
 	#"DTC_ZM00004_consensus" => ["RLX_singleton_family2330"],
@@ -232,7 +238,7 @@ sub write_annotations {
 
 =head1 AUTHOR
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 BUGS
 

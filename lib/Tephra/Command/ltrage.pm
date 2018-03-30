@@ -4,6 +4,9 @@ package Tephra::Command::ltrage;
 use 5.014;
 use strict;
 use warnings;
+use Pod::Find     qw(pod_where);
+use Pod::Usage    qw(pod2usage);
+use Capture::Tiny qw(capture_merged);
 use Tephra -command;
 use Tephra::LTR::LTRStats;
 #use Data::Dump::Color;
@@ -14,10 +17,10 @@ sub opt_spec {
 	[ "gff|f=s",       "The GFF3 file of LTR-RTs in <genome> "                                      ],
 	[ "outfile|o=s",   "The output file containing the age of each element "                        ],
 	[ "subs_rate|r=f", "The nucleotide substitution rate to use (Default: 1e-8) "                   ],
-	[ "threads|t=i",   "The number of threads to use for clustering coding domains "                ],
+	[ "threads|t=i",   "The number of threads to use for clustering coding domains (Default: 1) "   ],
 	[ "indir|i=s",     "The input directory of classifed LTR elements "                             ],
 	[ "all|a",         "Calculate age of all LTR-RTs in <gff> instead of exemplars in <indir> "     ],
-	[ "clean|c",       "Clean up all the intermediate files from PAML and clustalw (Default: yes) " ],
+	[ "clean|c",       "Clean up all the intermediate files from PAML and clustalw (Default: No) "  ],
 	[ "help|h",        "Display the usage menu and exit. "                                          ],
         [ "man|m",         "Display the full manual. "                                                  ],
 	);
@@ -32,23 +35,22 @@ sub validate_args {
         exit(0);
     }
     elsif ($opt->{help}) {
-        $self->help;
-        exit(0);
+        $self->help and exit(0);
     }
     elsif (! $opt->{genome} || ! -e $opt->{genome}) {
-        say STDERR "\nERROR: The '--genome' file does not appear to exist. Check input.";
+        say STDERR "\n[ERROR]: The '--genome' file does not appear to exist. Check input.\n";
         $self->help and exit(0);
     }
     elsif (! $opt->{outfile}) {
-	say STDERR "\nERROR: The '--outfile' argument is missing. Check input.";
+	say STDERR "\n[ERROR]: The '--outfile' argument is missing. Check input.\n";
         $self->help and exit(0);
     }
     elsif ($opt->{all} && ! -e $opt->{gff}) {
-        say STDERR "\nERROR: The '--gff' file does not appear to exist. Check input.";
+        say STDERR "\n[ERROR]: The '--gff' file does not appear to exist. Check input.\n";
         $self->help and exit(0);
     }
     elsif (! $opt->{indir} && ! $opt->{all}) {
-        say STDERR "\nERROR: The '--indir' option must be given if no gff file and '--all' option is given. Check input.";
+        say STDERR "\n[ERROR]: The '--indir' option must be given if no gff file and '--all' option is given. Check input.\n";
         $self->help and exit(0);
     }
 }
@@ -80,8 +82,13 @@ sub _calculate_ltr_stats {
 }
 
 sub help {
+    my $desc = capture_merged {
+        pod2usage(-verbose => 99, -sections => "NAME|DESCRIPTION", -exitval => "noexit",
+		  -input => pod_where({-inc => 1}, __PACKAGE__));
+    };
+    chomp $desc;
     print STDERR<<END
-
+$desc
   USAGE: tephra ltrage [-h] [-m]
       -m --man      :   Get the manual entry for a command.
       -h --help     :   Print the command usage.
@@ -95,7 +102,7 @@ sub help {
       -i|indir      :   The input directory of classified LTR elements.
       -r|subs_rate  :   The nucleotide substitution rate to use (Default: 1e-8).
       -t|threads    :   The number of threads to use for clustering coding domains (Default: 1).
-      -c|clean      :   Clean up all the intermediate files from PAML and clustalw (Default: yes).
+      -c|clean      :   Clean up all the intermediate files from PAML and clustalw (Default: No).
       -a|all        :   Calculate age of all LTR-RTs in <gff> instead of exemplars in <indir>.   
    
 END
@@ -122,7 +129,7 @@ __END__
 
 =head1 AUTHOR 
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 REQUIRED ARGUMENTS
 
@@ -160,7 +167,7 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =item -c, --clean
 
- Clean up all the intermediate files from PAML and clustalw (Default: yes).
+ Clean up all the intermediate files from PAML and clustalw (Default: No).
 
 =item -a, --all
 

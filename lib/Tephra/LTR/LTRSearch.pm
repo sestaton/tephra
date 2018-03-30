@@ -5,6 +5,7 @@ use Moose;
 use File::Spec;
 use File::Find;
 use File::Basename;
+use File::Path          qw(remove_tree);
 use IPC::System::Simple qw(system EXIT_ANY);
 use Cwd                 qw(abs_path);
 use Log::Any            qw($log);
@@ -13,7 +14,8 @@ use YAML::Tiny;
 use namespace::autoclean;
 #use Data::Dump;
 
-with 'Tephra::Role::Run::GT';
+with 'Tephra::Role::Logger',
+     'Tephra::Role::Run::GT';
 
 =head1 NAME
 
@@ -21,11 +23,11 @@ Tephra::LTR::LTRSearch - Find LTR retrotransposons in a reference genome
 
 =head1 VERSION
 
-Version 0.07.1
+Version 0.10.00
 
 =cut
 
-our $VERSION = '0.07.1';
+our $VERSION = '0.10.00';
 $VERSION = eval $VERSION;
 
 has config => (
@@ -35,13 +37,21 @@ has config => (
     documentation => qq{The Tephra LTR configuration file},
 );
 
-sub ltr_search_strict {
+has logfile => (
+      is        => 'ro',
+      isa       => 'Str',
+      predicate => 'has_logfile',
+);
+
+sub ltr_search {
     my $self = shift;
-    my ($config, $index) = @_;
+    my ($search_obj) = @_;
+    my ($config, $index, $mode) = @{$search_obj}{qw(config index mode)};
     
-    my $genome = $self->genome->absolute->resolve;
-    my $hmmdb  = $self->hmmdb->absolute->resolve;
-    my $trnadb = $self->trnadb->absolute->resolve;
+    my $genome  = $self->genome->absolute->resolve;
+    my $hmmdb   = $self->hmmdb->absolute->resolve;
+    my $trnadb  = $self->trnadb->absolute->resolve;
+    my $logfile = $self->logfile;
 
     ## LTRharvest constraints
     my ($overlaps, $mintsd, $maxtsd, $minlenltr, $maxlenltr, $mindistltr, $maxdistltr, $pdomcutoff, $pdomevalue) = 
@@ -54,109 +64,76 @@ sub ltr_search_strict {
     my ($pptradius, $pptlen, $pptagpr, $uboxlen, $uboxutpr, $pbsradius, $pbslen, $pbsoffset, $pbstrnaoffset, $pbsmaxeditdist, $maxgaplen) = 
 	@{$config->{findltrs}}{qw(pptradius pptlen pptagpr uboxlen uboxutpr pbsradius pbslen pbsoffset pbstrnaoffset pbsmaxeditdist maxgaplen)};
 
-    my (%suf_args, %ltrh_cmd, %ltrd_cmd);
-    
+    my (%ltrh_cmd, %ltrd_cmd, @ltrh_opts, @ltrh_args, $ltrh_gff, $ltrd_gff);
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
     if ($name =~ /(\.fa.*)/) {
 	$name =~ s/$1//;
     }
     
-    my $ltrh_gff = File::Spec->catfile( abs_path($path), $name.'_ltrharvest99.gff3' );
-    my $ltrg_gff = File::Spec->catfile( abs_path($path), $name.'_ltrdigest99.gff3' );
+    if ($mode eq 'strict') {
+	$ltrh_gff = File::Spec->catfile( abs_path($path), $name.'_ltrharvest99.gff3' );
+	$ltrd_gff = File::Spec->catfile( abs_path($path), $name.'_ltrdigest99.gff3' );
 
-    my @ltrh_opts = qw(-seqids -mintsd -maxtsd -minlenltr -maxlenltr -mindistltr 
+	@ltrh_opts = qw(-seqids -mintsd -maxtsd -minlenltr -maxlenltr -mindistltr 
                        -maxdistltr -motif -similar -vic -index -overlaps -seed -vic 
                        -xdrop -mat -mis -ins -del -gff3);
-    my @ltrh_args = ("yes",$mintsd,$maxtsd,$minlenltr,$maxlenltr,$mindistltr,$maxdistltr,"tgca","99",
-		     "10",$index,$overlaps,$seedlength,$tsdradius,$xdrop,
-		     $swmat,$swmis,$swins,$swdel,$ltrh_gff);
+	@ltrh_args = ("yes",$mintsd,$maxtsd,$minlenltr,$maxlenltr,$mindistltr,$maxdistltr,"tgca","99",
+		      "10",$index,$overlaps,$seedlength,$tsdradius,$xdrop,
+		      $swmat,$swmis,$swins,$swdel,$ltrh_gff);
+    }
+    elsif ($mode eq 'relaxed') {
+	$ltrh_gff = File::Spec->catfile( abs_path($path), $name.'_ltrharvest85.gff3' );
+	$ltrd_gff = File::Spec->catfile( abs_path($path), $name.'_ltrdigest85.gff3' );
+
+	@ltrh_opts = qw(-seqids -mintsd -maxtsd -minlenltr -maxlenltr 
+                       -mindistltr -maxdistltr -similar -vic -index -overlaps
+                       -seed -vic -xdrop -mat -mis -ins -del -gff3);
+	@ltrh_args = ("yes",$mintsd,$maxtsd,$minlenltr,$maxlenltr,$mindistltr,$maxdistltr,"85","10",
+		      $index,$overlaps,$seedlength,$tsdradius,$xdrop,$swmat,
+		      $swmis,$swins,$swdel,$ltrh_gff);
+    }
+    else {
+	say STDERR "\n[ERROR]: Could not get 'mode' for LTR search. This is a bug, please report it. Exiting.\n";
+        exit(1);
+    }
+
+    my $log = $self->get_tephra_logger($logfile);
+
     @ltrh_cmd{@ltrh_opts} = @ltrh_args;
-    
-    my $ltr_succ  = $self->run_ltrharvest(\%ltrh_cmd);
-    if (-s $ltrh_gff > 1) {
-	my $gffh_sort = $self->sort_gff($ltrh_gff);
+    my $ltrh_succ = $self->run_ltrharvest(\%ltrh_cmd, $ltrh_gff, $log);
+
+    if ($ltrh_succ && -s $ltrh_gff) {
+	my $gffh_sort = $self->sort_gff($ltrh_gff, $log);
 
 	my @ltrd_opts = qw(-trnas -hmms -seqfile -matchdescstart -seqnamelen -o 
                            -pdomevalcutoff -pdomcutoff -pptradius -pptlen -pptaprob 
                            -pptgprob -uboxlen -pptuprob -pbsalilen -pbsradius -pbsoffset -pbstrnaoffset
                            -pbsmaxedist -maxgaplen);
-	my @ltrd_args = ($trnadb,$hmmdb,$genome,"yes","50",$ltrg_gff,
+	my @ltrd_args = ($trnadb,$hmmdb,$genome,"yes","50",$ltrd_gff,
 			 $pdomevalue,$pdomcutoff,$pptradius,$pptlen,$pptagpr,$pptagpr,$uboxlen,
 	                 $uboxutpr,$pbslen,$pbsradius,$pbsoffset,$pbstrnaoffset,$pbsmaxeditdist,$maxgaplen);
 	@ltrd_cmd{@ltrd_opts} = @ltrd_args;
-	
-	my $ltr_dig = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort);
+
+	my $ltrd_succ = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort, $log);
+	$self->clean_indexes($path) 
+	    if $self->clean && $mode eq 'relaxed';
 	unlink $ltrh_gff;
 	unlink $gffh_sort;
-    
-	return $ltrg_gff;
+	
+	return $ltrd_gff;
     }
     else {
+	$self->clean_indexes($path) 
+	    if $self->clean && $mode eq 'relaxed';
 	unlink $ltrh_gff;
-	return undef;
+
+	return 0;
     }
-}
-
-sub ltr_search_relaxed {
-    my $self = shift;
-    my ($config, $index) = @_;
-    
-    my $genome = $self->genome->absolute->resolve;
-    my $hmmdb  = $self->hmmdb->absolute->resolve;
-    my $trnadb = $self->trnadb->absolute->resolve;
-
-    ## LTRharvest constraints
-    my ($overlaps, $mintsd, $maxtsd, $minlenltr, $maxlenltr, $mindistltr, $maxdistltr, $pdomcutoff, $pdomevalue) = 
-	@{$config->{findltrs}}{qw(overlaps mintsd maxtsd minlenltr maxlenltr mindistltr maxdistltr pdomcutoff pdomevalue)};
-
-    my ($seedlength, $tsdradius, $xdrop, $swmat, $swmis, $swins, $swdel) = 
-	@{$config->{findltrs}}{qw(seedlength tsdradius xdrop swmat swmis swins swdel)};
-
-    ## LTRdigest constraints
-    my ($pptradius, $pptlen, $pptagpr, $uboxlen, $uboxutpr, $pbsradius, $pbslen, $pbsoffset, $pbstrnaoffset, $pbsmaxeditdist, $maxgaplen) = 
-	@{$config->{findltrs}}{qw(pptradius pptlen pptagpr uboxlen uboxutpr pbsradius pbslen pbsoffset pbstrnaoffset pbsmaxeditdist maxgaplen)};
-
-    my (%suf_args, %ltrh_cmd, %ltrd_cmd);
-    
-    my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
-    if ($name =~ /(\.fa.*)/) {
-	$name =~ s/$1//;
-    }
-    
-    my $ltrh_gff = File::Spec->catfile( abs_path($path), $name.'_ltrharvest85.gff3' );
-    my $ltrg_gff = File::Spec->catfile( abs_path($path), $name.'_ltrdigest85.gff3' );
-
-    my @ltrh_opts = qw(-seqids -mintsd -maxtsd -minlenltr -maxlenltr 
-                       -mindistltr -maxdistltr -similar -vic -index -overlaps
-                       -seed -vic -xdrop -mat -mis -ins -del -gff3);
-    my @ltrh_args = ("yes",$mintsd,$maxtsd,$minlenltr,$maxlenltr,$mindistltr,$maxdistltr,"85","10",
-		     $index,$overlaps,$seedlength,$tsdradius,$xdrop,$swmat,
-                     $swmis,$swins,$swdel,$ltrh_gff);
-    @ltrh_cmd{@ltrh_opts} = @ltrh_args;
-    
-    my $ltr_succ  = $self->run_ltrharvest(\%ltrh_cmd);
-    my $gffh_sort = $self->sort_gff($ltrh_gff);
-
-    my @ltrd_opts = qw(-trnas -hmms -seqfile -matchdescstart -seqnamelen -o 
-                       -pdomevalcutoff -pdomcutoff -pptradius -pptlen -pptaprob
-                       -pptgprob -uboxlen -pptuprob -pbsalilen -pbsradius -pbsoffset 
-                       -pbstrnaoffset -pbsmaxedist -maxgaplen);
-    my @ltrd_args = ($trnadb,$hmmdb,$genome,"yes","50",$ltrg_gff,$pdomevalue,
-		     $pdomcutoff,$pptradius,$pptlen,$pptagpr,$pptagpr,$uboxlen,$uboxutpr,$pbslen,
-		     $pbsradius,$pbsoffset,$pbstrnaoffset,$pbsmaxeditdist,$maxgaplen);
-    @ltrd_cmd{@ltrd_opts} = @ltrd_args;
-    
-    my $ltr_dig = $self->run_ltrdigest(\%ltrd_cmd, $gffh_sort);
-    $self->clean_indexes($path) if $self->clean;
-    unlink $ltrh_gff;
-    unlink $gffh_sort;
-
-    return $ltrg_gff;
 }
 
 =head1 AUTHOR
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 BUGS
 

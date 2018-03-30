@@ -5,11 +5,11 @@ A tool for discovering transposable elements and describing patterns of genome e
 
 ### What is Tephra?
 
-Tephra is a command line application to annotate [transposable elements](http://en.wikipedia.org/wiki/Transposable_element) from a genome assembly. The goal is to provide a high quality set of de novo annotations for all transposon types, describe the structure and evolution of those sequences, and do it without a reference set of transposon sequences (therefore being unbiased as possible).
+Tephra is a command line application to annotate [transposable elements](http://en.wikipedia.org/wiki/Transposable_element) from a genome assembly. The goal is to provide a high quality set of *de novo* annotations for all transposon types, describe the structure and evolution of those sequences, and do it without a reference set of transposon sequences (therefore being unbiased as possible).
 
 **DEPENDENCIES**
 
-Part of the utility of Tephra is to provide family-level TE classifications and infer patterns of molecular evoltion. To be efficient as possible, these tasks require a few external programs. Specifically, you will need to download [MUSCLE](http://http://drive5.com/muscle/) and [Vmatch](http://vmatch.de) and add the PATH to these programs. Both of these programs are free, but they have a special license so I cannot distribute them. If you are only interested in TE identification, you can skip the installation of these programs.
+Part of the utility of Tephra is to provide family-level TE classifications and infer patterns of molecular evoltion. To be efficient as possible, these tasks require a few external programs. Specifically, you will need to download [MUSCLE](http://http://drive5.com/muscle/) and add this program to your system PATH. This program is free, but it has a special license so I cannot distribute it. If you are only interested in TE identification and classification, you can skip the installation of this program (it is only used for calculating the insertion age of transposons).
 
 **INSTALLATION**
 
@@ -28,10 +28,13 @@ The next two commands install BioPerl, and these can be skipped if BioPerl is in
     cpanm Data::Stag DB_File
     echo "n" | cpanm -n Bio::Root::Version
 
-Finally, download the [latest release](https://github.com/sestaton/tephra/releases/latest) and run the following commands:
+Finally, download the [latest release](https://github.com/sestaton/tephra/releases/latest) and run the following commands from the root directory:
 
+<<<<<<< HEAD
     wget https://github.com/sestaton/tephra/archive/v0.07.1.tar.gz
     tar xzf v0.07.1.tar.gz && cd tephra-0.07.1
+=======
+>>>>>>> c451712c04b8689e29af7429e3ae9cc0fb4399c9
     cpanm --installdeps .
     perl Makefile.PL
     make test
@@ -89,6 +92,7 @@ Tephra is a command-line program only for now. The command `tephra` itself contr
                 all: Run all subcommands and generate annotations for all transposon types.
        classifyltrs: Classify LTR retrotransposons into superfamilies and families.
        classifytirs: Classify TIR transposons into superfamilies.
+      findfragments: Search a masked genome with a repeat database to find fragmented elements.
       findhelitrons: Find Helitons in a genome assembly.
            findltrs: Find LTR retrotransposons in a genome assembly.
         findnonltrs: Find non-LTR retrotransposons in a genome assembly.
@@ -106,7 +110,7 @@ Tephra is a command-line program only for now. The command `tephra` itself contr
 Typing a subcommand will show the usage of that command, for example:
 
     $ tephra findnonltrs
-    ERROR: Required arguments not given.
+    [ERROR]: Required arguments not given.
     
     USAGE: tephra findnonltrs [-h] [-m]
         -m --man      :   Get the manual entry for a command.
@@ -150,7 +154,7 @@ Part of this project uses code from [MGEScan-nonLTR](http://darwin.informatics.i
 
 The license for Tephra is below:
 
-Copyright (C) 2015-2017 S. Evan Staton
+Copyright (C) 2015-2018 S. Evan Staton
 
 This program is distributed under the MIT (X11) License, which should be distributed with the package.
 If not, it can be found here: http://www.opensource.org/licenses/mit-license.php

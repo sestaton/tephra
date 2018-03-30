@@ -4,7 +4,13 @@ package Tephra::Command::findtrims;
 use 5.014;
 use strict;
 use warnings;
-use Cwd qw(abs_path);
+use Pod::Find     qw(pod_where);
+use Pod::Usage    qw(pod2usage);
+use Capture::Tiny qw(capture_merged);
+use Cwd           qw(abs_path);
+use File::Copy    qw(copy);
+use File::Path    qw(remove_tree);
+use File::Temp    qw(tempfile);
 use File::Spec;
 use File::Basename;
 use Tephra -command;
@@ -14,15 +20,16 @@ use Tephra::LTR::LTRRefine;
 
 sub opt_spec {
     return (    
-	[ "genome|g=s",  "The genome sequences in FASTA format to search for TRIMs "      ],
-	[ "trnadb|t=s",  "The file of tRNA sequences in FASTA format to search for PBS "  ], 
-	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains "     ],
-	[ "outfile|o=s", "The final combined and filtered GFF3 file of TRIMs "            ],
-	[ "logfile=s",   "The file to use for logging results in addition to the screen " ],
-	[ "clean",       "Clean up the index files (Default: yes) "                       ],
-	[ "debug",       "Show external command for debugging (Default: no) "             ],
-	[ "help|h",      "Display the usage menu and exit. "                              ],
-        [ "man|m",       "Display the full manual. "                                      ],
+	[ "genome|g=s",  "The genome sequences in FASTA format to search for TRIMs "                  ],
+	[ "trnadb|r=s",  "The file of tRNA sequences in FASTA format to search for PBS "              ], 
+	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains "                 ],
+	[ "outfile|o=s", "The final combined and filtered GFF3 file of TRIMs "                        ],
+	[ "logfile|l=s", "The file to use for logging results in addition to the screen "             ],
+	[ "threads|t=i", "The number of threads to use for the TRIM search"                           ],
+	[ "clean",       "Clean up the index files (Default: No) "                                    ],
+	[ "debug",       "Show external command for debugging (Default: No) "                         ],
+	[ "help|h",      "Display the usage menu and exit. "                                          ],
+        [ "man|m",       "Display the full manual. "                                                  ],
     );
 }
 
@@ -35,15 +42,14 @@ sub validate_args {
         exit(0);
     }
     elsif ($opt->{help}) {
-        $self->help;
-        exit(0);
+        $self->help and exit(0);
     }
     elsif (!$opt->{genome} || !$opt->{outfile}) {
-	say STDERR "\nERROR: Required arguments not given.";
+	say STDERR "\n[ERROR]: Required arguments not given.\n";
 	$self->help and exit(0);
     }
     elsif (! -e $opt->{genome}) {
-        say STDERR "\nERROR: The genome file does not exist. Check arguments.";
+        say STDERR "\n[ERROR]: The genome file does not exist. Check arguments.\n";
         $self->help and exit(0);
     }
 } 
@@ -59,7 +65,7 @@ sub execute {
 	_write_unrefined_trims($opt, $relaxed_gff);
     }
     elsif (!$relaxed_gff && !$strict_gff) {
-	say STDERR "\nWARNING: No TRIMs were found, so there will be no output.\n";
+	say STDERR "\n[WARNING]: No TRIMs were found, so there will be no output.\n";
 	exit(1);
     }
 }
@@ -92,30 +98,50 @@ sub _run_trim_search {
 
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($tephra_hmmdb, $tephra_trnadb) = @{$config}{qw(hmmdb trnadb)};
+    my ($name, $path, $suffix) = fileparse($opt->{genome}, qr/\.[^.]*/);
 
-    my $genome = $opt->{genome};
-    my $hmmdb  = $opt->{hmmdb} // $tephra_hmmdb;
-    my $trnadb = $opt->{trnadb} // $tephra_trnadb;
-    my $clean  = $opt->{clean} // 0;
-    my $debug  = $opt->{debug} // 0;
+    my ($tmp_fh, $tmp_hmmdb);
+    my $using_tephra_db = 0;
+    unless (defined $opt->{hmmdb} && -e $opt->{hmmdb}) { 
+        $using_tephra_db = 1;
+        my $tmpiname  = 'tephra_transposons_hmmdb_XXXX';
+	($tmp_fh, $tmp_hmmdb) = tempfile( TEMPLATE => $tmpiname, DIR => $path, SUFFIX => '.hmm', UNLINK => 0 );
+	close $tmp_fh;
+        copy $tephra_hmmdb, $tmp_hmmdb or die "\n[ERROR]: Copy failed: $!\n";
+	#$hmmdb = $tmp_hmmdb;
+    }
 
+    my $genome  = $opt->{genome};
+    my $hmmdb   = $using_tephra_db ? $tmp_hmmdb : $opt->{hmmdb};
+    my $trnadb  = $opt->{trnadb} // $tephra_trnadb;
+    my $clean   = $opt->{clean} // 0;
+    my $debug   = $opt->{debug} // 0;
+    my $threads = $opt->{threads} // 1;
+    my $logfile = $opt->{logfile} // File::Spec->catfile($path, 'tephra_findtrims.log');
+    
     my $trim_search = Tephra::TRIM::TRIMSearch->new( 
-	genome => $genome, 
-	hmmdb  => $hmmdb,
-	trnadb => $trnadb, 
-	clean  => $clean,
-	debug  => $debug,
+	genome  => $genome, 
+	hmmdb   => $hmmdb,
+	trnadb  => $trnadb, 
+	clean   => $clean,
+	debug   => $debug,
+	threads => $threads,
+	logfile => $logfile,
     );
 
-    my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
     my $index = File::Spec->catfile( abs_path($path), $name.$suffix.'.index');
-
     $genome = abs_path($genome);
     my @suff_args = qq(-db $genome -indexname $index -tis -suf -lcp -ssp -sds -des -dna);
-    $trim_search->create_index(\@suff_args);
+    my $log = $trim_search->get_tephra_logger($logfile);
+    $trim_search->create_index(\@suff_args, $index, $log);
     
-    my $strict_gff  = $trim_search->trim_search_strict($index);
-    my $relaxed_gff = $trim_search->trim_search_relaxed($index);
+    my $strict_gff
+	= $trim_search->trim_search({ index => $index, mode => 'strict'  });
+     my $relaxed_gff
+	 = $trim_search->trim_search({ index => $index, mode => 'relaxed' });
+
+    unlink $tmp_hmmdb if $using_tephra_db;
+    unlink $logfile unless -s $logfile;
 
     return ($relaxed_gff, $strict_gff);
 }
@@ -132,8 +158,13 @@ sub _write_unrefined_trims {
 }
 
 sub help {
+    my $desc = capture_merged {
+        pod2usage(-verbose => 99, -sections => "NAME|DESCRIPTION", -exitval => "noexit",
+		  -input => pod_where({-inc => 1}, __PACKAGE__));
+    };
+    chomp $desc;
     print STDERR<<END
-
+$desc
 USAGE: tephra findtrims [-h] [-m]
     -m --man      :   Get the manual entry for a command.
     -h --help     :   Print the command usage.
@@ -144,9 +175,10 @@ Required:
 
 Options:
     --logfile     :   The file to use for logging results in addition to the screen.
-    -t|trnadb     :   The file of tRNA sequences in FASTA format to search for PBS. 
+    -r|trnadb     :   The file of tRNA sequences in FASTA format to search for PBS. 
     -d|hmmdb      :   The HMM db in HMMERv3 format to search for coding domains.
-    -c|clean      :   Clean up the index files (Default: yes).
+    -t|threads    :   The number of threads to use for the TRIM search (Default: 1).
+    -c|clean      :   Clean up the index files (Default: No).
 
 END
 }
@@ -173,7 +205,7 @@ __END__
 
 =head1 AUTHOR 
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 REQUIRED ARGUMENTS
 
@@ -197,7 +229,12 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
  The file to use for logging results in addition to the screen.
 
-=item -t, --trnadb
+=item -t, --threads
+ 
+ The number of threads to use for the TRIM search. Specificaly,
+ the number or processors to use by the 'gt' program (Default: 1).
+
+=item -r, --trnadb
 
  The file of tRNA sequences in FASTA format to search for PBS.
 
@@ -207,7 +244,7 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =item -c, --clean
 
- Clean up the index files (Default: yes).
+ Clean up the index files (Default: No).
 
 =item -h, --help
 

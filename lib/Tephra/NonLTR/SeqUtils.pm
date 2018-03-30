@@ -13,11 +13,11 @@ Tephra::NonLTR::SeqUtils - Minor sequence utilities for non-LTR finding
 
 =head1 VERSION
 
-Version 0.07.1
+Version 0.10.00
 
 =cut
 
-our $VERSION = '0.07.1';
+our $VERSION = '0.10.00';
 $VERSION = eval $VERSION;
 
 sub invert_seq {
@@ -35,7 +35,7 @@ sub invert_seq {
     for my $file (@fasfiles) {
 	my ($name, $path, $suffix) = fileparse($file, qr/\.[^.]*/);
 
-	open my $in, '<', $file or die "\nERROR: Could not open file: $file";
+	open my $in, '<', $file or die "\n[ERROR]: Could not open file: $file";
         my @temp = <$in>;
         close $in;
 
@@ -46,8 +46,8 @@ sub invert_seq {
         $revseq =~ tr/[A,C,G,T,a,c,g,t]/[T,G,C,A,t,g,c,a]/;
         $revseq =~ s/.{60}\K/\n/g;
         my $outfile = File::Spec->catfile($minus_dna_dir, $name.$suffix);
-        open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile";;
-	say $out join "\n", ">".$file, $revseq;
+        open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile";;
+	say $out join "\n", ">".$name, $revseq;
 	close $out;
 	push @revfasfiles, $outfile;
     }
@@ -57,7 +57,7 @@ sub invert_seq {
 
 =head1 AUTHOR
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 BUGS
 

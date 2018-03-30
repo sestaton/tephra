@@ -19,11 +19,11 @@ Tephra::Role::Run::HelitronScanner - Helper role for running HelitronScanner
 
 =head1 VERSION
 
-Version 0.07.1
+Version 0.10.00
 
 =cut
 
-our $VERSION = '0.07.1';
+our $VERSION = '0.10.00';
 $VERSION = eval $VERSION;
 
 has genome => (
@@ -147,7 +147,7 @@ sub run_hscan_draw {
 
 =head1 AUTHOR
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 BUGS
 

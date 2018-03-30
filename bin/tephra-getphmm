@@ -28,14 +28,14 @@ GetOptions(
 );
 
 if (!$seq || !$phmm_file || !$out_dir) {
-    print "\nERROR: Missing arguments. Check command line. Exiting.\n\n";
+    print "\n[ERROR]: Missing arguments. Check command line. Exiting.\n\n";
     print $usage, "\n";
     exit(1);
 }
 
 my $seq_file = File::Spec->catfile($out_dir, 'nucleotide_orfs.fas');       
 my $pep_file = File::Spec->catfile($out_dir, 'translated_orfs.faa');
-open my $out, '>', $seq_file or die "\nERROR: Could not open file: $seq_file";
+open my $out, '>', $seq_file or die "\n[ERROR]: Could not open file: $seq_file";
 say $out $seq;
 close $out;
 
@@ -47,7 +47,7 @@ try {
     system($transeq, "-frame=f", $seq_file, "-outseq=$pep_file", "-auto", "-trim", "yes");
 }
 catch {
-    print "\nERROR: transeq failed. Here is the exception: $_\n";
+    print "\n[ERROR]: transeq failed. Here is the exception: $_\n";
     exit;
 };
 
@@ -63,7 +63,7 @@ sub parse_hmmsearch {
 
     my ($name, $path, $suffix) = fileparse($pep_file, qr/\.[^.]*/);
     my $hmmout = File::Spec->catfile($path, $name.'_hmmsearch.txt');
-    open my $o, '>', $hmmout or die "\nERROR: Could not open file: $hmmout";;
+    open my $o, '>', $hmmout or die "\n[ERROR]: Could not open file: $hmmout";;
     print $o @$hmm_results;
     close $o;
 

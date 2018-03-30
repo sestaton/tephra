@@ -29,69 +29,63 @@ my $log     = File::Spec->catfile($testdir, 'Ha1_tephra_findtrims.log');
 #my $model   = File::Spec->catfile($testdir, 'te.hmm');
 #my $trnas   = File::Spec->catfile($testdir, 'trnas.fas');
 
-my @assemb_results = capture { system([0..5], "$cmd findtrims -h") };
-ok(@assemb_results, 'Can execute findtrims subcommand');
+{
+    my @help_args = ($cmd, 'findtrims', '-h');
+    my ($stdout, $stderr, $exit) = capture { system(@help_args) };
+        #say STDERR "stderr: $stderr";
+    ok($stderr, 'Can execute findtrims subcommand');
+}
 
 SKIP: {
     skip 'skip development tests', 13 unless $devtests;
-    #my $find_cmd = "$cmd findtrims -g $genome -t $trnas -d $model --clean";
 
-    my $retry = 1;
-    findltrs : {
-	my $find_cmd = "$cmd findtrims -g $genome -o $outfile --clean";
-	#say STDERR $find_cmd;
-
-	#system([0..5], $find_cmd);
-	my ($stdout, $stderr, @ret) = capture { system([0..5], $find_cmd) };
-	
-	for my $line (split /^/, $stderr) {
-	    if ($line =~ /length_filtered/) {
-		my ($l_filt) = $line =~ /(\d+)$/;
-		#say STDERR "l_filt: $l_filt exp: 0";
-		ok( $l_filt == 0, 'Correct number of elements filtered by length' );
-	    }
-	    if ($line =~ /compound_gyp_cop_filtered/) {
-		my ($gc_filt) = $line =~ /(\d+)$/;
-		#say STDERR "gc_filt: $gc_filt";
-		ok( $gc_filt == 0, 'Correct number of elements filtered compound gypsy/copia' );
-	    }
-	    if ($line =~ /n_perc_filtered/) {
-		my ($n_filt) = $line =~ /(\d+)$/;
-		unless ($n_filt == 43) {
-		    say STDERR "n_filt: $n_filt exp: 43"; 
-		    redo findltrs if $retry;
-		    $retry--;
-		}
-		ok( $n_filt == 43, 'Correct number of elements filtered by N-percentage' );
-	    }
-	    elsif ($line =~ /\'relaxed\' constraints/) {
-		my ($r_ct) = $line =~ /(\d+)$/;
-		#say STDERR "r_ct: $r_ct exp: 757";
-		ok( $r_ct == 757, 'Correct number of combined elements found by relaxed constraints' );
-	    }
-	    elsif ($line =~ /\'strict\' constraints/) {
-		my ($s_ct) = $line =~ /(\d+)$/;
-		#say STDERR "s_ct: $s_ct exp: 0";
-		ok( $s_ct == 0, 'Correct number of total elements found by strict constraints' );
-	    }
-	    elsif ($line =~ /\'best\'/) {
-		my ($b_ct) = $line =~ /(\d+)$/;
-		#say STDERR "b_ct: $b_ct exp: 7";
-		ok( $b_ct == 7, 'Correct number of best elements found' );
-	    }
-	    elsif ($line =~ /\'combined\'/) {
-		my ($c_ct) = $line =~ /(\d+)$/;
-		#say STDERR "c_ct: $c_ct exp: 721";
-		ok( $c_ct == 721, 'Correct number of combined elements found' );
-	    }
-	    elsif ($line =~ /Total elements written/) {
-		my ($t_ct) = $line =~ /(\d+)$/;
-		#say STDERR "t_ct: $t_ct exp: 721";
-		ok( $t_ct == 721, 'Correct number of total elements found' );
-	    }
+    my @find_cmd = ($cmd, 'findtrims', '-g', $genome, '-o', $outfile, '--clean');
+    say STDERR join q{ }, @find_cmd;
+    #system([0..5], $find_cmd);
+    my ($stdout, $stderr, @ret) = capture { system([0..5], @find_cmd) };
+    
+    for my $line (split /^/, $stderr) {
+	if ($line =~ /length_filtered/) {
+	    my ($l_filt) = $line =~ /(\d+)$/;
+	    say STDERR "l_filt: $l_filt exp: 0";
+	    ok( $l_filt == 0, 'Correct number of elements filtered by length' );
+	}
+	if ($line =~ /compound_gyp_cop_filtered/) {
+	    my ($gc_filt) = $line =~ /(\d+)$/;
+	    say STDERR "gc_filt: $gc_filt";
+	    ok( $gc_filt == 0, 'Correct number of elements filtered compound gypsy/copia' );
+	}
+	if ($line =~ /n_perc_filtered/) {
+	    my ($n_filt) = $line =~ /(\d+)$/;
+	    ok( $n_filt == 43, 'Correct number of elements filtered by N-percentage' );
+	}
+	elsif ($line =~ /\'relaxed\' constraints/) {
+	    my ($r_ct) = $line =~ /(\d+)$/;
+	    say STDERR "r_ct: $r_ct exp: 757";
+	    ok( $r_ct == 757, 'Correct number of combined elements found by relaxed constraints' );
+	}
+	elsif ($line =~ /\'strict\' constraints/) {
+	    my ($s_ct) = $line =~ /(\d+)$/;
+	    say STDERR "s_ct: $s_ct exp: 0";
+	    ok( $s_ct == 0, 'Correct number of total elements found by strict constraints' );
+	}
+	elsif ($line =~ /\'best\'/) {
+	    my ($b_ct) = $line =~ /(\d+)$/;
+	    say STDERR "b_ct: $b_ct exp: 7";
+	    ok( $b_ct == 7, 'Correct number of best elements found' );
+	}
+	elsif ($line =~ /\'combined\'/) {
+	    my ($c_ct) = $line =~ /(\d+)$/;
+	    say STDERR "c_ct: $c_ct exp: 721";
+	    ok( $c_ct == 721, 'Correct number of combined elements found' );
+	}
+	elsif ($line =~ /Total elements written/) {
+	    my ($t_ct) = $line =~ /(\d+)$/;
+	    say STDERR "t_ct: $t_ct exp: 721";
+	    ok( $t_ct == 721, 'Correct number of total elements found' );
 	}
     }
-    
+
     open my $in, '<', $outfas;
     my $ct = 0;
     while (<$in>) { $ct++ if /^>/; }

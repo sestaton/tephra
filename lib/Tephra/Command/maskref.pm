@@ -4,6 +4,9 @@ package Tephra::Command::maskref;
 use 5.014;
 use strict;
 use warnings;
+use Pod::Find     qw(pod_where);
+use Pod::Usage    qw(pod2usage);
+use Capture::Tiny qw(capture_merged);
 use Tephra -command;
 use Tephra::Genome::MaskRef;
 
@@ -14,7 +17,7 @@ sub opt_spec {
 	[ "repeatdb|d=s",  "The database of repeat sequences to use for masking "                               ],
 	[ "percentid|p=i",  "The percent identity cutoff for classification of pairwise matches (Default: 80) " ],
 	[ "hitlength|l=i", "The alignment length cutoff for hits to the repeat database (Default: 70) "         ],
-	[ "threads|t=i",   "The number of threads to use for masking "                                          ],
+	[ "threads|t=i",   "The number of threads to use for masking (Default: 1) "                             ],
 	[ "splitsize|s=i", "The chunk size to process at a time (Default: 50kb) "                               ],
 	[ "overlap|v=i",   "The overlap between the chunks of the chromosomes (Default: 100 bp) "               ],
 	[ "clean|c=i",     "Clean up the index files (Default: yes) "                                           ],
@@ -32,19 +35,18 @@ sub validate_args {
         exit(0);
     }
     elsif ($opt->{help}) {
-        $self->help;
-        exit(0);
+        $self->help and exit(0);
     }
     elsif (!$opt->{genome} || !$opt->{repeatdb}) {
-	say STDERR "\nERROR: Required arguments not given.";
+	say STDERR "\n[ERROR]: Required arguments not given.\n";
 	$self->help and exit(0);
     }
     elsif (! -e $opt->{genome}) {
-	say STDERR "\nERROR: The genome file does not exist. Check arguments.";
+	say STDERR "\n[ERROR]: The genome file does not exist. Check arguments.\n";
         $self->help and exit(0);
     }
     elsif (! -e $opt->{repeatdb}) {
-	say STDERR "\nERROR: The repeat database file does not exist. Check arguments.";
+	say STDERR "\n[ERROR]: The repeat database file does not exist. Check arguments.\n";
         $self->help and exit(0);
     }
 } 
@@ -87,8 +89,13 @@ sub _run_masking {
 }
 
 sub help {
+    my $desc = capture_merged {
+        pod2usage(-verbose => 99, -sections => "NAME|DESCRIPTION", -exitval => "noexit",
+		  -input => pod_where({-inc => 1}, __PACKAGE__));
+    };
+    chomp $desc;
     print STDERR<<END
-
+$desc
 USAGE: tephra maskref [-h] [-m]
     -m --man      :   Get the manual entry for a command.
     -h --help     :   Print the command usage.
@@ -131,7 +138,7 @@ __END__
 
 =head1 AUTHOR 
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 REQUIRED ARGUMENTS
 

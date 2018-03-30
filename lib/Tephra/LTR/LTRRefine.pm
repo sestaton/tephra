@@ -19,7 +19,8 @@ use Carp 'croak';
 #use Data::Dump::Color;
 use namespace::autoclean;
 
-with 'Tephra::Role::Util';
+with 'Tephra::Role::Util', 
+     'Tephra::Role::Logger';
 
 =head1 NAME
 
@@ -27,11 +28,11 @@ Tephra::LTR::LTRRefine - Refine LTR predictions based on multiple criteria
 
 =head1 VERSION
 
-Version 0.07.1
+Version 0.10.00
 
 =cut
 
-our $VERSION = '0.07.1';
+our $VERSION = '0.10.00';
 $VERSION = eval $VERSION;
 
 has genome => (
@@ -76,6 +77,14 @@ has remove_tnp_domains => (
     default   => 0,
 );
 
+has domains_required => (
+    is        => 'ro',
+    isa       => 'Bool',
+    predicate => 'has_domains_required',
+    lazy      => 1,
+    default   => 0,
+);
+
 has is_trim => (
     is        => 'ro',
     isa       => 'Bool',
@@ -94,7 +103,7 @@ sub collect_features {
     my (%features, %intervals, %coord_map);
     my ($source, $seq_id, $start, $end, $length, $region);
 
-    open my $gffio, '<', $gff or die "\nERROR: Could not open file: $gff\n";
+    open my $gffio, '<', $gff or die "\n[ERROR]: Could not open file: $gff\n";
 
     while (my $line = <$gffio>) {
 	chomp $line;
@@ -143,7 +152,7 @@ sub filter_compound_elements {
 
     my ($allct, $curct) = (0, 0);
     my ($gyp_cop_filtered, $dup_pdoms_filtered, $len_filtered, 
-	$n_perc_filtered, $classII_filtered) = (0, 0, 0, 0, 0);
+	$n_perc_filtered, $classII_filtered, $pdom_filtered) = (0, 0, 0, 0, 0, 0);
     
     for my $source (keys %$features) {
 	for my $ltr (keys %{$features->{$source}}) {
@@ -202,6 +211,11 @@ sub filter_compound_elements {
 		$len_filtered++;
 	    }
 
+	    if ($self->domains_required && !$has_pdoms) {
+		delete $features->{$source}{$ltr};
+		$pdom_filtered++;
+	    }
+
 	    @pdoms = ();
 	    $is_gypsy  = 0;
 	    $is_copia  = 0;
@@ -219,8 +233,11 @@ sub filter_compound_elements {
     if ($self->remove_tnp_domains) {
 	$stats{class_II_filtered} = $classII_filtered;
     }
+    if ($self->domains_required) {
+        $stats{coding_domain_filtered} = $pdom_filtered;
+    }
     
-    return $features, \%stats;
+    return ($features, \%stats);
 }
 
 
@@ -319,7 +336,7 @@ sub summarize_features {
 	$has_pdoms++ if $feat->{type} eq 'protein_match';
     }
 
-    croak "\nERROR: 'ltr_similarity' is not defined in GFF3. This is a bug, please report it.\n"
+    croak "\n[ERROR]: 'ltr_similarity' is not defined in GFF3. This is a bug, please report it.\n"
 	unless defined $ltr_sim;
     $tsd_eq = 1 if $five_pr_tsd == $three_pr_tsd;
 
@@ -392,7 +409,7 @@ sub get_ltr_score_dups {
 		$best_element{$source}{$best_score_key} = $allfeatures->{$source}{$best_score_key};
 	    }
 	    else {
-		croak "\nERROR: Something went wrong....'$best_score_key' not found in hash. This is a bug, please report it.";
+		croak "\n[ERROR]: Something went wrong....'$best_score_key' not found in hash. This is a bug, please report it.";
 	    }
 	}
 	elsif (@{$sccounts{ $scores->{$source}{$best_score_key} }} >= 1 && 
@@ -406,7 +423,7 @@ sub get_ltr_score_dups {
 		$best_element{$source}{$best} = $allfeatures->{$source}{$best};
 	    }
 	    else {
-		croak "\nERROR: Something went wrong....'$best' not found in hash. This is a bug, please report it.";
+		croak "\n[ERROR]: Something went wrong....'$best' not found in hash. This is a bug, please report it.";
 	    }
 	}
     }
@@ -458,7 +475,7 @@ sub reduce_features {
 	my $lname = $self->is_trim ? 'tephra_findtrims.log' : 'tephra_findltrs.log';
 	$logfile = File::Spec->catfile( abs_path($path), $name.'_'.$lname );
 	$log = $self->get_tephra_logger($logfile);
-	say STDERR "\nWARNING: '--logfile' option not given so results will be appended to: $logfile.";
+	say STDERR "\n[WARNING]: '--logfile' option not given so results will be appended to: $logfile.";
     }
 
     my ($relaxed_features, $strict_features, $best_elements)
@@ -538,7 +555,6 @@ sub reduce_features {
 	my $l = 40 - length($s);
 	my $pad = ' ' x $l;
 	$log->info("Results - Number of elements filtered by '$s':$pad",$best_stats{$s});
-
     }
 
     $log->info("Results - Number of elements found with 'relaxed' constraints:                       $all");
@@ -546,7 +562,7 @@ sub reduce_features {
     $log->info("Results - Number of 'best' elements that were overlapping in these two data sets:    $best");
     $log->info("Results - Number of 'combined' non-overlapping elements:                             $comb");
 
-    return (\%best_features);
+    return \%best_features;
 }
 
 sub sort_features {
@@ -583,17 +599,19 @@ sub sort_features {
         my $lname = $self->is_trim ? 'tephra_findtrims.log' : 'tephra_findltrs.log';
         $logfile = File::Spec->catfile( abs_path($path), $name.'_'.$lname );
         $log = $self->get_tephra_logger($logfile);
-        say STDERR "\nWARNING: '--logfile' option not given so results will be appended to: $logfile.";
+	#no need to print warning twice
+        #say STDERR "\n[WARNING]: '--logfile' option not given so results will be appended to: $logfile.";
     }
 
-    open my $ofas, '>>', $outfasta or die "\nERROR: Could not open file: $outfasta\n";
+    open my $ofas, '>>', $outfasta or die "\n[ERROR]: Could not open file: $outfasta\n";
 
     my ($elem_tot, $count) = (0, 1);
     if (defined $combined_features) {
-	open my $ogff, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+	#dd $combined_features;
+	open my $ogff, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 
 	my ($header, %features);
-	open my $in, '<', $gff or die "\nERROR: Could not open file: $gff\n";
+	open my $in, '<', $gff or die "\n[ERROR]: Could not open file: $gff\n";
 	while (my $line = <$in>) {
 	    chomp $line;
 	    if ($line =~ /^##\w+/) {
@@ -606,7 +624,7 @@ sub sort_features {
 	close $in;
 
 	if (not defined $header) {
-	    say STDERR "\nWARNING: Could not get sequence region from $gff.\n";
+	    say STDERR "\n[WARNING]: Could not get sequence region from $gff.\n";
 	}
 	else {
 	    chomp $header;
@@ -636,7 +654,8 @@ sub sort_features {
 			$elem =~ s/\d+.*/$count/;
 
 			my $id = join "_", $elem, $chromosome, $start, $end;
-			$id =~ s/LTR_/RLT_TRIM_/g
+			#$id =~ s/LTR_/RLT_TRIM_/g
+			$id =~ s/LTR_/TRIM_/g
 			    if $self->is_trim;
 
 			$self->_get_ltr_range($index, $id, $chromosome, $start, $end, $ofas);
@@ -669,7 +688,7 @@ sub sort_features {
 	$log->info("Results - Total elements written:$pad",$elem_tot);
     }
     else {
-	open my $in, '<', $gff, or die "\nERROR: Could not open file: $gff\n";
+	open my $in, '<', $gff, or die "\n[ERROR]: Could not open file: $gff\n";
 	while (my $line = <$in>) {
 	    chomp $line;
 	    next if $line =~ /^#/;
@@ -682,7 +701,8 @@ sub sort_features {
 		my $elem = $feature->{attributes}{ID}[0];
 		$elem =~ s/\d+.*//;
 		$elem .= $count;
-		$elem =~ s/LTR_/RLT_TRIM_/g 
+		#$elem =~ s/LTR_/RLT_TRIM_/g 
+		$elem =~ s/LTR_/TRIM_/g
 		    if $self->is_trim;
 
 		my $id = join "_", $elem, $chromosome, $start, $end;
@@ -691,7 +711,7 @@ sub sort_features {
 	}
 	close $in;
 
-	move $gff, $outfile or die "Move failed: $!";
+	move $gff, $outfile or die "\n[ERROR]: move failed: $!\n";
 	#say STDERR "\nTotal elements written: $elem_tot";
 	#$log->info("Results - Total elements written: $elem_tot");
 	my $pad = ' ' x 51;
@@ -730,7 +750,7 @@ sub _filterNpercent {
 
 =head1 AUTHOR
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 BUGS
 

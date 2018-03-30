@@ -4,6 +4,9 @@ package Tephra::Command::illrecomb;
 use 5.014;
 use strict;
 use warnings;
+use Pod::Find     qw(pod_where);
+use Pod::Usage    qw(pod2usage);
+use Capture::Tiny qw(capture_merged);
 use Tephra -command;
 use Tephra::Genome::IllRecombination;
 
@@ -30,15 +33,14 @@ sub validate_args {
         exit(0);
     }
     elsif ($opt->{help}) {
-        $self->help;
-        exit(0);
+        $self->help and exit(0);
     }
     elsif (!$opt->{infile} || !$opt->{outfile} || !$opt->{statsfile}) {
-	say STDERR "\nERROR: Required arguments not given.";
+	say STDERR "\n[ERROR]: Required arguments not given.\n";
 	$self->help and exit(0);
     }
     elsif (! -e $opt->{infile}) {
-	say STDERR "\nERROR: Input file does not exist. Check arguments.";
+	say STDERR "\n[ERROR]: Input file does not exist. Check arguments.\n";
 	$self->help and exit(0);
     }
 }
@@ -72,8 +74,13 @@ sub _calculate_ill_recomb {
 }
 
 sub help {
+    my $desc = capture_merged {
+        pod2usage(-verbose => 99, -sections => "NAME|DESCRIPTION", -exitval => "noexit",
+		  -input => pod_where({-inc => 1}, __PACKAGE__));
+    };
+    chomp $desc;
     print STDERR<<END
-
+$desc
 USAGE: tephra illrecomb [-h] [-m]
     -m --man         :   Get the manual entry for a command.
     -h --help        :   Print the command usage.
@@ -112,7 +119,7 @@ END
 
 =head1 AUTHOR 
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 REQUIRED ARGUMENTS
 

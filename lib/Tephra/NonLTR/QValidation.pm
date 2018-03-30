@@ -22,11 +22,11 @@ Tephra::NonLTR::QValidation - Valid non-LTR search (adapted from MGEScan-nonLTR)
 
 =head1 VERSION
 
-Version 0.07.1
+Version 0.10.00
 
 =cut
 
-our $VERSION = '0.07.1';
+our $VERSION = '0.10.00';
 $VERSION = eval $VERSION;
 
 has fasta   => ( is => 'ro', isa => 'Path::Class::File', required => 1, coerce => 1 );
@@ -85,6 +85,8 @@ sub validate_q_score {
 	    $self->vote_hmmsearch($seq, $hmm_dir, $domain, $validation_file, $evalue_file, \@all_clade);
 	}
     }
+
+    return;
 }
 
 sub get_domain_for_full_frag {
@@ -107,6 +109,8 @@ sub get_domain_for_full_frag {
 	    $self->_add_clade_to_header($clade, $result_pep_file);
 	}
     }
+
+    return;
 }
 
 sub get_full_frag {
@@ -126,16 +130,16 @@ sub get_full_frag {
 	# copy full length in + strand
 	if (-e $file_f) {
 	    my $of = File::Spec->catfile($clade_dir, $clade.'.dna');
-	    open my $fh_out, '>', $of or die"\nERROR: Could not open file: $of";
-	    $self->collate($file_f, $fh_out, '+');
+	    open my $fh_out, '>', $of or die"\n[ERROR]: Could not open file: $of";
+	    $self->_add_strand_to_header($file_f, $fh_out, '+');
 	    close $fh_out;
 	}
 
 	# copy full length in - strand
 	if (-e $file_b) {
 	    my $of = File::Spec->catfile($clade_dir, $clade.'.dna');
-            open my $fh_out, '>>', $of or die"\nERROR: Could not open file: $of";
-            $self->collate($file_b, $fh_out, '-');
+            open my $fh_out, '>>', $of or die"\n[ERROR]: Could not open file: $of";
+            $self->_add_strand_to_header($file_b, $fh_out, '-');
 	    close $fh_out;
 	}
 
@@ -146,6 +150,8 @@ sub get_full_frag {
 	    system([0..5],"transeq", "-frame=f", "-sequence=$dna_file", "-outseq=$pep_file", "-auto");
 	}
     }
+
+    return;
 }
 
 
@@ -160,7 +166,7 @@ sub get_domain_pep_seq {
 
     my ($name, $path, $suffix) = fileparse($pep_file, qr/\.[^.]*/);
     my $hmmout = File::Spec->catfile($path, $name.'_hmmsearch.txt');
-    open my $o, '>', $hmmout or die "\nERROR: Could not open file: $hmmout";
+    open my $o, '>', $hmmout or die "\n[ERROR]: Could not open file: $hmmout";
     print $o @hmm_results;
     close $o;
     my $hmmer_in = Bio::SearchIO->new(-file => $hmmout, -format => 'hmmer');
@@ -190,8 +196,8 @@ sub get_domain_pep_seq {
     my $head;
     my $seq;
 
-    open my $in, '<', $pep_file or die "\nERROR: Could not open file: $pep_file";
-    open my $out, '>', $result_pep_file or die "\nERROR: Could not open file: $result_pep_file";
+    open my $in, '<', $pep_file or die "\n[ERROR]: Could not open file: $pep_file";
+    open my $out, '>', $result_pep_file or die "\n[ERROR]: Could not open file: $result_pep_file";
 
     while (my $line = <$in>){
 	chomp $line;
@@ -224,6 +230,8 @@ sub get_domain_pep_seq {
     }
     close $in;
     close $out;
+
+    return;
 }
 
 
@@ -240,7 +248,7 @@ sub get_domain_dna_seq {
     #my @temp = split /\s+/, $1;
     my ($name, $path, $suffix) = fileparse($pep_file, qr/\.[^.]*/);
     my $hmmout = File::Spec->catfile($path, $name.'_hmmsearch.txt');
-    open my $o, '>', $hmmout or die "\nERROR: Could not open file: $hmmout";;
+    open my $o, '>', $hmmout or die "\n[ERROR]: Could not open file: $hmmout";;
     print $o @hmm_results;
     close $o;
     my $hmmer_in = Bio::SearchIO->new(-file => $hmmout, -format => 'hmmer');
@@ -273,8 +281,8 @@ sub get_domain_dna_seq {
     my $head;
     my $seq;
 
-    open my $in, '<', $dna_file or die "\nERROR: Could not open file: $dna_file";
-    open my $out, '>', $result_dna_file or die "\nERROR: Could not open file: $result_dna_file";
+    open my $in, '<', $dna_file or die "\n[ERROR]: Could not open file: $dna_file";
+    open my $out, '>', $result_dna_file or die "\n[ERROR]: Could not open file: $result_dna_file";
 
     while (my $each_line = <$in>) {
 	chomp $each_line;
@@ -308,6 +316,8 @@ sub get_domain_dna_seq {
     }
     close $in;
     close $out;
+
+    return;
 }
 
 sub vote_hmmsearch {
@@ -322,7 +332,7 @@ sub vote_hmmsearch {
     my $i;
     my $anno_clade; 
 
-    open my $in, '<', $seq or die "\nERROR: Could not open file: $seq";
+    open my $in, '<', $seq or die "\n[ERROR]: Could not open file: $seq";
     while (my $line = <$in>) {
 	if ($line =~ /\>/) {
 	    chomp $line;
@@ -341,7 +351,7 @@ sub vote_hmmsearch {
 
 	my ($name, $path, $suffix) = fileparse($seq, qr/\.[^.]*/);
 	my $hmmout = File::Spec->catfile($path, $name.'_hmmsearch.txt');
-	open my $o, '>', $hmmout or die "\nERROR: Could not open file: $hmmout";;
+	open my $o, '>', $hmmout or die "\n[ERROR]: Could not open file: $hmmout";;
 	print $o @hmm_results;
 	close $o;
 
@@ -377,7 +387,7 @@ sub vote_hmmsearch {
 	}
     }
 
-    open my $out, '>>', $validation_file or die "\nERROR: Could not open file: $validation_file";
+    open my $out, '>>', $validation_file or die "\n[ERROR]: Could not open file: $validation_file";
     if ($seq =~ /\/((\w|\d)+)\./) {
 	$anno_clade = $1;
     }
@@ -387,12 +397,14 @@ sub vote_hmmsearch {
 	printf $out "%.1e\n", $sig{$key};
     }
     close $out;
+
+    return;
 }
 
-sub collate {
+sub _add_strand_to_header {
     my $self = shift;
     my ($file_in, $fh_out, $strand) = @_;
-    open my $fh_in, '<', $file_in or die "\nERROR: Could not open file: $file_in\n";
+    open my $fh_in, '<', $file_in or die "\n[ERROR]: Could not open file: $file_in\n";
 
     while (my $line = <$fh_in>) {
 	chomp $line;
@@ -405,6 +417,8 @@ sub collate {
 	}
     }
     close $fh_in;
+
+    return;
 }
 
 sub _add_clade_to_header {
@@ -412,8 +426,8 @@ sub _add_clade_to_header {
     my ($clade, $result_file) = @_;
 
     my $outfile = $result_file.'p';
-    open my $in, '<', $result_file or die "\nERROR: Could open file: $result_file\n";
-    open my $out, '>', $outfile or die "\nERROR: Could open file: $outfile\n";
+    open my $in, '<', $result_file or die "\n[ERROR]: Could open file: $result_file\n";
+    open my $out, '>', $outfile or die "\n[ERROR]: Could open file: $outfile\n";
 
     while (my $line = <$in>) {
 	chomp $line;
@@ -427,11 +441,13 @@ sub _add_clade_to_header {
     }
     close $in;
     close $out;
+
+    return;
 }
 
 =head1 AUTHOR
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 BUGS
 

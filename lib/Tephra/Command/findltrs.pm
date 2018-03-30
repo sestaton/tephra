@@ -4,6 +4,14 @@ package Tephra::Command::findltrs;
 use 5.014;
 use strict;
 use warnings;
+use Pod::Find     qw(pod_where);
+use Pod::Usage    qw(pod2usage);
+use Capture::Tiny qw(capture_merged);
+use Cwd           qw(abs_path);
+use File::Path    qw(remove_tree);
+use File::Copy    qw(copy);
+use File::Temp    qw(tempfile);
+use File::Spec;
 use File::Find;
 use File::Basename;
 use Tephra -command;
@@ -17,8 +25,9 @@ sub opt_spec {
     return (    
 	[ "config|c=s",  "The Tephra LTR option configuration file "                      ],
 	[ "outfile|o=s", "The final combined and filtered GFF3 file of LTR-RTs "          ],
-	[ "logfile=s",   "The file to use for logging results in addition to the screen " ],
+	[ "logfile|l=s", "The file to use for logging results in addition to the screen " ],
 	[ "index|i=s",   "The suffixerator index to use for the LTR search "              ],
+	[ "threads|t=i", "The number of threads to use for the LTR search (Default: 1) "  ],
 	[ "help|h",      "Display the usage menu and exit. "                              ],
         [ "man|m",       "Display the full manual. "                                      ],
     );
@@ -33,15 +42,14 @@ sub validate_args {
         exit(0);
     }
     elsif ($opt->{help}) {
-        $self->help;
-        exit(0);
+	$self->help and exit(0);
     }
     elsif (!$opt->{config}) {
-	say STDERR "\nERROR: Required arguments not given.";
+	say STDERR "\n[ERROR]: Required arguments not given.\n";
 	$self->help and exit(0);
     }
     elsif (! -e $opt->{config}) { 
-	say STDERR "\nERROR: '--config' file given but does not appear to exist. Check input.";
+	say STDERR "\n[ERROR]: '--config' file given but does not appear to exist. Check input.\n";
 	$self->help and exit(0);
     }
 } 
@@ -62,12 +70,13 @@ sub _refine_ltr_predictions {
 
     $refine_opts{remove_dup_domains} = $search_config->{findltrs}{dedup} =~ /yes/i ? 1 : 0;
     $refine_opts{remove_tnp_domains} = $search_config->{findltrs}{tnpfilter} =~ /yes/i ? 1 : 0;
+    $refine_opts{domains_required}   = $search_config->{findltrs}{domains_required} =~ /yes/i ? 1 : 0;
     $refine_opts{outfile} = $opt->{outfile} if $opt->{outfile};
     $refine_opts{logfile} = $opt->{logfile} if $opt->{logfile};
     
     my $refine_obj = Tephra::LTR::LTRRefine->new(%refine_opts);
 
-    if (defined $relaxed_gff && defined $strict_gff) {
+    if ($relaxed_gff && $strict_gff) {
 	my $relaxed_features
 	    = $refine_obj->collect_features({ gff => $relaxed_gff, pid_threshold => 85 });
 	my $strict_features
@@ -82,11 +91,11 @@ sub _refine_ltr_predictions {
 
 	$refine_obj->sort_features({ gff               => $relaxed_gff, 
 				     combined_features => $combined_features });
-
+	
 	unlink $relaxed_gff, $strict_gff;
     }
-    elsif (defined $relaxed_gff && !defined $strict_gff) {
-	say STDERR "\nWARNING: No LTR retrotransposons were found under strict conditions. ".                  
+    elsif ($relaxed_gff && !$strict_gff) {
+	say STDERR "\n[WARNING]: No LTR retrotransposons were found under strict conditions. ".                  
             "Skipping refinement step.\n";
 	$refine_obj->sort_features({ gff               => $relaxed_gff,
                                      combined_features => undef });
@@ -94,7 +103,7 @@ sub _refine_ltr_predictions {
 	unlink $relaxed_gff;
     }
     else {
-	say STDERR "\nWARNING: No LTR retrotransposons were found with the given parameters.\n";
+	say STDERR "\n[WARNING]: No LTR retrotransposons were found with the given parameters.\n";
     }
 }
     
@@ -104,55 +113,75 @@ sub _run_ltr_search {
     my @indexfiles;
     if (defined $opt->{index}) {
 	my ($name, $path, $suffix) = fileparse($opt->{index}, qr/\.[^.]*/);
-	my @files;
-	for my $suf ('.des', '.lcp', '.llv', '.md5', '.prj', '.sds', '.suf')  {
-	    push @files, $opt->{index}.$suf;
-	}
-	
-	my $matchstr = join "|", @files;
+	my $matchstr = join "|", map { $opt->{index}.$_ } ('.des', '.lcp', '.llv', '.md5', '.prj', '.sds', '.suf');
+
 	find( sub { push @indexfiles, $File::Find::name if -f and /$matchstr/ }, $path );
     }
     
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($tephra_hmmdb, $tephra_trnadb) = @{$config}{qw(hmmdb trnadb)};
-    
+
     my $config_obj    = Tephra::Config::Reader->new( config => $opt->{config} );
     my $search_config = $config_obj->get_configuration;
     my $global_opts   = $config_obj->get_all_opts($search_config);
 
-    my $ltr_search = Tephra::LTR::LTRSearch->new( genome => $global_opts->{genome},
-						  hmmdb  => $global_opts->{hmmdb},
-						  trnadb => $global_opts->{trnadb}, 
-						  clean  => $global_opts->{clean},
-						  debug  => $global_opts->{debug} );
+    my ($name, $path, $suffix) = fileparse($global_opts->{genome}, qr/\.[^.]*/);
 
-    unless (defined $opt->{index} && @indexfiles == 7) {
-	my ($name, $path, $suffix) = fileparse($global_opts->{genome}, qr/\.[^.]*/);
-	$opt->{index} = $global_opts->{genome}.'.index';
-    
-	my @suff_args = qq(-db $global_opts->{genome} -indexname $opt->{index} -tis -suf -lcp -ssp -sds -des -dna);
-	$ltr_search->create_index(\@suff_args);
+    my $using_tephra_db = 0;
+    if ($global_opts->{hmmdb} =~ /TephraDB/) { 
+	$using_tephra_db = 1;
+	my $tmpiname  = 'tephra_transposons_hmmdb_XXXX';
+	my ($tmp_fh, $tmp_hmmdb) = tempfile( TEMPLATE => $tmpiname, DIR => $path, SUFFIX => '.hmm', UNLINK => 0 );
+	copy $tephra_hmmdb, $tmp_hmmdb or die "Copy failed: $!";
+	$global_opts->{hmmdb} = $tmp_hmmdb;
     }
 
-    my $strict_gff  = $ltr_search->ltr_search_strict($search_config,  $opt->{index});
-    my $relaxed_gff = $ltr_search->ltr_search_relaxed($search_config, $opt->{index});
+    my $ltr_search_obj = Tephra::LTR::LTRSearch->new( 
+	genome  => $global_opts->{genome},
+	hmmdb   => $global_opts->{hmmdb},
+	trnadb  => $global_opts->{trnadb}, 
+	clean   => $global_opts->{clean},
+	debug   => $global_opts->{debug},
+	threads => $global_opts->{threads},
+	logfile => $global_opts->{logfile},
+    );
+
+    unless (defined $opt->{index} && @indexfiles == 7) {
+	$opt->{index} = File::Spec->catfile( abs_path($path), $name.$suffix.'.index');
+
+	my @suff_args = qq(-db $global_opts->{genome} -indexname $opt->{index} -tis -suf -lcp -ssp -sds -des -dna);
+	my $log = $ltr_search_obj->get_tephra_logger($global_opts->{logfile});
+	$ltr_search_obj->create_index(\@suff_args, $opt->{index}, $log);
+    }
+
+    my $strict_gff =
+	$ltr_search_obj->ltr_search({ config => $search_config, index => $opt->{index}, mode => 'strict'  });
+    my $relaxed_gff =
+	$ltr_search_obj->ltr_search({ config => $search_config, index => $opt->{index}, mode => 'relaxed' });
+    unlink $global_opts->{hmmdb} if $using_tephra_db; # this is just a temp file to keep ltrdigest from crashing
 
     return ($global_opts, $search_config, $relaxed_gff, $strict_gff);
 }
 
 sub help {
+    my $desc = capture_merged {
+        pod2usage(-verbose => 99, -sections => "NAME|DESCRIPTION", -exitval => "noexit",
+		  -input => pod_where({-inc => 1}, __PACKAGE__));
+    };
+    chomp $desc;
     print STDERR<<END
-
+$desc
 USAGE: tephra findltrs [-h] [-m]
     -m --man      :   Get the manual entry for a command.
     -h --help     :   Print the command usage.
 
 Required:
-    -c|config     :   The Tephra LTR option configuration file.
+    -c|config     :   The Tephra configuration file.
 
 Options:
     -o|outfile    :   The final combined and filtered GFF3 file of LTR-RTs.
     -i|index      :   The suffixerator index to use for the LTR search.
+    -t|threads    :   The number of threads to use for the LTR search (Default: 1).
 
 END
 }
@@ -178,7 +207,7 @@ __END__
 
 =head1 AUTHOR 
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 REQUIRED ARGUMENTS
 
@@ -190,7 +219,7 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =item -c, --config
 
- The Tephra LTR option configuration file.
+ The Tephra configuration file.
 
 =back
 
@@ -204,7 +233,12 @@ S. Evan Staton, C<< <statonse at gmail.com> >>
 
 =item -i, --index
 
- The suffixerator index to use for the LTR search.
+ The suffixerator index to use for the LTR search. 
+
+=item -t, --threads
+
+ The number of threads to use for the LTR search. Specifically, the number
+ of processors to use by the 'gt' program (Default: 1).
 
 =item -t, --trnadb
 

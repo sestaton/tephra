@@ -5,7 +5,7 @@ use Moose;
 use File::Spec;
 use File::Find;
 use File::Basename;
-use File::Path qw(make_path);
+use File::Path qw(make_path remove_tree);
 use Cwd        qw(abs_path);
 use Bio::DB::HTS::Kseq;
 use Tephra::NonLTR::RunHMM;
@@ -21,11 +21,11 @@ Tephra::NonLTR::NonLTRSearch - Search a genome for non-LTR retrotransposons
 
 =head1 VERSION
 
-Version 0.07.1
+Version 0.10.00
 
 =cut
 
-our $VERSION = '0.07.1';
+our $VERSION = '0.10.00';
 $VERSION = eval $VERSION;
 
 has genome  => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
@@ -63,10 +63,10 @@ sub find_nonltrs {
 
     # Forward strand
     my $fasfiles = $self->_split_genome($genome, $genome_dir);
-    die "\nERROR: No FASTA files found in genome directory. Sequences must be over 50kb and less than 50% gaps. Exiting.\n" 
+    die "\n[ERROR]: No FASTA files found in genome directory. Sequences must be over 50kb and less than 50% gaps. Exiting.\n" 
 	if @$fasfiles == 0;
 
-    printf STDERR "Running forward...\n" if $self->verbose;
+    say STDERR "Running forward..." if $self->verbose;
     for my $file (sort @$fasfiles) {    
 	my $run_hmm = Tephra::NonLTR::RunHMM->new( 
 	    fasta   => $file, 
@@ -81,14 +81,18 @@ sub find_nonltrs {
 	fastadir => $genome_dir, 
 	outdir   => $plus_out_dir, 
 	reverse  => 0 );
-    $pp->postprocess;
+    my $fpp_result = $pp->postprocess;
+
+    unless ($fpp_result) {
+	say STDERR "\n[WARNING]: No non-LTR elements were found on the forward strand. Will search reverse strand.\n";
+    }
 
     # Backward strand
-    printf "Running backward...\n" if $self->verbose;
+    say STDERR "Running backward..." if $self->verbose;
 
     my $sequtils = Tephra::NonLTR::SeqUtils->new;
     my $revfasfiles = $sequtils->invert_seq($genome_dir, $minus_dna_dir);
-    die "\nERROR: No FASTA files found in genome directory. Sequences must be over 50kb and less than 50% gaps. Exiting.\n"
+    die "\n[ERROR]: No FASTA files found in genome directory. Sequences must be over 50kb and less than 50% gaps. Exiting.\n"
         if @$revfasfiles == 0;
     
     for my $file (sort @$revfasfiles) {
@@ -105,18 +109,28 @@ sub find_nonltrs {
 	fastadir => $minus_dna_dir, 
 	outdir   => $minus_out_dir, 
 	reverse  => 1 );
+    my $bpp_result = $pp_rev->postprocess;
 
-    $pp_rev->postprocess;
-    
-    # Validation for Q value
-    my $pp2 = Tephra::NonLTR::QValidation->new( 
-	outdir  => $main_data_dir, 
-	phmmdir => $phmm_dir, 
-	fasta   => $genome_dir );
-
-    $pp2->validate_q_score;
-
-    return ($genome_dir, $main_data_dir);
+    unless ($bpp_result) {
+        say STDERR "\n[WARNING]: No non-LTR elements were found on the reverse strand.\n";
+    }
+ 
+    if (!$fpp_result && !$bpp_result) { 
+	remove_tree( $main_data_dir, { safe => 1} );
+	remove_tree( $genome_dir, { safe => 1} );
+	remove_tree( $minus_dna_dir, { safe => 1} );
+	return (undef, undef);
+    }
+    else {
+	# Validation for Q value
+	my $pp2 = Tephra::NonLTR::QValidation->new( 
+	    outdir  => $main_data_dir, 
+	    phmmdir => $phmm_dir, 
+	    fasta   => $genome_dir );
+	$pp2->validate_q_score;
+	
+	return ($genome_dir, $main_data_dir);
+    }
 }
 
 sub _split_genome {
@@ -140,7 +154,7 @@ sub _split_genome {
 	my $n_perc = sprintf("%.2f",($n_count/$seqlength)*100);
 	if ($seqlength >= $length_thresh && $n_perc <= $nperc_thresh) {
 	    my $outfile = File::Spec->catfile($genome_dir, $id.'.fasta');
-	    open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+	    open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 	    say $out join "\n", ">".$id, $seq;
 	    close $out;
 	    push @fasfiles, $outfile;
@@ -152,7 +166,7 @@ sub _split_genome {
 
 =head1 AUTHOR
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 BUGS
 

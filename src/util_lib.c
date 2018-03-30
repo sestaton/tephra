@@ -10,14 +10,14 @@ double **dmatrix(int num_row, int num_col){
 
   m=(double **) malloc(num_row * sizeof(double*));
   if (!m) {
-    fprintf(stderr, "%s\n", "ERROR: Allocation failure for points to rows in dmatrix()");
+    fprintf(stderr, "%s\n", "[ERROR]: Allocation failure for points to rows in dmatrix()");
     exit(EXIT_FAILURE);
   }
 
   for(i=0; i<num_row; i++) {
     m[i]=(double *) malloc(num_col * sizeof(double));
     if (!m[i]) {
-      fprintf(stderr, "%s %d %s\n", "ERROR: Allocation failure for the row ", i, " in dmatrix()");
+      fprintf(stderr, "%s %d %s\n", "[ERROR]: Allocation failure for the row ", i, " in dmatrix()");
       exit(EXIT_FAILURE);
     }
 
@@ -36,14 +36,14 @@ int **imatrix(int num_row, int num_col){
 
   m=(int **) malloc(num_row * sizeof(int*));
   if (!m) {
-    fprintf(stderr, "%s\n", "ERROR: Allocation failure for points to rows in imatrix()");
+    fprintf(stderr, "%s\n", "[ERROR]: Allocation failure for points to rows in imatrix()");
     exit(EXIT_FAILURE);
   }
 
   for(i=0; i<num_row; i++) {
     m[i]=(int *) malloc(num_col * sizeof(int));
     if (!m[i]) {
-      fprintf(stderr, "%s %d %s\n", "ERROR: Allocation failure for the row ", i ," in imatrix()");
+      fprintf(stderr, "%s %d %s\n", "[ERROR]: Allocation failure for the row ", i ," in imatrix()");
       exit(EXIT_FAILURE);
     }
 
@@ -62,7 +62,7 @@ double *dvector(int nh){
   v=(double *)malloc(nh * sizeof(double));
 
   if (!v) {
-    fprintf(stderr, "%s\n", "ERROR: Allocation failure in dvector()");
+    fprintf(stderr, "%s\n", "[ERROR]: Allocation failure in dvector()");
     exit(EXIT_FAILURE);
   }
 
@@ -80,7 +80,7 @@ int *ivector(int nh){
   v=(int *)malloc(nh * sizeof(int));
 
   if (!v) {
-    fprintf(stderr, "%s\n", "ERROR: Allocation failure in ivector()");
+    fprintf(stderr, "%s\n", "[ERROR]: Allocation failure in ivector()");
     exit(EXIT_FAILURE);
   }
 

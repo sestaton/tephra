@@ -15,16 +15,16 @@ use Time::HiRes     qw(gettimeofday);
 use Log::Any        qw($log);
 use Cwd             qw(getcwd abs_path);
 use Bio::DB::HTS::Kseq;
-use Bio::AlignIO;
-use Bio::TreeIO;
 use Parallel::ForkManager;
 use Carp 'croak';
 use Try::Tiny;
+use Tephra::Alignment::Utils;
 #use Data::Dump::Color;
 use namespace::autoclean;
 
 with 'Tephra::Role::GFF',
      'Tephra::Role::Util',
+     'Tephra::Role::Run::Any',
      'Tephra::Role::Run::PAML';
 
 =head1 NAME
@@ -33,11 +33,11 @@ Tephra::LTR::LTRStats - Calculate the age distribution of LTR retrotransposons
 
 =head1 VERSION
 
-Version 0.07.1
+Version 0.10.00
 
 =cut
 
-our $VERSION = '0.07.1';
+our $VERSION = '0.10.00';
 $VERSION = eval $VERSION;
 
 has genome => (
@@ -109,7 +109,7 @@ sub calculate_ltr_ages {
     my $t0 = gettimeofday();
     my $ltrrts  = 0;
     my $logfile = File::Spec->catfile($resdir, 'all_aln_reports.log');
-    open my $logfh, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
+    open my $logfh, '>>', $logfile or die "\n[ERROR]: Could not open file: $logfile\n";
     
     my $pm = Parallel::ForkManager->new($threads);
     local $SIG{INT} = sub {
@@ -143,7 +143,7 @@ sub calculate_ltr_ages {
     my @agefiles;
     find( sub { push @agefiles, $File::Find::name if -f and /divergence.txt$/ and -s }, $resdir );
 
-    open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
     say $out join "\t", "LTR-ID", "Divergence", "Age", "Ts:Tv";
 
     for my $file (@agefiles) {
@@ -159,7 +159,7 @@ sub calculate_ltr_ages {
 	find({ wanted => $wanted, preprocess => $process }, $resdir);
 	unlink @alnfiles;
 
-	remove_tree( $resdir, { safe => 1 } );
+	remove_tree( $args->{resdir}, { safe => 1 } );
     }
 
     my $t2 = gettimeofday();
@@ -192,11 +192,11 @@ sub collect_feature_args {
 	}
 	else {
 	    unless (-e $self->gff) {
-		croak "\nERROR: No exemplar files were found in the input directory ".
+		croak "\n[ERROR]: No exemplar files were found in the input directory ".
 		    "and the input GFF file does not appear to exist. Exiting.\n";
 	    }
 
-	    warn "\nWARNING: No exemplar files were found in the input directory. LTR age will be ".
+	    warn "\n[WARNING]: No exemplar files were found in the input directory. LTR age will be ".
 		"calculated from LTR-RT elements in the input GFF.\n";
 
 	    my ($files, $wdir) = $self->extract_ltr_features;
@@ -220,13 +220,12 @@ sub extract_ltr_features {
     }
 
     my ($header, $features) = $self->collect_gff_features($gff);
-
     my $index = $self->index_ref($fasta);
 
     my ($family, %ltrs, %seen, %coord_map);
     for my $rep_region (keys %$features) {
         for my $ltr_feature (@{$features->{$rep_region}}) {
-	    if ($ltr_feature->{type} eq 'LTR_retrotransposon') {
+	    if ($ltr_feature->{type} =~ /(?:LTR|TRIM)_retrotransposon/) {
 		my $elem_id = @{$ltr_feature->{attributes}{ID}}[0];
 		$family  = @{$ltr_feature->{attributes}{family}}[0];
 		my ($start, $end) = @{$ltr_feature}{qw(start end)};
@@ -242,8 +241,8 @@ sub extract_ltr_features {
 			@{$ltr_feature}{qw(type start end strand)};
 		    $strand //= '?';
 		    my $ltrkey = join "||", $seq_id, $type, $start, $end, $strand;
-		    $pkey = join "||", $family, $pkey;
-		    push @{$ltrs{$pkey}{'ltrs'}}, $ltrkey unless exists $seen{$ltrkey};
+		    my $parent_key = join "||", $family, $pkey;
+		    push @{$ltrs{$parent_key}{'ltrs'}}, $ltrkey unless exists $seen{$ltrkey};
 		    $seen{$ltrkey} = 1;
 		}
 	    }
@@ -253,32 +252,35 @@ sub extract_ltr_features {
     my @files;
     my $ltrct = 0;
     my $orientation;
-    for my $ltr (sort keys %ltrs) {
+    for my $ltr (nsort keys %ltrs) {
 	my ($family, $element, $rstart, $rend) = split /\|\|/, $ltr;
 	my ($seq_id, $type, $start, $end) = split /\|\|/, $ltrs{$ltr}{'full'};
 	my $ltr_file = join "_", $family, $element, $seq_id, $start, $end, 'ltrs.fasta';
 	my $ltrs_out = File::Spec->catfile($dir, $ltr_file);
-	die "\nERROR: $ltrs_out exists. This will cause problems downstream. Please remove the previous ".
+	die "\n[ERROR]: $ltrs_out exists. This will cause problems downstream. Please remove the previous ".
 	    "results and try again. Exiting.\n" if -e $ltrs_out;
 	push @files, $ltrs_out;
-	open my $ltrs_outfh, '>>', $ltrs_out or die "\nERROR: Could not open file: $ltrs_out\n";
+	open my $ltrs_outfh, '>>', $ltrs_out or die "\n[ERROR]: Could not open file: $ltrs_out\n";
 
 	for my $ltr_repeat (@{$ltrs{$ltr}{'ltrs'}}) {
 	    #ltr: Contig57_HLAC-254L24||long_terminal_repeat||60101||61950||+
             my ($src, $ltrtag, $s, $e, $strand) = split /\|\|/, $ltr_repeat;
+	    my $ltrid;
 
             if ($ltrct) {
 		$orientation = '5prime' if $strand eq '-';
                 $orientation = '3prime'  if $strand eq '+';
                 $orientation = 'unk-prime-r' if $strand eq '?';
-		$self->subseq($index, $src, $element, $s, $e, $ltrs_outfh, $orientation, $family);
+		$ltrid = join "_", $orientation, $family, $element, $src, $s, $e;
+		$self->write_element_parts($index, $src, $s, $e, $ltrs_outfh, $ltrid);
                 $ltrct = 0;
             }
             else {
 		$orientation = '5prime' if $strand eq '+';
                 $orientation = '3prime' if $strand eq '-';
                 $orientation = 'unk-prime-f' if $strand eq '?';
-		$self->subseq($index, $src, $element, $s, $e, $ltrs_outfh, $orientation, $family);
+		$ltrid = join "_", $orientation, $family, $element, $src, $s, $e;
+		$self->write_element_parts($index, $src, $s, $e, $ltrs_outfh, $ltrid);
                 $ltrct++;
             }
         }
@@ -296,7 +298,8 @@ sub process_baseml_args {
     my $divfile = File::Spec->catfile( abs_path($ppath), $pname.'-divergence.txt' );
     $divfile = basename($divfile);
 
-    my $divergence = $self->_check_divergence($phy);
+    my $utils = Tephra::Alignment::Utils->new;
+    my $divergence = $utils->check_divergence($phy);
 
     if ($divergence > 0) {
 	my $baseml_args = $self->create_baseml_files({ phylip => $phy, treefile => $dnd });
@@ -310,12 +313,12 @@ sub process_baseml_args {
     }
     else {
 	my $element = basename($phy);
-	$element =~ s/_ltrs_muscle-out.*//;
-	open my $divout, '>', $divfile or die "\nERROR: Could not open divergence file: $divfile\n";
+	$element =~ s/_ltrs.*_muscle-out.*//;
+	open my $divout, '>', $divfile or die "\n[ERROR]: Could not open divergence file: $divfile\n";
 	say $divout join "\t", $element, $divergence , '0', '0';
 	close $divout;
 	my $dest_file = File::Spec->catfile($resdir, $divfile);
-	copy($divfile, $dest_file) or die "\nERROR: Copy failed: $!";
+	copy($divfile, $dest_file) or die "\n[ERROR]: Copy failed: $!\n";
 	unlink $divfile;
     }
 }
@@ -329,7 +332,7 @@ sub process_align_args {
     make_path( $pdir, {verbose => 0, mode => 0771,} );
 
     my $fas = File::Spec->catfile($pdir, $name.$suffix);
-    copy($db, $fas) or die "\nERROR: Copy failed: $!";
+    copy($db, $fas) or die "\n[ERROR]: Copy failed: $!\n";
     unlink $db;
 
     my $tre  = File::Spec->catfile($pdir, $name.'.dnd');
@@ -345,70 +348,11 @@ sub process_align_args {
     $status = $self->capture_cmd($trecmd);
     unlink $db && return if $status =~ /failed/i;
 
-    my $phy = $self->parse_aln($aln, $tre, $dnd);
+    my $utils = Tephra::Alignment::Utils->new;
+    my $phy = $utils->parse_aln($aln, $tre, $dnd);
     $self->process_baseml_args($phy, $dnd, $resdir);
     
     return;
-}
-
-sub parse_aln {
-    my $self = shift;
-    my ($aln, $tre, $dnd) = @_;
-
-    my ($name, $path, $suffix) = fileparse($aln, qr/\.[^.]*/);
-    my $phy = File::Spec->catfile( abs_path($path), $name.'.phy' );
-    
-    my $aln_in  = Bio::AlignIO->new(-file  => $aln,    -format => 'clustalw');
-    my $aln_out = Bio::AlignIO->new(-file  => ">$phy", -format => 'phylip', -flag_SI => 1, -idlength => 20);
-
-    while (my $alnobj = $aln_in->next_aln) {
-	$aln_out->write_aln($alnobj);
-    }
-
-    my $tre_in  = Bio::TreeIO->new(-file => $tre,    -format => 'newick');
-    my $tre_out = Bio::TreeIO->new(-file => ">$dnd", -format => 'newick');
-
-    while (my $treobj = $tre_in->next_tree) {
-	for my $node ($treobj->get_nodes) {
-	    my $id = $node->id;
-	    next unless defined $id;
-	    my $newid = substr $id, 0, 20;
-	    $node->id($newid);
-	}
-	$tre_out->write_tree($treobj);
-    }
-    unlink $tre;
-    
-    return $phy;
-}
-
-sub subseq {
-    my $self = shift;
-    my ($index, $loc, $elem, $start, $end, $out, $orient, $family) = @_;
-
-    my $location = "$loc:$start-$end";
-    my ($seq, $length) = $index->get_sequence($location);
-
-    croak "\nERROR: Something went wrong, this is a bug. Please report it.\n"
-        unless $length;
-
-    my $id;
-    $id = join "_", $family, $elem, $loc, $start, $end if !$orient;
-    $id = join "_", $orient, $family, $elem, $loc, $start, $end if $orient; # for unique IDs with clustalw
-
-    $seq =~ s/.{60}\K/\n/g;
-    say $out join "\n", ">$id", $seq;
-}
-
-sub collate {
-    my $self = shift;
-    my ($file_in, $fh_out) = @_;
-    my $lines = do { 
-	local $/ = undef; 
-	open my $fh_in, '<', $file_in or die "\nERROR: Could not open file: $file_in\n";
-	<$fh_in>;
-    };
-    print $fh_out $lines;
 }
 
 sub _get_exemplar_ltrs {
@@ -417,14 +361,14 @@ sub _get_exemplar_ltrs {
 
     my (@dirs, @ltrseqs);
     find( sub { push @dirs, $File::Find::name if -d && /_copia\z|_gypsy\z|_unclassified\z/ }, $dir);
-    croak "\nERROR: Could not find the expected sub-directories ending in 'copia', 'gypsy' and 'unclassified'. Please ".
+    croak "\n[ERROR]: Could not find the expected sub-directories ending in 'copia', 'gypsy' and 'unclassified'. Please ".
         "check input. Exiting.\n" unless @dirs;
 
     for my $sfdir (@dirs) {
 	my ($ltrfile, %ltrfams);
-	find( sub { $ltrfile = $File::Find::name if -f and /exemplar_ltrs.fasta$/ }, $sfdir);
+	find( sub { $ltrfile = $File::Find::name if -f and /exemplar_repeats.fasta$/ }, $sfdir);
 	unless (defined $ltrfile) {
-	    say STDERR "\nWARNING: No exemplar LTR file was found in: $sfdir.";
+	    say STDERR "\n[WARNING]: No exemplar LTR file was found in: $sfdir.";
 	    say STDERR "This is likely because there were no families identified by the 'classifyltrs' command for this superfamily.";
 	    say STDERR "You can try the 'ltrage' command again with the --all flag to process all LTR-RTs.\n";
 	    next;
@@ -436,7 +380,7 @@ sub _get_exemplar_ltrs {
 	while ( my $seq = $iter->next_seq() ) {
 	    my $id  = $seq->name;
 	    my $seq = $seq->seq;
-	    if ($id =~ /^[35]prime_(RL[CGX]_family\d+)_LTR_retrotransposon.*/) {
+	    if ($id =~ /^[35]prime_(RL[CGX]_family\d+)_(?:LTR|TRIM)_retrotransposon.*/) {
 		my $family = $1;
 		push @{$ltrfams{$family}}, { id => $id, seq => $seq };
 	    }
@@ -444,7 +388,7 @@ sub _get_exemplar_ltrs {
 	
 	for my $family (keys %ltrfams) {
 	    my $outfile = File::Spec->catfile($dir, $family.'_exemplar_ltrseqs.fasta');
-	    open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+	    open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 	    for my $pair (@{$ltrfams{$family}}) {
 		say $out join "\n", ">".$pair->{id}, $pair->{seq};
 	    }
@@ -456,21 +400,9 @@ sub _get_exemplar_ltrs {
     return \@ltrseqs;
 }
 
-sub _check_divergence {
-    my $self = shift;
-    my ($phy) = @_;
-
-    my $alnio = Bio::AlignIO->new(-file => $phy, -format => 'phylip', -longid => 1); 
-    my $aln = $alnio->next_aln;
-    my $pid = $aln->overall_percentage_identity;
-    my $div = 100 - $pid;
-
-    return $div;
-}
-
 =head1 AUTHOR
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 BUGS
 

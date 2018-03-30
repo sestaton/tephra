@@ -13,11 +13,11 @@ Tephra::Role::GFF - Utility methods for working with GFF files
 
 =head1 VERSION
 
-Version 0.07.1
+Version 0.10.00
 
 =cut
 
-our $VERSION = '0.07.1';
+our $VERSION = '0.10.00';
 $VERSION = eval $VERSION;
 
 #
@@ -28,7 +28,7 @@ sub collect_gff_features {
     my ($gff) = @_;
 
     my $header;
-    open my $in, '<', $gff or die "\nERROR: Could not open file: $gff\n";
+    open my $in, '<', $gff or die "\n[ERROR]: Could not open file: $gff\n";
     while (<$in>) {
 	chomp;
 	next if /^###$/;
@@ -42,7 +42,7 @@ sub collect_gff_features {
     close $in;
     chomp $header;
 
-    open my $gffio, '<', $gff or die "\nERROR: Could not open file: $gff\n";
+    open my $gffio, '<', $gff or die "\n[ERROR]: Could not open file: $gff\n";
 
     my ($start, $end, $region, $key, %features);
     while (my $line = <$gffio>) {
@@ -78,7 +78,7 @@ sub get_parent_coords {
 
 =head1 AUTHOR
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 BUGS
 

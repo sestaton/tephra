@@ -31,15 +31,18 @@ my @dirs = ($gindir, $cindir, $iindir);
 
 SKIP: {
     skip 'skip development tests', 3 unless $devtests;
-    my @results = capture { system([0..5], "$cmd ltrage -h") };
+    {
+        my @help_args = ($cmd, 'ltrage', '-h');
+        my ($stdout, $stderr, $exit) = capture { system(@help_args) };
+        #say STDERR "stderr: $stderr";
+        ok($stderr, 'Can execute ltrage subcommand');
+    }
 
-    ok(@results, 'Can execute ltrage subcommand');
-    
     my $outfile = $gff;
     $outfile =~ s/\.gff3/_ltrages.tsv/;
-    my $age_cmd = "$cmd ltrage -g $genome -f $gff -i $gindir -o $outfile --all";
-    #say STDERR $age_cmd;
-    my @ret = capture { system([0..5], $age_cmd) };
+    my @age_cmd = ($cmd, 'ltrage', '-g', $genome, '-f', $gff, '-i', $gindir, '-o', $outfile, '--all');
+    #say STDERR join q{ }, @age_cmd;
+    my @ret = capture { system([0..5], @age_cmd) };
 
     ok( -s $outfile, 'Generated LTR age report for input GFF3 file');
 
@@ -55,5 +58,7 @@ SKIP: {
     find( sub { push @outfiles, $File::Find::name if /^ref_ltr/ && ! /$gff/ }, $testdir);
     unlink @outfiles;
 };
+
+unlink $gff;
 
 done_testing();

@@ -23,8 +23,8 @@ if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
 
 my $cmd       = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir   = File::Spec->catdir('t', 'test_data');
-my $ctestfile = File::Spec->catfile($testdir, 'tephra_copia_exemplar_ltrs.fasta');
-my $gtestfile = File::Spec->catfile($testdir, 'tephra_gypsy_exemplar_ltrs.fasta');
+my $ctestfile = File::Spec->catfile($testdir, 'tephra_copia_exemplar_repeats.fasta');
+my $gtestfile = File::Spec->catfile($testdir, 'tephra_gypsy_exemplar_repeats.fasta');
 my $outdir    = File::Spec->catdir($testdir,  't_family_domains');
 my $cresdir   = File::Spec->catdir($outdir,   'ref_tephra_ltrs_combined_filtered_copia');
 my $gresdir   = File::Spec->catdir($outdir,   'ref_tephra_ltrs_combined_filtered_gypsy');
@@ -36,17 +36,20 @@ my $masked    = File::Spec->catfile($testdir, 'ref_masked.fas');
 
 SKIP: {
     skip 'skip development tests', 8 unless $devtests;
-    copy $ctestfile, $cresdir or die "\nERROR: copy failed $!";
-    copy $gtestfile, $gresdir or die "\nERROR: copy failed $!";
+    copy $ctestfile, $cresdir or die "\n[ERROR]: copy failed $!";
+    copy $gtestfile, $gresdir or die "\n[ERROR]: copy failed $!";
 
-    my @results = capture { system([0..5], "$cmd sololtr -h") };
-    
-    ok(@results, 'Can execute sololtr subcommand');
+    {
+        my @help_args = ($cmd, 'sololtr', '-h');
+        my ($stdout, $stderr, $exit) = capture { system(@help_args) };
+        #say STDERR "stderr: $stderr";
+        ok($stderr, 'Can execute sololtr subcommand');
+    }
 
-    my $find_cmd = "$cmd sololtr -i $outdir -g $masked -r $allstfile -o $outfile -l 100 -p 50 -s $seqfile";
-    #say STDERR $find_cmd;
-    
-    my @ret = capture { system([0..5], $find_cmd) };
+    my @find_cmd = ($cmd, 'sololtr', '-i', $outdir, '-g', $masked, '-r', $allstfile, '-o', $outfile,
+		    '-l', 100, '-p', 0, '-s', $seqfile);
+    #say STDERR join q{ }, @find_cmd;    
+    my @ret = capture { system([0..5], @find_cmd) };
     #system([0..5], $find_cmd);
 
     ok( -s $allstfile, 'Generated summary statistics for all solo-LTR matches' );
@@ -56,7 +59,7 @@ SKIP: {
     my $seqct = 0;
     open my $in, '<', $seqfile;
     while (<$in>) { $seqct++ if /^>/; }
-    ok( $seqct == 1, 'Correct number of solo-LTR sequences above thresholds' );
+    ok( $seqct == 2, 'Correct number of solo-LTR sequences above thresholds' );
     close $in;
 
     my $soloct = 0;
@@ -71,13 +74,15 @@ SKIP: {
     close $gff;
     
     #say STDERR "SOLOCT: $soloct";
-    ok( $soloct == 1, 'Correct number of solo-LTRs found' );
+    ok( $soloct == 2, 'Correct number of solo-LTRs found' );
     ok( $seqct == $soloct, 'Same number of sequences and elements written to GFF/FASTA' );
 
     # clean up
     unlink $allstfile, $outfile;
-    remove_tree( $outdir, { safe => 1 } );
-    unlink $masked;
+    #remove_tree( $outdir, { safe => 1 } );
+    #unlink $masked;
 };
+
+remove_tree( $outdir, { safe => 1 } );
 
 done_testing();

@@ -5,7 +5,11 @@ use Moose;
 use File::Spec;
 use File::Find;
 use File::Basename;
-use File::Temp;
+use File::Temp   qw(tempfile);
+use Time::HiRes  qw(gettimeofday);
+use Log::Any     qw($log);
+use Scalar::Util qw(openhandle);
+use Cwd          qw(getcwd abs_path);
 use Path::Class::File;
 use Bio::Seq;
 use Bio::SeqIO;
@@ -15,15 +19,12 @@ use Bio::SearchIO;
 use Sort::Naturally;
 use Parallel::ForkManager;
 use Statistics::Descriptive;
-use Time::HiRes  qw(gettimeofday);
-use Log::Any     qw($log);
-use Scalar::Util qw(openhandle);
-use Cwd          qw(getcwd abs_path);
 use Tephra::Config::Exe;
 #use Data::Dump::Color;
 use namespace::autoclean;
 
-with 'Tephra::Role::Util';
+with 'Tephra::Role::Run::Any',
+     'Tephra::Role::Util';
 
 =head1 NAME
 
@@ -31,11 +32,11 @@ Tephra::Genome::IllRecombination - Calculate illegitimate recombination in a gen
 
 =head1 VERSION
 
-Version 0.07.1
+Version 0.10.00
 
 =cut
 
-our $VERSION = '0.07.1';
+our $VERSION = '0.10.00';
 $VERSION = eval $VERSION;
 
 has infile => (
@@ -105,6 +106,8 @@ sub find_illegitimate_recombination {
     }
 
     $self->collate_gap_stats($all_gap_stats, $statsfile);
+
+    return;
 }
 
 
@@ -119,7 +122,7 @@ sub align_features {
 
     my ($name, $path, $suffix) = fileparse($infile, qr/\.[^.]*/);
     my $logfile = File::Spec->catfile( abs_path($path), 'all_illrecomb_muscle_reports.log' );
-    open my $log, '>>', $logfile or die "\nERROR: Could not open file: $logfile\n";
+    open my $log, '>>', $logfile or die "\n[ERROR]: Could not open file: $logfile\n";
 
     my $pm = Parallel::ForkManager->new($threads);
     local $SIG{INT} = sub {
@@ -131,7 +134,7 @@ sub align_features {
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			      unlink $data_ref->{data}{seqs}, unlink $data_ref->{data}{log};
 			      if ($data_ref->{status} =~ /failed/i) {
-				  say $log "WARNING: ",basename($ident), " failed with exit code: $exit_code";
+				  say $log "\n[WARNING]: ",basename($ident), " failed with exit code: $exit_code\n";
 			      }
 			      else {
 				  my $t1 = gettimeofday();
@@ -201,18 +204,17 @@ sub find_align_gaps {
     my (@indels, @flanking_seqs);
 
     my $cwd = getcwd();
-    open my $illrecstat_fh, '>>', $illrecstatsfile or die "\nERROR: Could not open file: $!";
-    
-    open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+    open my $illrecstat_fh, '>>', $illrecstatsfile or die "\n[ERROR]: Could not open file: $!";
+    open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 
     my ($seqs_in_aln, $count) = $self->split_aln($aln_file);
 
     for my $fas (@$seqs_in_aln) {
-	my $aln_in = Bio::AlignIO->new(-fh => \*$fas, -format => 'fasta');
+	my $aln_in = Bio::AlignIO->new(-file => $fas, -format => 'fasta');
 
 	my ($fname, $fpath, $fsuffix) = fileparse($fas, qr/\.[^.]*/);
 	my $seq_out = File::Spec->catfile( abs_path($fpath), $fname.'_gap_flanking_sequences.fasta' );
-	open my $each_out, '>>', $seq_out or die "\nERROR: Could not open file: $seq_out\n";
+	open my $each_out, '>>', $seq_out or die "\n[ERROR]: Could not open file: $seq_out\n";
 
 	while ( my $aln = $aln_in->next_aln() ) {
 	    my $aln_len = $aln->length;
@@ -247,11 +249,11 @@ sub find_align_gaps {
 		my $downstream_epos = $indel_epos + 20;
 
 		if ($upstream_spos < 1 || $upstream_epos > $aln_len) {
-		    #say STDERR "WARNING: Deletion $del has a flanking repeat out of bounds.";
+		    #say STDERR "[WARNING]: Deletion $del has a flanking repeat out of bounds.";
 		    next;
 		}
 		if ($downstream_epos > $aln_len) {
-		    #say STDERR "WARNING: Deletion $del has the downstream flanking repeat out of bounds.";
+		    #say STDERR "[WARNING]: Deletion $del has the downstream flanking repeat out of bounds.";
 		    last;
 		}
 
@@ -310,27 +312,17 @@ sub split_aln {
     my $cwd = getcwd();
     
     my $tmpiname = $iname.'_'.$fcount.'_XXXX';
-    my $fname = File::Temp->new( TEMPLATE => $tmpiname,
-				 DIR      => $ipath,
-				 UNLINK   => 0,
-				 SUFFIX   => '.fasta');
+    my ($tmp_fh, $tmp_filename) = tempfile( TEMPLATE => $tmpiname, DIR => $ipath, SUFFIX => '.fasta', UNLINK => 0 );
+    push @split_files, $tmp_filename;
 
-    open my $out, '>', $fname or die "\nERROR: Could not open file: $fname\n";
-
-    push @split_files, $fname;
     while (my $seq = $iter->next_seq) {
 	if ($count % 1 == 0 && $count > 0) {
 	    $fcount++;
 	    $tmpiname = $iname.'_'.$fcount.'_XXXX';
-	    $fname = File::Temp->new( TEMPLATE => $tmpiname,
-				      DIR      => $ipath,
-				      UNLINK   => 0,
-				      SUFFIX   => '.fasta');
-
-	    open $out, '>', $fname or die "\nERROR: Could not open file: $fname\n";
-	    push @split_files, $fname;
+	    ($tmp_fh, $tmp_filename) = tempfile( TEMPLATE => $tmpiname, DIR => $ipath, SUFFIX => '.fasta', UNLINK => 0 );
+	    push @split_files, $tmp_filename;
 	}
-	say $out join "\n", '>'.$seq->name, $seq->seq;
+	say $tmp_fh join "\n", ">".$seq->name, $seq->seq;
 	$count++;
     }
 
@@ -365,44 +357,33 @@ sub bl2seq_compare {
     my ($indel_len, $upstr_seq, $downstr_seq, $upstr_id, $downstr_id, $fname, $fpath, $each_out, $illrecstat_fh) =
 	@{$args}{qw(indel_length upstream_seq downstream_seq upstream_id downstream_id fas_name fas_path seqs_fh stats_fh)};
 
-    my $qname = File::Temp->new( TEMPLATE => $fname.'_XXXX',
-				 DIR      => $fpath,
-				 UNLINK   => 0,
-				 SUFFIX   => '.fasta');
+    my $tmpiname = $fname.'_XXXX';
+    my ($qtmp_fh, $qtmp_filename) = tempfile( TEMPLATE => $tmpiname, DIR => $fpath, SUFFIX => '.fasta', UNLINK => 0 );
+    my ($rtmp_fh, $rtmp_filename) = tempfile( TEMPLATE => $tmpiname, DIR => $fpath, SUFFIX => '.fasta', UNLINK => 0 );
+    my ($tmp_outfh, $tmp_outfile) = tempfile( TEMPLATE => $tmpiname, DIR => $fpath, SUFFIX => '.blo',   UNLINK => 0 );
 
-    my $rname = File::Temp->new( TEMPLATE => $fname.'_XXXX',
-				 DIR      => $fpath,
-				 UNLINK   => 0,
-				 SUFFIX   => '.fasta');
-
-    my $out = File::Temp->new( TEMPLATE => $fname.'_XXXX',
-			       DIR      => $fpath,
-			       UNLINK   => 0,
-			       SUFFIX   => '.blo');
-
-    my $outfile = $out->filename;
-    my $qfile   = $qname->filename;
-    my $rfile   = $rname->filename;
     my $config  = Tephra::Config::Exe->new->get_config_paths;
     my ($blastbin) = @{$config}{qw(blastpath)};
     my $blastn  = File::Spec->catfile($blastbin, 'blastn');
 
-    say $qname join "\n", ">".$upstr_id, $upstr_seq;
-    say $rname join "\n", ">".$downstr_id, $downstr_seq;
+    say $qtmp_fh join "\n", ">".$upstr_id, $upstr_seq;
+    say $rtmp_fh join "\n", ">".$downstr_id, $downstr_seq;
+    close $qtmp_fh;
+    close $rtmp_fh;
 
-    my $blcmd = "$blastn -query $qfile -subject $rfile -word_size 4 -outfmt 5 -out $outfile 2>&1 | ";
+    my $blcmd = "$blastn -query $qtmp_filename -subject $rtmp_filename -word_size 4 -outfmt 5 -out $tmp_outfile 2>&1 | ";
     $blcmd .= "egrep -v \"CFastaReader|Error\" | ";
     $blcmd .= "sed \'/^ *\$/d\'"; ## This is a hack for these warnings. I'm throwing away the errors which is why it's a hack but
                                   ## they are not informative. Need to find a workaround for this.
     $self->run_cmd($blcmd);
-    unlink $qfile, $rfile;
+    unlink $qtmp_filename, $rtmp_filename;
 
-    my $bl2seq_report = Bio::SearchIO->new(-file => $outfile, -format => 'blastxml');
+    my $bl2seq_report = Bio::SearchIO->new(-file => $tmp_outfile, -format => 'blastxml');
     
     while ( my $result = $bl2seq_report->next_result ) {
 	if ($result->num_hits == 0) {
-	    #warn "WARNING: No hits found.";
-	    unlink $outfile;
+	    #warn "[WARNING]: No hits found.";
+	    unlink $tmp_outfile;
 	    return;
 	}
 	else {
@@ -462,7 +443,9 @@ sub bl2seq_compare {
 	    }
 	}
     }
-    unlink $outfile;
+    unlink $tmp_outfile;
+
+    return;
 }
 
 sub get_stats {
@@ -485,25 +468,15 @@ sub get_stats {
 
 	push @{$gap_stats->{$fasname}}, join "||", $gap, $count, $gap_percent, $mean, $min, $max, $sum;
     }
-}
 
-sub collate {
-    my $self = shift;
-    my ($file_in, $fh_out) = @_;
-    
-    open my $fh_in, '<', $file_in or die "\nERROR: Could not open file: $file_in\n";
-
-    while (my $line = <$fh_in>) {
-	chomp $line;
-	say $fh_out $line;
-    }
+    return;
 }
 
 sub collate_gap_stats {
     my $self = shift;
     my ($gap_stats, $statsfile) = @_;
 
-    open my $gap_stats_fh_out, '>', $statsfile or die "\nERROR: Could not open file: $statsfile\n";
+    open my $gap_stats_fh_out, '>', $statsfile or die "\n[ERROR]: Could not open file: $statsfile\n";
     
     say $gap_stats_fh_out join "\t", "Family_name", "Total_fam_gap_count", "Total_length_of_gaps", 
         "Mean_fam_gap_count (stddev)", "Mean_fam_gap_size (stddev)", "Mean_fam_gap_perc (stdev)", 
@@ -572,6 +545,8 @@ sub collate_gap_stats {
 	    $grand_gap_size_max.' ('.$grand_gap_size_max_sd.')';
     }
     close $gap_stats_fh_out;
+
+    return;
 }
 
 sub _filter_families_by_size {
@@ -595,7 +570,7 @@ sub _filter_families_by_size {
                 say $fout join "\n",">$id", $seq;
             }
             else {
-                open $fout, '>', $foutfile or die "\nERROR: Could not open file: $foutfile\n";
+                open $fout, '>', $foutfile or die "\n[ERROR]: Could not open file: $foutfile\n";
                 say $fout join "\n", ">$id", $seq;
                 push @seqs, $foutfile;
             }
@@ -648,11 +623,13 @@ sub _remove_singletons {
     }
 
     delete $args->{$_} for @singles;
+
+    return;
 }
 
 =head1 AUTHOR
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 BUGS
 

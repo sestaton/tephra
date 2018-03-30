@@ -12,11 +12,11 @@ Tephra::Config::Reader - Attributes and routines for parsing Tephra configuratio
 
 =head1 VERSION
 
-Version 0.07.1
+Version 0.10.00
 
 =cut
 
-our $VERSION = '0.07.1';
+our $VERSION = '0.10.00';
 $VERSION = eval $VERSION;
 
 =head1 SYNOPSIS
@@ -98,6 +98,8 @@ sub parse_configuration {
     $config{findltrs}{dedup}      = $yaml->[0]{findltrs}[$index]{dedup};
     $index++;
     $config{findltrs}{tnpfilter}  = $yaml->[0]{findltrs}[$index]{tnpfilter};
+    $index++;
+    $config{findltrs}{domains_required} = $yaml->[0]{findltrs}[$index]{domains_required};
     $config{findltrs}{mintsd}     = $yaml->[0]{findltrs}[$index]{ltrharvest}[$ltrh_index]{mintsd};
     $ltrh_index++;
     $config{findltrs}{maxtsd}     = $yaml->[0]{findltrs}[$index]{ltrharvest}[$ltrh_index]{maxtsd};
@@ -125,7 +127,7 @@ sub parse_configuration {
     $config{findltrs}{swdel}      = $yaml->[0]{findltrs}[$index]{ltrharvest}[$ltrh_index]{swdel};
     $ltrh_index++;
     $config{findltrs}{overlaps}   = $yaml->[0]{findltrs}[$index]{ltrharvest}[$ltrh_index]{overlaps};
-    $config{findltrs}{tnpfilter}  = $yaml->[0]{findltrs}[$index]{tnpfilter};
+    #$config{findltrs}{tnpfilter}  = $yaml->[0]{findltrs}[$index]{tnpfilter};
 
     # ltrdigest options from config
     my $ltrd_index = 0;
@@ -232,7 +234,7 @@ sub _validate_params {
 	    elsif (not defined $v) {
 	    #if ($cmd ne 'all' && ! defined $v) {
 		#elsif (not defined $v && $cmd ne 'all') {
-		die "[ERROR]: '$opt' under '$cmd' is not defined after parsing configuration file.\n".
+		die "[[ERROR]]: '$opt' under '$cmd' is not defined after parsing configuration file.\n".
 		    "         This indicates there may be a blank line in your configuration file.\n".
 		    "         Please check your configuration file and try again. Exiting.\n";
 	    }
@@ -253,7 +255,7 @@ sub get_all_opts {
         $genome = $config->{all}{genome};
     }
     else {
-        say STDERR "\nERROR: genome file was not defined in configuration or does not exist. Check input. Exiting.\n";
+        say STDERR "\n[ERROR]: genome file was not defined in configuration or does not exist. Check input. Exiting.\n";
         exit(1);
     }
 
@@ -261,7 +263,7 @@ sub get_all_opts {
         $repeatdb = $config->{all}{repeatdb};
     }   
     else {
-        say STDERR "\nERROR: repeatdb file was not defined in configuration or does not exist. Check input. Exiting.\n";
+        say STDERR "\n[ERROR]: repeatdb file was not defined in configuration or does not exist. Check input. Exiting.\n";
         exit(1);
     }
 
@@ -302,7 +304,7 @@ sub get_all_opts {
     
 =head1 AUTHOR
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 BUGS
 

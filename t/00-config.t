@@ -12,7 +12,7 @@ use IPC::System::Simple qw(system);
 use Capture::Tiny       qw(capture);
 use Tephra::Config::Exe;
 
-use Test::More tests => 16;
+use Test::More tests => 18;
 
 $| = 1;
 
@@ -26,18 +26,24 @@ diag( "Testing Tephra $Tephra::VERSION, Perl $], $^X" );
 my $cmd = File::Spec->catfile('blib', 'bin', 'tephra');
 ok( -x $cmd, 'Can execute tephra' );
 
-my @results = capture { system([0..5], "$cmd commands") };
-ok(@results, 'Can execute commands subcommand');
+{
+    my ($stdout, $stderr, $exit) = capture { system($cmd) };
+    ok($stderr, 'Can execute commands subcommand');
+}
 
 my $config = Tephra::Config::Exe->new->get_config_paths;
-my ($gt, $hscan, $hmm2bin, $hmm3bin, $moddir, $chrdir, $mgescan, $trans, $pamlbin, $transeq, $htslibdir, $blast)
-    = @{$config}{qw(gt hscanjar hmmer2bin hmmer3bin modeldir hmmdir mgescan transcmd pamlbin transeq htslibdir blastpath)};
+my ($gt, $vmbin, $hscan, $hmm2bin, $hmm3bin, $moddir, $chrdir, $mgescan, $trans, $pamlbin, $transeq, $htslibdir, $blast)
+    = @{$config}{qw(gt vmatchbin hscanjar hmmer2bin hmmer3bin modeldir hmmdir mgescan transcmd pamlbin transeq htslibdir blastpath)};
 
 my $hmm2search = File::Spec->catfile($hmm2bin, 'hmmsearch');
 my $hmm3search = File::Spec->catfile($hmm3bin, 'hmmsearch');
-my $blastn     = File::Spec->catfile($blast,  'blastn');
+my $blastn     = File::Spec->catfile($blast,   'blastn');
+my $vmatch     = File::Spec->catfile($vmbin,   'vmatch');
+my $mkvtree    = File::Spec->catfile($vmbin,   'mkvtree');
 
 ok( -x $gt,         'Can execute gt for testing' );
+ok( -x $vmatch,     'Can execute vmatch for testing' );
+ok( -x $mkvtree,    'Can execute mkvtree for testing' );
 ok( -e $hscan,      'Can execute HelitronScanner for testing' );
 ok( -x $hmm2search, 'Can execute HMMERv2 hmmsearch' );
 ok( -x $hmm3search, 'Can execute HMMERv3 hmmsearch' );

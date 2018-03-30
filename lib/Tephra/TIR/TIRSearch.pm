@@ -6,6 +6,7 @@ use Bio::GFF3::LowLevel qw(gff3_format_feature);
 use List::UtilsBy       qw(nsort_by);
 use Cwd                 qw(abs_path);
 use File::Copy          qw(move);
+use File::Path          qw(remove_tree);
 use File::Spec;
 use File::Basename;
 use Path::Class::File;
@@ -15,9 +16,10 @@ use Carp 'croak';
 #use Data::Dump::Color;
 use namespace::autoclean;
 
-with 'Tephra::Role::Run::GT',
+with 'Tephra::Role::Logger',
      'Tephra::Role::GFF',
-     'Tephra::Role::Util';
+     'Tephra::Role::Util',
+     'Tephra::Role::Run::GT';
 
 has outfile => (
       is        => 'ro',
@@ -26,17 +28,23 @@ has outfile => (
       required  => 0,
 );
 
+has logfile => (
+      is        => 'ro',
+      isa       => 'Str',
+      predicate => 'has_logfile',
+);
+
 =head1 NAME
 
 Tephra::TIR::TIRSearch - Find TIR transposons in a reference genome
 
 =head1 VERSION
 
-Version 0.07.1
+Version 0.10.00
 
 =cut
 
-our $VERSION = '0.07.1';
+our $VERSION = '0.10.00';
 $VERSION = eval $VERSION;
 
 sub tir_search {
@@ -46,6 +54,7 @@ sub tir_search {
     my $genome  = $self->genome->absolute->resolve;
     my $hmmdb   = $self->hmmdb;
     my $outfile = $self->outfile;
+    my $logfile = $self->logfile;
     my (%suf_args, %tirv_cmd);
 
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
@@ -62,8 +71,10 @@ sub tir_search {
     my @tirv_args = ("yes","27","100",$index,$hmmdb);
     @tirv_cmd{@tirv_opts} = @tirv_args;
     
-    $self->run_tirvish(\%tirv_cmd, $gff);
-    
+    my $log = $self->get_tephra_logger($logfile);
+    my $tirv_succ = $self->run_tirvish(\%tirv_cmd, $gff, $log);
+    #remove_tree($model_dir, { safe => 1 });
+
     my $filtered = $self->_filter_tir_gff($gff, $fas);
 
     $self->clean_indexes($path) if $self->clean;
@@ -78,8 +89,8 @@ sub _filter_tir_gff {
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile( abs_path($path), $name.'_filtered.gff3' );
-    open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
-    open my $faout, '>>', $fas or die "\nERROR: Could not open file: $fas\n";
+    open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
+    open my $faout, '>>', $fas or die "\n[ERROR]: Could not open file: $fas\n";
     
     my %tirs;
     my ($header, $features) = $self->collect_gff_features($gff);
@@ -111,7 +122,8 @@ sub _filter_tir_gff {
 		my $elem_id = $tir_feature->{attributes}{ID}[0];
 		($seq_id, $source, $tir_start, $tir_end, $strand) 
 		    = @{$tir_feature}{qw(seq_id source start end strand)};
-		$self->subseq($index, $seq_id, $elem_id, $tir_start, $tir_end, $faout)
+		my $id = join "_", $elem_id, $seq_id, $tir_start, $tir_end;
+		$self->write_element_parts($index, $seq_id, $tir_start, $tir_end, $faout, $id);
             }
 	    my $gff3_str = gff3_format_feature($tir_feature);
 	    $tir_feats .= $gff3_str;
@@ -124,30 +136,14 @@ sub _filter_tir_gff {
     }
     close $out;
 
-    move $outfile, $gff or die "ERROR: move failed: $!";
-    return $outfile;
-}
+    move $outfile, $gff or die "\n[ERROR]: move failed: $!\n";
 
-sub subseq {
-    my $self = shift;
-    my ($index, $loc, $elem, $start, $end, $out) = @_;
-
-    my $location = "$loc:$start-$end";
-    my ($seq, $length) = $index->get_sequence($location);
-    croak "\nERROR: Something went wrong. This is a bug, please report it.\n"
-        unless $length;
-
-    my $id = join "_", $elem, $loc, $start, $end;
-
-    if ($seq) {
-        $seq =~ s/.{60}\K/\n/g;
-        say $out join "\n", ">$id", $seq;
-    }
+    return ($outfile, $fas);
 }
 
 =head1 AUTHOR
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 BUGS
 

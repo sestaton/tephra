@@ -125,11 +125,11 @@ void viterbi(HMM *hmm_ptr, int T, char *O, double *pprob, int *vpath, char *sign
   int debug = 0;
 
   if ((phmm_dir = (char *)malloc(50 * sizeof(char)))==NULL){ 
-    printf("ERROR: allocation of phmm_dir\n");
+    printf("[ERROR]: allocation of phmm_dir\n");
     exit;
   }
   if ((out_dir = (char *)malloc(50 * sizeof(char)))==NULL){ 
-    printf("ERROR: allocation of out_dir\n");
+    printf("[ERROR]: allocation of out_dir\n");
     exit;
   }
 
@@ -665,25 +665,25 @@ void get_hydro(int start, int end, double *score, char *O){
   char buffer[10]; /* long enough to hold your number + null */
 
   if ((command = (char *)malloc(10000 * sizeof(char)))==NULL){ 
-    printf("ERROR: allocation of command\n");
+    printf("[ERROR]: allocation of command\n");
     exit;
   }
   memset(command, '\0', 10000);
 
   if ((domain_bp = (char *)malloc(10000 * sizeof(char)))==NULL){ 
-    printf("ERROR: allocation of domain_bp\n");
+    printf("[ERROR]: allocation of domain_bp\n");
     exit;
   }
   memset(domain_bp, '\0', 10000);
 
   if ((st = (char *)malloc(70 * sizeof(char)))==NULL){
-    printf("ERROR: allocation of st\n");
+    printf("[ERROR]: allocation of st\n");
     exit;
   }
   memset(st, '\0', 70);
 
   if ((seq = (char *)malloc(20000 * sizeof(char)))==NULL){
-    printf("ERROR: allocation of seq\n");
+    printf("[ERROR]: allocation of seq\n");
     exit;
   }
   memset(seq, '\0', 20000);
@@ -701,15 +701,15 @@ void get_hydro(int start, int end, double *score, char *O){
   memcpy(domain_bp, &O[start], end-start+1);
 
   if ((fp = fopen(temp_file1, "w"))==NULL){
-    printf("ERROR: file opening for temp_file1: %s\n", strerror(errno));
+    printf("[ERROR]: file opening for temp_file1: %s\n", strerror(errno));
   }
   fprintf(fp, "%s\n", domain_bp);
   if(ferror(fp)) {
-    printf("ERROR: file writing for domain_bp\n"); 
+    printf("[ERROR]: file writing for domain_bp\n"); 
   }
   fclose(fp);
   if(ferror(fp)) {
-    printf("ERROR: file writing for domain_bp\n");
+    printf("[ERROR]: file writing for domain_bp\n");
   }
 
   strcpy(command, "transeq -frame=f ");
@@ -849,15 +849,15 @@ void get_phmm(int state, int start, int end, double *score, char *O, int *seq_le
   //char *temp = malloc(10 * sizeof(char));
 
   if ((command = (char *)malloc(10000 * sizeof(char)))==NULL){ 
-    printf("ERROR: allocation of command\n");
+    printf("[ERROR]: allocation of command\n");
     exit;
   }
   if ((domain_bp = (char *)malloc(10000 * sizeof(char)))==NULL){ 
-    printf("ERROR: allocation of domain_bp\n");
+    printf("[ERROR]: allocation of domain_bp\n");
     exit;
   }
   if ((hmm_file = (char *)malloc(100 * sizeof(char)))==NULL){ 
-    printf("ERROR: allocation of hmm_file\n");
+    printf("[ERROR]: allocation of hmm_file\n");
     exit;
   }
   memset(command, '\0', 10000);

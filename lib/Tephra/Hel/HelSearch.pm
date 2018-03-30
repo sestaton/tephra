@@ -5,16 +5,19 @@ use Moose;
 use File::Spec;
 use File::Find;
 use File::Basename;
-use Path::Class::File;
-use Bio::DB::HTS::Kseq;
-use Sort::Naturally;
+use File::Temp          qw(tempfile);
 use IPC::System::Simple qw(system EXIT_ANY);
 use Log::Any            qw($log);
 use Cwd                 qw(abs_path);
+use Path::Class::File;
+use Bio::DB::HTS::Kseq;
+use Sort::Naturally;
 use Try::Tiny;
 use namespace::autoclean;
+#use Data::Dump::Color;
 
-with 'Tephra::Role::Run::HelitronScanner';
+with 'Tephra::Role::Run::HelitronScanner',
+     'Tephra::Role::Util';
 
 =head1 NAME
 
@@ -22,11 +25,11 @@ Tephra::Hel::HelSearch - Find Helitrons in a reference genome
 
 =head1 VERSION
 
-Version 0.07.1
+Version 0.10.00
 
 =cut
 
-our $VERSION = '0.07.1';
+our $VERSION = '0.10.00';
 $VERSION = eval $VERSION;
 
 sub find_helitrons {
@@ -87,17 +90,18 @@ sub find_helitrons {
 sub make_hscan_outfiles {
     my $self = shift;
     my ($helitrons) = @_;
-    my $gff    = $self->gff; 
+    #my $gff    = $self->gff; 
     my $genome = $self->genome->absolute->resolve;
 
     my ($full, $exte, $flank, $head, $tail, $paired) = 
 	@{$helitrons}{qw(full_helitrons extended_seqs flanking_seqs head tail paired)};
 
-    my ($gname, $gpath, $gsuffix) = fileparse($gff, qr/\.[^.]*/); 
-    my $fasta = $self->fasta // File::Spec->catfile($gpath, $gname.'.fasta');
+    my ($gname, $gpath, $gsuffix) = fileparse($genome, qr/\.[^.]*/); 
+    my $tmpfname = $gname.'_tephra_helsearch_fas_XXXX';
+    my $tmpgname = $gname.'_tephra_helsearch_gff_XXXX';
 
-    open my $outg, '>', $gff or die "\nERROR: Could not open file: $gff\n";
-    open my $outf, '>', $fasta or die "\nERROR: Could not open file: $fasta\n";
+    my ($outf, $ffilename) = tempfile( TEMPLATE => $tmpfname, DIR => $gpath, UNLINK => 0, SUFFIX => '.fasta' );
+    my ($outg, $gfilename) = tempfile( TEMPLATE => $tmpgname, DIR => $gpath, UNLINK => 0, SUFFIX => '.gff3' );
 
     my %refs;
     my $gkseq = Bio::DB::HTS::Kseq->new($genome);
@@ -109,36 +113,38 @@ sub make_hscan_outfiles {
 	$refs{$name} = length($seq);
     }
 
-    my $header = "##gff-version 3";
+    my $header = '##gff-version 3';
     say $outg $header;
     for my $ref (nsort keys %refs) {
-	say $outg join q{ }, "##sequence-region", $ref, '1', $refs{$ref};
+	say $outg join q{ }, '##sequence-region', $ref, '1', $refs{$ref};
     }
     
     my %strand = ( forward => '+', reverse => '-' );
     
-    my ($name, $seq, %hel);
+    my ($name, $seq, %hel, %sfmap);
     my $helct = 0;
-    open my $hin, '<', $full or die "\nERROR: Could not open file: $full\n";
+    open my $hin, '<', $full or die "\n[ERROR]: Could not open file: $full\n";
     while (($name, $seq) = $self->read_seq(\*$hin)) {
 	$helct++;
 	my ($ref, $start, $stop) = ($name =~ /(^\S+)_\#SUB_(\d+)-(\d+)/);
 	my ($str) = ($name =~ /\[(forward|reverse)\]/);
 	my $strand = $strand{$str};
-	my $id = "DHH_helitron$helct";
+	#my $id = "DHH_helitron$helct";
+	my $id = "helitron$helct";
+	$sfmap{$id} = 'DHH';
 
 	# seqid source type start end score strand phase attribs
 	my $gff_str;
 	if ($start > $stop && $strand eq '-') {
 	    $gff_str = join "||", $ref, 'HelitronScanner', 'helitron', $stop, $start, '.', 
 	        $strand, '.', "ID=$id;Ontology_term=SO:0000544";
-	    $id .= "_$ref"."_$stop"."_$start"."_$strand";
+	    $id .= "_$ref"."_$stop"."_$start"; #."_$strand";
 	    say $outf join "\n", ">".$id, $seq;
 	}
 	else {
 	    $gff_str = join "||", $ref, 'HelitronScanner', 'helitron', $start, $stop, '.',
                 $strand, '.', "ID=$id;Ontology_term=SO:0000544";
-	    $id .= "_$ref"."_$start"."_$stop"."_$strand";
+	    $id .= "_$ref"."_$start"."_$stop"; #."_$strand";
 	    say $outf join "\n", ">".$id, $seq;
 	}
 	push @{$hel{$ref}}, $gff_str;
@@ -146,6 +152,7 @@ sub make_hscan_outfiles {
     close $hin;
     close $outf;
 
+    #dd \%hel;
     for my $ref (nsort keys %hel) {
 	for my $feature (@{$hel{$ref}}) {
 	    my @feats = split /\|\|/, $feature;
@@ -155,6 +162,9 @@ sub make_hscan_outfiles {
     close $outg;
 
     unlink $full, $exte, $flank, $head, $tail, $paired; #TODO: optionally keep intermediate files
+    
+    return (\%sfmap,
+	    { fasta => $ffilename, gff => $gfilename });
 }
 
 sub read_seq {
@@ -176,7 +186,7 @@ sub read_seq {
 
 =head1 AUTHOR
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 BUGS
 

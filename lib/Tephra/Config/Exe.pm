@@ -15,11 +15,11 @@ Tephra::Config::Exe - Class for setting up PATHs for Tephra dependencies
 
 =head1 VERSION
 
-Version 0.07.1
+Version 0.10.00
 
 =cut
 
-our $VERSION = '0.07.1';
+our $VERSION = '0.10.00';
 
 has basedir => (
     is       => 'ro',
@@ -41,6 +41,7 @@ sub get_config_paths {
 
     # we don't want to reconfigure every time the tests run 
     my $gt      = File::Spec->catfile($root,   'gt', 'bin', 'gt');
+    my $vmbin   = File::Spec->catfile($root,   'vmatch');
     my $hscan   = File::Spec->catfile($root,   'helitronscanner', 'HelitronScanner', 'HelitronScanner.jar');
     my $hmm2bin = File::Spec->catdir($root,    'hmmer-2.3.2', 'bin');
     my $hmm3bin = File::Spec->catdir($root,    'hmmer-3.1b2-linux-intel-x86_64', 'binaries');
@@ -70,6 +71,7 @@ sub get_config_paths {
 
     return ({
         gt         => $gt,
+	vmatchbin  => $vmbin,
         hscanjar   => $hscan,
         hmmer2bin  => $hmm2bin,
 	hmmer3bin  => $hmm3bin,
@@ -87,7 +89,7 @@ sub get_config_paths {
 
 =head1 AUTHOR
 
-S. Evan Staton, C<< <statonse at gmail.com> >>
+S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =head1 BUGS
 
