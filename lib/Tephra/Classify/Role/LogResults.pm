@@ -4,12 +4,7 @@ use 5.014;
 use Moose::Role;
 use Statistics::Descriptive;
 use namespace::autoclean;
-
-with 'Tephra::Role::Logger',
-     'Tephra::Role::GFF',
-     'Tephra::Role::Util',
-     'Tephra::Role::Run::GT';
-
+#use Data::Dump::Color;
 
 =head1 NAME
 
@@ -55,10 +50,11 @@ sub log_basic_element_stats {
     return $count;
 }
 
-sub write_pdom_organization {
+sub write_superfam_pdom_organization {
     my $self = shift;
-    my ($pdom_index, $domoutfile) = @_;
-
+    my ($dom_obj) = @_;
+    
+    my ($pdom_index, $domoutfile) = @{$dom_obj}{qw(pdom_index outfile)};
     open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
 
     my %tot_dom_ct;
@@ -77,6 +73,19 @@ sub write_pdom_organization {
 	say $domf join "\t", $domorg, $tot_dom_ct{$domorg};
     }
     close $domf;
+
+    return;
+}
+
+sub write_fam_pdom_organization {
+    my $self = shift;
+    my ($dom_obj) = @_;
+    
+    my ($pdom_famid_map, $outfh, $elemnum, $elemid, $famname) = @{$dom_obj}{qw(famid_map outfh elemnum elemid famname)};
+    my $re = qr/helitron\d+|non_LTR_retrotransposon\d+|(?:LTR|TRIM|LARD)_retrotransposon\d+|terminal_inverted_repeat_element\d+/;
+    my ($element) = ($elemnum =~ /($re)/);
+ 
+    say $outfh join "\t", $famname, $elemid, $pdom_famid_map->{$element}{pdoms};
 
     return;
 }
