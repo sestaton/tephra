@@ -100,7 +100,7 @@ sub make_exemplars {
 	chomp $line;
 	next if $line =~ /^#/;
 	my $feature = gff3_parse_feature( $line );
-	if ($feature->{type} =~ /(?:LTR|TRIM)_retrotransposon|terminal_inverted_repeat_element/) {
+	if ($feature->{type} =~ /(?:LTR|TRIM|LARD)_retrotransposon|terminal_inverted_repeat_element/) {
 	    $elem_id = @{$feature->{attributes}{ID}}[0];
 	    ($source_id, $source, $type, $start, $end, $strand) 
 		= @{$feature}{qw(seq_id source type start end strand)};
