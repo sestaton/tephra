@@ -174,7 +174,7 @@ sub filter_compound_elements {
 		    if ($pdom_name =~ /RVT_1|Chromo/i) {
 			$is_gypsy  = 1;
 		    }
-		    elsif ($pdom_name =~ /RVT_2/i) {
+		    elsif ($pdom_name =~ /RVT_2|UBN2/i) {
 			$is_copia  = 1;
 		    }
 		    elsif ($pdom_name =~ /transpos(?:ase)?|mule|(?:dbd|dde)?_tnp_(?:hat)?|duf4216/i) {
