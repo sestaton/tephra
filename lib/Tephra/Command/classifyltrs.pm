@@ -64,8 +64,8 @@ sub validate_args {
 sub execute {
     my ($self, $opt, $args) = @_;
 
-    my ($gffs, $log) = _classify_ltr_superfamilies($opt);
-    my $somb = _classify_ltr_families($opt, $gffs, $log);
+    my ($gffs, $lard_index, $log) = _classify_ltr_superfamilies($opt);
+    my $somb = _classify_ltr_families($opt, $gffs, $lard_index, $log);
 }
 
 sub _classify_ltr_superfamilies {
@@ -108,7 +108,7 @@ sub _classify_ltr_superfamilies {
     $classify_obj->annotate_unclassified($blast_out, $gypsy, $copia, $features, $ltr_rregion_map);
     unlink $unc_fas;
 
-    my ($gyp_gff, $cop_gff, $unc_gff, %gffs);
+    my ($gyp_gff, $cop_gff, $unc_gff, $lard_index, %gffs);
     if (%$gypsy) {
 	$gyp_gff = $classify_obj->write_gypsy($gypsy, $header, $log);
 	$gffs{'gypsy'} = $gyp_gff;
@@ -120,15 +120,15 @@ sub _classify_ltr_superfamilies {
     }
 
     if (%$features) {
-        $unc_gff = $classify_obj->write_unclassified($features, $header, $log);
+        ($unc_gff, $lard_index) = $classify_obj->write_unclassified($features, $header, $log);
 	$gffs{'unclassified'} = $unc_gff;
     }
 
-    return (\%gffs, $log);
+    return (\%gffs, $lard_index, $log);
 }
 
 sub _classify_ltr_families {
-    my ($opt, $gffs, $log) = @_;
+    my ($opt, $gffs, $lard_index, $log) = @_;
 
     my $threads = $opt->{threads} // 1;
     my $hpcov   = $opt->{percentcov} // 50;
@@ -151,7 +151,7 @@ sub _classify_ltr_families {
 
     my ($outfiles, $annot_ids) = $classify_fams_obj->make_families($gffs, $log);
     $classify_fams_obj->combine_families($outfiles);
-    $classify_fams_obj->annotate_gff($annot_ids, $opt->{ingff});
+    $classify_fams_obj->annotate_gff($annot_ids, $lard_index, $opt->{ingff});
     
     unlink $_ for values %$gffs;
 }
