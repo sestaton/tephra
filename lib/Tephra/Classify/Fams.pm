@@ -9,10 +9,12 @@ use File::Find;
 use File::Basename;
 use Bio::DB::HTS::Kseq;
 use Bio::DB::HTS::Faidx;
-use List::Util  qw(min max);
-use Time::HiRes qw(gettimeofday);
-use File::Path  qw(make_path);
-use Cwd         qw(abs_path);         
+use Bio::GFF3::LowLevel qw(gff3_format_feature);
+use List::Util          qw(min max);
+use List::UtilsBy       qw(nsort_by);
+use Time::HiRes         qw(gettimeofday);
+use File::Path          qw(make_path);
+use Cwd                 qw(abs_path);         
 use Parallel::ForkManager;
 use Carp 'croak';
 use Try::Tiny;
@@ -21,6 +23,8 @@ use Tephra::Annotation::MakeExemplars;
 use namespace::autoclean;
 
 with 'Tephra::Role::Util',
+     'Tephra::Role::GFF',
+     'Tephra::Classify::Role::LogResults',
      'Tephra::Classify::Fams::Cluster',
      'Tephra::Role::Run::Blast';
 
@@ -184,23 +188,25 @@ sub run_family_classification {
     my $threads = $self->threads;
     my $debug   = $self->debug;
 
-    my $dir;
+    my ($dir, $pdom_famid_map);
     if ($tetype eq 'LTR') {
-	$dir = $self->extract_ltr_features($gff);
+	($dir, $pdom_famid_map) = $self->extract_ltr_features($gff);
     }
     if ($tetype eq 'TIR') {
-	$dir = $self->extract_tir_features($gff);
+	($dir, $pdom_famid_map) = $self->extract_tir_features($gff);
     }
+    #dd $pdom_famid_map and exit;
 
     my $clusters = $self->cluster_features($dir);
     my $dom_orgs = $self->parse_clusters($clusters);
     my ($dom_fam_map, $fas_obj, $unmerged_stats) = 
 	$self->make_fasta_from_dom_orgs($dom_orgs, $clusters, $tetype);
+    
     my $blastout = $self->process_blast_args($fas_obj);
     my $matches  = $self->parse_blast($blastout);
 
     my ($fams, $ids, $merged_stats) = 
-	$self->write_families($dom_fam_map, $unmerged_stats, $matches, $clusters, $tetype);
+	$self->write_families($pdom_famid_map, $dom_fam_map, $unmerged_stats, $matches, $clusters, $tetype);
 
     my $exm_obj = Tephra::Annotation::MakeExemplars->new(
         genome  => $genome,
@@ -228,7 +234,7 @@ sub make_fasta_from_dom_orgs {
     my $dir  = basename($cpath);
     my ($sf) = ($dir =~ /_((?:\w+\d+\-)?\w+)$/);
     unless (defined $sf) {
-	say STDERR "\n[ERROR]: Can't get sf from $clsfile at $.";
+	say STDERR "\n[ERROR]: Can not get superfamily from $clsfile at $.";
     }
 
     my $sfname;
@@ -386,14 +392,16 @@ sub parse_blast {
 
 sub write_families {
     my $self = shift;
-    my ($dom_fam_map, $unmerged_stats, $matches, $clsfile, $tetype) = @_;
+    my ($pdom_famid_map, $dom_fam_map, $unmerged_stats, $matches, $clsfile, $tetype) = @_;
+    my $gff = $self->gff;
 
+    #dd $pdom_famid_map and exit;
     my ($cname, $cpath, $csuffix) = fileparse($clsfile, qr/\.[^.]*/);
-    my $dir  = basename($cpath);
+    my $dir = basename($cpath);
     #my ($sf) = ($dir =~ /_(\w+)$/);
     my ($sf) = ($dir =~ /_((?:\w+\d+\-)?\w+)$/);
     unless (defined $sf) {
-        say STDERR "\n[ERROR]: Can't get sf from $clsfile at $.";
+        say STDERR "\n[ERROR]: Can not get superfamily name from $clsfile at $.";
     }
 
     my $sfname;
@@ -410,6 +418,10 @@ sub write_families {
 	$sfname = 'DTX' if $sf =~ /unclassified/i;
     }
 
+    my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
+    my $domoutfile = File::Spec->catfile($path, $name.'_family-level_domain_org.tsv');
+    open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
+
     my @compfiles;
     find( sub { push @compfiles, $File::Find::name if /complete.fasta$/ }, $cpath );
     my $ltrfas = shift @compfiles;
@@ -425,7 +437,13 @@ sub write_families {
 	$fam_id_map = $tomerge == 1 ? $matches : $dom_fam_map;
     }
 
-    for my $str (reverse sort { @{$fam_id_map->{$a}} <=> @{$fam_id_map->{$b}} } keys %$fam_id_map) {
+    my $re = qr/helitron\d+|non_LTR_retrotransposon\d+|(?:LTR|TRIM|LARD)_retrotransposon\d+|terminal_inverted_repeat_element\d+/;
+    #my ($element) = ($elemnum =~ /($re)/);
+    #say "ltrfas: $ltrfas";
+    #say join "\n", keys %$seqstore and exit;
+    #dd $fam_id_map and exit;
+    #for my $str (reverse sort { @{$fam_id_map->{$a}} <=> @{$fam_id_map->{$b}} } keys %$fam_id_map) {
+    for my $str (reverse nsort keys %$fam_id_map) {
 	my $famfile = $sf."_family$idx".".fasta";
 	my $outfile = File::Spec->catfile( abs_path($cpath), $famfile );
 	open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
@@ -439,6 +457,15 @@ sub write_families {
 		say $out join "\n", ">$sfname"."_family$idx"."_$query"."_$coords", $seqstore->{$query}{$coords};
 		delete $seqstore->{$query};
 		$annot_ids{$query} = $sfname."_family$idx";
+		my ($element) = ($query =~ /($re)/);
+
+		if (exists $pdom_famid_map->{$element}) { 
+		    $self->write_fam_pdom_organization({ famid_map => $pdom_famid_map, 
+							 outfh     => $domf, 
+							 elemnum   => $query, 
+							 elemid    => "$sfname"."_family$idx"."_$query"."_$coords", 
+							 famname   => $sfname."_family$idx"});
+		}
 	    }
 	    else {
 		croak "\n[ERROR]: $query not found in store. Exiting.";
@@ -461,13 +488,23 @@ sub write_families {
 	    $seqstore->{$k}{$coords} =~ s/.{60}\K/\n/g;
 	    say $outx join "\n", ">$sfname"."_singleton_family$idx"."_$k"."_$coords", $seqstore->{$k}{$coords};
 	    $annot_ids{$k} = $sfname."_singleton_family$idx";
+	    my ($element) = ($k =~ /($re)/);
+
+	    if (exists $pdom_famid_map->{$element}) {
+		$self->write_fam_pdom_organization({ famid_map => $pdom_famid_map, 
+						     outfh     => $domf, 
+						     elemnum   => $k,
+						     elemid    => "$sfname"."_singleton_family$idx"."_$k"."_$coords", 
+						     famname   => $sfname."_singleton_family$idx" });
+	    }
 	    $idx++;
 	}
 	close $outx;
 	$fastas{$xoutfile} = 1;
     }
     my $singct = $idx;
-    
+    close $domf;
+
     return (\%fastas, \%annot_ids,
 	    { superfamily       => $sf,
 	      total_elements    => $elemct,
@@ -507,38 +544,106 @@ sub combine_families {
 
 sub annotate_gff {
     my $self = shift;
-    my ($annot_ids, $ingff) = @_;
+    my ($annot_ids, $lard_index, $ingff) = @_;
     my $outdir = $self->outdir->absolute->resolve;
     my $outgff = $self->gff;
 
-    open my $in, '<', $ingff or die "\n[ERROR]: Could not open file: $ingff\n";
+    my ($header, $features) = $self->collect_gff_features($ingff);
+    #open my $in, '<', $ingff or die "\n[ERROR]: Could not open file: $ingff\n";
     open my $out, '>', $outgff or die "\n[ERROR]: Could not open file: $outgff\n";
+    say $out $header;
 
-    while (my $line = <$in>) {
-	chomp $line;
-	if ($line =~ /^#/) {
-	    say $out $line;
-	}
-	else {
-	    my @f = split /\t/, $line;
-	    if ($f[2] =~ /(?:LTR|TRIM)_retrotransposon|terminal_inverted_repeat_element/) {
-		my ($id) = ($f[8] =~ /ID=((?:LTR|TRIM)_retrotransposon\d+|terminal_inverted_repeat_element\d+);/);
-		my $key  = $id."_$f[0]";
-		if (exists $annot_ids->{$key}) {
-		    my $family = $annot_ids->{$key};
-		    $f[8] =~ s/ID=$id\;/ID=$id;family=$family;/;
-		    say $out join "\t", @f;
+    my $is_lard = 0;
+    my ($new_id, $gff_str, $seq_id, $strand, $source);
+    #dd $features and exit;
+    for my $rep_region (nsort_by { m/repeat_region\d+\|\|(\d+)\|\|\d+/ and $1 } keys %$features) {
+	my ($rreg_id, $s, $e) = split /\|\|/, $rep_region;
+        for my $feature (@{$features->{$rep_region}}) {
+	    if ($feature->{type} =~ /(?:LTR|TRIM)_retrotransposon|terminal_inverted_repeat_element/) {
+                #my ($seq_id, $start, $end) = @{$ltr_feature}{qw(seq_id start end)};
+		#dd $feature and exit;
+		$is_lard = 1;
+		
+                my $id = $feature->{attributes}{ID}[0];
+		($seq_id, $strand, $source) = @{$feature}{qw(seq_id strand source)};
+
+		if (exists $lard_index->{$id}) {
+		    $feature->{type} = 'LARD_retrotransposon';
+                    $new_id = $lard_index->{$id};
 		}
 		else {
-		    say $out join "\t", @f;
+		    $new_id = $id;
+		}
+
+		my $key = join "_", $new_id, $seq_id;
+		if (exists $annot_ids->{$key}) {
+		    $feature->{attributes}{ID}[0] = $new_id;
+		    $feature->{attributes}{family}[0] = $annot_ids->{$key};		    
 		}
 	    }
 	    else {
-		say $out join "\t", @f;
+		if ($is_lard) {
+		    $feature->{attributes}{Parent}[0] = $new_id;
+		}
 	    }
+	    my $gff_feat = gff3_format_feature($feature);
+	    $gff_str .= $gff_feat;
+	    #chomp $gff_str;
+	    #say $out $gff_str;
 	}
+	chomp $gff_str;
+	say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
+	say $out $gff_str;
+	$is_lard = 0;
+	undef $gff_str;
     }
-    close $in;
+    ##debug
+	    #my $is_lard = 0;
+    #my $new_id;
+    #dd $annot_ids;
+    #while (my $line = <$in>) {
+	#chomp $line;
+	#if ($line =~ /^#/) {
+	    #say $out $line;
+	#}
+	#else {
+	    #my @f = split /\t/, $line;
+	    #if ($f[8] =~ /((?:LTR|TRIM|LARD)_retrotransposon\d+|terminal_inverted_repeat_element\d+)/) {
+		#$my ($id) = ($f[8] =~ /ID=((?:LTR|TRIM|LARD)_retrotransposon\d+|terminal_inverted_repeat_element\d+);/);
+		#my $key  = $id."_$f[0]";
+		#my $id = $1;
+		
+		#if (exists $lard_index->{$id}) {
+		    #$new_id = $lard_index->{$id};
+		    #say "found in lard index: $id";
+		    #$is_lard = 1;
+		    #$f[2] =~ s/LTR/LARD/;
+		    #$f[8] =~ s/LTR/LARD/;
+		#}
+		#else {
+		#    $new_id = $id;
+		#}
+
+		#my $key = $new_id."_$f[0]";
+		#say join q{ }, $key, $id if $is_lard;
+		#if (exists $annot_ids->{$key}) {
+		    #my $family = $annot_ids->{$key};
+		    #$f[8] =~ s/ID=$id\;/ID=$new_id;family=$family;/;
+		    #$f[8] =~ s/Parent=$id\;/Parent=$new_id/;
+		    #say $out join "\t", @f;
+		#}
+		#else {
+		#    say $out join "\t", @f;
+		#}
+	    #}
+	    #else {
+		#say $out join "\t", @f;
+	    #}
+	    #$is_lard = 0;
+	#}
+	
+    #}
+    #close $in;
     close $out;
 
     return;
@@ -549,7 +654,7 @@ sub _compare_merged_nonmerged {
     my ($matches, $seqstore, $unmerged_stats) = @_;
 
     my $famtot = 0;
-
+    
     for my $str (keys %$matches) {
 	for my $elem (@{$matches->{$str}}) {
 	    my $query = $elem =~ s/\w{3}_singleton_family\d+_//r;
