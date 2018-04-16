@@ -100,6 +100,7 @@ sub parse_configuration {
     $config{findltrs}{tnpfilter}  = $yaml->[0]{findltrs}[$index]{tnpfilter};
     $index++;
     $config{findltrs}{domains_required} = $yaml->[0]{findltrs}[$index]{domains_required};
+    $index++;
     $config{findltrs}{mintsd}     = $yaml->[0]{findltrs}[$index]{ltrharvest}[$ltrh_index]{mintsd};
     $ltrh_index++;
     $config{findltrs}{maxtsd}     = $yaml->[0]{findltrs}[$index]{ltrharvest}[$ltrh_index]{maxtsd};
@@ -127,7 +128,7 @@ sub parse_configuration {
     $config{findltrs}{swdel}      = $yaml->[0]{findltrs}[$index]{ltrharvest}[$ltrh_index]{swdel};
     $ltrh_index++;
     $config{findltrs}{overlaps}   = $yaml->[0]{findltrs}[$index]{ltrharvest}[$ltrh_index]{overlaps};
-    #$config{findltrs}{tnpfilter}  = $yaml->[0]{findltrs}[$index]{tnpfilter};
+    $index++;
 
     # ltrdigest options from config
     my $ltrd_index = 0;
@@ -234,7 +235,7 @@ sub _validate_params {
 	    elsif (not defined $v) {
 	    #if ($cmd ne 'all' && ! defined $v) {
 		#elsif (not defined $v && $cmd ne 'all') {
-		die "[[ERROR]]: '$opt' under '$cmd' is not defined after parsing configuration file.\n".
+		die "[ERROR]: '$opt' under '$cmd' is not defined after parsing configuration file.\n".
 		    "         This indicates there may be a blank line in your configuration file.\n".
 		    "         Please check your configuration file and try again. Exiting.\n";
 	    }
