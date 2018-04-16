@@ -321,7 +321,8 @@ sub write_gypsy {
     }
     close $out;
     
-    $self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
+    $self->write_superfam_pdom_organization({ pdom_index => \%pdom_index, outfile => $domoutfile }) 
+	if %pdom_index;
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) {
@@ -385,7 +386,8 @@ sub write_copia {
     }
     close $out;
 
-    $self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
+    $self->write_superfam_pdom_organization({ pdom_index => \%pdom_index, outfile => $domoutfile })
+        if %pdom_index;
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) {
@@ -403,13 +405,10 @@ sub write_unclassified {
     my ($features, $header, $log) = @_;
     my $gff = $self->gff->absolute->resolve;
 
-    my %pdom_index;
-    my @all_pdoms;
-    my $pdom_org;
-    my @lengths;
-    my $unc_feats;
-    my $has_pdoms = 0;
-    my $pdoms = 0;
+    my (%pdom_index, %lard_index);
+    my (@all_pdoms, $pdom_org);
+    my (@lard_lengths, @unc_lengths);
+    my ($has_pdoms, $pdoms, $is_lard) = (0, 0, 0);
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name.'_unclassified.gff3');
@@ -417,7 +416,7 @@ sub write_unclassified {
     open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
     say $out $header;
 
-    my ($seq_id, $source, $start, $end, $strand);
+    my ($seq_id, $source, $start, $end, $strand, $ltrlen, $unc_feats);
     for my $rep_region (nsort_by { m/repeat_region\d+\|\|(\d+)\|\|\d+/ and $1 } keys %$features) {
         my ($rreg, $s, $e) = split /\|\|/, $rep_region;
         for my $ltr_feature (@{$features->{$rep_region}}) {
@@ -430,15 +429,24 @@ sub write_unclassified {
 		($seq_id, $source, $start, $end, $strand) 
 		    = @{$ltr_feature}{qw(seq_id source start end strand)};
 		$strand //= '?';
-                my $ltrlen = $end - $start + 1;
-                push @lengths, $ltrlen;
+                $ltrlen = $end - $start + 1;
+                #push @lengths, $ltrlen;
             }
             my $gff3_str = gff3_format_feature($ltr_feature);
             $unc_feats .= $gff3_str;
         }
         chomp $unc_feats;
         say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg";
-        say $out $unc_feats;
+        if ($has_pdoms) { 
+	    say $out $unc_feats;
+	    push @unc_lengths, $ltrlen;
+	}
+	else {
+	    my $unc_lard_feats = $self->_format_lard_features($unc_feats);
+	    say $out $unc_lard_feats->{unc_feats};
+	    push @lard_lengths, $ltrlen;
+	    $lard_index{ $unc_lard_feats->{old_id} } = $unc_lard_feats->{new_id};
+	}
 
 	$pdom_org = join ",", @all_pdoms;
 	$pdom_index{$strand}{$pdom_org}++ if $pdom_org;
@@ -451,17 +459,51 @@ sub write_unclassified {
     }
     close $out;
 
-    $self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
+    $self->write_superfam_pdom_organization({ pdom_index => \%pdom_index, outfile => $domoutfile })
+        if %pdom_index;
     unlink $domoutfile unless -s $domoutfile;
 
-    if (@lengths) {
-	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'unclassified LTR-RT', log => $log, pdom_ct => $pdoms });
+    if (@unc_lengths || @lard_lengths) {
+	my $unc_count = 
+	    $self->log_basic_element_stats({ lengths => \@unc_lengths, type => 'unclassified LTR-RT', log => $log, pdom_ct => $pdoms });
+	my $lard_count =
+            $self->log_basic_element_stats({ lengths => \@lard_lengths, type => 'LARD', log => $log, pdom_ct => 0 });
 
-	return $outfile;
+	return ($outfile, \%lard_index);
     }
     else { 
 	return undef;
     }
+}
+
+sub _format_lard_features {
+    my $self = shift;
+    my ($unc_feats) = @_;
+
+    my ($new_feats, $old_id, $new_id);
+    my $is_lard = 0;
+    my $lard_type = 'LARD_retrotransposon';
+
+    for my $feat (split /^/, $unc_feats) {
+        chomp $feat;
+        my @feats = split /\t/, $feat;
+	if ($feats[8] =~ /(LTR_retrotransposon\d+)/) {
+            ($old_id) = ($feats[8] =~ /(LTR_retrotransposon\d+)/);
+            $feats[8] =~ s/LTR/LARD/g;
+            $new_id = $old_id =~ s/LTR/LARD/r;
+        }
+	#($old_id) = ($feats[8] =~ /(LTR_retrotransposon\d+)/);
+        #$feats[8] =~ s/LTR_retrotransposon/$lard_type/g;
+	#$new_id = $feats[8];
+        if ($feats[2] eq 'LTR_retrotransposon') {
+            $feats[2] = $lard_type;
+            $is_lard = 1;
+        }
+        $new_feats .= join "\t", @feats, "\n";
+    }
+    chomp $new_feats;
+
+    return ({ unc_feats => $new_feats, is_lard => $is_lard, old_id => $old_id, new_id => $new_id });
 }
 
 sub _map_repeat_types {
