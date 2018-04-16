@@ -19,7 +19,7 @@ use Parallel::ForkManager;
 use Carp 'croak';
 use Try::Tiny;
 use Tephra::Config::Exe;
-#use Data::Dump::Color;
+use Data::Dump::Color;
 use namespace::autoclean;
 
 with 'Tephra::Role::GFF',
@@ -85,7 +85,7 @@ sub extract_ltr_features {
         next if $line =~ /^#/;
         my $feature = gff3_parse_feature( $line );
 
-        if ($feature->{type} =~ /(?:LTR|TRIM)_retrotransposon/) {
+        if ($feature->{type} =~ /(?:LTR|TRIM|LARD)_retrotransposon/) {
             my $elem_id = @{$feature->{attributes}{ID}}[0];
             my ($start, $end) = @{$feature}{qw(start end)};
             my $key = join "||", $elem_id, $start, $end;
@@ -186,13 +186,13 @@ sub extract_ltr_features {
     close $fivefh;
     close $threfh;
 
-    $self->merge_overlapping_hits($index, $resdir, \%pdoms);
+    my $pdom_fam_map = $self->merge_overlapping_hits($index, $resdir, \%pdoms);
 
     for my $file ($comp, $ppts, $pbs, $five_pr_ltrs, $three_pr_ltrs) {
         unlink $file if ! -s $file;
     }
 
-    return $resdir
+    return ($resdir, $pdom_fam_map);
 }
 
 sub extract_tir_features {
@@ -302,21 +302,23 @@ sub extract_tir_features {
     close $fivefh;
     close $threfh;
     
-    $self->merge_overlapping_hits($index, $resdir, \%pdoms);
+    my $pdom_fam_map = $self->merge_overlapping_hits($index, $resdir, \%pdoms);
 
     for my $file ($comp, $five_pr_tirs, $three_pr_tirs) {
         unlink $file if ! -s $file;
     }
 
-    return $resdir
+    return ($resdir, $pdom_fam_map);
 }
 
 sub merge_overlapping_hits {
     my $self = shift;
     my ($index, $resdir, $pdoms) = @_;
 
+    #dd $pdoms and exit;
     ## This is where we merge overlapping hits in a chain and concatenate non-overlapping hits
     ## to create a single domain sequence for each element
+    my (%pdom_fam_map, %element_map, @pdomains);
     for my $src (keys %$pdoms) {
         for my $element (keys %{$pdoms->{$src}}) {
             my ($pdom_s, $pdom_e, $str);
@@ -344,21 +346,30 @@ sub merge_overlapping_hits {
                     }
                             
                     $self->concat_pdoms($src, $element, \%seqs, $fh);
+		    #push @pdomains, $pdom_type for @{$pdoms->{$src}{$element}{$pdom_type}};
                 }
                 else {
                     my ($nustart, $nuend, $str) = split /\|\|/, @{$pdoms->{$src}{$element}{$pdom_type}}[0];
 		    my $id = join "_", $element, $src, $nustart, $nuend;
 		    $self->write_element_parts($index, $src, $nustart, $nuend, $fh, $id);
+		    #push @pdomains, @{$pdoms->{$src}{$element}{$pdom_type}}[0];
                 }
                 close $fh;
                 %seqs   = ();
                 %lrange = ();
                 unlink $pdom_file if ! -s $pdom_file;
+		push @pdomains, $pdom_type;
+		#@{$pdoms->{$src}{$element}{$pdom_type}}[0]
+		#push @{$pdom_fam_map{$element}{pdoms}}, $pdom_type;
             }
+	    $pdom_fam_map{$element}{pdoms} = join ",", @pdomains
+		if @pdomains;
+	    @pdomains = ();
         }
     }
 
-    return;
+    #dd \%pdom_fam_map; # and exit;
+    return \%pdom_fam_map;
 }
 
 sub concat_pdoms {
