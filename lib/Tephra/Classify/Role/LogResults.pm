@@ -82,7 +82,7 @@ sub write_fam_pdom_organization {
     my ($dom_obj) = @_;
     
     my ($pdom_famid_map, $outfh, $elemnum, $elemid, $famname) = @{$dom_obj}{qw(famid_map outfh elemnum elemid famname)};
-    my $re = qr/helitron\d+|non_LTR_retrotransposon\d+|(?:LTR|TRIM|LARD)_retrotransposon\d+|terminal_inverted_repeat_element\d+/;
+    my $re = qr/helitron\d+|non_LTR_retrotransposon\d+|(?:LTR|TRIM|LARD)_retrotransposon\d+|terminal_inverted_repeat_element\d+|MITE\d+/;
     my ($element) = ($elemnum =~ /($re)/);
  
     say $outfh join "\t", $famname, $elemid, $pdom_famid_map->{$element}{pdoms};
