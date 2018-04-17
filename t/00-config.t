@@ -3,6 +3,7 @@
 use 5.010;
 use strict;
 use warnings FATAL => 'all';
+use Net::FTP;
 use HTTP::Tiny;
 use HTML::TreeBuilder;
 use File::Spec;
@@ -10,9 +11,10 @@ use File::Copy          qw(move);
 use File::Path          qw(make_path);
 use IPC::System::Simple qw(system);
 use Capture::Tiny       qw(capture);
+use Cwd                 qw(getcwd);
 use Tephra::Config::Exe;
 
-use Test::More tests => 18;
+use Test::More 'no_plan';
 
 $| = 1;
 
@@ -56,5 +58,37 @@ ok( -e $transeq,    'Can build transeq for identify coding domains' );
 ok( -e $blastn,     'Can build blastn for sequence searches' );
 ok( -e $htslibdir,  'Can build HTSlib for indexing and parsing sequence files' );
 
-done_testing();
+if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
+    my $wd = getcwd();
+    my $dev_file = fetch_dev_tair_data($wd);
+    ok( -e $dev_file, 'Can download genome data from TAIR for testing ');
+}
 
+#done_testing();
+
+sub fetch_dev_tair_data {
+    my ($cdir) = @_;
+    my $wd = File::Spec->catdir($cdir, 't', 'test_data');
+    chdir $wd or die $!;
+
+    my $host = 'ftp.arabidopsis.org';
+    my $ftp = Net::FTP->new($host, Passive => 1, Debug => 0)
+	or die "Cannot connect to $host: $@";
+
+    $ftp->login or die "Cannot login ", $ftp->message;
+
+    my $dir = '/home/tair/Sequences/whole_chromosomes/';
+    $ftp->cwd($dir)
+	or die "Cannot change working directory ", $ftp->message;
+
+    my $file = 'TAIR10_chr1.fas';
+
+    $ftp->binary();
+    my $rsize = $ftp->size($file) or die "Could not get size ", $ftp->message;
+    $ftp->get($file) or die "get failed ", $ftp->message;
+    my $lsize = -s $file;
+    die "Failed to fetch complete file: $file (local size: $lsize, remote size: $rsize)"
+	unless $rsize == $lsize;
+
+    return File::Spec->catfile($wd, $file);
+}
