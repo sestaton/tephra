@@ -441,11 +441,6 @@ sub write_families {
     }
 
     my $re = qr/helitron\d+|non_LTR_retrotransposon\d+|(?:LTR|TRIM|LARD)_retrotransposon\d+|terminal_inverted_repeat_element\d+|MITE\d+/;
-    #my ($element) = ($elemnum =~ /($re)/);
-    #say "ltrfas: $ltrfas";
-    #say join "\n", keys %$seqstore and exit;
-    #dd $fam_id_map and exit;
-    #for my $str (reverse sort { @{$fam_id_map->{$a}} <=> @{$fam_id_map->{$b}} } keys %$fam_id_map) {
     for my $str (reverse nsort keys %$fam_id_map) {
 	my $famfile = $sf."_family$idx".".fasta";
 	my $outfile = File::Spec->catfile( abs_path($cpath), $famfile );
@@ -567,19 +562,15 @@ sub annotate_gff {
     }
 
     my ($header, $features) = $self->collect_gff_features($ingff);
-    #open my $in, '<', $ingff or die "\n[ERROR]: Could not open file: $ingff\n";
     open my $out, '>', $outgff or die "\n[ERROR]: Could not open file: $outgff\n";
     say $out $header;
 
     my $is_lard_mite = 0;
     my ($new_id, $gff_str, $seq_id, $strand, $source);
-    #dd $features and exit;
     for my $rep_region (nsort_by { m/repeat_region\d+\|\|(\d+)\|\|\d+/ and $1 } keys %$features) {
 	my ($rreg_id, $s, $e) = split /\|\|/, $rep_region;
         for my $feature (@{$features->{$rep_region}}) {
 	    if ($feature->{type} =~ /(?:LTR|TRIM)_retrotransposon|terminal_inverted_repeat_element|MITE/) {
-                #my ($seq_id, $start, $end) = @{$ltr_feature}{qw(seq_id start end)};
-		#dd $feature and exit;
 		$is_lard_mite = 1;
 		
                 my $id = $feature->{attributes}{ID}[0];
@@ -606,8 +597,6 @@ sub annotate_gff {
 	    }
 	    my $gff_feat = gff3_format_feature($feature);
 	    $gff_str .= $gff_feat;
-	    #chomp $gff_str;
-	    #say $out $gff_str;
 	}
 	chomp $gff_str;
 	say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
@@ -615,53 +604,6 @@ sub annotate_gff {
 	$is_lard_mite = 0;
 	undef $gff_str;
     }
-    ##debug
-    #my $is_lard = 0;
-    #my $new_id;
-    #dd $annot_ids;
-    #while (my $line = <$in>) {
-	#chomp $line;
-	#if ($line =~ /^#/) {
-	    #say $out $line;
-	#}
-	#else {
-	    #my @f = split /\t/, $line;
-	    #if ($f[8] =~ /((?:LTR|TRIM|LARD)_retrotransposon\d+|terminal_inverted_repeat_element\d+)/) {
-		#$my ($id) = ($f[8] =~ /ID=((?:LTR|TRIM|LARD)_retrotransposon\d+|terminal_inverted_repeat_element\d+);/);
-		#my $key  = $id."_$f[0]";
-		#my $id = $1;
-		
-		#if (exists $lard_index->{$id}) {
-		    #$new_id = $lard_index->{$id};
-		    #say "found in lard index: $id";
-		    #$is_lard = 1;
-		    #$f[2] =~ s/LTR/LARD/;
-		    #$f[8] =~ s/LTR/LARD/;
-		#}
-		#else {
-		#    $new_id = $id;
-		#}
-
-		#my $key = $new_id."_$f[0]";
-		#say join q{ }, $key, $id if $is_lard;
-		#if (exists $annot_ids->{$key}) {
-		    #my $family = $annot_ids->{$key};
-		    #$f[8] =~ s/ID=$id\;/ID=$new_id;family=$family;/;
-		    #$f[8] =~ s/Parent=$id\;/Parent=$new_id/;
-		    #say $out join "\t", @f;
-		#}
-		#else {
-		#    say $out join "\t", @f;
-		#}
-	    #}
-	    #else {
-		#say $out join "\t", @f;
-	    #}
-	    #$is_lard = 0;
-	#}
-	
-    #}
-    #close $in;
     close $out;
 
     return;
