@@ -30,11 +30,10 @@ if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
     $exp_gct   = 5;
     $exp_tot   = 5;
 
-    $genome = File::Spec->catfile($testdir, 'TAIR10_chr1.fa');
+    $genome = File::Spec->catfile($testdir, 'TAIR10_chr1.fas');
     $gff    = File::Spec->catfile($testdir, 'TAIR10_chr1_nonLTRs.gff3');
     $fas    = File::Spec->catfile($testdir, 'TAIR10_chr1_nonLTRs.fasta');
-    $outdir = File::Spec->catfile($testdir, 'TAIR10_chr1_combined_trims.gff3');
-    $fas    = File::Spec->catfile($testdir, 'TAIR10_chr1_nonLTRs');
+    $outdir = File::Spec->catfile($testdir, 'TAIR10_chr1_nonLTRs');                                   
     $log    = File::Spec->catfile($testdir, 'TAIR10_chr1_tephra_findnonltrs.log');
 }
 
@@ -56,13 +55,9 @@ if ($devtests) {
     ok( -e $fas, 'Can find some non-LTRs' );
 
     open my $in, '<', $fas;
-    while (<$in>) { 
-	chomp;
-	if (/^>RIL/) {
-	    $seqct++;
-	}
-    }
+    while (<$in>) { $seqct++ if /^>/; }
     close $in;
+    say STDERR "seqct: $seqct";
     
     open my $gin, '<', $gff;
     while (<$gin>) {
@@ -81,12 +76,14 @@ if ($devtests) {
 	}
     }
     close $lin;
+    say STDERR "tot: $tot";
     
     ok( -e $log, 'findnonltrs log created' );
     ok( $tot == $seqct, 'Correct number of elements logged and written');
 }
 
 #say STDERR "DEBUG: $tot -> $exp_tot";
+#say STDERR "DEBUG: $gct -> $exp_gct";
 ok( $seqct == $exp_seqct, 'Correct number of non-LTRs found' );
 ok( $gct == $exp_gct, 'Correct number of non-LTRs found' );
 ok( $tot == $exp_tot, 'Correct number of elements logged' );
