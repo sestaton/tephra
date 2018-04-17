@@ -65,8 +65,8 @@ sub validate_args {
 sub execute {
     my ($self, $opt, $args) = @_;
 
-    my ($gffs, $log) = _classify_tir_superfamilies($opt);
-    _classify_tir_families($opt, $gffs, $log);
+    my ($gffs, $mite_index, $log) = _classify_tir_superfamilies($opt);
+    _classify_tir_families($opt, $gffs, $mite_index, $log);
 }
 
 sub _classify_tir_superfamilies {
@@ -103,10 +103,12 @@ sub _classify_tir_superfamilies {
     my ($hatoutfile, $hatfas, $hat_ct) = $classify_obj->find_hat($features, $header, $index, $log);
     my ($mutoutfile, $mutfas, $mut_ct) = $classify_obj->find_mutator($features, $header, $index, $log);
     my ($cacoutfile, $cacfas, $cac_ct) = $classify_obj->find_cacta($features, $header, $index, $log);
-    my ($uncoutfile, $uncfas, $unc_ct) = $classify_obj->write_unclassified_tirs($features, $header, $index, $log);
+    my $unc_obj = $classify_obj->write_unclassified_tirs($features, $header, $index, $log);
 
-    my @fastas = grep { defined && /\.fasta$/ } ($tcmfas, $hatfas, $mutfas, $cacfas, $uncfas);
-    my @gffs   = grep { defined && /\.gff3$/  } ($tcmoutfile, $hatoutfile, $mutoutfile, $cacoutfile, $uncoutfile);
+    my @fastas = grep { defined && /\.fasta$/ } 
+        ($tcmfas, $hatfas, $mutfas, $cacfas, $unc_obj->{unc_fasta}, $unc_obj->{mite_fasta});
+    my @gffs = grep { defined && /\.gff3$/ } 
+        ($tcmoutfile, $hatoutfile, $mutoutfile, $cacoutfile, $unc_obj->{unc_outfile}, $unc_obj->{mite_outfile});
 
     my %gffs;
     for my $file (@gffs) {
@@ -114,17 +116,20 @@ sub _classify_tir_superfamilies {
 	    $gffs{'mariner'} = $file;
 	}
 	if ($file =~ /hat/i) {
-	     $gffs{'hat'} = $file;
+	    $gffs{'hat'} = $file;
 	}
 	if ($file =~ /mut/i) {
-	     $gffs{'mutator'} = $file;
+	    $gffs{'mutator'} = $file;
 	}
 	if ($file =~ /cac/i) {
-	     $gffs{'cacta'} = $file;
+	    $gffs{'cacta'} = $file;
 	}
 	if ($file =~ /unc/i) {
-	     $gffs{'unclassified'} = $file;
+	    $gffs{'unclassified'} = $file;
 	}
+	if ($file =~ /mite/i) {
+	    $gffs{'mite'} = $file;
+        }
     }
 
     if (@fastas && @gffs) {
@@ -135,16 +140,18 @@ sub _classify_tir_superfamilies {
 	my $hat_str = sprintf("%-70s %-10s", "Results - Number of hAT elements:", $hat_ct);
 	my $mut_str = sprintf("%-70s %-10s", "Results - Number of Mutator elements:", $mut_ct);
 	my $cac_str = sprintf("%-70s %-10s", "Results - Number of CACTA elements:", $cac_ct);
-	my $unc_str = sprintf("%-70s %-10s", "Results - Number of unclassified TIR elements:", $unc_ct);
+	my $mte_str = sprintf("%-70s %-10s", "Results - Number of MITE elements:", $unc_obj->{mite_count});
+	my $unc_str = sprintf("%-70s %-10s", "Results - Number of unclassified TIR elements:", $unc_obj->{unc_count});
 
 	$log->info($tot_str);
 	$log->info($tc1_str);
 	$log->info($hat_str);
 	$log->info($mut_str);
 	$log->info($cac_str);
+	$log->info($mte_str);
 	$log->info($unc_str);
 
-	return (\%gffs, $log);
+	return (\%gffs, $unc_obj->{mite_index}, $log);
     }
     else {
 	say STDERR "\n[WARNING]: No TIR elements were classified. Check input.\n";
@@ -153,7 +160,7 @@ sub _classify_tir_superfamilies {
 }
 
 sub _classify_tir_families {
-    my ($opt, $gffs, $log) = @_;
+    my ($opt, $gffs, $mite_index, $log) = @_;
 
     my $threads = $opt->{threads} // 1;
     my $hpcov   = $opt->{percentcov} // 50;
@@ -180,7 +187,10 @@ sub _classify_tir_families {
 
     my ($outfiles, $annot_ids) = $classify_fams_obj->make_families($gffs, $log);
     $classify_fams_obj->combine_families($outfiles);
-    $classify_fams_obj->annotate_gff($annot_ids, $opt->{ingff});
+    $classify_fams_obj->annotate_gff({ annotated_ids => $annot_ids,
+                                       annotated_idx => $mite_index,
+                                       input_gff     => $opt->{ingff},
+                                       te_type       => 'TIR' });
     
     unlink $_ for values %$gffs;
 }
