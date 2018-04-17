@@ -140,7 +140,9 @@ sub find_tc1_mariner {
     }
     close $out;
 
-    $self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
+    #$self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
+    $self->write_superfam_pdom_organization({ pdom_index => \%pdom_index, outfile => $domoutfile })
+	if %pdom_index;
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) { 
@@ -230,7 +232,9 @@ sub find_hat {
     close $out;
     close $faout;
 
-    $self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
+    #$self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
+    $self->write_superfam_pdom_organization({ pdom_index => \%pdom_index, outfile => $domoutfile })
+        if %pdom_index;
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) { 
@@ -323,7 +327,9 @@ sub find_mutator {
     close $out;
     close $faout;
 
-    $self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
+    #$self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
+    $self->write_superfam_pdom_organization({ pdom_index => \%pdom_index, outfile => $domoutfile })
+        if %pdom_index;
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) { 
@@ -424,7 +430,9 @@ sub find_cacta {
     close $out;
     close $faout;
 
-    $self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
+    #$self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
+    $self->write_superfam_pdom_organization({ pdom_index => \%pdom_index, outfile => $domoutfile })
+        if %pdom_index;
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) {
@@ -445,22 +453,24 @@ sub write_unclassified_tirs {
     my $gff   = $self->gff->absolute->resolve;
     my $fasta = $self->genome->absolute->resolve;
 
-    my @lengths;
-    my $unc_feats;
-    my $is_unclass = 0;
-    my $has_pdoms = 0;
-    my $pdoms = 0;
-    my %pdom_index;
-    my $pdom_org;
-    my @all_pdoms;
+    my (@unc_lengths, @mite_lengths);
+    my ($is_unclass, $has_pdoms, $pdoms) = (0, 0, 0);
+    my (%pdom_index, %mite_index, @all_pdoms);
+    my ($pdom_org, $unc_feats);
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile    = File::Spec->catfile($path, $name.'_unclassified.gff3');
     my $fas        = File::Spec->catfile($path, $name.'_unclassified.fasta');
     my $domoutfile = File::Spec->catfile($path, $name.'_unclassified_domain_org.tsv');
+    my $moutfile   = File::Spec->catfile($path, $name.'_mite.gff3');
+    my $mfas       = File::Spec->catfile($path, $name.'_mite.fasta');
+
     open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
     open my $faout, '>>', $fas or die "\n[ERROR]: Could not open file: $fas\n";
+    open my $mout, '>>', $moutfile or die "\n[ERROR]: Could not open file: $outfile\n";
+    open my $mfaout, '>>', $mfas or die "\n[ERROR]: Could not open file: $fas\n";
     say $out $header;
+    say $mout $header;
 
     my ($len, $lines, $seq_id, $source, $start, $end, $strand);
     for my $rep_region (nsort_by { m/repeat_region\d+\|\|(\d+)\|\|\d+/ and $1 } keys %$feature) {
@@ -488,14 +498,49 @@ sub write_unclassified_tirs {
 	
 	chomp $unc_feats;
 	say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
-	say $out $unc_feats;
-	say $faout $lines;
+	#say $out $unc_feats;
+	#say $faout $lines;
+	#push @unc_lengths, $len;
+
+	if ($has_pdoms) { # && $len > 600) { 
+	    say $faout $lines;
+	    #say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
+            say $out $unc_feats;
+            push @unc_lengths, $len;
+        }
+        else {
+	    #say "debug mite: $len";
+	    if ($len <= 600) {
+		#say "debug mite: $len";  
+		# MITEs are typically small; hard-coded at 600 bp max, and lack coding domains
+		# --
+		# Tourist ref: https://www.ncbi.nlm.nih.gov/pubmed/1332797/
+		# --
+		# Heartbreaker ref: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC15555/
+		# --
+		# Feschotte C, Zhang X, Wessler S. Miniature inverted-repeat transposable elements (MITEs) 
+		# and their relationship with established DNA transposons. 2002.
+		# --
+		# Review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2167627/
+		say $mfaout $lines;
+		my $unc_mite_feats = $self->_format_mite_features($unc_feats);
+		say $mout join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
+		say $mout $unc_mite_feats->{unc_feats};
+		push @mite_lengths, $len;
+		$mite_index{ $unc_mite_feats->{old_id} } = $unc_mite_feats->{new_id};
+	    }
+	    else {
+		say $out $unc_feats;
+		say $faout $lines;
+		push @unc_lengths, $len;
+	    }
+	}
 
 	undef $unc_feats;
 	undef $lines;
 
 	delete $feature->{$rep_region};
-	push @lengths, $len;
+	#push @unc_lengths, $len;
 	$pdom_org = join ",", @all_pdoms;
 	$pdom_index{$strand}{$pdom_org}++ if $pdom_org;
 	$pdoms++ if $has_pdoms;
@@ -503,18 +548,32 @@ sub write_unclassified_tirs {
     }
     close $out;
     close $faout;
+    close $mout;
+    close $mfaout;
 
-    $self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
+    #$self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
+    $self->write_superfam_pdom_organization({ pdom_index => \%pdom_index, outfile => $domoutfile })
+        if %pdom_index;
     unlink $domoutfile unless -s $domoutfile;
     
-    if (@lengths) { 
-	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'unclassified TIR', log => $log, pdom_ct => $pdoms });
+    if (@unc_lengths || @mite_lengths) { 
+	my $unc_count = 
+	    $self->log_basic_element_stats({ lengths => \@unc_lengths, type => 'unclassified TIR', log => $log, pdom_ct => $pdoms });
+	my $mite_count = 
+	    $self->log_basic_element_stats({ lengths => \@mite_lengths, type => 'MITE', log => $log, pdom_ct => 0 });
 
-	return ($outfile, $fas, $count);
+	return ({ unc_outfile  => $outfile, 
+		  unc_fasta    => $fas, 
+		  mite_outfile => $moutfile,
+                  mite_fasta   => $mfas,
+		  unc_count    => $unc_count, 
+		  mite_count   => $mite_count, 
+		  mite_index   => \%mite_index });
     }
     else {
-	unlink $outfile, $fas;
-	return (undef, undef, 0);
+	unlink $outfile, $fas, $moutfile, $mfas;
+
+	return undef;
     }
 }
 
@@ -544,6 +603,33 @@ sub write_combined_output {
     unlink @{$outfiles->{fastas}}, @{$outfiles->{gffs}};
 
     return;
+}
+
+sub _format_mite_features {
+    my $self = shift;
+    my ($unc_feats) = @_;
+
+    my ($new_feats, $old_id, $new_id);
+    my $is_mite = 0;
+    my $mite_type = 'MITE';
+
+    for my $feat (split /^/, $unc_feats) {
+        chomp $feat;
+        my @feats = split /\t/, $feat;
+        if ($feats[8] =~ /(terminal_inverted_repeat_element\d+)/) {
+            ($old_id) = ($feats[8] =~ /(terminal_inverted_repeat_element\d+)/);
+            $feats[8] =~ s/terminal_inverted_repeat_element/$mite_type/g;
+            $new_id = $old_id =~ s/terminal_inverted_repeat_element/$mite_type/r;
+        }
+        if ($feats[2] eq 'terminal_inverted_repeat_element') {
+            $feats[2] = $mite_type;
+            $is_mite = 1;
+        }
+        $new_feats .= join "\t", @feats, "\n";
+    }
+    chomp $new_feats;
+
+    return ({ unc_feats => $new_feats, is_mite => $is_mite, old_id => $old_id, new_id => $new_id });
 }
 
 =head1 AUTHOR
