@@ -22,6 +22,7 @@ my $outgff   = File::Spec->catfile($testdir, 'ref_tirs_classified.gff3');
 my $outfas   = File::Spec->catfile($testdir, 'ref_tirs_classified.fasta');
 my $log      = File::Spec->catfile($testdir, 'ref_tephra_classifytirs.log');
 my $outdir   = File::Spec->catfile($testdir, 't_family_domains');
+#my $famdom   = File::Spec->catfile($testdir, 'TAIR10_chr1_tirs_classified_family-level_domain_org.tsv');
 my $repeatdb = File::Spec->catfile($testdir, 'repdb.fas');
 
 {
