@@ -424,7 +424,7 @@ sub write_families {
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $domoutfile = File::Spec->catfile($path, $name.'_family-level_domain_org.tsv');
     open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
-    say join "\t", "Family_name", "Element_ID", "Domain_organization";
+    say $domf join "\t", "Family_name", "Element_ID", "Domain_organization";
 
     my @compfiles;
     find( sub { push @compfiles, $File::Find::name if /complete.fasta$/ }, $cpath );
@@ -503,7 +503,8 @@ sub write_families {
     }
     my $singct = $idx;
     close $domf;
-    unlink $domoutfile unless -s $domoutfile;
+    my $has_domains_out = $self->_check_domfile_has_data($domoutfile);
+    unlink $domoutfile unless $has_domains_out; 
 
     return (\%fastas, \%annot_ids,
 	    { superfamily       => $sf,
@@ -608,6 +609,25 @@ sub annotate_gff {
     close $out;
 
     return;
+}
+
+sub _check_domfile_has_data {
+    my $self = shift;
+    my ($domoutfile) = @_;
+    
+    open my $in, '<', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";
+    my $h = <$in>;
+    my $has_data = 0;
+    while (my $line = <$in>) {
+	chomp $line;
+	if ($line =~ /\S/) {
+	    $has_data = 1;
+	    last;
+	}
+    }
+    close $in;
+
+    return $has_data;
 }
 
 sub _compare_merged_nonmerged {
