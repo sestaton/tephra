@@ -130,6 +130,7 @@ sub make_families {
 				  $sfam =~ s/.*gypsy.*/Gypsy/i;
 				  $sfam =~ s/.*copia.*/Copia/i;
 				  $sfam =~ s/.*unclassified.*/unclassified/i;
+				  $sfam =~ s/.*mite.*/MITE/i;
 
 				  my $tot_str = sprintf("%-70s %-10s", "Results - Number of $sfam families:", $famct);
 				  my $fam_str = sprintf("%-70s %-10s", "Results - Number of $sfam elements in families:", $famtot);
@@ -249,6 +250,7 @@ sub make_fasta_from_dom_orgs {
 	$sfname = 'DTM' if $sf =~ /mutator/i;
 	$sfname = 'DTT' if $sf =~ /mariner/i;
 	$sfname = 'DTX' if $sf =~ /unclassified/i;
+	$sfname = 'DTX' if $sf =~ /mite/i;
     }
 
     my @compfiles;
@@ -416,6 +418,7 @@ sub write_families {
 	$sfname = 'DTM' if $sf =~ /mutator/i;
 	$sfname = 'DTT' if $sf =~ /mariner/i;
 	$sfname = 'DTX' if $sf =~ /unclassified/i;
+	$sfname = 'DTX' if $sf =~ /mite/i;
     }
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
@@ -437,7 +440,7 @@ sub write_families {
 	$fam_id_map = $tomerge == 1 ? $matches : $dom_fam_map;
     }
 
-    my $re = qr/helitron\d+|non_LTR_retrotransposon\d+|(?:LTR|TRIM|LARD)_retrotransposon\d+|terminal_inverted_repeat_element\d+/;
+    my $re = qr/helitron\d+|non_LTR_retrotransposon\d+|(?:LTR|TRIM|LARD)_retrotransposon\d+|terminal_inverted_repeat_element\d+|MITE\d+/;
     #my ($element) = ($elemnum =~ /($re)/);
     #say "ltrfas: $ltrfas";
     #say join "\n", keys %$seqstore and exit;
@@ -504,6 +507,7 @@ sub write_families {
     }
     my $singct = $idx;
     close $domf;
+    unlink $domoutfile unless -s $domoutfile;
 
     return (\%fastas, \%annot_ids,
 	    { superfamily       => $sf,
@@ -544,32 +548,46 @@ sub combine_families {
 
 sub annotate_gff {
     my $self = shift;
-    my ($annot_ids, $lard_index, $ingff) = @_;
+    my ($annot_ids, $index, $ingff, $type) = @_;
     my $outdir = $self->outdir->absolute->resolve;
     my $outgff = $self->gff;
+
+    my $new_type;
+    if ($type eq 'TIR') {
+	$new_type = 'MITE';
+
+    }
+    elsif ($type eq 'LTR') { 
+	$new_type = 'LARD_retrotransposon';
+    }
+    else {
+	say "\n[ERROR]: Could not determine LTR/TIR type to annotate GFF3. This is a bug, please report it. Exiting.\n";
+	exit(1);
+
+    }
 
     my ($header, $features) = $self->collect_gff_features($ingff);
     #open my $in, '<', $ingff or die "\n[ERROR]: Could not open file: $ingff\n";
     open my $out, '>', $outgff or die "\n[ERROR]: Could not open file: $outgff\n";
     say $out $header;
 
-    my $is_lard = 0;
+    my $is_lard_mite = 0;
     my ($new_id, $gff_str, $seq_id, $strand, $source);
     #dd $features and exit;
     for my $rep_region (nsort_by { m/repeat_region\d+\|\|(\d+)\|\|\d+/ and $1 } keys %$features) {
 	my ($rreg_id, $s, $e) = split /\|\|/, $rep_region;
         for my $feature (@{$features->{$rep_region}}) {
-	    if ($feature->{type} =~ /(?:LTR|TRIM)_retrotransposon|terminal_inverted_repeat_element/) {
+	    if ($feature->{type} =~ /(?:LTR|TRIM)_retrotransposon|terminal_inverted_repeat_element|MITE/) {
                 #my ($seq_id, $start, $end) = @{$ltr_feature}{qw(seq_id start end)};
 		#dd $feature and exit;
-		$is_lard = 1;
+		$is_lard_mite = 1;
 		
                 my $id = $feature->{attributes}{ID}[0];
 		($seq_id, $strand, $source) = @{$feature}{qw(seq_id strand source)};
 
-		if (exists $lard_index->{$id}) {
-		    $feature->{type} = 'LARD_retrotransposon';
-                    $new_id = $lard_index->{$id};
+		if (exists $index->{$id}) {
+		    $feature->{type} = $new_type;
+                    $new_id = $index->{$id};
 		}
 		else {
 		    $new_id = $id;
@@ -582,7 +600,7 @@ sub annotate_gff {
 		}
 	    }
 	    else {
-		if ($is_lard) {
+		if ($is_lard_mite) {
 		    $feature->{attributes}{Parent}[0] = $new_id;
 		}
 	    }
@@ -594,7 +612,7 @@ sub annotate_gff {
 	chomp $gff_str;
 	say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
 	say $out $gff_str;
-	$is_lard = 0;
+	$is_lard_mite = 0;
 	undef $gff_str;
     }
     ##debug
