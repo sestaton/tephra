@@ -30,8 +30,8 @@ sub log_basic_element_stats {
 
     my $stat = Statistics::Descriptive::Full->new;
     $stat->add_data(@$lengths);
-    my $min   = $stat->min;
-    my $max   = $stat->max;
+    my $min   = $stat->min // 0;
+    my $max   = $stat->max // 0;
     my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
     my $count = $stat->count;
 
