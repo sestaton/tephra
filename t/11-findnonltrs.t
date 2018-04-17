@@ -26,15 +26,16 @@ my $devtests = 0;
 my ($exp_seqct, $exp_gct, $exp_tot) = (0, 0, 0);
 if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
     $devtests  = 1;
-    $exp_seqct = 16;
-    $exp_gct   = 16;
-    $exp_tot   = 16;
+    $exp_seqct = 5;
+    $exp_gct   = 5;
+    $exp_tot   = 5;
 
-    $genome = File::Spec->catfile($testdir, 'Ha1.fa');
-    $gff    = File::Spec->catfile($testdir, 'Ha1_nonLTRs.gff3');
-    $fas    = File::Spec->catfile($testdir, 'Ha1_nonLTRs.fasta');
-    $outdir = File::Spec->catdir($testdir,  'Ha1_nonLTRs');
-    $log    = File::Spec->catdir($testdir,  'Ha1_tephra_findnonltrs.log');
+    $genome = File::Spec->catfile($testdir, 'TAIR10_chr1.fa');
+    $gff    = File::Spec->catfile($testdir, 'TAIR10_chr1_nonLTRs.gff3');
+    $fas    = File::Spec->catfile($testdir, 'TAIR10_chr1_nonLTRs.fasta');
+    $outdir = File::Spec->catfile($testdir, 'TAIR10_chr1_combined_trims.gff3');
+    $fas    = File::Spec->catfile($testdir, 'TAIR10_chr1_nonLTRs');
+    $log    = File::Spec->catfile($testdir, 'TAIR10_chr1_tephra_findnonltrs.log');
 }
 
 {
@@ -50,7 +51,7 @@ my ($stdout, $stderr, @ret) = capture { system([0..5], @find_cmd) };
 
 my ($seqct, $gct, $tot) = (0, 0, 0);
 if ($devtests) {
-    $exp_tot = 16;
+    $exp_tot = 5;
     ok( -e $gff, 'Can find some non-LTRs' );
     ok( -e $fas, 'Can find some non-LTRs' );
 
