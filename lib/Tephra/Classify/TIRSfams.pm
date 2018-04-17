@@ -140,7 +140,6 @@ sub find_tc1_mariner {
     }
     close $out;
 
-    #$self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
     $self->write_superfam_pdom_organization({ pdom_index => \%pdom_index, outfile => $domoutfile })
 	if %pdom_index;
     unlink $domoutfile unless -s $domoutfile;
@@ -232,7 +231,6 @@ sub find_hat {
     close $out;
     close $faout;
 
-    #$self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
     $self->write_superfam_pdom_organization({ pdom_index => \%pdom_index, outfile => $domoutfile })
         if %pdom_index;
     unlink $domoutfile unless -s $domoutfile;
@@ -327,7 +325,6 @@ sub find_mutator {
     close $out;
     close $faout;
 
-    #$self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
     $self->write_superfam_pdom_organization({ pdom_index => \%pdom_index, outfile => $domoutfile })
         if %pdom_index;
     unlink $domoutfile unless -s $domoutfile;
@@ -430,7 +427,6 @@ sub find_cacta {
     close $out;
     close $faout;
 
-    #$self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
     $self->write_superfam_pdom_organization({ pdom_index => \%pdom_index, outfile => $domoutfile })
         if %pdom_index;
     unlink $domoutfile unless -s $domoutfile;
@@ -498,20 +494,14 @@ sub write_unclassified_tirs {
 	
 	chomp $unc_feats;
 	say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
-	#say $out $unc_feats;
-	#say $faout $lines;
-	#push @unc_lengths, $len;
 
-	if ($has_pdoms) { # && $len > 600) { 
+	if ($has_pdoms) {
 	    say $faout $lines;
-	    #say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
             say $out $unc_feats;
             push @unc_lengths, $len;
         }
         else {
-	    #say "debug mite: $len";
 	    if ($len <= 600) {
-		#say "debug mite: $len";  
 		# MITEs are typically small; hard-coded at 600 bp max, and lack coding domains
 		# --
 		# Tourist ref: https://www.ncbi.nlm.nih.gov/pubmed/1332797/
@@ -540,7 +530,6 @@ sub write_unclassified_tirs {
 	undef $lines;
 
 	delete $feature->{$rep_region};
-	#push @unc_lengths, $len;
 	$pdom_org = join ",", @all_pdoms;
 	$pdom_index{$strand}{$pdom_org}++ if $pdom_org;
 	$pdoms++ if $has_pdoms;
@@ -551,7 +540,6 @@ sub write_unclassified_tirs {
     close $mout;
     close $mfaout;
 
-    #$self->write_pdom_organization(\%pdom_index, $domoutfile) if %pdom_index;
     $self->write_superfam_pdom_organization({ pdom_index => \%pdom_index, outfile => $domoutfile })
         if %pdom_index;
     unlink $domoutfile unless -s $domoutfile;
