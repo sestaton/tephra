@@ -90,6 +90,8 @@ ok( $tot == $exp_tot, 'Correct number of elements logged' );
 
 ## clean up
 unlink $gff, $fas, $log;
+unlink $genome if $devtests;
+unlink $genome.'.fai' if $devtests;
 remove_tree( $outdir, { safe => 1 } );
 
 #done_testing();
