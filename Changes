@@ -1,6 +1,26 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.11.0	04/17/2018	Vancouver, BC
+
+- Modify configuration format to have LTRharvest/LTRdigest options at same level as other
+  'findltrs' options. This simplifies the parsing and usage of the configuration file.
+- Add methods for annotating LARD and MITE elements.
+- Add method to write family-level protein domain architecture to make it possible to 
+  quickly look up the domain count/organization for individual elements.
+- Modify superfamily-level domain architecture method to take an object instead of a
+  list of variables.
+- Fix syntax with family-level clustering class (*Fams::Cluster) where LTR/TIR GFF3 
+  parsing methods return data results without semicolon to terminate return statements.
+- Modify GFF3 annotation method in *Fams class to use proper object-based GFF3 parser from 
+  *Role::GFF3 instead of the previous hand-rolled method. The previous line-based parsing
+  worked for simple cases but became impractical for annotating elements without coding
+  domains. The updated code is more flexible, cleaner, and does not suffer from duplication
+  of code as before.
+- Automate fetching data from TAIR (chromosome 1 of TAIR 10, specifically) for running dev tests.
+- Modify all tests that have 'development' mode designed to fully test certain methods 
+  to use the aforementioned data from TAIR.
+
 0.10.0	03/27/2018	Vancouver, BC
 
 - Remove redundant 'subseq' method from all classes in favor of reusable 'write_element_parts'
