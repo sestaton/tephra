@@ -424,6 +424,7 @@ sub write_families {
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $domoutfile = File::Spec->catfile($path, $name.'_family-level_domain_org.tsv');
     open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
+    say join "\t", "Family_name", "Element_ID", "Domain_organization";
 
     my @compfiles;
     find( sub { push @compfiles, $File::Find::name if /complete.fasta$/ }, $cpath );
