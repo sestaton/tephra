@@ -548,14 +548,14 @@ sub combine_families {
 
 sub annotate_gff {
     my $self = shift;
-    my ($annot_ids, $index, $ingff, $type) = @_;
+    my ($anno_obj) = @_;
     my $outdir = $self->outdir->absolute->resolve;
     my $outgff = $self->gff;
 
+    my ($annot_ids, $index, $ingff, $type) = @{$anno_obj}{qw(annotated_ids annoted_idx input_gff te_type)};
     my $new_type;
     if ($type eq 'TIR') {
 	$new_type = 'MITE';
-
     }
     elsif ($type eq 'LTR') { 
 	$new_type = 'LARD_retrotransposon';
@@ -616,7 +616,7 @@ sub annotate_gff {
 	undef $gff_str;
     }
     ##debug
-	    #my $is_lard = 0;
+    #my $is_lard = 0;
     #my $new_id;
     #dd $annot_ids;
     #while (my $line = <$in>) {
