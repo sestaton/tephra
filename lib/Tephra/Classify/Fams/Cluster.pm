@@ -204,8 +204,8 @@ sub extract_tir_features {
     my $index = $self->index_ref($fasta);
 
     my ($name, $path, $suffix) = fileparse($infile, qr/\.[^.]*/);
-    my $type = ($name =~ /(?:cacta|mariner|mutator|hat|unclassified)$/i);
-    croak "\n[ERROR]: Unexpected input. Should match /cacta|mariner|mutator|hat|unclassified$/i. Exiting."
+    my $type = ($name =~ /(?:cacta|mariner|mutator|hat|unclassified|mite)$/i);
+    croak "\n[ERROR]: Unexpected input. Should match /cacta|mariner|mutator|hat|unclassified|mite$/i. Exiting."
         unless defined $type;
 
     my $resdir = File::Spec->catdir($dir, $name);
@@ -229,7 +229,7 @@ sub extract_tir_features {
         next if $line =~ /^#/;
         my $feature = gff3_parse_feature( $line );
 
-        if ($feature->{type} eq 'terminal_inverted_repeat_element') {
+        if ($feature->{type} =~ /terminal_inverted_repeat_element|MITE/) {
             my $elem_id = @{$feature->{attributes}{ID}}[0];
             my ($start, $end) = @{$feature}{qw(start end)};
             my $key = join "||", $elem_id, $start, $end;
