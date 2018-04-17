@@ -12,13 +12,13 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] add family classifications to GFF Name attribute
  - [x] incorporate legacy annotations from input GFF/reference to family classification
  - [x] merge overlapping hits in chain of protein matches, and contatenate the rest for each element
- - [ ] mark unclassified elements with no protein domains as LARDs
+ - [x] mark unclassified elements with no protein domains as LARDs
  - [x] combine exemplars for efficiently comparing to a reference set
  - [x] identify fragmented elements with refined full-length elements (handled in v0.08.0+ in 'getfragments'
        command)
  - [x] include measure of similarity within/between families
  - [x] use BLAST role to run searches for 'search_unclassified' method in Tephra::Classify::LTRSfams
- - [ ] investigate why UBN2* domains are being used to classify Gypsy (modified regex in v0.17.7 should solve the problem; 
+ - [x] investigate why UBN2* domains are being used to classify Gypsy (modified regex in v0.17.7 should solve the problem; 
        need to do full-genome test to confirm)
  - [ ] add DIRS and PLE so we are describing all orders in Wicker's scheme
 
@@ -28,7 +28,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Check for index (if given)
  - [ ] Add optional test for the presence of coding domains similar to 'LTRRefine' class. This should reduce the
        number of DTX elements. Add this to the configuration file for the 'all' command the same as for LTRs.
- - [ ] Mark short elements with no coding potential as MITEs
+ - [x] Mark short elements with no coding potential as MITEs
  - [x] Output FASTA along with GFF3 like other commands
 
 ## Command `tephra sololtr`
@@ -69,7 +69,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Add optional test for the presence of coding domains to 'LTRRefine' class. This should reduce the
        number of RLX elements.
  - [ ] flag suspicious compound elements somehow
- - [ ] adjust domain organization file to allow referencing a specific element or family (perhaps do the domain
+ - [x] adjust domain organization file to allow referencing a specific element or family (perhaps do the domain
        summary on each family and combine the results)
  - [ ] adding to the above, a final HTML file with family-level identity and domain organization would be useful
 
