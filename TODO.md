@@ -163,7 +163,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] logging results/progress (need to log progress and errors to the correct location)
  - [x] add debug options for seeing commands (done for LTR search)
  - [ ] documentation of algorithms, in addition to usage
- - [ ] reduce LTRs/TRIMs....perhaps when combining all GFFs
+ - [x] reduce LTRs/TRIMs....perhaps when combining all GFFs
  - [ ] save tnp matching ltr-rts and search for cacta tes..or just add as putative classII
  - [ ] add kmer mapping command (see tallymer2gff.pl)
  - [x] create config role for setting paths
@@ -177,7 +177,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] add command to get TIR ages
  - [x] investigate why tests fail with Perl version 5.12 or lower (Bio::DB::HTS needs 5.14.2, so that's why)
  - [x] add subcommand to run/log all methods as a pipeline
- - [ ] document the configuration file format and usage
+ - [x] document the configuration file format and usage (on Github wiki, for now)
  - [x] add 'findfragments' subcommand to be run after final masking prior to complete GFF generation
  - [x] add classification method for TRIMs
  - [ ] move 'classify[ltr|tir]' commands to 'find[ltr|tir]' commands to simplify the process similar to the methods
