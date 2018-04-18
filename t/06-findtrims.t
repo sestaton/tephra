@@ -105,9 +105,9 @@ SKIP: {
     }
     close $gin;
     
-    ok( $gct == $exp_ct,  'Correct number of TRIMs in output GFF3 file'        );
-    ok( $ct == $gct,  'Expected number of records in GFF3 and FASTA files' );
-    ok( -e $log,      'Expected log file of TRIM results produced'         );
+    ok( $gct == $exp_ct,  'Correct number of TRIMs in output GFF3 file' );
+    ok( $ct == $gct, 'Expected number of records in GFF3 and FASTA files' );
+    ok( -e $log, 'Expected log file of TRIM results produced' );
     
     ## clean up
     unlink $outfile, $outfas, $log;
