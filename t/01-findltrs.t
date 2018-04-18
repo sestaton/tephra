@@ -32,12 +32,12 @@ ok( -e $config, 'Can create config file for testing' );
 {
     my @help_args = ($cmd, 'findltrs', '-h');
     my ($stdout, $stderr, $exit) = capture { system(@help_args) };
-    #say STDERR "stderr: $stderr";
+    say STDERR "stderr: $stderr";
     ok($stderr, 'Can execute findltrs subcommand');
 }
 
 my @find_args = ($cmd, 'findltrs', '-c', $config); # == 0 or die $!;
-#say STDERR join q{ }, @find_args;
+say STDERR join q{ }, @find_args;
 
 my ($stdout, $stderr, $exit) = capture { system(@find_args) }; 
 ok( -e $outgff, 'Can find some LTRs' );
