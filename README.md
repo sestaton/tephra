@@ -78,7 +78,7 @@ Tephra is a command-line program only for now. The command `tephra` itself contr
 
     $ tephra 
 
-    Tephra version 0.09.9
+    Tephra version 0.11.0
     
     Copyright (C) 2015-2018 S. Evan Staton
     LICENSE -- MIT
