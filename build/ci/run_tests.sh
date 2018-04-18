@@ -16,7 +16,7 @@ set -euo pipefail
 ##
 
 perl Makefile.PL
-#make 
+make 
 #cover -test -blib -ignore "blib/lib/Tephra/Command.pm" -report coveralls
 #prove -bv t/04-findtirs.t
 #prove -bv t/0[45]*t
