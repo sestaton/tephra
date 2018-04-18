@@ -23,8 +23,7 @@ if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
 my $cmd       = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir   = File::Spec->catdir('t', 'test_data');
 #my $outdir    = File::Spec->catdir($testdir,  't_family_domains');
-#my $genome    = File::Spec->catfile($testdir, 'ref.fas');
-#my $genome    = File::Spec->catfile($testdir, 'Ha1.fa');
+my $genome    = File::Spec->catfile($testdir, 'ref.fas');
 my $thrlog    = File::Spec->catfile($testdir, 'tephra_fragment_searches.log');
 my $log       = File::Spec->catfile($testdir, 'tephra_full.log');
 my $gff       = File::Spec->catfile($testdir, 'tephra_transposons.gff3');
@@ -73,7 +72,9 @@ SKIP: {
 	    if -d $res;
     }
 }
-    
+unlink $genome.'.fai' 
+    if -e $genome.'.fai';
+
 done_testing();
 
 sub write_config {
@@ -95,35 +96,35 @@ findltrs:
   - dedup:            NO
   - tnpfilter:        NO
   - domains_required: NO
-    ltrharvest:
-      - mintsd: 4
-      - maxtsd: 6
-      - minlenltr: 100
-      - maxlenltr: 6000
-      - mindistltr: 1500
-      - maxdistltr: 25000
-      - seedlength: 30
-      - tsdradius: 60
-      - xdrop: 5
-      - swmat: 2 
-      - swmis: -2
-      - swins: -3
-      - swdel: -3
-      - overlaps: best
-    ltrdigest:
-      - pptradius: 30
-      - pptlen: 8 30
-      - pptagpr: 0.25
-      - uboxlen: 3 30
-      - uboxutpr: 0.91
-      - pbsradius: 30
-      - pbslen: 11 30
-      - pbsoffset: 0 5
-      - pbstrnaoffset: 0 5
-      - pbsmaxeditdist: 1
-      - pdomevalue: 10E-6
-      - pdomcutoff: NONE
-      - maxgaplen: 50
+  - ltrharvest:
+    - mintsd: 4
+    - maxtsd: 6
+    - minlenltr: 100
+    - maxlenltr: 6000
+    - mindistltr: 1500
+    - maxdistltr: 25000
+    - seedlength: 30
+    - tsdradius: 60
+    - xdrop: 5
+    - swmat: 2 
+    - swmis: -2
+    - swins: -3
+    - swdel: -3
+    - overlaps: best
+  - ltrdigest:
+    - pptradius: 30
+    - pptlen: 8 30
+    - pptagpr: 0.25
+    - uboxlen: 3 30
+    - uboxutpr: 0.91
+    - pbsradius: 30
+    - pbslen: 11 30
+    - pbsoffset: 0 5
+    - pbstrnaoffset: 0 5
+    - pbsmaxeditdist: 1
+    - pdomevalue: 10E-6
+    - pdomcutoff: NONE
+    - maxgaplen: 50
 classifyltrs:
   - percentcov:       50
   - percentid:        80
