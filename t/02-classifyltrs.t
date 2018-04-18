@@ -59,7 +59,7 @@ close $in;
 
 open my $din, '<', $famdom;
 my $fct = 0;
-while (<$din>) { $fct++ if /\S+/; }
+while (<$din>) { next if /^Family_name/; $fct++ if /\S+/; }
 close $din;
 
 #say STDERR "ct: $ct";
