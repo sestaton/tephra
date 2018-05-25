@@ -152,6 +152,8 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] Consider removing all FASTA/GFF3 files except the final annotated products. Could add a 'splitgff3' command
        to produce separate FASTA/GFF3 files from a single GFF3 if going back to files split by TE type is 
        of interest.
+ - [ ] Add method to filter LTRs/TIRs that appear to be duplicated genes. This method may fit better in the individual TE
+       finding programs since the 'all' command is not the only use case of Tephra.
 
 ## Command `tephra reannotate`
 
