@@ -158,6 +158,7 @@ This file is for logging feature requests and bugs during development. Hopefully
 ## Command `tephra reannotate`
 
  - [ ] Add tests!
+ - [ ] Log input FASTA and database used for transferring annotations
 
 *** 
 
