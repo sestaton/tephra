@@ -105,13 +105,12 @@ Required:
     -d|repeatdb   :   The database of repeat sequences to use for masking.
 
 Options:
+    -o|outfile    :   The output filename to use for the masked genome.
     -p|percentid  :   The percent identity cutoff for classification of pairwise matches (Default: 80).
     -l|hitlength  :   The alignment length cutoff for hits to the repeat database (Default: 70).
-    -o|outfile    :   The output filename to use for the masked genome.
-    -c|clean      :   Clean up the index files (Default: yes).
-    -t|threads    :   The number of threads to use for masking (Default: 1).
     -s|splitsize  :   The chunk size to process at a time (Default: 50kb).
     -v|overlap    :   The overlap between the chunks of the chromosomes (Default: 100 bp).
+    -t|threads    :   The number of threads to use for masking (Default: 1).
     -c|clean      :   Clean up the index files (Default: yes).
 
 END
@@ -162,10 +161,6 @@ S. Evan Staton, C<< <evan at evanstaton.com> >>
 
  The output filename to use for the masked genome. If not given, the output will be named "input_masked.fas."
  For example, if the input is "seqs.fas" the output filename would be "seqs_masked.fas."
-
-=item -c, --clean
-
- Clean up the index files (Default: yes).
 
 =item -t, --threads
 
