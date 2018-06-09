@@ -178,7 +178,7 @@ sub collect_feature_args {
 
     my (@tirs, %aln_args);
     if ($self->all || ! $self->dir) {
-	my ($files, $wdir) = $self->extract_tir_features;
+	my ($files, $wdir) = $self->extract_tir_sequences;
         $aln_args{tirs} = { seqs => $files };
         $aln_args{resdir} = $wdir;
     }
@@ -201,95 +201,13 @@ sub collect_feature_args {
 	    warn "\n[WARNING]: No exemplar files were found in the input directory. TIR age will be ".
 		"calculated from TIR elements in the input GFF.\n\n";
 
-	    my ($files, $wdir) = $self->extract_tir_features;
+	    my ($files, $wdir) = $self->extract_tir_sequences;
 	    $aln_args{tirs} = { seqs => $files };
 	    $aln_args{resdir} = $wdir;
 	}
     }
 
     return \%aln_args;
-}
-
-sub extract_tir_features {
-    my $self = shift;
-    my $fasta = $self->genome->absolute->resolve;
-    my $gff   = $self->gff->absolute->resolve;
-    
-    my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $dir = File::Spec->catdir($path, $name.'_tirages');
-    unless ( -d $dir ) {
-	make_path( $dir, {verbose => 0, mode => 0771,} );
-    }
-
-    my ($header, $features) = $self->collect_gff_features($gff);
-    my $index = $self->index_ref($fasta);
-
-    #dd $features;
-    my ($family, %tirs, %seen, %coord_map);
-    for my $rep_region (keys %$features) {
-        for my $tir_feature (@{$features->{$rep_region}}) {
-	    if ($tir_feature->{type} eq 'terminal_inverted_repeat_element') {
-		my $elem_id = @{$tir_feature->{attributes}{ID}}[0];
-		next unless defined $elem_id;
-		$family = @{$tir_feature->{attributes}{family}}[0];
-		my ($start, $end) = @{$tir_feature}{qw(start end)};
-		my $key = defined $family ? join "||", $family, $elem_id, $start, $end 
-		    : join "||", $elem_id, $start, $end;
-		$tirs{$key}{'full'} = join "||", @{$tir_feature}{qw(seq_id type start end)};
-		$coord_map{$elem_id} = join "||", @{$tir_feature}{qw(seq_id start end)};
-	    }
-	    if ($tir_feature->{type} eq 'terminal_inverted_repeat') {
-		my $parent = @{$tir_feature->{attributes}{Parent}}[0];
-		my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
-		if ($seq_id eq $tir_feature->{seq_id}) {
-		    my ($type, $start, $end, $strand) = 
-			@{$tir_feature}{qw(type start end strand)};
-		    $strand //= '?';
-		    my $tirkey = join "||", $seq_id, $type, $start, $end, $strand;
-		    $pkey = defined $family ? join "||", $family, $pkey : $pkey;
-		    push @{$tirs{$pkey}{'tirs'}}, $tirkey unless exists $seen{$tirkey};
-		    $seen{$tirkey} = 1;
-		}
-	    }
-	}
-    }
-
-    my @files;
-    my $tirct = 0;
-    my $orientation;
-    for my $tir (sort keys %tirs) {
-	my ($family, $element, $rstart, $rend) = split /\|\|/, $tir;
-	my ($seq_id, $type, $start, $end) = split /\|\|/, $tirs{$tir}{'full'};
-	my $tir_file = join "_", $family, $element, $seq_id, $start, $end, 'tirs.fasta';
-	my $tirs_out = File::Spec->catfile($dir, $tir_file);
-	die "\n[ERROR]: $tirs_out exists. This will cause problems downstream. Please remove the previous ".
-	    "results and try again. Exiting.\n" if -e $tirs_out;
-	push @files, $tirs_out;
-	open my $tirs_outfh, '>>', $tirs_out or die "\n[ERROR]: Could not open file: $tirs_out\n";
-
-	for my $tir_repeat (@{$tirs{$tir}{'tirs'}}) {
-	    #Contig57_HLAC-254L24||terminal_inverted_repeat||60101||61950||+
-            my ($src, $tirtag, $s, $e, $strand) = split /\|\|/, $tir_repeat;
-	    my $tirid;
-
-            if ($tirct) {
-		$orientation = '5prime' if $strand eq '-';
-                $orientation = '3prime'  if $strand eq '+';
-                $orientation = 'unk-prime-r' if $strand eq '?';
-		$self->write_tir_parts($index, $src, $element, $s, $e, $tirs_outfh, $orientation, $family);
-                $tirct = 0;
-            }
-            else {
-		$orientation = '5prime' if $strand eq '+';
-                $orientation = '3prime' if $strand eq '-';
-                $orientation = 'unk-prime-f' if $strand eq '?';
-		$self->write_tir_parts($index, $src, $element, $s, $e, $tirs_outfh, $orientation, $family);
-                $tirct++;
-            }
-        }
-    }
-
-    return (\@files, $dir);
 }
 
 sub process_baseml_args {
