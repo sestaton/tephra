@@ -76,7 +76,7 @@ sub get_parent_coords {
     return ($seq_id, $pkey);
 }
 
-sub extract_tir_features {
+sub extract_tir_sequences {
     my $self = shift;
     my $fasta = $self->genome->absolute->resolve;
     my $gff   = $self->gff->absolute->resolve;
@@ -159,7 +159,6 @@ sub extract_tir_features {
 }
 
 
-    
 =head1 AUTHOR
 
 S. Evan Staton, C<< <evan at evanstaton.com> >>
