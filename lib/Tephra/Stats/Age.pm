@@ -177,7 +177,7 @@ sub collect_feature_args {
 
     my %aln_args;
     if ($self->all || ! $self->dir) {
-	my ($files, $wdir) = $self->extract_ltr_features;
+	my ($files, $wdir) = $self->extract_ltr_sequences;
         $aln_args{ltrs} = { seqs => $files };
         $aln_args{resdir} = $wdir;
     }
@@ -199,7 +199,7 @@ sub collect_feature_args {
 	    warn "\n[WARNING]: No exemplar files were found in the input directory. LTR age will be ".
 		"calculated from LTR-RT elements in the input GFF.\n";
 
-	    my ($files, $wdir) = $self->extract_ltr_features;
+	    my ($files, $wdir) = $self->extract_ltr_sequences;
 	    $aln_args{ltrs} = { seqs => $files };
 	    $aln_args{resdir} = $wdir;
 	}
