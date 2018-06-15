@@ -32,7 +32,7 @@ my @dirs = ($gindir, $cindir, $iindir);
 SKIP: {
     skip 'skip development tests', 3 unless $devtests;
     {
-        my @help_args = ($cmd, 'ltrage', '-h');
+        my @help_args = ($cmd, 'age', '-h');
         my ($stdout, $stderr, $exit) = capture { system(@help_args) };
         #say STDERR "stderr: $stderr";
         ok($stderr, 'Can execute ltrage subcommand');
@@ -40,7 +40,7 @@ SKIP: {
 
     my $outfile = $gff;
     $outfile =~ s/\.gff3/_ltrages.tsv/;
-    my @age_cmd = ($cmd, 'ltrage', '-g', $genome, '-f', $gff, '-i', $gindir, '-o', $outfile, '--all');
+    my @age_cmd = ($cmd, 'age', '-g', $genome, '-f', $gff, '-i', $gindir, '-o', $outfile, '--all');
     #say STDERR join q{ }, @age_cmd;
     my @ret = capture { system([0..5], @age_cmd) };
 
