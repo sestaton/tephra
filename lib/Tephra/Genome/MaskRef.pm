@@ -152,8 +152,9 @@ sub mask_reference {
 
     my (@reports, %seqs);
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
+			      my ($mask_struct, $part_dir) = @{$data_ref}{qw(mask_struct part_dir)};
 			      my ($report, $ref, $id, $seq, $path) 
-				  = @{$data_ref}{qw(masked ref id seq path)};
+				  = @{$mask_struct}{qw(masked ref id seq path)};
 			      if (defined $id && defined $seq) {
 				  push @reports, $report;
 				  $seqs{$ref}{$id} = $seq;
@@ -163,10 +164,11 @@ sub mask_reference {
                               my $time = sprintf("%.2f",$elapsed/60);
                               say $log basename($ident),
                               " just finished with PID $pid and exit code: $exit_code in $time minutes";
+			      remove_tree( $part_dir, { safe => 1 } );
                         } );
 
     for my $chr (nsort @$files) {
-	my $chr_windows = $self->_split_chr_windows($chr);
+	my $chr_windows = $self->_split_chr_windows($chr->{file});
 	my $window_ct = keys %$chr_windows;
 	for my $seq_index (sort { $a <=> $b } keys %$chr_windows) {
 	    my $wchr = $chr_windows->{$seq_index};
@@ -174,9 +176,10 @@ sub mask_reference {
 	    @{$SIG}{qw(INT TERM)} = sub { $pm->finish };
 	    my $mask_struct = $self->run_masking($seq_index, $chr_windows, $chr, $wchr);
 	    
-	    $pm->finish(0, $mask_struct);
+	    $pm->finish(0, { mask_struct => $mask_struct, part_dir => $chr->{dir} });
 	}
-	unlink $chr;
+	#unlink $chr;
+	
     }
 
     $pm->wait_all_children;
@@ -568,7 +571,7 @@ sub _split_genome {
 	open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 	say $out join "\n", ">".$id, $seqobj->seq;
 	close $out;
-	push @files, $outfile;
+	push @files, { file => $outfile, dir => $dir };
     }
     
     return \@files;
