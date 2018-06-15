@@ -7,6 +7,8 @@ Version	Date	Location
 - Remove 'ltrage' and 'tirage' commands and create single 'age' command to share refactored/common
   methods.
 - Bug fix for 'maskref' command not cleaning up intermediate sub-directories. Fixes #24 on github.
+- Add 6 new HMM models to local Pfam database for tryrosine recombinases, endonucleases, and
+  Helitron_like_N for classifying DIRs, non-LTRs, and Helitron elements, respectively.
 
 0.11.0	04/17/2018	Vancouver, BC
 
