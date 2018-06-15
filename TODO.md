@@ -123,7 +123,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Add outfile option instead of creating filename
  - [x] Make some kind of statistical report about masking percentage. It would be helpful to format
        the output like RepeatMasker to give a global view of what was masked.
- - [x] Clean up the intermediate folders for each chromosome when masking the genome
+ - [ ] Clean up the intermediate folders for each chromosome when masking the genome
  - [x] Create overlapping windows for masking subsets to solve the issue of reduced representation when
        generating smaller chunks
 
@@ -187,3 +187,4 @@ This file is for logging feature requests and bugs during development. Hopefully
        for the commands for helitrons and tirs
  - [ ] modify header to include element number in family. The element number should be listed numerically according 
        to chromosome position? (Wicker et al., 2007)
+ - [ ] add tryrosine recombinases, endonucleases, Helitron_like_N models from Pfam to HMM db
