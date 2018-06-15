@@ -9,7 +9,7 @@ use Capture::Tiny       qw(capture_merged);
 use IPC::System::Simple qw(system);
 use Tephra;
 
-our $VERSION = '0.11.0';
+our $VERSION = '0.11.1';
 
 if (!@ARGV || $ARGV[0] =~ /-h|help/) {
     my $usage = usage();

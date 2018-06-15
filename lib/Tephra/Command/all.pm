@@ -18,7 +18,7 @@ use Tephra::Genome::Unmask;
 use Tephra::Analysis::Pipeline;
 #use Data::Dump::Color;
 
-our $VERSION = '0.11.0';
+our $VERSION = '0.11.1';
 
 sub opt_spec {
     return (    
