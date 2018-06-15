@@ -78,7 +78,7 @@ Tephra is a command-line program only for now. The command `tephra` itself contr
 
     $ tephra 
 
-    Tephra version 0.11.0
+    Tephra version 0.11.1
     
     Copyright (C) 2015-2018 S. Evan Staton
     LICENSE -- MIT
@@ -99,6 +99,7 @@ Tephra is a command-line program only for now. The command `tephra` itself contr
     
     Available commands:
          
+	        age: Calculate the age distribution of LTR or TIR transposons.
                 all: Run all subcommands and generate annotations for all transposon types.
        classifyltrs: Classify LTR retrotransposons into superfamilies and families.
        classifytirs: Classify TIR transposons into superfamilies.
@@ -109,11 +110,9 @@ Tephra is a command-line program only for now. The command `tephra` itself contr
            findtirs: Find TIR transposons in a genome assembly.
           findtrims: Find TRIM retrotransposons in a genome assembly.
           illrecomb: Characterize the distribution of illegitimate recombination in a genome.
-             ltrage: Calculate the age distribution of LTR retrotransposons.
             maskref: Mask a reference genome with transposons.
          reannotate: Transfer annotations from a reference set of repeats to Tephra annotations.
             sololtr: Find solo-LTRs in a genome assembly.
-             tirage: Calculate the age distribution of TIR transposons.
     
     Most common usage:
     
