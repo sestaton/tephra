@@ -177,7 +177,7 @@ sub collect_feature_args {
 
     my %aln_args;
     if ($self->all || ! $self->dir) {
-	my ($files, $wdir) = $self->extract_ltr_features;
+	my ($files, $wdir) = $self->extract_ltr_sequences;
         $aln_args{ltrs} = { seqs => $files };
         $aln_args{resdir} = $wdir;
     }
@@ -199,94 +199,13 @@ sub collect_feature_args {
 	    warn "\n[WARNING]: No exemplar files were found in the input directory. LTR age will be ".
 		"calculated from LTR-RT elements in the input GFF.\n";
 
-	    my ($files, $wdir) = $self->extract_ltr_features;
+	    my ($files, $wdir) = $self->extract_ltr_sequences;
 	    $aln_args{ltrs} = { seqs => $files };
 	    $aln_args{resdir} = $wdir;
 	}
     }
 
     return \%aln_args;
-}
-
-sub extract_ltr_features {
-    my $self = shift;
-    my $fasta = $self->genome->absolute->resolve;
-    my $gff   = $self->gff->absolute->resolve;
-    
-    my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $dir = File::Spec->catdir($path, $name.'_ltrages');
-    unless ( -d $dir ) {
-	make_path( $dir, {verbose => 0, mode => 0771,} );
-    }
-
-    my ($header, $features) = $self->collect_gff_features($gff);
-    my $index = $self->index_ref($fasta);
-
-    my ($family, %ltrs, %seen, %coord_map);
-    for my $rep_region (keys %$features) {
-        for my $ltr_feature (@{$features->{$rep_region}}) {
-	    if ($ltr_feature->{type} =~ /(?:LTR|TRIM)_retrotransposon/) {
-		my $elem_id = @{$ltr_feature->{attributes}{ID}}[0];
-		$family  = @{$ltr_feature->{attributes}{family}}[0];
-		my ($start, $end) = @{$ltr_feature}{qw(start end)};
-		my $key = join "||", $family, $elem_id, $start, $end;
-		$ltrs{$key}{'full'} = join "||", @{$ltr_feature}{qw(seq_id type start end)};
-		$coord_map{$elem_id} = join "||", @{$ltr_feature}{qw(seq_id start end)};
-	    }
-	    if ($ltr_feature->{type} eq 'long_terminal_repeat') {
-		my $parent = @{$ltr_feature->{attributes}{Parent}}[0];
-		my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
-		if ($seq_id eq $ltr_feature->{seq_id}) {
-		    my ($type, $start, $end, $strand) = 
-			@{$ltr_feature}{qw(type start end strand)};
-		    $strand //= '?';
-		    my $ltrkey = join "||", $seq_id, $type, $start, $end, $strand;
-		    my $parent_key = join "||", $family, $pkey;
-		    push @{$ltrs{$parent_key}{'ltrs'}}, $ltrkey unless exists $seen{$ltrkey};
-		    $seen{$ltrkey} = 1;
-		}
-	    }
-	}
-    }
-
-    my @files;
-    my $ltrct = 0;
-    my $orientation;
-    for my $ltr (nsort keys %ltrs) {
-	my ($family, $element, $rstart, $rend) = split /\|\|/, $ltr;
-	my ($seq_id, $type, $start, $end) = split /\|\|/, $ltrs{$ltr}{'full'};
-	my $ltr_file = join "_", $family, $element, $seq_id, $start, $end, 'ltrs.fasta';
-	my $ltrs_out = File::Spec->catfile($dir, $ltr_file);
-	die "\n[ERROR]: $ltrs_out exists. This will cause problems downstream. Please remove the previous ".
-	    "results and try again. Exiting.\n" if -e $ltrs_out;
-	push @files, $ltrs_out;
-	open my $ltrs_outfh, '>>', $ltrs_out or die "\n[ERROR]: Could not open file: $ltrs_out\n";
-
-	for my $ltr_repeat (@{$ltrs{$ltr}{'ltrs'}}) {
-	    #ltr: Contig57_HLAC-254L24||long_terminal_repeat||60101||61950||+
-            my ($src, $ltrtag, $s, $e, $strand) = split /\|\|/, $ltr_repeat;
-	    my $ltrid;
-
-            if ($ltrct) {
-		$orientation = '5prime' if $strand eq '-';
-                $orientation = '3prime'  if $strand eq '+';
-                $orientation = 'unk-prime-r' if $strand eq '?';
-		$ltrid = join "_", $orientation, $family, $element, $src, $s, $e;
-		$self->write_element_parts($index, $src, $s, $e, $ltrs_outfh, $ltrid);
-                $ltrct = 0;
-            }
-            else {
-		$orientation = '5prime' if $strand eq '+';
-                $orientation = '3prime' if $strand eq '-';
-                $orientation = 'unk-prime-f' if $strand eq '?';
-		$ltrid = join "_", $orientation, $family, $element, $src, $s, $e;
-		$self->write_element_parts($index, $src, $s, $e, $ltrs_outfh, $ltrid);
-                $ltrct++;
-            }
-        }
-    }
-
-    return (\@files, $dir);
 }
 
 sub process_baseml_args {
