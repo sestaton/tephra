@@ -94,7 +94,7 @@ sub extract_ltr_sequences {
     my ($family, %ltrs, %seen, %coord_map);
     for my $rep_region (keys %$features) {
         for my $ltr_feature (@{$features->{$rep_region}}) {
-            if ($ltr_feature->{type} =~ /(?:LTR|TRIM)_retrotransposon/) {
+            if ($ltr_feature->{type} =~ /(?:LTR|TRIM|LARD)_retrotransposon/) {
                 my $elem_id = @{$ltr_feature->{attributes}{ID}}[0];
                 $family  = @{$ltr_feature->{attributes}{family}}[0];
                 my ($start, $end) = @{$ltr_feature}{qw(start end)};
@@ -176,7 +176,7 @@ sub extract_tir_sequences {
     my ($family, %tirs, %seen, %coord_map);
     for my $rep_region (keys %$features) {
         for my $tir_feature (@{$features->{$rep_region}}) {
-            if ($tir_feature->{type} eq 'terminal_inverted_repeat_element') {
+            if ($tir_feature->{type} =~ /terminal_inverted_repeat_element|MITE/i) {
                 my $elem_id = @{$tir_feature->{attributes}{ID}}[0];
                 next unless defined $elem_id;
                 $family = @{$tir_feature->{attributes}{family}}[0];
