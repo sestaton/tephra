@@ -1,5 +1,5 @@
-package Tephra::Command::tirage;
-# ABSTRACT: Calculate the age distribution of TIR transposons.
+package Tephra::Command::age;
+# ABSTRACT: Calculate the age distribution of LTR or TIR transposons.
 
 use 5.014;
 use strict;
@@ -8,17 +8,17 @@ use Pod::Find     qw(pod_where);
 use Pod::Usage    qw(pod2usage);
 use Capture::Tiny qw(capture_merged);
 use Tephra -command;
-use Tephra::TIR::TIRStats;
+use Tephra::Stats::Age;
 
 sub opt_spec {
     return (
-	[ "genome|g=s",    "The genome sequences in FASTA format used to search for TIRs "              ],
-	[ "gff|f=s",       "The GFF3 file of TIRs in <genome> "                                         ],
+	[ "genome|g=s",    "The genome sequences in FASTA format used to search for LTRs/TIRs "         ],
+	[ "gff|f=s",       "The GFF3 file of LTRs/TIRs in <genome> "                                    ],
 	[ "outfile|o=s",   "The output file containing the age of each element "                        ],
 	[ "subs_rate|r=f", "The nucleotide substitution rate to use (Default: 1e-8) "                   ],
 	[ "threads|t=i",   "The number of threads to use for clustering coding domains "                ],
 	[ "indir|i=s",     "The input directory of superfamily exemplars "                              ],
-	[ "all|a",         "Calculate age of all TIRs in <gff> instead of exemplars in <indir> "        ],
+	[ "all|a",         "Calculate age of all LTRs/TIRs in <gff> instead of exemplars in <indir> "   ],
 	[ "clean|c",       "Clean up all the intermediate files from PAML and clustalw (Default: yes) " ],
 	[ "help|h",        "Display the usage menu and exit. "                                          ],
         [ "man|m",         "Display the full manual. "                                                  ],
@@ -49,7 +49,7 @@ sub validate_args {
         $self->help and exit(0);
     }
     elsif (! $opt->{indir} && ! $opt->{all}) {
-        say STDERR "\n[ERROR]: The '--indir' option must be given if no gff file and '--all' option is given. Check input.\n";
+        say STDERR "\n[ERROR]: The '--indir' option must be given if no GFF3 file and '--all' option is given. Check input.\n";
         $self->help and exit(0);
     }
 }
@@ -57,27 +57,27 @@ sub validate_args {
 sub execute {
     my ($self, $opt, $args) = @_;
 
-    my $some = _calculate_tir_stats($opt);
+    my $some = _calculate_age_stats($opt);
 }
 
-sub _calculate_tir_stats {
+sub _calculate_age_stats {
     my ($opt) = @_;
 
-    my %tirstats_opts = (
+    my %agestats_opts = (
 	genome  => $opt->{genome},
 	outfile => $opt->{outfile},
     );
     
-    $tirstats_opts{all}       = $opt->{all} // 0;
-    $tirstats_opts{dir}       = $opt->{indir} // 0;
-    $tirstats_opts{gff}       = $opt->{gff} // 0;
-    $tirstats_opts{subs_rate} = $opt->{subs_rate} // 1e-8;
-    $tirstats_opts{threads}   = $opt->{threads} // 1;
-    $tirstats_opts{clean}     = $opt->{clean} // 0;
+    $agestats_opts{all}       = $opt->{all} // 0;
+    $agestats_opts{dir}       = $opt->{indir} // 0;
+    $agestats_opts{gff}       = $opt->{gff} // 0;
+    $agestats_opts{subs_rate} = $opt->{subs_rate} // 1e-8;
+    $agestats_opts{threads}   = $opt->{threads} // 1;
+    $agestats_opts{clean}     = $opt->{clean} // 0;
 
-    my $stats_obj = Tephra::TIR::TIRStats->new(%tirstats_opts);
+    my $stats_obj = Tephra::Age::Stats->new(%agestats_opts);
 
-    $stats_obj->calculate_tir_ages;
+    $stats_obj->calculate_ages;
 }
 
 sub help {
@@ -88,13 +88,13 @@ sub help {
     chomp $desc;
     print STDERR<<END
 $desc
-  USAGE: tephra tirage [-h] [-m]
+  USAGE: tephra age [-h] [-m]
       -m --man      :   Get the manual entry for a command.
       -h --help     :   Print the command usage.
     
   Required:
-      -g|genome     :   The genome sequences in FASTA format used to search for TIRs.
-      -f|gff        :   The GFF3 file of TIRs in <--genome>.
+      -g|genome     :   The genome sequences in FASTA format used to search for LTRs/TIRs.
+      -f|gff        :   The GFF3 file of LTRs/TIRs in <--genome>.
       -o|outfile    :   The output file containing the age of each element.
       -i|indir      :   The input directory of superfamily exemplars.
 
@@ -102,7 +102,7 @@ $desc
       -r|subs_rate  :   The nucleotide substitution rate to use (Default: 1e-8).
       -t|threads    :   The number of threads to use for clustering coding domains (Default: 1).
       -c|clean      :   Clean up all the intermediate files from PAML and clustalw (Default: yes).
-      -a|all        :   Calculate age of all TIRs in <gff> instead of exemplars in <indir>.   
+      -a|all        :   Calculate age of all LTRs/TIRs in <gff> instead of exemplars in <indir>.   
    
 END
 }
@@ -114,15 +114,15 @@ __END__
 
 =head1 NAME
                                                                        
- tephra tirage - Calculate the age distribution of TIR transposons.
+ tephra age - Calculate the age distribution of LTR or TIR transposons.
 
 =head1 SYNOPSIS    
 
- tephra tirage -g ref.fas -f ref_tephra_mutator.gff3 -o ref_classified_tirs -t 12 --clean
+ tephra age -g ref.fas -f ref_tephra_tirs.gff3 -o ref_classified_tirs -t 12 --clean
 
 =head1 DESCRIPTION
 
- This subcommand takes a GFF3 of TIR transposons as input from Tephra and calculates
+ This subcommand takes a GFF3 of LTR or TIR transposons as input from Tephra and calculates
  the insertion time and age of each element using a substitution rate and model of evolution.
 
 =head1 AUTHOR 
@@ -135,11 +135,11 @@ S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =item -g, --genome
 
- The genome sequences in FASTA format used to search for TIRs.
+ The genome sequences in FASTA format used to search for LTRs/TIRs.
 
 =item -f, --gff
 
- The GFF3 file of TIRs in <--genome> as output by the 'tephra classifytirs' command.
+ The GFF3 file of LTRs/TIRs in <--genome> as output by the 'tephra classifytirs' or 'tephra classifyltrs' commands.
 
 =item -o, --outdir
 
@@ -165,7 +165,7 @@ S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =item -a, --all
 
- Calculate age of all TIRs in <gff> instead of exemplars in <indir>.
+ Calculate age of all LTRs/TIRs in <gff> instead of exemplars in <indir>.
 
 =item -h, --help
 
