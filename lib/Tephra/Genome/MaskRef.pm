@@ -152,7 +152,6 @@ sub mask_reference {
 
     my (@reports, %seqs);
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
-			      #my ($mask_struct, $part_dir) = @{$data_ref}{qw(mask_struct part_dir)};
 			      my ($report, $ref, $id, $seq, $path) 
 				  = @{$data_ref}{qw(masked ref id seq path)};
 			      if (defined $id && defined $seq) {
@@ -175,15 +174,12 @@ sub mask_reference {
 	    @{$SIG}{qw(INT TERM)} = sub { $pm->finish };
 	    my $mask_struct = $self->run_masking($seq_index, $chr_windows, $chr->{file}, $wchr);
 	    
-	    $pm->finish(0, $mask_struct); #{ mask_struct => $mask_struct, part_dir => $chr->{dir} });
+	    $pm->finish(0, $mask_struct);
 	}
 	$pm->wait_all_children;
 
-	unlink $chr;
 	remove_tree( $chr->{dir}, { safe => 1 } );
     }
-
-    #$pm->wait_all_children;
     
     $self->write_masking_results(\@reports, \%seqs, $out, $outfile, $t0);
     remove_tree( $genome_dir, { safe => 1 } ) if $self->clean;
@@ -380,15 +376,9 @@ sub get_masking_results {
 
     for my $s (sort { $a <=> $b } keys %windows) { 
 	my ($code) = ($windows{$s}{match} =~ /(^[A-Z]{3})_?\-?/);
-	# unknown repeat type or not formatted with 3-letter code 
+	# unknown repeat type or not formatted with 3-letter code gets labeled 'unk'
 	my $code_type = defined $code && exists $repeat_map->{$code} ? $code : 'unk';
 	push @{$report{ $code_type }}, $windows{$s}{len};
-	#if (defined $code && exists $repeat_map->{$code}) {
-	    #push @{$report{ $code }}, $windows{$s}{len};
-	#}
-	#else {
-	    #push @{$report{ 'unk' }}, $windows{$s}{len}; # unknown repeat type or not formatted with 3-letter code
-	#}
     }
 
     unlink $voutfile if $self->clean;
