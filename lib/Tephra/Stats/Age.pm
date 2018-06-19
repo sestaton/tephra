@@ -197,23 +197,12 @@ sub collect_feature_args {
 	if ($type =~ /ltr/i) { 
 	    my $ltrseqs = $self->get_exemplar_ltrs($dir);
 	    @seqs = @$ltrseqs;
-
-	    #if (@$ltrseqs > 0) {
-		#$aln_args{repeats} = { seqs => $ltrseqs };
-		#$aln_args{resdir} = $dir;
-	    #}
 	}
 	elsif ($type =~ /tir/i) {
 	    #$dir = $self->dir->absolute->resolve;
 	    my $wanted  = sub { push @seqs, $File::Find::name if -f && /exemplar_repeats.fasta$/ };
 	    my $process = sub { grep ! -d, @_ };
 	    find({ wanted => $wanted, preprocess => $process }, $dir);
-	    #$seqs = \@tirs;
-	    
-	    #if (@tirs > 0) {
-		#$aln_args{tirs} = { seqs => \@tirs };
-	    #$aln_args{resdir} = $dir;
-	    #}
 	}
 
 	if (@seqs > 0) {
