@@ -20,6 +20,7 @@ sub opt_spec {
 	[ "indir|i=s",     "The input directory of superfamily exemplars "                              ],
 	[ "all|a",         "Calculate age of all LTRs/TIRs in <gff> instead of exemplars in <indir> "   ],
 	[ "clean|c",       "Clean up all the intermediate files from PAML and clustalw (Default: yes) " ],
+	[ "type=s",        "Type of transposon to calculate age for (must be 'ltr' or 'tir') "          ],
 	[ "help|h",        "Display the usage menu and exit. "                                          ],
         [ "man|m",         "Display the full manual. "                                                  ],
 	);
@@ -52,6 +53,10 @@ sub validate_args {
         say STDERR "\n[ERROR]: The '--indir' option must be given if no GFF3 file and '--all' option is given. Check input.\n";
         $self->help and exit(0);
     }
+    elsif (! $opt->{type} || $opt->{type} !~ /ltr|tir/i) {
+	say STDERR "\n[ERROR]: The '--type' argument is missing or does not match one of 'ltr' or 'tir' (case insensitive). Check input.\n";
+        $self->help and exit(0);
+    }
 }
 
 sub execute {
@@ -74,8 +79,9 @@ sub _calculate_age_stats {
     $agestats_opts{subs_rate} = $opt->{subs_rate} // 1e-8;
     $agestats_opts{threads}   = $opt->{threads} // 1;
     $agestats_opts{clean}     = $opt->{clean} // 0;
+    $agestats_opts{type}      = lc($opt->{type});
 
-    my $stats_obj = Tephra::Age::Stats->new(%agestats_opts);
+    my $stats_obj = Tephra::Stats::Age->new(%agestats_opts);
 
     $stats_obj->calculate_ages;
 }
@@ -97,8 +103,10 @@ $desc
       -f|gff        :   The GFF3 file of LTRs/TIRs in <--genome>.
       -o|outfile    :   The output file containing the age of each element.
       -i|indir      :   The input directory of superfamily exemplars.
+      --type        :   Type of transposon to calculate age for (must be 'ltr' or 'tir').
 
   Options:
+      -i|indir      :   The input directory of superfamily exemplars.
       -r|subs_rate  :   The nucleotide substitution rate to use (Default: 1e-8).
       -t|threads    :   The number of threads to use for clustering coding domains (Default: 1).
       -c|clean      :   Clean up all the intermediate files from PAML and clustalw (Default: yes).
@@ -145,11 +153,19 @@ S. Evan Staton, C<< <evan at evanstaton.com> >>
 
  The output directory for placing categorized elements.
 
+=item --type
+
+ Type of transposon to calculate age for (must be 'ltr' or 'tir').
+
 =back
 
 =head1 OPTIONS
 
 =over 2
+
+=item -o, --outdir
+
+ The output directory for placing categorized elements.
 
 =item -r, --subs_rate
 
