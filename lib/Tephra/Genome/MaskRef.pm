@@ -164,7 +164,7 @@ sub mask_reference {
                               my $time = sprintf("%.2f",$elapsed/60);
                               say $log basename($ident),
                               " just finished with PID $pid and exit code: $exit_code in $time minutes";
-			      remove_tree( $part_dir, { safe => 1 } );
+			      #remove_tree( $part_dir, { safe => 1 } );
                         } );
 
     for my $chr (nsort @$files) {
@@ -174,12 +174,12 @@ sub mask_reference {
 	    my $wchr = $chr_windows->{$seq_index};
 	    $pm->start($wchr) and next;
 	    @{$SIG}{qw(INT TERM)} = sub { $pm->finish };
-	    my $mask_struct = $self->run_masking($seq_index, $chr_windows, $chr, $wchr);
+	    my $mask_struct = $self->run_masking($seq_index, $chr_windows, $chr->{file}, $wchr);
 	    
 	    $pm->finish(0, { mask_struct => $mask_struct, part_dir => $chr->{dir} });
 	}
-	#unlink $chr;
-	
+	unlink $chr;
+	#remove_tree( $chr->{dir}, { safe => 1 } );
     }
 
     $pm->wait_all_children;
@@ -379,9 +379,15 @@ sub get_masking_results {
 
     for my $s (sort { $a <=> $b } keys %windows) { 
 	my ($code) = ($windows{$s}{match} =~ /(^[A-Z]{3})_?\-?/);
-	if (defined $code && exists $repeat_map->{$code}) {
-	    push @{$report{ $code }}, $windows{$s}{len};
-	}
+	# unknown repeat type or not formatted with 3-letter code 
+	my $code_type = defined $code && exists $repeat_map->{$code} ? $code : 'unk';
+	push @{$report{ $code_type }}, $windows{$s}{len};
+	#if (defined $code && exists $repeat_map->{$code}) {
+	    #push @{$report{ $code }}, $windows{$s}{len};
+	#}
+	#else {
+	    #push @{$report{ 'unk' }}, $windows{$s}{len}; # unknown repeat type or not formatted with 3-letter code
+	#}
     }
 
     unlink $voutfile if $self->clean;
@@ -456,7 +462,13 @@ sub write_masking_results {
 	$has_masking = 1;
 	for my $rep_type (keys %$report) {
             my $total = sum(@{$report->{$rep_type}});
-            my ($class, $order, $name) = @{$repeat_map->{$rep_type}}{qw(class order repeat_name)};
+	    my ($class, $order, $name);
+	    if (exists $repeat_map->{$rep_type}) { 
+		($class, $order, $name) = @{$repeat_map->{$rep_type}}{qw(class order repeat_name)};
+	    }
+	    elsif ($rep_type eq 'unk') { 
+		($class, $order, $name) = ('Unknown') x 3;
+	    }
             ($classlen, $orderlen, $namelen) = (length($class), length($order), length($name)); 
             $final_rep{$class}{$order}{$name} += $total;
         }
