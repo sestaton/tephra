@@ -152,9 +152,9 @@ sub mask_reference {
 
     my (@reports, %seqs);
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
-			      my ($mask_struct, $part_dir) = @{$data_ref}{qw(mask_struct part_dir)};
+			      #my ($mask_struct, $part_dir) = @{$data_ref}{qw(mask_struct part_dir)};
 			      my ($report, $ref, $id, $seq, $path) 
-				  = @{$mask_struct}{qw(masked ref id seq path)};
+				  = @{$data_ref}{qw(masked ref id seq path)};
 			      if (defined $id && defined $seq) {
 				  push @reports, $report;
 				  $seqs{$ref}{$id} = $seq;
@@ -164,7 +164,6 @@ sub mask_reference {
                               my $time = sprintf("%.2f",$elapsed/60);
                               say $log basename($ident),
                               " just finished with PID $pid and exit code: $exit_code in $time minutes";
-			      #remove_tree( $part_dir, { safe => 1 } );
                         } );
 
     for my $chr (nsort @$files) {
@@ -176,13 +175,15 @@ sub mask_reference {
 	    @{$SIG}{qw(INT TERM)} = sub { $pm->finish };
 	    my $mask_struct = $self->run_masking($seq_index, $chr_windows, $chr->{file}, $wchr);
 	    
-	    $pm->finish(0, { mask_struct => $mask_struct, part_dir => $chr->{dir} });
+	    $pm->finish(0, $mask_struct); #{ mask_struct => $mask_struct, part_dir => $chr->{dir} });
 	}
+	$pm->wait_all_children;
+
 	unlink $chr;
-	#remove_tree( $chr->{dir}, { safe => 1 } );
+	remove_tree( $chr->{dir}, { safe => 1 } );
     }
 
-    $pm->wait_all_children;
+    #$pm->wait_all_children;
     
     $self->write_masking_results(\@reports, \%seqs, $out, $outfile, $t0);
     remove_tree( $genome_dir, { safe => 1 } ) if $self->clean;
