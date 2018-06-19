@@ -83,4 +83,6 @@ sub parse_hmmsearch {
     my $best_hit = min(@evalues);
     print $best_hit;
     unlink $hmmout;
+
+    return;
 }
