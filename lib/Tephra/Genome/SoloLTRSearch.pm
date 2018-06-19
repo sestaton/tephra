@@ -23,7 +23,8 @@ use Tephra::Config::Exe;
 use namespace::autoclean;
 #use Data::Dump::Color;
 
-with 'Tephra::Role::Run::Any';
+with 'Tephra::Role::Run::Any',
+     'Tephra::LTR::Role::Utils';
 
 =head1 NAME
 
@@ -447,7 +448,7 @@ sub _get_ltr_alns {
 
     my (@ltrseqs, @aligns);
 
-    my $ltrseqs = $self->_get_exemplar_ltrs($dir);
+    my $ltrseqs = $self->get_exemplar_ltrs($dir);
     return unless defined $ltrseqs && @$ltrseqs;
 
     # This is where families are filtered by size. Since largest families come first,
@@ -479,48 +480,6 @@ sub _get_ltr_alns {
     }
 
     return \@aligns;
-}
-
-sub _get_exemplar_ltrs {
-    my $self = shift;
-    my ($dir) = @_;
-
-    my ($ltrfile, @ltrseqs, %ltrfams);
-    find( sub { $ltrfile = $File::Find::name if -f and /exemplar_repeats.fasta$/ }, $dir);
-    unless (defined $ltrfile) {
-	say STDERR "\n[WARNING]: Exemplar LTR file not found in $dir.\n";
-	return;
-    }
-	    
-    if ($ltrfile =~ /^RL|family\d+/) {
-	croak "\n[ERROR]: Expecting a single file of LTR exemplar sequences but it appears this command has ".
-	    "been run before. This will cause problems. Please re-run 'classifyltrs' or report this issue. Exiting.\n";
-	return;
-    }
-
-    my $kseq = Bio::DB::HTS::Kseq->new($ltrfile);
-    my $iter = $kseq->iterator();
-
-    while ( my $seq = $iter->next_seq() ) {
-	my $id  = $seq->name;
-	my $seq = $seq->seq;
-	if ($id =~ /^[35]prime_(RL[CGX]_family\d+)_LTR_retrotransposon.*/) {
-	    my $family = $1;
-	    push @{$ltrfams{$family}}, { id => $id, seq => $seq };
-	}
-    }
-
-    for my $family (keys %ltrfams) {
-	my $outfile = File::Spec->catfile($dir, $family.'_exemplar_ltrseqs.fasta');
-	open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
-	for my $pair (@{$ltrfams{$family}}) {
-	    say $out join "\n", ">".$pair->{id}, $pair->{seq};
-	}
-	close $out;
-	push @ltrseqs, $outfile;
-    }
-
-    return \@ltrseqs;
 }
 
 sub _collate {
