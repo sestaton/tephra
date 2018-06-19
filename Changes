@@ -13,6 +13,8 @@ Version	Date	Location
   would print a warning that no classifications could be determined based on the absense of the 
   3-letter code in the header. Now, the Class, Order, and Repeat will be listed as 'Unknown' and
   the number of masked bases will be reported.
+- Remove redundant methods for finding LTR exemplars and place in common role under the LTR 
+  namespace (called *LTR::Role::Utils).
 
 0.11.0	04/17/2018	Vancouver, BC
 
