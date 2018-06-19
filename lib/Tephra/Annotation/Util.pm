@@ -106,7 +106,7 @@ sub map_superfamily_name {
 
     my ($sfamily_code) = ($id =~ /(^[A-Z]{3})_?/);
     unless (defined $sfamily_code) {
-	say STDERR "\n[[WARNING]]: Could not get 3-letter code from: $id. Skipping.\n"
+	say STDERR "\n[WARNING]: Could not get 3-letter code from: $id. Skipping.\n"
 	    if $self->debug;
 	return 0;
     }
@@ -164,7 +164,7 @@ sub map_superfamily_name {
 	return $sfcode_table{$sfamily_code};
     }
     else {
-	say STDERR "\n[[WARNING]]: No 3-letter code could be found for: $sfamily_code\n"
+	say STDERR "\n[WARNING]: No 3-letter code could be found for: $sfamily_code\n"
 	    if $self->debug;
 	return 0;
     }
@@ -244,7 +244,7 @@ sub map_superfamily_name_to_code {
 	return $name_table{$name};
     }
     else {
-	say STDERR "\n[[WARNING]]: No 3-letter code could be found for: $name\n"
+	say STDERR "\n[WARNING]: No 3-letter code could be found for: $name\n"
 	    if $self->debug;
 	return 0;
     }
