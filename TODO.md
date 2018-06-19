@@ -123,7 +123,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Add outfile option instead of creating filename
  - [x] Make some kind of statistical report about masking percentage. It would be helpful to format
        the output like RepeatMasker to give a global view of what was masked.
- - [ ] Clean up the intermediate folders for each chromosome when masking the genome
+ - [x] Clean up the intermediate folders for each chromosome when masking the genome
  - [x] Create overlapping windows for masking subsets to solve the issue of reduced representation when
        generating smaller chunks
 
