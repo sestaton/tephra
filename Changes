@@ -5,7 +5,7 @@ Version	Date	Location
 
 - Refactor LTRStats/TIRStats classes to put common methods in GFF Role or Tephra::Stats::Age class.
 - Remove 'ltrage' and 'tirage' commands and create single 'age' command to share refactored/common
-  methods.
+  methods (updated tests for these changes).
 - Bug fix for 'maskref' command not cleaning up intermediate sub-directories. Fixes #24 on github.
 - Add 6 new HMM models to local Pfam database for tryrosine recombinases, endonucleases, and
   Helitron_like_N for classifying DIRs, non-LTRs, and Helitron elements, respectively.
