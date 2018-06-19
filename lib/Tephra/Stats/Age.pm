@@ -25,7 +25,8 @@ use namespace::autoclean;
 with 'Tephra::Role::GFF',
      'Tephra::Role::Util',
      'Tephra::Role::Run::Any',
-     'Tephra::Role::Run::PAML';
+     'Tephra::Role::Run::PAML',
+     'Tephra::LTR::Role::Utils';
 
 =head1 NAME
 
@@ -90,10 +91,16 @@ has all => (
     default  => 1,
 );
 
+has type => (
+      is        => 'ro',
+      isa       => 'Maybe[Str]',
+      predicate => 'has_type',
+      required  => 0,
+);
 #
 # methods
 #
-sub calculate_ltr_ages {
+sub calculate_ages {
     my $self = shift;
     my $threads = $self->threads;
     my $outfile = $self->outfile;
@@ -107,7 +114,7 @@ sub calculate_ltr_ages {
     }
     
     my $t0 = gettimeofday();
-    my $ltrrts  = 0;
+    my $tes  = 0;
     my $logfile = File::Spec->catfile($resdir, 'all_aln_reports.log');
     open my $logfh, '>>', $logfile or die "\n[ERROR]: Could not open file: $logfile\n";
     
@@ -127,9 +134,9 @@ sub calculate_ltr_ages {
 			} );
 
     for my $type (keys %$args) {
-	if ($type eq 'ltrs') {
+	if ($type eq 'repeats') {
 	    for my $db (@{$args->{$type}{seqs}}) {
-		$ltrrts++;
+		$tes++;
 		$pm->start($db) and next;
 		$SIG{INT} = sub { $pm->finish };
 		$self->process_align_args($db, $resdir);
@@ -144,7 +151,7 @@ sub calculate_ltr_ages {
     find( sub { push @agefiles, $File::Find::name if -f and /divergence.txt$/ and -s }, $resdir );
 
     open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
-    say $out join "\t", "LTR-ID", "Divergence", "Age", "Ts:Tv";
+    say $out join "\t", "ID", "Divergence", "Age", "Ts:Tv";
 
     for my $file (@agefiles) {
 	$self->collate($file, $out);
@@ -154,7 +161,7 @@ sub calculate_ltr_ages {
     if ($self->clean) {
 	my @alnfiles;
 	my $wanted  = sub { push @alnfiles, $File::Find::name 
-				if -f && /ltrs.fasta$|\.aln$|\.log$|\.phy$|\.dnd$|\.ctl$|\-divergence.txt$/ };
+				if -f && /(?:ltrs|tirs).fasta$|\.aln$|\.log$|\.phy$|\.dnd$|\.ctl$|\-divergence.txt$/ };
 	my $process = sub { grep ! -d, @_ };
 	find({ wanted => $wanted, preprocess => $process }, $resdir);
 	unlink @alnfiles;
@@ -165,8 +172,9 @@ sub calculate_ltr_ages {
     my $t2 = gettimeofday();
     my $total_elapsed = $t2 - $t0;
     my $final_time = sprintf("%.2f",$total_elapsed/60);
+    my $order = $self->type =~ /ltr/i ? 'LTR-RTs' : 'TIRs';
 
-    say $logfh "\n========> Finished calculating insertion time for $ltrrts LTR-RTs in $final_time minutes";
+    say $logfh "\n========> Finished calculating insertion time for $tes $order transposons in $final_time minutes";
     close $logfh;
 
     return;
@@ -174,33 +182,56 @@ sub calculate_ltr_ages {
 
 sub collect_feature_args {
     my $self = shift;
+    my $type = uc($self->type);
 
-    my %aln_args;
+    my (%aln_args, @seqs);
     if ($self->all || ! $self->dir) {
-	my ($files, $wdir) = $self->extract_ltr_sequences;
-        $aln_args{ltrs} = { seqs => $files };
+	
+	my ($files, $wdir) = $type =~ /ltr/i ? $self->extract_ltr_sequences : $self->extract_tir_sequences;
+        $aln_args{repeats} = { seqs => $files };
         $aln_args{resdir} = $wdir;
     }
     else {
 	my $dir = $self->dir;
-	#my $dir = $self->dir->absolute->resolve; 
-	my $ltrseqs = $self->_get_exemplar_ltrs($dir);
+	#my $dir = $self->dir->absolute->resolve;
+	if ($type =~ /ltr/i) { 
+	    my $ltrseqs = $self->get_exemplar_ltrs($dir);
+	    @seqs = @$ltrseqs;
 
-	if (@$ltrseqs > 0) {
-	    $aln_args{ltrs} = { seqs => $ltrseqs };
-	    $aln_args{resdir} = $dir;
+	    #if (@$ltrseqs > 0) {
+		#$aln_args{repeats} = { seqs => $ltrseqs };
+		#$aln_args{resdir} = $dir;
+	    #}
 	}
+	elsif ($type =~ /tir/i) {
+	    #$dir = $self->dir->absolute->resolve;
+	    my $wanted  = sub { push @seqs, $File::Find::name if -f && /exemplar_repeats.fasta$/ };
+	    my $process = sub { grep ! -d, @_ };
+	    find({ wanted => $wanted, preprocess => $process }, $dir);
+	    #$seqs = \@tirs;
+	    
+	    #if (@tirs > 0) {
+		#$aln_args{tirs} = { seqs => \@tirs };
+	    #$aln_args{resdir} = $dir;
+	    #}
+	}
+
+	if (@seqs > 0) {
+	    $aln_args{repeats} = { seqs => \@seqs };                                                                                    
+	    $aln_args{resdir} = $dir; 
+	}      
 	else {
 	    unless (-e $self->gff) {
 		croak "\n[ERROR]: No exemplar files were found in the input directory ".
 		    "and the input GFF file does not appear to exist. Exiting.\n";
 	    }
 
-	    warn "\n[WARNING]: No exemplar files were found in the input directory. LTR age will be ".
-		"calculated from LTR-RT elements in the input GFF.\n";
+	    warn "\n[WARNING]: No exemplar files were found in the input directory. $type age will be ".
+		"calculated from $type elements in the input GFF.\n";
 
-	    my ($files, $wdir) = $self->extract_ltr_sequences;
-	    $aln_args{ltrs} = { seqs => $files };
+	    #my ($files, $wdir) = $self->extract_ltr_sequences;
+	    my ($files, $wdir) = $type =~ /ltr/i ? $self->extract_ltr_sequences : $self->extract_tir_sequences;
+	    $aln_args{repeats} = { seqs => $files };
 	    $aln_args{resdir} = $wdir;
 	}
     }
@@ -232,7 +263,7 @@ sub process_baseml_args {
     }
     else {
 	my $element = basename($phy);
-	$element =~ s/_ltrs.*_muscle-out.*//;
+	$element =~ s/_(?:ltrs|tirs).*_muscle-out.*//;
 	open my $divout, '>', $divfile or die "\n[ERROR]: Could not open divergence file: $divfile\n";
 	say $divout join "\t", $element, $divergence , '0', '0';
 	close $divout;
