@@ -2,9 +2,13 @@ package Tephra::Role::GFF;
 
 use 5.014;
 use Moose::Role;
-use Sort::Naturally;
+use File::Spec;
+use File::Basename;
+use File::Path          qw(make_path);
 use Bio::GFF3::LowLevel qw(gff3_parse_feature);
+use Sort::Naturally;
 use Path::Class::File;
+use Tephra::Alignment::Utils;
 #use Data::Dump::Color;
 use namespace::autoclean;
 
@@ -240,6 +244,25 @@ sub extract_tir_sequences {
     return (\@files, $dir);
 }
 
+sub write_tir_parts {
+    my $self = shift;
+    my ($index, $loc, $elem, $start, $end, $out, $orient, $family) = @_;
+
+    my ($seq, $length) = $self->get_full_seq($index, $loc, $start, $end);
+
+    # need to reverse-complement the inverted seq
+    my $utils = Tephra::Alignment::Utils->new;
+    $seq = $utils->revcom($seq) if $orient =~ /3prime|prime-r/;
+
+    my $id;
+    $id = join "_", $family, $elem, $loc, $start, $end if !$orient;
+    $id = join "_", $orient, $family, $elem, $loc, $start, $end if $orient; # for unique IDs with clustalw
+
+    #$self->write_element_parts($index, $loc, $start, $end, $out, $id);
+    say $out join "\n", ">".$id, $seq;
+
+    return;
+}
 
 =head1 AUTHOR
 
