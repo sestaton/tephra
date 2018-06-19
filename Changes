@@ -1,7 +1,7 @@
 Revision history for Tephra
 
 Version	Date	Location
-0.11.1	06/15/2018	Vancouver, BC
+0.11.1	06/19/2018	Vancouver, BC
 
 - Refactor LTRStats/TIRStats classes to put common methods in GFF Role or Tephra::Stats::Age class.
 - Remove 'ltrage' and 'tirage' commands and create single 'age' command to share refactored/common
@@ -9,6 +9,10 @@ Version	Date	Location
 - Bug fix for 'maskref' command not cleaning up intermediate sub-directories. Fixes #24 on github.
 - Add 6 new HMM models to local Pfam database for tryrosine recombinases, endonucleases, and
   Helitron_like_N for classifying DIRs, non-LTRs, and Helitron elements, respectively.
+- Add methods to now handle unformatted repeat database with 'maskref' command. Previous versions
+  would print a warning that no classifications could be determined based on the absense of the 
+  3-letter code in the header. Now, the Class, Order, and Repeat will be listed as 'Unknown' and
+  the number of masked bases will be reported.
 
 0.11.0	04/17/2018	Vancouver, BC
 
