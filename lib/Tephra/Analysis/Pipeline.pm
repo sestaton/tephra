@@ -200,24 +200,24 @@ sub calculate_ltrage {
 
     my $t0 = gettimeofday();
     my $st = strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - 'tephra ltrage' started at: $st.");
+    $log->info("Command - 'tephra age' started at: $st.");
 
     my $ltrage_opts = ['-g', $global_opts->{genome}, '-t', $global_opts->{threads},
-                       '-o', $ltrage_out, '-f', $ltrc_gff, '-r', $global_opts->{subs_rate}, '--clean'];
-        push @$ltrage_opts, '--all'
-            if $config->{ltrage}{all} =~ /yes/i;
+                       '-o', $ltrage_out, '-f', $ltrc_gff, '-r', $global_opts->{subs_rate}, '--type', 'ltr', '--clean'];
+    push @$ltrage_opts, '--all'
+	if $config->{ltrage}{all} =~ /yes/i;
 
     if ($config->{ltrage}{all} =~ /no/i) {
         push @$ltrage_opts, '-i';
         push @$ltrage_opts, $ltrc_dir;
     }
-    $self->capture_tephra_cmd('ltrage', $ltrage_opts, $global_opts->{debug});
+    $self->capture_tephra_cmd('age', $ltrage_opts, $global_opts->{debug});
         
     my $t1 = gettimeofday();
     my $total_elapsed = $t1 - $t0;
     my $final_time = sprintf("%.2f",$total_elapsed/60);
     my $ft = strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - 'tephra ltrage' completed at: $ft.");
+    $log->info("Command - 'tephra age' completed at: $ft.");
 
     return $ltrage_out;
 }
@@ -373,23 +373,23 @@ sub calculate_tirage {
     
     my $t0 = gettimeofday();
     my $st = strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - 'tephra tirage' started at: $st.");
+    $log->info("Command - 'tephra age' started at: $st.");
     
     my $tirage_opts = ['-g', $global_opts->{genome}, '-t', $global_opts->{threads},
-                       '-o', $tirage_out, '-f', $tirc_gff, '-r', $global_opts->{subs_rate}, '--clean'];
+                       '-o', $tirage_out, '-f', $tirc_gff, '-r', $global_opts->{subs_rate}, '--type', 'tir', '--clean'];
     push @$tirage_opts, '--all'
         if $config->{tirage}{all} =~ /yes/i;
     if ($config->{tirage}{all} =~ /no/i) {
         push @$tirage_opts, '-i';
         push @$tirage_opts, $tirc_dir;
     }
-    $self->capture_tephra_cmd('tirage', $tirage_opts, $global_opts->{debug});
+    $self->capture_tephra_cmd('age', $tirage_opts, $global_opts->{debug});
     
     my $t1 = gettimeofday();
     my $total_elapsed = $t1 - $t0;
     my $final_time = sprintf("%.2f",$total_elapsed/60);
     my $ft = strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - 'tephra tirage' completed at: $ft.");
+    $log->info("Command - 'tephra age' completed at: $ft.");
     
     return $tirage_out;
 }
