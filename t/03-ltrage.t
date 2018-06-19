@@ -40,8 +40,8 @@ SKIP: {
 
     my $outfile = $gff;
     $outfile =~ s/\.gff3/_ltrages.tsv/;
-    my @age_cmd = ($cmd, 'age', '-g', $genome, '-f', $gff, '-i', $gindir, '-o', $outfile, '--all');
-    #say STDERR join q{ }, @age_cmd;
+    my @age_cmd = ($cmd, 'age', '-g', $genome, '-f', $gff, '-i', $gindir, '-o', $outfile, '--type', 'ltr', '--all');
+    say STDERR join q{ }, @age_cmd;
     my @ret = capture { system([0..5], @age_cmd) };
 
     ok( -s $outfile, 'Generated LTR age report for input GFF3 file');
