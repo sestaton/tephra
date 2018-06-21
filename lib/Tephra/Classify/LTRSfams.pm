@@ -267,6 +267,8 @@ sub annotate_unclassified {
     }
     close $in;
     unlink $blast_out;
+
+    return;
 }
 
 sub write_gypsy {
@@ -443,9 +445,15 @@ sub write_unclassified {
 	}
 	else {
 	    my $unc_lard_feats = $self->_format_lard_features($unc_feats);
-	    say $out $unc_lard_feats->{unc_feats};
-	    push @lard_lengths, $ltrlen;
-	    $lard_index{ $unc_lard_feats->{old_id} } = $unc_lard_feats->{new_id};
+	    if ($unc_lard_feats->{is_lard}) { 
+		say $out $unc_lard_feats->{unc_feats};
+		push @lard_lengths, $ltrlen;
+		$lard_index{ $unc_lard_feats->{old_id} } = $unc_lard_feats->{new_id};
+	    }
+	    else {
+		say $out $unc_feats;
+                push @unc_lengths, $ltrlen;
+	    }
 	}
 
 	$pdom_org = join ",", @all_pdoms;
