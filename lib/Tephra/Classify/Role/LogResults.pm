@@ -61,15 +61,15 @@ sub write_superfam_pdom_organization {
     say $domf join "\t", "Strand", "Domain_organizaion", "Domain_count";
 
     for my $strand (keys %$pdom_index) {
-	for my $org (keys %{$pdom_index->{$strand}}) {
+	for my $org (reverse sort { $pdom_index->{$strand}{$a} <=> $pdom_index->{$strand}{$b} } keys %{$pdom_index->{$strand}}) {
 	    $tot_dom_ct{$org} += $pdom_index->{$strand}{$org};
 	    say $domf join "\t", $strand, $org, $pdom_index->{$strand}{$org};
 	}
     }
     
-    say $domf "==========";
+    say $domf "#========== Below are the domain architectures summarized for both strands ==========";
     say $domf join "\t", "Domain_organization", "Domain_count";
-    for my $domorg (keys %tot_dom_ct) {
+    for my $domorg (reverse sort { $tot_dom_ct{$a} <=> $tot_dom_ct{$b} } keys %tot_dom_ct) {
 	say $domf join "\t", $domorg, $tot_dom_ct{$domorg};
     }
     close $domf;
