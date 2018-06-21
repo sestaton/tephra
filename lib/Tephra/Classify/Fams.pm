@@ -19,7 +19,7 @@ use Parallel::ForkManager;
 use Carp 'croak';
 use Try::Tiny;
 use Tephra::Annotation::MakeExemplars;
-#use Data::Dump::Color;
+use Data::Dump::Color;
 use namespace::autoclean;
 
 with 'Tephra::Role::Util',
@@ -103,11 +103,17 @@ sub make_families {
     my $outdir  = $self->outdir->absolute->resolve;
     my $threads = $self->threads;    
     my $tetype  = $self->type;
+    my $gff     = $self->gff;
     #my $log     = $self->get_logger($logfile);
     
     my $t0 = gettimeofday();
-    my $logfile = File::Spec->catfile($outdir, $tetype.'_superfamilies_thread_report.log');
+    my $logfile = File::Spec->catfile($outdir, $tetype.'_families_thread_report.log');
     open my $fmlog, '>>', $logfile or die "\n[ERROR]: Could not open file: $logfile\n";
+
+    my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
+    my $domoutfile = File::Spec->catfile($path, $name.'_family-level_domain_org.tsv');
+    open my $domfh, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
+    say $domfh join "\t", "Family_name", "Element_ID", "Domain_organization";
 
     my $pm = Parallel::ForkManager->new(3);
     local $SIG{INT} = sub {
@@ -116,7 +122,7 @@ sub make_families {
         exit 1;
     };
 
-    my (%reports, @family_fastas, @annotated_ids);
+    my (%reports, @family_fastas, @annotated_ids); #, %seen_te_types);
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			      for my $type (keys %$data_ref) {
 				  my $family_stats = $data_ref->{$type}{family_stats};
@@ -156,7 +162,7 @@ sub make_families {
 	$SIG{INT} = sub { $pm->finish };
 
 	my ($fams, $ids, $family_stats) = 
-	    $self->run_family_classification($gff_obj->{$type}, $tetype);
+	    $self->run_family_classification($gff_obj->{$type}, $tetype, $domfh);
 
 	$reports{$type} = { family_fasta   => $fams, 
 			    annotated_ids  => $ids, 
@@ -166,6 +172,10 @@ sub make_families {
     }
 
     $pm->wait_all_children;
+
+    close $domfh;
+    my $has_domains_out = $self->_check_domfile_has_data($domoutfile);
+    unlink $domoutfile unless $has_domains_out;
 
     my (%outfiles, %annot_ids);
     @outfiles{keys %$_}  = values %$_ for @family_fastas;
@@ -184,7 +194,7 @@ sub make_families {
 
 sub run_family_classification {
     my $self = shift;
-    my ($gff, $tetype) = @_;
+    my ($gff, $tetype, $domfh) = @_;
     my $genome  = $self->genome->absolute->resolve;
     my $threads = $self->threads;
     my $debug   = $self->debug;
@@ -207,7 +217,7 @@ sub run_family_classification {
     my $matches  = $self->parse_blast($blastout);
 
     my ($fams, $ids, $merged_stats) = 
-	$self->write_families($pdom_famid_map, $dom_fam_map, $unmerged_stats, $matches, $clusters, $tetype);
+	$self->write_families($pdom_famid_map, $dom_fam_map, $unmerged_stats, $matches, $clusters, $tetype, $domfh);
 
     my $exm_obj = Tephra::Annotation::MakeExemplars->new(
         genome  => $genome,
@@ -394,8 +404,7 @@ sub parse_blast {
 
 sub write_families {
     my $self = shift;
-    my ($pdom_famid_map, $dom_fam_map, $unmerged_stats, $matches, $clsfile, $tetype) = @_;
-    my $gff = $self->gff;
+    my ($pdom_famid_map, $dom_fam_map, $unmerged_stats, $matches, $clsfile, $tetype, $domfh) = @_;
 
     #dd $pdom_famid_map and exit;
     my ($cname, $cpath, $csuffix) = fileparse($clsfile, qr/\.[^.]*/);
@@ -421,11 +430,6 @@ sub write_families {
 	$sfname = 'DTX' if $sf =~ /mite/i;
     }
 
-    my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $domoutfile = File::Spec->catfile($path, $name.'_family-level_domain_org.tsv');
-    open my $domf, '>>', $domoutfile or die "\n[ERROR]: Could not open file: $domoutfile\n";
-    say $domf join "\t", "Family_name", "Element_ID", "Domain_organization";
-
     my @compfiles;
     find( sub { push @compfiles, $File::Find::name if /complete.fasta$/ }, $cpath );
     my $ltrfas = shift @compfiles;
@@ -433,7 +437,6 @@ sub write_families {
     my $elemct = (keys %$seqstore);
 	
     my ($idx, $famtot, $tomerge) = (0, 0, 0);
-    my (%fastas, %annot_ids);
 
     my $fam_id_map;
     if (defined $matches) {
@@ -441,6 +444,7 @@ sub write_families {
 	$fam_id_map = $tomerge == 1 ? $matches : $dom_fam_map;
     }
 
+    my (%fastas, %annot_ids, @seen);
     my $re = qr/helitron\d+|non_LTR_retrotransposon\d+|(?:LTR|TRIM|LARD)_retrotransposon\d+|terminal_inverted_repeat_element\d+|MITE\d+/;
     for my $str (reverse nsort keys %$fam_id_map) {
 	my $famfile = $sf."_family$idx".".fasta";
@@ -454,13 +458,13 @@ sub write_families {
 		my $coords  = (keys %$coordsh)[0];
 		$seqstore->{$query}{$coords} =~ s/.{60}\K/\n/g;
 		say $out join "\n", ">$sfname"."_family$idx"."_$query"."_$coords", $seqstore->{$query}{$coords};
-		delete $seqstore->{$query};
 		$annot_ids{$query} = $sfname."_family$idx";
 		my ($element) = ($query =~ /($re)/);
+		push @seen, $query;
 
 		if (exists $pdom_famid_map->{$element}) { 
 		    $self->write_fam_pdom_organization({ famid_map => $pdom_famid_map, 
-							 outfh     => $domf, 
+							 outfh     => $domfh, 
 							 elemnum   => $query, 
 							 elemid    => "$sfname"."_family$idx"."_$query"."_$coords", 
 							 famname   => $sfname."_family$idx"});
@@ -476,6 +480,7 @@ sub write_families {
     }
     my $famct = $idx;
     $idx = 0;
+    delete $seqstore->{$_} for @seen;
 	
     if (%$seqstore) {
 	my $famxfile = $sf.'_singleton_families.fasta';
@@ -491,7 +496,7 @@ sub write_families {
 
 	    if (exists $pdom_famid_map->{$element}) {
 		$self->write_fam_pdom_organization({ famid_map => $pdom_famid_map, 
-						     outfh     => $domf, 
+						     outfh     => $domfh, 
 						     elemnum   => $k,
 						     elemid    => "$sfname"."_singleton_family$idx"."_$k"."_$coords", 
 						     famname   => $sfname."_singleton_family$idx" });
@@ -502,9 +507,6 @@ sub write_families {
 	$fastas{$xoutfile} = 1;
     }
     my $singct = $idx;
-    close $domf;
-    my $has_domains_out = $self->_check_domfile_has_data($domoutfile);
-    unlink $domoutfile unless $has_domains_out; 
 
     return (\%fastas, \%annot_ids,
 	    { superfamily       => $sf,
@@ -516,15 +518,19 @@ sub write_families {
 
 sub combine_families {
     my ($self) = shift;
-    my ($outfiles) = @_;
+    my ($anno_obj) = @_;
     my $genome = $self->genome->absolute->resolve;
     my $outdir = $self->outdir->absolute->resolve;
     my $outgff = $self->gff;
     
+    my ($outfiles, $annot_ids, $index) = @{$anno_obj}{qw(outfiles annotated_ids annotated_idx)};
     my ($name, $path, $suffix) = fileparse($outgff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name.'.fasta');
-
+    
     open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
+
+    my $re = qr/helitron\d+|(?:non_)?(?:LTR|LARD|TRIM)_retrotransposon\d+|terminal_inverted_repeat_element\d+/;
+    #my ($chr, $start, $end) = ($id =~ /^(?:\w{3}_)?(?:singleton_)?(?:family\d+_)?$re?_(\S+)_(\d+)[-_](\d+)/);
 
     for my $file (nsort keys %$outfiles) {
 	unlink $file && next unless -s $file;
@@ -533,6 +539,33 @@ sub combine_families {
 	while (my $seqobj = $iter->next_seq) {
 	    my $id  = $seqobj->name;
 	    my $seq = $seqobj->seq;
+	    my ($elem, $seq_id, $start, $end) = ($id =~ /^(?:\w{3}_)?(?:singleton_)?(?:family\d+_)?($re)?_(\S+)_(\d+)[-_](\d+)/);
+	    unless (defined $seq_id) {
+		say STDERR "DEBUG: seq_id -> $id";
+		say STDERR 'my ($elem, $seq_id, $start, $end) = ($id =~ /^(?:\w{3}_)?(?:singleton_)?(?:family\d+_)?($re)?_(\S+)_(\d+)[-_](\d+)/);';
+		exit;
+	    }
+	    #if (exists $index->{$elem}) {
+		#$feature->{type} = $new_type;
+		#$new_id = $index->{$elem};
+	    #}
+	    #else {
+		#$new_id = $elem;
+	    #}
+
+	    my $key = join "_", $elem, $seq_id;
+	    if (exists $annot_ids->{$key}) {
+		#$feature->{attributes}{ID}[0] = $new_id;
+		#$feature->{attributes}{family}[0] = $annot_ids->{$key};
+		#$new_family = $annot_ids->{$key};
+		#say STDERR "DEBUG: $id => $annot_ids->{$key}";
+		#$id =~ s/$elem/$annot_ids->{$key}/g;
+		$id = join "_", $annot_ids->{$key}, $elem, $seq_id, $start, $end;
+	    }
+	    #else {
+		#$id = $id;
+	    #}
+   
 	    $seq =~ s/.{60}\K/\n/g;
 	    say $out join "\n", ">$id", $seq;
 	}
@@ -549,7 +582,7 @@ sub annotate_gff {
     my $outdir = $self->outdir->absolute->resolve;
     my $outgff = $self->gff;
 
-    my ($annot_ids, $index, $ingff, $type) = @{$anno_obj}{qw(annotated_ids annoted_idx input_gff te_type)};
+    my ($annot_ids, $index, $ingff, $type) = @{$anno_obj}{qw(annotated_ids annotated_idx input_gff te_type)};
     my $new_type;
     if ($type eq 'TIR') {
 	$new_type = 'MITE';
@@ -572,7 +605,7 @@ sub annotate_gff {
     for my $rep_region (nsort_by { m/repeat_region\d+\|\|(\d+)\|\|\d+/ and $1 } keys %$features) {
 	my ($rreg_id, $s, $e) = split /\|\|/, $rep_region;
         for my $feature (@{$features->{$rep_region}}) {
-	    if ($feature->{type} =~ /(?:LTR|TRIM)_retrotransposon|terminal_inverted_repeat_element|MITE/) {
+	    if ($feature->{type} =~ /(?:LTR|TRIM|LARD)_retrotransposon|terminal_inverted_repeat_element|MITE/) {
 		$is_lard_mite = 1;
 		
                 my $id = $feature->{attributes}{ID}[0];
@@ -616,7 +649,7 @@ sub _check_domfile_has_data {
     my ($domoutfile) = @_;
     
     open my $in, '<', $domoutfile or die "\nERROR: Could not open file: $domoutfile\n";
-    my $h = <$in>;
+    my $h = <$in>; # skip header
     my $has_data = 0;
     while (my $line = <$in>) {
 	chomp $line;
