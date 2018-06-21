@@ -662,6 +662,8 @@ sub _remove_singletons {
         $index = 0;
         @singles = ();
     }
+
+    return;
 }
 
 =head1 AUTHOR
