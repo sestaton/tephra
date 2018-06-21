@@ -60,6 +60,10 @@ sub validate_args {
         say STDERR "\n[ERROR]: The input GFF3 file does not exist. Check arguments.\n";
         $self->help and exit(0);
     }
+    elsif (-e $opt->{outdir}) {
+        say STDERR "\n[ERROR]: The output directory exists. This may cause problems. Check arguments.\n";
+        $self->help and exit(0);
+    }
 } 
 
 sub execute {
