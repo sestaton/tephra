@@ -70,11 +70,11 @@ sub unmask_repeatdb {
 
     my $tmpfname = $name.'_unmasked_XXXX';
     my ($outfh, $tmp_outfile) = tempfile( TEMPLATE => $tmpfname, DIR => $path, UNLINK => 0, SUFFIX => '.fasta' );
+    my $re = qr/helitron\d+|(?:non_)?(?:LTR|LARD|TRIM)_retrotransposon\d+|terminal_inverted_repeat_element\d+|MITE\d+/;
 
     for my $id (keys %$store) {
 	my $seq = $store->{$id}{seq};
-	my $re = qr/helitron\d+|non_LTR_retrotransposon\d+|TRIM_retrotransposon\d+|terminal_inverted_repeat_element\d+/;
-	my ($chr, $start, $end) = ($id =~ /(?:\w{3}_)(?:singleton_)?(?:family\d+_)$re?_(\S+)_(\d+)[-_](\d+)/);
+	my ($chr, $start, $end) = ($id =~ /^(?:\w{3}_)?(?:singleton_)?(?:family\d+_)?$re?_(\S+)_(\d+)[-_](\d+)/);
 	my ($gseq, $glength) = $self->get_full_seq($index, $chr, $start, $end);
 	$gseq =~ s/.{60}\K/\n/g;
 	say $outfh join "\n", ">".$id, $gseq;
@@ -93,12 +93,12 @@ sub store_seq_coords {
     my %hash;
     my $kseq = Bio::DB::HTS::Kseq->new($file);
     my $iter = $kseq->iterator();
+    my $re = qr/helitron\d+|(?:non_)?(?:LTR|LARD|TRIM)_retrotransposon\d+|terminal_inverted_repeat_element\d+|MITE\d+/;
 
     while (my $seqobj = $iter->next_seq) {
         my $id = $seqobj->name;
         $id =~ s/_[+-]$//;
-	my $re = qr/helitron\d+|non_LTR_retrotransposon\d+|TRIM_retrotransposon\d+|terminal_inverted_repeat_element\d+/;
-        my ($chr, $start, $end) = ($id =~ /(?:\w{3}_)(?:singleton_)?(?:family\d+_)$re?_(\S+)_(\d+)[-_](\d+)/);
+        my ($chr, $start, $end) = ($id =~ /^(?:\w{3}_)?(?:singleton_)?(?:family\d+_)?$re?_(\S+)_(\d+)[-_](\d+)/);
         my $coords = join "||", $id, $start, $end;
         my $seq = $seqobj->seq;
         $hash{$id} = { seq => $seq, coords => $coords };
