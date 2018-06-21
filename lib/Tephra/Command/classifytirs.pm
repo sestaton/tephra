@@ -186,11 +186,18 @@ sub _classify_tir_families {
     );
 
     my ($outfiles, $annot_ids) = $classify_fams_obj->make_families($gffs, $log);
-    $classify_fams_obj->combine_families($outfiles);
-    $classify_fams_obj->annotate_gff({ annotated_ids => $annot_ids,
-                                       annotated_idx => $mite_index,
-                                       input_gff     => $opt->{ingff},
+
+    # update the FASTA IDs and combine them
+    $classify_fams_obj->combine_families({ outfiles      => $outfiles, 
+                                           annotated_ids => $annot_ids, 
+                                           annotated_idx => $mite_index });
+
+    # update the GFF3 IDs and combine them
+    $classify_fams_obj->annotate_gff({ annotated_ids => $annot_ids, 
+                                       annotated_idx => $mite_index, 
+                                       input_gff     => $opt->{ingff}, 
                                        te_type       => 'TIR' });
+
     
     unlink $_ for values %$gffs;
 }
