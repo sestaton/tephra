@@ -59,6 +59,10 @@ sub validate_args {
         say STDERR "\n[ERROR]: The input GFF3 file does not exist. Check arguments.\n";
         $self->help and exit(0);
     }
+    elsif (-e $opt->{outdir}) {
+        say STDERR "\n[ERROR]: The output directory exists. This may cause problems. Check arguments.\n";
+        $self->help and exit(0);
+    }
 } 
 
 sub execute {
@@ -150,7 +154,13 @@ sub _classify_ltr_families {
     );
 
     my ($outfiles, $annot_ids) = $classify_fams_obj->make_families($gffs, $log);
-    $classify_fams_obj->combine_families($outfiles);
+
+    # update the FASTA IDs and combine them
+    $classify_fams_obj->combine_families({ outfiles      => $outfiles, 
+					   annotated_ids => $annot_ids, 
+					   annotated_idx => $lard_index });
+
+    # update the GFF3 IDs and combine them
     $classify_fams_obj->annotate_gff({ annotated_ids => $annot_ids, 
 				       annotated_idx => $lard_index, 
 				       input_gff     => $opt->{ingff}, 
