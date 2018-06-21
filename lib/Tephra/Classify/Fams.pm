@@ -122,7 +122,7 @@ sub make_families {
         exit 1;
     };
 
-    my (%reports, @family_fastas, @annotated_ids); #, %seen_te_types);
+    my (%reports, @family_fastas, @annotated_ids); 
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			      for my $type (keys %$data_ref) {
 				  my $family_stats = $data_ref->{$type}{family_stats};
@@ -445,7 +445,8 @@ sub write_families {
     }
 
     my (%fastas, %annot_ids, @seen);
-    my $re = qr/helitron\d+|non_LTR_retrotransposon\d+|(?:LTR|TRIM|LARD)_retrotransposon\d+|terminal_inverted_repeat_element\d+|MITE\d+/;
+    my $re = qr/helitron\d+|(?:non_)?(?:LTR|LARD|TRIM)_retrotransposon\d+|terminal_inverted_repeat_element\d+|MITE\d+/;
+
     for my $str (reverse nsort keys %$fam_id_map) {
 	my $famfile = $sf."_family$idx".".fasta";
 	my $outfile = File::Spec->catfile( abs_path($cpath), $famfile );
@@ -529,8 +530,7 @@ sub combine_families {
     
     open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 
-    my $re = qr/helitron\d+|(?:non_)?(?:LTR|LARD|TRIM)_retrotransposon\d+|terminal_inverted_repeat_element\d+/;
-    #my ($chr, $start, $end) = ($id =~ /^(?:\w{3}_)?(?:singleton_)?(?:family\d+_)?$re?_(\S+)_(\d+)[-_](\d+)/);
+    my $re = qr/helitron\d+|(?:non_)?(?:LTR|LARD|TRIM)_retrotransposon\d+|terminal_inverted_repeat_element\d+|MITE\d+/;
 
     for my $file (nsort keys %$outfiles) {
 	unlink $file && next unless -s $file;
@@ -540,31 +540,11 @@ sub combine_families {
 	    my $id  = $seqobj->name;
 	    my $seq = $seqobj->seq;
 	    my ($elem, $seq_id, $start, $end) = ($id =~ /^(?:\w{3}_)?(?:singleton_)?(?:family\d+_)?($re)?_(\S+)_(\d+)[-_](\d+)/);
-	    unless (defined $seq_id) {
-		say STDERR "DEBUG: seq_id -> $id";
-		say STDERR 'my ($elem, $seq_id, $start, $end) = ($id =~ /^(?:\w{3}_)?(?:singleton_)?(?:family\d+_)?($re)?_(\S+)_(\d+)[-_](\d+)/);';
-		exit;
-	    }
-	    #if (exists $index->{$elem}) {
-		#$feature->{type} = $new_type;
-		#$new_id = $index->{$elem};
-	    #}
-	    #else {
-		#$new_id = $elem;
-	    #}
 
 	    my $key = join "_", $elem, $seq_id;
 	    if (exists $annot_ids->{$key}) {
-		#$feature->{attributes}{ID}[0] = $new_id;
-		#$feature->{attributes}{family}[0] = $annot_ids->{$key};
-		#$new_family = $annot_ids->{$key};
-		#say STDERR "DEBUG: $id => $annot_ids->{$key}";
-		#$id =~ s/$elem/$annot_ids->{$key}/g;
 		$id = join "_", $annot_ids->{$key}, $elem, $seq_id, $start, $end;
 	    }
-	    #else {
-		#$id = $id;
-	    #}
    
 	    $seq =~ s/.{60}\K/\n/g;
 	    say $out join "\n", ">$id", $seq;
