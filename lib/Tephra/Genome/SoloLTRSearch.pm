@@ -136,8 +136,8 @@ sub find_soloLTRs {
     my $report   = $self->report; 
 
     my @sfs;
-    find( sub { push @sfs, $File::Find::name if -d && /_copia\z|_gypsy\z/ }, $anno_dir);
-    croak "\n[ERROR]: Could not find the expected sub-directories ending in 'copia' and 'gypsy' please ".
+    find( sub { push @sfs, $File::Find::name if -d && /_copia\z|_gypsy\z|_unclassified\z/ }, $anno_dir);
+    croak "\n[ERROR]: Could not find the expected sub-directories ending in 'copia', 'gypsy' and 'unclassified' please ".
 	"check input. Exiting.\n" unless @sfs; #== 2;
 
     my $forks = @sfs;
@@ -448,7 +448,7 @@ sub _get_ltr_alns {
 
     my (@ltrseqs, @aligns);
 
-    my $ltrseqs = $self->get_exemplar_ltrs($dir);
+    my $ltrseqs = $self->get_exemplar_ltrs_for_sololtrs($dir);
     return unless defined $ltrseqs && @$ltrseqs;
 
     # This is where families are filtered by size. Since largest families come first,
