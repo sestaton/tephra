@@ -23,7 +23,55 @@ Version 0.11.1
 our $VERSION = '0.11.1';
 $VERSION = eval $VERSION;
 
-sub get_exemplar_ltrs {
+sub get_exemplar_ltrs_for_age {
+    my $self = shift;
+    my ($dir, $outdir) = @_;
+
+    my (@dirs, @ltrseqs);
+    find( sub { push @dirs, $File::Find::name if -d && /_copia\z|_gypsy\z|_unclassified\z/ }, $dir);
+    croak "\n[ERROR]: Could not find the expected sub-directories ending in 'copia', 'gypsy' and 'unclassified'. Please ".
+        "check input. Exiting.\n" unless @dirs;
+
+    for my $sfdir (@dirs) {
+	my ($ltrfile, %ltrfams);
+	find( sub { $ltrfile = $File::Find::name if -f and /exemplar_repeats.fasta$/ }, $sfdir);
+	unless (defined $ltrfile) {
+	    say STDERR "\n[WARNING]: No exemplar LTR file was found in: $sfdir.";
+	    say STDERR "This is likely because there were no families identified by the 'classifyltrs' command for this superfamily.";
+	    say STDERR "You can try the 'age' command again with the --all flag to process all LTR-RTs.\n";
+	    exit;
+	}
+
+	my $kseq = Bio::DB::HTS::Kseq->new($ltrfile);
+	my $iter = $kseq->iterator();
+	
+	my $re = qr/(?:LTR|LARD|TRIM)_retrotransposon\d+/;
+	while ( my $seq = $iter->next_seq() ) {
+	    my $id  = $seq->name;
+	    my $seq = $seq->seq;
+	    if ($id =~ /^(?:[35]prime_)?(\w{3}_)?((?:singleton_)?(?:family\d+_))?$re?_\S+_\d+[-_]\d+/) {
+		my $code = $1;
+		my $family = $2;
+		$family =~ s/_//g;
+		push @{$ltrfams{$code.$family}}, { id => $id, seq => $seq };
+	    }
+	}
+
+	for my $family (keys %ltrfams) {
+	    my $outfile = File::Spec->catfile($outdir, $family.'_exemplar_ltrseqs.fasta');
+	    open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
+	    for my $pair (@{$ltrfams{$family}}) {
+		say $out join "\n", ">".$pair->{id}, $pair->{seq};
+	    }
+	    close $out;
+	    push @ltrseqs, $outfile;
+	}
+    }
+
+    return \@ltrseqs;
+}
+
+sub get_exemplar_ltrs_for_sololtrs {
     my $self = shift;
     my ($dir) = @_;
 
