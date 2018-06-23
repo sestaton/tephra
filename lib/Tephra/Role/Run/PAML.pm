@@ -125,9 +125,10 @@ sub create_baseml_files {
     open my $out, '>', $control_file or die "\n[ERROR]: Could not open file: $control_file\n";
     print $out $ctl_file;
     close $out;
+    #say STDERR "$control_file -> $outfile";
 
-    return ({ outfile     => $outfile,
-	     control_file => $control_file });
+    return ({ outfile      => $outfile,
+	      control_file => $control_file });
 }
 
 sub parse_baseml {
@@ -144,11 +145,11 @@ sub parse_baseml {
     my $element = basename($phylip);
     $element =~ s/_ltrs.*_muscle-out.*//;
     $element =~ s/_tirs.*_muscle-out.*//;
-    #my $out = basename($outfile);
     my $wd  = getcwd();
     my $dirobj = Path::Class::Dir->new($wd);
     my $parent = $dirobj->parent;
 
+    #say STDERR "WD: $wd -> $divergence_file";
     open my $divin, '<', $outfile or die "[ERROR]: Could not open outfile: $outfile\n";
     open my $divout, '>', $divergence_file or die "[ERROR]: Could not open divergence file: $divergence_file\n";
 
@@ -171,14 +172,14 @@ sub parse_baseml {
 
     my $resdir = basename($results_dir);
     my $dest_file = File::Spec->catfile($parent, $resdir, $divergence_file);
-    copy($divergence_file, $dest_file) or die "\n[ERROR]: move failed: $!\n";
+    copy($divergence_file, $dest_file) or die "\n[ERROR]: Copy failed for $divergence_file: $!\n";
     chdir $parent or die $!;
     remove_tree($wd, { safe => 1 });
     
     return;
 }
 
-sub _build_baseml_exec { # this should probably be a separate role 
+sub _build_baseml_exec {
     my $self  = shift;
     my $blexe = $self->get_baseml_exec; # set during class initialization
     
