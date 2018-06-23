@@ -26,7 +26,8 @@ with 'Tephra::Role::GFF',
      'Tephra::Role::Util',
      'Tephra::Role::Run::Any',
      'Tephra::Role::Run::PAML',
-     'Tephra::LTR::Role::Utils';
+     'Tephra::LTR::Role::Utils',
+     'Tephra::TIR::Role::Utils';
 
 =head1 NAME
 
@@ -106,7 +107,7 @@ sub calculate_ages {
     my $outfile = $self->outfile;
 
     my $args = $self->collect_feature_args;
-    
+    #dd $args and exit;
     my $resdir = File::Spec->catdir( abs_path($args->{resdir}), 'divergence_time_stats');
     
     unless ( -d $resdir ) {
@@ -183,48 +184,68 @@ sub calculate_ages {
 sub collect_feature_args {
     my $self = shift;
     my $type = uc($self->type);
+    my $gff  = $self->gff;
 
+    ## The control statement below checks if we want to:
+    ## 1) calculate age on all elements, or
+    ## 2) only calculate age on exemplars
+    ## NB: the third part of this structure would handle the case where no exemplars are
+    ## found and the '--all' flag was not set. In that case, age on all elements would
+    ## be calculated instead of exiting. Currently (v0.11.1), the loop would never get
+    ## to that point because the GFF3 file and the '--all' flag, or the input directory
+    ## must given or the program with halt. It would be easy to allow this behavior in
+    ## in a future release once these methods are deemed stable. At the time of a major 
+    ## refactoring of these methods, it makes more sense to limit the options.
     my (%aln_args, @seqs);
-    if ($self->all || ! $self->dir) {
+    if ($self->all && $self->gff) {
+	my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
+	my $wdir = $type =~ /ltr/i ? File::Spec->catdir($path, $name.'_ltrages') : File::Spec->catdir($path, $name.'_tirages');
+	unless ( -d $wdir ) {
+	    make_path( $wdir, {verbose => 0, mode => 0771,} );
+	}
 	
-	my ($files, $wdir) = $type =~ /ltr/i ? $self->extract_ltr_sequences : $self->extract_tir_sequences;
-        $aln_args{repeats} = { seqs => $files };
-        $aln_args{resdir} = $wdir;
+	my ($files, $swdir) = $type =~ /ltr/i ? $self->extract_ltr_sequences : $self->extract_tir_sequences;
+	$aln_args{repeats} = { seqs => $files };
+	$aln_args{resdir} = $swdir;
     }
-    else {
+    elsif (! $self->all && $self->dir) { 
 	my $dir = $self->dir;
-	#my $dir = $self->dir->absolute->resolve;
+	my ($name, $path, $suffix) = fileparse($dir, qr/\.[^.]*/);
+
+	my $wdir = $type =~ /ltr/i ? File::Spec->catdir($path, $name.'_ltrages') : File::Spec->catdir($path, $name.'_tirages');
+	unless ( -d $wdir ) {
+	    make_path( $wdir, {verbose => 0, mode => 0771,} );
+	}
+
 	if ($type =~ /ltr/i) { 
-	    my $ltrseqs = $self->get_exemplar_ltrs($dir);
+	    my $ltrseqs = $self->get_exemplar_ltrs_for_age($dir, $wdir);
 	    @seqs = @$ltrseqs;
 	}
 	elsif ($type =~ /tir/i) {
-	    #$dir = $self->dir->absolute->resolve;
-	    my $wanted  = sub { push @seqs, $File::Find::name if -f && /exemplar_repeats.fasta$/ };
-	    my $process = sub { grep ! -d, @_ };
-	    find({ wanted => $wanted, preprocess => $process }, $dir);
+	    my $tirseqs = $self->get_exemplar_tirs_for_age($dir, $wdir);
+	    @seqs = @$tirseqs;
 	}
 
 	if (@seqs > 0) {
-	    $aln_args{repeats} = { seqs => \@seqs };                                                                                    
-	    $aln_args{resdir} = $dir; 
-	}      
-	else {
-	    unless (-e $self->gff) {
-		croak "\n[ERROR]: No exemplar files were found in the input directory ".
-		    "and the input GFF file does not appear to exist. Exiting.\n";
-	    }
-
-	    warn "\n[WARNING]: No exemplar files were found in the input directory. $type age will be ".
-		"calculated from $type elements in the input GFF.\n";
-
-	    #my ($files, $wdir) = $self->extract_ltr_sequences;
-	    my ($files, $wdir) = $type =~ /ltr/i ? $self->extract_ltr_sequences : $self->extract_tir_sequences;
-	    $aln_args{repeats} = { seqs => $files };
-	    $aln_args{resdir} = $wdir;
+	    $aln_args{repeats} = { seqs => \@seqs };
+	    $aln_args{resdir} = $wdir; 
 	}
     }
+    elsif ($self->gff) {
+	unless (-e $self->gff) {
+	    croak "\n[ERROR]: No exemplar files were found in the input directory ".
+		"and the input GFF file does not appear to exist. Exiting.\n";
+	}
+	
+	warn "\n[WARNING]: No exemplar files were found in the input directory. $type age will be ".
+	    "calculated from $type elements in the input GFF.\n";
+	
+	my ($files, $wdir) = $type =~ /ltr/i ? $self->extract_ltr_sequences : $self->extract_tir_sequences;
+	$aln_args{repeats} = { seqs => $files };
+	$aln_args{resdir} = $wdir;
+    }
 
+    #dd \%aln_args and exit;
     return \%aln_args;
 }
 
@@ -235,7 +256,7 @@ sub process_baseml_args {
     my $cwd = getcwd();
     my ($pname, $ppath, $psuffix) = fileparse($phy, qr/\.[^.]*/);
     my $divfile = File::Spec->catfile( abs_path($ppath), $pname.'-divergence.txt' );
-    $divfile = basename($divfile);
+    my $divfile_name = basename($divfile);
 
     my $utils = Tephra::Alignment::Utils->new;
     my $divergence = $utils->check_divergence($phy);
@@ -243,7 +264,7 @@ sub process_baseml_args {
     if ($divergence > 0) {
 	my $baseml_args = $self->create_baseml_files({ phylip => $phy, treefile => $dnd });
 	$self->run_baseml({ working_dir => $ppath, current_dir => $cwd }); 
-	$self->parse_baseml({ divergence_file => $divfile,
+	$self->parse_baseml({ divergence_file => $divfile_name,
 			      results_dir     => $resdir,
 			      treefile        => $dnd,
 			      phylip          => $phy,
@@ -256,10 +277,14 @@ sub process_baseml_args {
 	open my $divout, '>', $divfile or die "\n[ERROR]: Could not open divergence file: $divfile\n";
 	say $divout join "\t", $element, $divergence , '0', '0';
 	close $divout;
-	my $dest_file = File::Spec->catfile($resdir, $divfile);
-	copy($divfile, $dest_file) or die "\n[ERROR]: Copy failed: $!\n";
+	my $dest_file = File::Spec->catfile($resdir, $divfile_name);
+
+	copy($divfile, $dest_file) or die "\n[ERROR]: Copy failed for $divfile to $dest_file WD:$cwd: $!\n";
 	unlink $divfile;
+	remove_tree( $ppath, { safe => 1 } );
     }
+
+    return;
 }
 
 sub process_align_args {
@@ -271,7 +296,7 @@ sub process_align_args {
     make_path( $pdir, {verbose => 0, mode => 0771,} );
 
     my $fas = File::Spec->catfile($pdir, $name.$suffix);
-    copy($db, $fas) or die "\n[ERROR]: Copy failed: $!\n";
+    copy($db, $fas) or die "\n[ERROR]: Copy failed before alignment for '$path.$name.$suffix': $!\n";
     unlink $db;
 
     my $tre  = File::Spec->catfile($pdir, $name.'.dnd');
@@ -289,8 +314,14 @@ sub process_align_args {
 
     my $utils = Tephra::Alignment::Utils->new;
     my $phy = $utils->parse_aln($aln, $tre, $dnd);
-    $self->process_baseml_args($phy, $dnd, $resdir);
-    
+    if (-s $phy) { 
+	$self->process_baseml_args($phy, $dnd, $resdir);
+    }
+    else {
+	say STDERR "\n[ERROR]: Phylip conversion of '$phy' did not complete. Check '$aln' and '$tre' for debugging. Exiting.\n";
+	exit(1);
+    }
+
     return;
 }
 
