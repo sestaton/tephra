@@ -15,6 +15,27 @@ Version	Date	Location
   the number of masked bases will be reported.
 - Remove redundant methods for finding LTR exemplars and place in common role under the LTR 
   namespace (called *LTR::Role::Utils).
+- Fix minor bug with header being printed multiple times in famliy-level domain architecture
+  log file.
+- Fix major bug caused by a delete hash key statment in the write_families method in the 
+  *Classify::Fams class that was causing the writing of elements to get out of sync,
+  and even some elements getting dropped from the combined file.
+- Fix bug with element IDs being updated in the domain architecture log and GFF3 after
+  family-level classification but not FASTA. This caused the ID numbers in the FASTA to differ,
+  but now they are consistent. This change is in the *Classify::Fams class, but required changes
+  to both the 'classifyltrs' and 'classifytirs' commands to pass new object references containing
+  a mapping of updated IDs.
+- Add method to properly check for and annotate LARD elements. The statistics for these elements
+  are now logged along with other LTR-RTs.
+- Modify output in domain architecture log file so the results are printed in descending order
+  by occurrence for easier interpretation of the results.
+- Add methods for finding TIR exemplars and place in common role under the TIR
+  namespace (called *TIR::Role::Utils).
+- Refactor the control-flow for the 'age' command option and use new methods for getting exemplars,
+  or if the --all option is given, use new logic to set output directory for both LTR/TIR types.
+- Refactor *SoloLTRSearch class to use more descriptive method for finding exemplars, which is now
+  in the *LTR::Role::Utils class.
+- Add unclassified LTR elements to solo-LTR search instead of only Gypsy and Copia.
 
 0.11.0	04/17/2018	Vancouver, BC
 
