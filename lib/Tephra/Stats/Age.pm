@@ -136,7 +136,7 @@ sub calculate_ages {
 
     for my $type (keys %$args) {
 	if ($type eq 'repeats') {
-	    for my $db (@{$args->{$type}{seqs}}) {
+	    for my $db (nsort @{$args->{$type}{seqs}}) {
 		$tes++;
 		$pm->start($db) and next;
 		$SIG{INT} = sub { $pm->finish };
@@ -154,7 +154,7 @@ sub calculate_ages {
     open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
     say $out join "\t", "ID", "Divergence", "Age", "Ts:Tv";
 
-    for my $file (@agefiles) {
+    for my $file (nsort @agefiles) {
 	$self->collate($file, $out);
     }
     close $out;
