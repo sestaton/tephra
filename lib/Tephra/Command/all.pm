@@ -84,14 +84,15 @@ sub _run_all_commands {
 	# Need to add a 3-letter code ("RLX") to avoid warnings in masking.
 	# The LTRs/TRIMs will be classified in a later step and the proper codes will
 	# be applied.
-	my $tmp_ltr_ref = $tephra_obj->make_temp_reference_for_masking($ltr_fas, 'LTRs');
+	#my $tmp_ltr_ref = $tephra_obj->make_temp_reference_for_masking($ltr_fas, 'LTRs');
 
 	$genome_mask1 = $tephra_obj->mask_reference({
 	    log         => $log, 
 	    log_results => 0,
 	    config      => $config, 
 	    reference   => $global_opts->{genome}, 
-	    database    => $tmp_ltr_ref, 
+	    #database    => $tmp_ltr_ref,
+	    database    => $ltr_fas,
 	    dbtype      => 'LTRs', 
 	    ref_count   => $refct });
 
@@ -100,7 +101,7 @@ sub _run_all_commands {
 	    $log->info("Output files - $genome_mask1");
 	    push @mask_files, $genome_mask1;
 	    push @mask_files, $genome_mask1.'.log';
-	    unlink $tmp_ltr_ref;
+	    #unlink $tmp_ltr_ref;
 	}
     }
 
@@ -311,10 +312,13 @@ sub _run_all_commands {
 	push @fas_files, $nonltr_fas;
     }
 
-    ## combine results
-    my  $customRepDB = $tephra_obj->make_combined_repeatdb($log, \@fas_files);
-    if (-e $customRepDB) {
-        $log->info("Output files - $customRepDB");
+    ## combine full-length elements for masking and fragment discovery
+    my $completeRepDB = $tephra_obj->make_combined_repeatdb({ log => $log, files => \@fas_files, task => 'complete' });
+    #my $completeRepDB = $customRepDB =~ s/\.fasta/_complete.fasta/r;
+    #move $customRepDB, $completeRepDB or die "\n[ERROR]: move failed: $!\n";
+
+    if (-e $completeRepDB) {
+        $log->info("Output files - $completeRepDB");
     }
 
     ## maskref on customRepDB
@@ -323,17 +327,24 @@ sub _run_all_commands {
 	  log_results => 1,
 	  config      => $config,
 	  reference   => $global_opts->{genome},
-	  database    => $customRepDB,
-	  dbtype      => 'full transposon database',
+	  database    => $completeRepDB,
+	  dbtype      => 'full-length transposon database',
 	  ref_count   => $refct });
 
     push @mask_files, $final_mask.'.log';
 
     ## findfragments
-    my $fragments_gff = $tephra_obj->find_fragments($log, $customRepDB, $final_mask);
+    my ($fragments_gff, $fragments_fas) = $tephra_obj->find_fragments($log, $customRepDB, $final_mask);
 
     if (-e $fragments_gff) {
 	$log->info("Output files - $fragments_gff");
+	$log->info("Output files - $fragments_fas");
+    }
+    
+    my $customRepDB = $tephra_obj->make_combined_repeatdb({ log => $log, files => \(@fas_files, $fragments_fas), task => 'all' });
+
+    if (-e $customRepDB) {
+        $log->info("Output files - $customRepDB");
     }
 
     ## combine GFF3
