@@ -273,7 +273,7 @@ sub make_fasta_from_dom_orgs {
     my $foutfile = File::Spec->catfile($cpath, $famfile);
     open my $out, '>>', $foutfile or die "\n[ERROR]: Could not open file: $foutfile\n";
 
-    my %fam_map;
+    my (%fam_map, @seen);
     my ($idx, $famtot) = (0, 0);
     for my $str (reverse sort { @{$dom_orgs->{$a}} <=> @{$dom_orgs->{$b}} } keys %$dom_orgs) {  
 	my $famnum = $sfname."_family$idx";
@@ -284,8 +284,9 @@ sub make_fasta_from_dom_orgs {
                 my $coords  = (keys %$coordsh)[0];
                 $seqstore->{$elem}{$coords} =~ s/.{60}\K/\n/g;
                 say $out join "\n", ">$sfname"."_family$idx"."_$elem"."_$coords", $seqstore->{$elem}{$coords};
-                delete $seqstore->{$elem};
+                #delete $seqstore->{$elem};
 		push @{$fam_map{$famnum}}, $elem;
+		push @seen, $elem;
             }
             else {
                 croak "\n[ERROR]: $elem not found in store. Exiting.";
@@ -296,6 +297,7 @@ sub make_fasta_from_dom_orgs {
     close $out;
     my $famct = $idx;
     $idx = 0;
+    delete $seqstore->{$_} for @seen;
 
     my $reduc = (keys %$seqstore);
     my $singfile = $sfname.'_singletons.fasta';
@@ -443,17 +445,18 @@ sub write_families {
 	my $tomerge = $self->_compare_merged_nonmerged($matches, $seqstore, $unmerged_stats);
 	$fam_id_map = $tomerge == 1 ? $matches : $dom_fam_map;
     }
+    #dd $fam_id_map; # and exit;
 
     my (%fastas, %annot_ids, @seen);
     my $re = qr/helitron\d+|(?:non_)?(?:LTR|LARD|TRIM)_retrotransposon\d+|terminal_inverted_repeat_element\d+|MITE\d+/;
 
-    for my $str (reverse nsort keys %$fam_id_map) {
+    for my $str (reverse sort { @{$fam_id_map->{$a}} <=> @{$fam_id_map->{$b}} } keys %$fam_id_map) {
 	my $famfile = $sf."_family$idx".".fasta";
 	my $outfile = File::Spec->catfile( abs_path($cpath), $famfile );
 	open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 	for my $elem (@{$fam_id_map->{$str}}) {
 	    my $query = $elem =~ s/\w{3}_singleton_family\d+_//r;
-	    if (exists $seqstore->{$query}) {
+	    if (exists $seqstore->{$query} && @{$fam_id_map->{$str}} > 1) {
 		$famtot++;
 		my $coordsh = $seqstore->{$query};
 		my $coords  = (keys %$coordsh)[0];
