@@ -547,54 +547,100 @@ sub combine_age_files {
     my $t0 = gettimeofday();
     my $st = strftime('%d-%m-%Y %H:%M:%S', localtime);
 
+
+    my $re = qr/helitron\d+|(?:non_)?(?:LTR|LARD|TRIM)_retrotransposon\d+|terminal_inverted_repeat_element\d+|MITE\d+/;
+    #my ($chr, $start, $end) = ($id =~ /^(?:\w{3}_)?(?:singleton_)?(?:family\d+_)?$re?_(\S+)_(\d+)[-_](\d+)/);
+
     my $util = Tephra::Annotation::Util->new;
+    my $repeat_map = $util->build_repeat_map;
 
     my ($famname, %families, %ages);
     for my $fasta (@$fastas) {
-        open my $in, '<', $fasta or die "\n[ERROR]: Could not open file: $fasta\n";
-        
-        while (my $line = <$in>) {
-            chomp $line;
-            if ($line =~ /^>([A-Z]{3}(?:_singleton_)?(?:_?family\d+)?)_(?:LTR|TRIM|terminal)/) {
+        my $kseq = Bio::DB::HTS::Kseq->new($fasta);
+        my $iter = $kseq->iterator;
+
+	while (my $seqo = $iter->next_seq) {
+            my $id = $seqo->name;
+            my $seq = $seqo->seq;
+            if ($id =~  /^((?:\w{3}_)?(?:singleton_)?(?:family\d+_))?(?:exemplar_)?($re)?_\S+_\d+[-_]\d+/) {  
+                #/^>([A-Z]{3}(?:_singleton_)?(?:_?family\d+)?)_(?:LTR|TRIM|terminal)/) {
                 $famname = $1;
-                $line =~ s/>//;
-                push @{$families{$famname}}, $line;
+                my $type = $2;
+                $type =~ s/\d+$//;
+                $famname =~ s/_$//;
+
+                $type = $type =~ /LARD|TRIM|LTR/i ? 'LTR_retrotransposon' 
+                    : $type =~ /terminal_inverted_repeat_element|MITE/i ? 'terminal_inverted_repeat_element' 
+                    : $type;
+                push @{$families{$type}{$famname}}, $id;
             }
         }
-        close $in;
     }
+    #dd \%families and exit;
 
     for my $agefile (@$ages) { 
+        #say STDERR "working on... $agefile";
         open my $tab, '<', $agefile or die "\n[ERROR]: Could not open file: $agefile\n";
         
         while (my $line = <$tab>) {
             chomp $line;
-            next if $line =~ /^(?:LTR|TIR)-ID/;
+            next if $line =~ /^(?:LTR|TIR)?-?ID/;
             #LTR-ID Divergence Age Ts:Tv
             my ($id, $div, $age, $tstv) = split /\t/, $line;
-            if ($id =~ /^([A-Z]{3}(?:_singleton_)?(?:_?family\d+)?)_(?:LTR|TRIM|terminal)/) {
-                my $fam = $1;
-                if (exists $families{$fam}) {
-                    my $famsize = @{$families{$fam}};
-                    push @{$ages{$famsize}{$fam}}, join "||", $id, $div, $age, $tstv;
+            if ($id =~ /^((?:\w{3}_)?(?:singleton_)?(?:family\d+_))?(?:exemplar_)?(?:($re)?_\S+_\d+[-_]\d+)?/) {  
+                #/^((?:\w{3}_)?(?:singleton_)?(?:family\d+_))?(?:exemplar_)?($re)?_\S+_\d+[-_]\d+/
+                #/^([A-Z]{3}(?:_singleton_)?(?:_?family\d+)?)_(?:LTR|TRIM|terminal)/) {
+                $famname = $1;
+                my $type = $2;
+                #$type =~ s/\d+$//;
+                $famname =~ s/_$//;
+
+                if (defined $type) {
+                    $type = $type =~ /LARD|TRIM|LTR/i ? 'LTR_retrotransposon'
+                        : $type =~ /terminal_inverted_repeat_element|MITE/i ? 'terminal_inverted_repeat_element'
+                        : $type;
+                }
+                elsif (!defined $type && defined $famname) {
+                    my ($sfam_code) = ($famname =~ /(^\w{3})_?/);
+                    #say join q{ }, $sfam_code, $famname;
+                    my $order = $repeat_map->{$sfam_code}{order};
+                    #dd $order;
+                    #my $order = $sf_map->{order};
+                    #say join q{ }, $sfam_code, $order and exit;
+                    $type = $order =~ /LTR/i ? 'LTR_retrotransposon' 
+                        : $order =~ /TIR/i ? 'terminal_inverted_repeat_element' : $order;
+                }
+
+		#say join q{ }, $type, $famname;
+                if (exists $families{$type}{$famname}) {
+                    #say join q{ }, $type, $famname;
+                    my $famsize = @{$families{$type}{$famname}};
+                    #push @{$ages{$type}{$famsize}{$famname}}, join "||", $id, $div, $age, $tstv;
+                    push @{$ages{$type}{$famname}{$famsize}}, join "||", $id, $div, $age, $tstv;
                 }
             }
         }
         close $tab;
     }
+    #dd \%ages and exit;
 
     open my $out, '>', $age_sum or die "\n[ERROR]: Could not open file: $age_sum\n";
     say $out join "\t", 'Superfamily', 'Family', 'Family_size', 'ElementID', 'Divergence', 'Age', 'Ts:Tv';
 
     my $ct = 0;
-    for my $famsize (reverse sort { $a <=> $b } keys %ages) {
-        for my $fam (nsort keys %{$ages{$famsize}}) { 
-            for my $agestr (@{$ages{$famsize}{$fam}}) {
-                $ct++;
-                my ($id, $div, $age, $tstv) = split /\|\|/, $agestr;
-                my $sfam = $util->map_superfamily_name($fam);
-                $sfam = $sfam ? $sfam : 'Unknown'; # the method above returns 0 if the superfamily is unknown
-                say $out join "\t", $sfam, $fam, $famsize, $id, $div, $age, $tstv;
+    for my $type (nsort keys %ages) {
+        for my $fam (nsort keys %{$ages{$type}}) {
+            for my $famsize (reverse sort { $a <=> $b } keys %{$ages{$type}{$fam}}) {
+        #for my $famsize (keys %{$ages{$type}}) { #reverse sort { $a <=> $b } keys %{$ages{$type}}) {
+            #for my $fam (nsort keys %{$ages{$type}{$famsize}}) { 
+                #for my $agestr (@{$ages{$type}{$famsize}{$fam}}) {
+                for my $agestr (@{$ages{$type}{$fam}{$famsize}}) {
+                    $ct++;
+                    my ($id, $div, $age, $tstv) = split /\|\|/, $agestr;
+                    my $sfam = $util->map_superfamily_name($fam);
+                    $sfam = $sfam ? $sfam : 'Unknown'; # the method above returns 0 if the superfamily is unknown
+                    say $out join "\t", $sfam, $fam, $famsize, $id, $div, $age, $tstv;
+                }
             }
         }
     }
@@ -602,11 +648,13 @@ sub combine_age_files {
 
     my $age_pd = ' ' x length($ct);
     $log->info("Command - Generating combined age files at: $st.");
+    #say "Command - Generating combined age files at: $st.";
     my $t1 = gettimeofday();
     my $total_elapsed = $t1 - $t0;
     my $final_time = sprintf("%.2f",$total_elapsed/60);
     my $ft = strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Results - Finished generating combined age files for $ct transposons at: $st.");
+    #say "Results - Finished generating combined age files for $ct transposons at: $st.";
 
     return $ct;
 }
