@@ -462,6 +462,7 @@ sub find_fragments {
 
     my ($name, $path, $suffix) = fileparse($global_opts->{genome}, qr/\.[^.]*/);
     my $fragments_gff = File::Spec->catfile( abs_path($path), $name.'_tephra_transposon_fragments.gff3' );
+    my $fragments_fas = File::Spec->catfile( abs_path($path), $name.'_tephra_transposon_fragments.fasta' );
 
     my $findfragments_opts = ['-g', $final_mask, '-d', $customRepDB, '-o', $fragments_gff, '-t', $global_opts->{threads}];
     $self->capture_tephra_cmd('findfragments', $findfragments_opts, $global_opts->{debug});
@@ -472,7 +473,7 @@ sub find_fragments {
     my $ft = strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findfragments' completed at: $ft.");
 
-    return $fragments_gff;
+    return ($fragments_gff, $fragments, $fas);
 }
 
 sub combine_gff_files {
