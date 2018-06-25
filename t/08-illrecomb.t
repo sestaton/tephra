@@ -23,7 +23,7 @@ if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
 
 my $cmd       = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir   = File::Spec->catdir('t', 'test_data');
-my $outdir    = File::Spec->catdir($testdir,  't_family_domains');
+my $outdir    = File::Spec->catdir($testdir,  'ltr_family_domains');
 my $allstfile = File::Spec->catfile($testdir, 'gypsy_illrecomb_stats.tsv');
 my $illstfile = File::Spec->catfile($testdir, 'gypsy_illrecomb_illrecstats.tsv');
 my $seqfile   = File::Spec->catfile($testdir, 'gypsy_illrecomb_seqs.fasta');

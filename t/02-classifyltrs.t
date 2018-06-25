@@ -19,7 +19,7 @@ $| = 1;
 
 my $cmd      = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir  = File::Spec->catdir('t', 'test_data');
-my $outdir   = File::Spec->catfile($testdir, 't_family_domains');
+my $outdir   = File::Spec->catfile($testdir, 'ltr_family_domains');
 my $genome   = File::Spec->catfile($testdir, 'ref.fas');
 my $log      = File::Spec->catfile($testdir, 'ref_tephra_classifyltrs.log');
 my $ingff    = File::Spec->catfile($testdir, 'ref_tephra_ltrs_combined_filtered.gff3');
