@@ -422,14 +422,23 @@ sub find_nonltrs {
 
 sub make_combined_repeatdb {
     my $self = shift;
-    my ($log, $fas_files) = @_;
+    my ($obj) = @_;
     my $global_opts = $self->global_options;
 
+    my ($log, $fas_files, $task) = @{$obj}{qw(log files task)};
     my $t0 = gettimeofday();
     my $st = strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Command - Generating combined FASTA file at: $st.");
+    my ($str, $customRepDB);
+    if ($task eq 'complete') {
+	$str = "Command - Generating combined FASTA file of complete elements at:               $st.";
+	$customRepDB = $global_opts->{outfile} =~ s/\.gff.*/_complete.fasta/r;
+    }
+    elsif ($task eq 'all') {
+	$str = "Command - Generating combined FASTA file of fragments and complete elements at: $st.";
+	$customRepDB = $global_opts->{outfile} =~ s/\.gff.*/.fasta/r;
+    }
     
-    my $customRepDB = $global_opts->{outfile} =~ s/\.gff.*/.fasta/r;
+    $log->info($str);
     open my $out, '>', $customRepDB or die "\n[ERROR]: Could not open file: $customRepDB\n";
 
     for my $file (@$fas_files) {
@@ -446,7 +455,15 @@ sub make_combined_repeatdb {
     my $total_elapsed = $t1 - $t0;
     my $final_time = sprintf("%.2f",$total_elapsed/60);
     my $ft = strftime('%d-%m-%Y %H:%M:%S', localtime);
-    $log->info("Results - Finished generating combined FASTA file at: $ft. Final output files:");
+    my $estr;
+    if ($task eq 'complete') {
+	$str = "Results - Finished generating combined FASTA file of complete elements at:               $ft. Final output files:";
+    }
+    elsif ($task eq 'all') {
+	$str = "Results - Finished generating combined FASTA file of fragments and complete elements at: $ft. Final output files:";
+    }
+    
+    $log->info($estr);
 
     return $customRepDB;
 }
