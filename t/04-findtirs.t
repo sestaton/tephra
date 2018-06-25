@@ -38,7 +38,7 @@ ok( @files == 1, 'Can find some tirs' ); # only 1 after rename
 
 ## clean up
 #my @outfiles;
-#find( sub { push @outfiles, $File::Find::name if /^ref_tirs/ && ! /$gff/ }, $testdir);
+#find( sub { push @outfiles, $File::Find::name if /fas/ }, $testdir);
 #unlink @outfiles;
 unlink $fas;
     
