@@ -490,7 +490,7 @@ sub find_fragments {
     my $ft = strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findfragments' completed at: $ft.");
 
-    return ($fragments_gff, $fragments, $fas);
+    return ($fragments_gff, $fragments_fas);
 }
 
 sub combine_gff_files {
