@@ -21,7 +21,7 @@ my $ingff    = File::Spec->catfile($testdir, 'ref_tirs.gff3');
 my $outgff   = File::Spec->catfile($testdir, 'ref_tirs_classified.gff3');
 my $outfas   = File::Spec->catfile($testdir, 'ref_tirs_classified.fasta');
 my $log      = File::Spec->catfile($testdir, 'ref_tephra_classifytirs.log');
-my $outdir   = File::Spec->catfile($testdir, 't_family_domains');
+my $outdir   = File::Spec->catfile($testdir, 'tir_family_domains');
 #my $famdom   = File::Spec->catfile($testdir, 'TAIR10_chr1_tirs_classified_family-level_domain_org.tsv');
 my $repeatdb = File::Spec->catfile($testdir, 'repdb.fas');
 
@@ -61,5 +61,6 @@ ok( -e $log, 'Correctly logged TIR classification results' );
 ## clean up
 unlink $outfas, $log;
 unlink $ingff;
+remove_tree( $outdir, { safe => 1 } );
 
 done_testing();
