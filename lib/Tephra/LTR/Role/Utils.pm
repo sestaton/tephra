@@ -5,6 +5,7 @@ use Moose::Role;
 use File::Spec;
 use File::Find;
 use File::Basename;
+use File::Path qw(remove_tree);
 use Bio::DB::HTS::Kseq;
 use Carp 'croak';
 use namespace::autoclean;
@@ -39,6 +40,8 @@ sub get_exemplar_ltrs_for_age {
 	    say STDERR "\n[WARNING]: No exemplar LTR file was found in: $sfdir.";
 	    say STDERR "This is likely because there were no families identified by the 'classifyltrs' command for this superfamily.";
 	    say STDERR "You can try the 'age' command again with the --all flag to process all LTR-RTs.\n";
+	    remove_tree( $outdir, { safe => 1 } )
+		if $self->clean;
 	    exit;
 	}
 
