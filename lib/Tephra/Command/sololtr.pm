@@ -26,6 +26,7 @@ sub opt_spec {
 	[ "seq|s=s",          "Extract query sequence from domain alignment."                               ],
 	[ "threads|t=i",      "The number of threads to use for clustering coding domains (Default: 1)"     ],
 	[ "clean",            "Clean up the intermediate alignment files (Default: yes) "                   ],
+	[ "debug",            "Show external commands and progress for debugging (Default: no) "            ],
 	[ "help|h",           "Display the usage menu and exit. "                                           ],
 	[ "man|m",            "Display the full manual. "                                                   ],
 	);
@@ -76,6 +77,7 @@ sub _calculate_soloLTR_abund {
     my $threads = $opt->{threads} // 1;
     my $clean   = $opt->{clean} // 1;
     my $all     = $opt->{allfamilies} // 0;
+    my $debug   = $opt->{debug} // 0;
 
     my $ill_obj = Tephra::Genome::SoloLTRSearch->new(
 	dir          => $opt->{indir},
@@ -89,6 +91,7 @@ sub _calculate_soloLTR_abund {
 	threads      => $threads,
 	clean        => $clean,
 	fullanalysis => $all,
+	debug        => $debug,
     );
     
     $ill_obj->find_soloLTRs;
@@ -124,6 +127,7 @@ $desc
      -a|allfamilies   :    Analyze all LTR-RT families for solo-LTRs (Default: no).      
      -t|threads       :    The number of threads to use for clustering coding domains (Default: 1).
      --clean          :    Clean up the intermediate alignment and HMMER files (Default: yes).
+     --debug          :    Show external commands and progress for debugging (Default: no).
 
 END
 }
@@ -217,6 +221,10 @@ S. Evan Staton, C<< <evan at evanstaton.com> >>
 =item --clean
 
  Clean up the intermediate alignment and HMMER files (Default: yes).
+
+=item --debug
+
+ Show external commands and progress for debugging (Default: no).
 
 =item -h, --help
 
