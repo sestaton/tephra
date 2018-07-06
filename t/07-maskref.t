@@ -11,7 +11,7 @@ use File::Find;
 use File::Spec;
 #use Data::Dump::Color;
 
-use Test::More tests => 3;
+use Test::More tests => 4;
 
 $| = 1;
 
@@ -31,10 +31,16 @@ my $log      = File::Spec->catfile($testdir, 'ref_masked.fas.log');
 
 my @mask_cmd = ($cmd, 'maskref', '-g', $genome, '-d', $repeatdb, '-o', $masked, $log);
 #say STDERR $mask_cmd;
-my @ret = capture { system([0..5], @mask_cmd) };
+my ($stdout, $stderr, $exit) = capture { system([0..5], @mask_cmd) };
 
 ok( -e $masked, 'Can mask reference' );
 ok( -e $log, 'Can mask reference' );
+
+for my $line (split /^/, $stdout) { 
+    if ($line =~ /Total masked bases:  (\d+.\d+)%/) {
+	ok( $1 > 0, 'Logged non-zero masked bases of output masked genome' );
+    }
+}
 
 ## clean up
 unlink $log;
