@@ -334,14 +334,15 @@ sub _run_all_commands {
     push @mask_files, $final_mask.'.log';
 
     ## findfragments
-    my ($fragments_gff, $fragments_fas) = $tephra_obj->find_fragments($log, $customRepDB, $final_mask);
+    my ($fragments_gff, $fragments_fas) = $tephra_obj->find_fragments($log, $completeRepDB, $final_mask);
+    push @fas_files, $fragments_fas;
 
     if (-e $fragments_gff) {
 	$log->info("Output files - $fragments_gff");
 	$log->info("Output files - $fragments_fas");
     }
     
-    my $customRepDB = $tephra_obj->make_combined_repeatdb({ log => $log, files => \(@fas_files, $fragments_fas), task => 'all' });
+    my $customRepDB = $tephra_obj->make_combined_repeatdb({ log => $log, files => \@fas_files, task => 'all' });
 
     if (-e $customRepDB) {
         $log->info("Output files - $customRepDB");
