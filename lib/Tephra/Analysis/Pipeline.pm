@@ -429,15 +429,19 @@ sub make_combined_repeatdb {
     my $t0 = gettimeofday();
     my $st = strftime('%d-%m-%Y %H:%M:%S', localtime);
     my ($str, $customRepDB);
-    if ($task eq 'complete') {
+    if (defined $task && $task eq 'complete') {
 	$str = "Command - Generating combined FASTA file of complete elements at:               $st.";
 	$customRepDB = $global_opts->{outfile} =~ s/\.gff.*/_complete.fasta/r;
     }
-    elsif ($task eq 'all') {
+    elsif (defined $task && $task eq 'all') {
 	$str = "Command - Generating combined FASTA file of fragments and complete elements at: $st.";
 	$customRepDB = $global_opts->{outfile} =~ s/\.gff.*/.fasta/r;
     }
-    
+    else {
+	say STDERR "\n[ERROR]: Could not determine the task for combining repeat libraries. This is a bug, please report it.\n";
+	return;
+    }
+
     $log->info($str);
     open my $out, '>', $customRepDB or die "\n[ERROR]: Could not open file: $customRepDB\n";
 
