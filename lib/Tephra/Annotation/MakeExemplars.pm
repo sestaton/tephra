@@ -199,6 +199,7 @@ sub process_vmatch_args {
 			} );
 
     for my $db (@fams) {
+	next unless -s $db;
 	$pm->start($db) and next;
 	$SIG{INT} = sub { $pm->finish };
 	my ($exemplar, $family) = $self->calculate_exemplars($db);
