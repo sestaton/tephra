@@ -128,6 +128,17 @@ has threads => (
     default   => 1,
 );
 
+has debug => (
+    is         => 'ro',
+    isa        => 'Bool',
+    predicate  => 'has_debug',
+    lazy       => 1,
+    default    => 0,
+);
+
+#
+# Methods
+#
 sub find_soloLTRs {
     my $self = shift;
     my $anno_dir = $self->dir->absolute->resolve;
@@ -137,8 +148,8 @@ sub find_soloLTRs {
 
     my @sfs;
     find( sub { push @sfs, $File::Find::name if -d && /_copia\z|_gypsy\z|_unclassified\z/ }, $anno_dir);
-    croak "\n[ERROR]: Could not find the expected sub-directories ending in 'copia', 'gypsy' and 'unclassified' please ".
-	"check input. Exiting.\n" unless @sfs; #== 2;
+    croak "\n[ERROR]: Could not find the expected sub-directories ending in 'copia', 'gypsy' and 'unclassified'. ".
+	"Please check input. Exiting.\n" unless @sfs; #== 2;
 
     my $forks = @sfs;
     my $pm = Parallel::ForkManager->new($forks);
@@ -149,10 +160,13 @@ sub find_soloLTRs {
     };
 
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
-			      my ($model_dir, $reports) = @{$data_ref}{qw(model_dir reports)};
-			      $self->_collate($reports, $report);
-			      if ($self->clean) {
-				  remove_tree( $model_dir, { safe => 1} );
+			      if (defined $data_ref) { 
+				  my ($model_dir, $reports) = @{$data_ref}{qw(model_dir reports)};
+				  $self->_collate_sololtr_reports($reports, $report);
+
+				  if ($self->clean) {
+				      remove_tree( $model_dir, { safe => 1} );
+				  }
 			      }
 			} );
 
@@ -184,44 +198,48 @@ sub run_sf_search {
     my $self = shift;
     my ($sf, $dir, $dirct, $hmmsearch_summary) = @_;
     my $genome = $self->genome->absolute->resolve;
+    my $debug  = $self->debug;
     
     my ($hmmbuild, $hmmsearch) = $self->_find_hmmer;
 
-    #print STDERR "Getting LTR alignments for ",ucfirst($sf),"....";
-    my $ltr_aln_files = $self->_get_ltr_alns($dir);
-    #say STDERR "done with alignments.";
+    print STDERR "Getting LTR alignments for ",ucfirst($sf),"...." if $debug;
+    my $ltr_aln_files = $self->_get_ltr_alns($dir);    
+    say STDERR "done with alignments." if $debug;
+    #dd $ltr_aln_files and exit;
 
     ## need masked genome here
-    if (!defined $ltr_aln_files || @$ltr_aln_files < 1 || ! -e $genome) {
-	croak "\n[ERROR]: No genome was found or the expected alignments files were not found for ",
-	    ucfirst($sf),". Exiting.";
+    if (!defined $ltr_aln_files || @$ltr_aln_files < 1) {
+	say STDERR "\n[ERROR]: The expected alignments files were not found for ",ucfirst($sf).
+	    ". Skipping solo-LTR search for this superfamily.";
+	return undef;
     }
         
-    #print STDERR "Getting alignment statistics for ",ucfirst($sf),"...";
+    print STDERR "Getting alignment statistics for ",ucfirst($sf),"..." if $debug;
     my $aln_stats = $self->_get_aln_len($ltr_aln_files); # return a hash-ref
-    #say STDERR "done with alignment statistics.";
-        
+    say STDERR "done with alignment statistics." if $debug;
+    #dd $aln_stats;
+
     # make one directory
     my $model_dir = File::Spec->catdir($dir, 'Tephra_LTR_exemplar_models');
     unless ( -e $model_dir ) {
 	make_path( $model_dir, {verbose => 0, mode => 0771,} );
     }
         
-    #print STDERR "Building LTR exemplar models for ",ucfirst($sf),"...";
+    print STDERR "Building LTR exemplar models for ",ucfirst($sf),"..." if $debug;
     for my $ltr_aln (nsort_by { m/family(\d+)/ and $1 } @$ltr_aln_files) {
 	$self->build_model($ltr_aln, $model_dir, $hmmbuild);        
 	unlink $ltr_aln;    
     }
-    #say STDERR "done with models.";
-        
+    say STDERR "done with models." if $debug;
+    
     my @ltr_hmm_files;
     find( sub { push @ltr_hmm_files, $File::Find::name if -f and /\.hmm$/ }, $model_dir);
         
-    #print STDERR "Search genome with models for ",ucfirst($sf),"...";
+    print STDERR "Search genome with models for ",ucfirst($sf),"..." if $debug;
     $self->do_parallel_search($hmmsearch, $genome, \@ltr_hmm_files, $model_dir, $aln_stats);
-    #say STDERR "done searching with LTR models.";
+    say STDERR "done searching with LTR models." if $debug;
 
-    #print STDERR "Collating results and writing GFF...";
+    print STDERR "Collating results and writing GFF..." if $debug;
     my @reports;
     find( sub { push @reports, $File::Find::name if -f and /\.txt$/ }, $model_dir );
 
@@ -324,7 +342,7 @@ sub write_sololtr_gff {
 	        '.', '?', '.', "ID=solo_LTR$ct;match_id=$query;Name=solo_LTR;Ontology_term=SO:0001003";
 	}
 	else {
-	    croak "\n[ERROR]: $hit_name not found in $genome. This should not happen. Exiting.\n";
+	    croak "\n[ERROR]: $hit_name not found in $genome. This is a bug, please report it. Exiting.\n";
 	}
     }
     close $in;
@@ -342,9 +360,12 @@ sub build_model {
     my $model_path = File::Spec->catfile($model_dir, $hmmname);
     # hmmer3 has --dna and --cpu options and not -g (global)
     my $hmm_cmd = "$hmmbuild -f --nucleic $model_path $aln";
+    say STDERR "DEBUG: $hmm_cmd" if $self->debug;
 
     my $status = $self->capture_cmd($hmm_cmd);
     unlink $aln && return if $status =~ /failed/i;
+
+    return;
 }
 
 sub search_with_models {
@@ -357,13 +378,14 @@ sub search_with_models {
 
     ## no -o option in hmmer2
     my $hmmsearch_cmd = "$hmmsearch --cpu 1 $hmm $fasta > $hmmsearch_out";
+    say STDERR "DEBUG: $hmmsearch_cmd" if $self->debug;
     $self->run_cmd($hmmsearch_cmd);
 
     if (-e $hmmsearch_out) {   
 	$self->write_hmmsearch_report($aln_stats, $hmmsearch_out);
     }
-
     unlink $hmm;
+
     return $hmmsearch_out;
 }
 
@@ -374,6 +396,7 @@ sub write_hmmsearch_report {
     my $match_pid  = $self->percentid;
     my $match_len  = $self->matchlen;
     #my $match_pcov = $self->percentcov;
+    #dd $aln_stats;
 
     my $parsed = $search_report;
     $parsed =~ s/\.hmmer$/\_hmmer_parsed.txt/;
@@ -448,7 +471,7 @@ sub _get_ltr_alns {
 
     my (@ltrseqs, @aligns);
 
-    my $ltrseqs = $self->get_exemplar_ltrs_for_sololtrs($dir);
+    my $ltrseqs = $self->get_exemplar_ltrs_for_sololtrs({ input_dir => $dir, full_analysis => $allfams });
     return unless defined $ltrseqs && @$ltrseqs;
 
     # This is where families are filtered by size. Since largest families come first,
@@ -476,13 +499,13 @@ sub _get_ltr_alns {
 		push @aligns, $aln;
             }
         }
-	unlink $ltrseq;
     }
+    unlink $_ for @$ltrseqs;
 
     return \@aligns;
 }
 
-sub _collate {
+sub _collate_sololtr_reports {
     my $self = shift;
     my ($files, $outfile) = @_;
 
