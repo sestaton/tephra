@@ -71,6 +71,7 @@ ok( -e $uncdom, 'Generated domain organization file for Unclassfied elements' );
 ok( -e $famdom, 'Generated domain organization file individual elements' );
 ok( $ct == $fct, 'Correct number of classified elements in family-level domain organization file' );
 
-unlink $outfas, $ingff, $log, $uncfas, $copdom, $gypdom, $uncdom, $famdom;
+#unlink $outfas, 
+unlink $ingff, $log, $uncfas, $copdom, $gypdom, $uncdom, $famdom;
 
 done_testing();
