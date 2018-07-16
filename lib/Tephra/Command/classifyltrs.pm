@@ -167,6 +167,7 @@ sub _classify_ltr_families {
 				       te_type       => 'LTR' });
     
     unlink $_ for values %$gffs;
+    return;
 }
 
 sub help {
