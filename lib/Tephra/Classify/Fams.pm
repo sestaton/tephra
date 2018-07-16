@@ -105,7 +105,7 @@ sub make_families {
     my $tetype  = $self->type;
     my $gff     = $self->gff;
     #my $log     = $self->get_logger($logfile);
-    
+
     my $t0 = gettimeofday();
     my $logfile = File::Spec->catfile($outdir, $tetype.'_families_thread_report.log');
     open my $fmlog, '>>', $logfile or die "\n[ERROR]: Could not open file: $logfile\n";
@@ -278,19 +278,20 @@ sub make_fasta_from_dom_orgs {
     for my $str (reverse sort { @{$dom_orgs->{$a}} <=> @{$dom_orgs->{$b}} } keys %$dom_orgs) {  
 	my $famnum = $sfname."_family$idx";
         for my $elem (@{$dom_orgs->{$str}}) {
-            if (exists $seqstore->{$elem}) {
-                $famtot++;
-                my $coordsh = $seqstore->{$elem};
-                my $coords  = (keys %$coordsh)[0];
-                $seqstore->{$elem}{$coords} =~ s/.{60}\K/\n/g;
-                say $out join "\n", ">$sfname"."_family$idx"."_$elem"."_$coords", $seqstore->{$elem}{$coords};
-                #delete $seqstore->{$elem};
-		push @{$fam_map{$famnum}}, $elem;
-		push @seen, $elem;
-            }
-            else {
-                croak "\n[ERROR]: $elem not found in store. Exiting.";
-            }
+	    unless (exists $seqstore->{$elem}) {
+		say STDERR "\n[ERROR]: $elem not found in store of Tephra::Classify::Fams::make_fasta_from_dom_orgs. ".
+		    "This is a bug, please report it.";
+		next;
+	    }
+	    
+	    $famtot++;
+	    my $coordsh = $seqstore->{$elem};
+	    my $coords  = (keys %$coordsh)[0];
+	    $seqstore->{$elem}{$coords} =~ s/.{60}\K/\n/g;
+	    say $out join "\n", ">$sfname"."_family$idx"."_$elem"."_$coords", $seqstore->{$elem}{$coords};
+	    #delete $seqstore->{$elem};
+	    push @{$fam_map{$famnum}}, $elem;
+	    push @seen, $elem;
         }
         $idx++;
     }
@@ -456,7 +457,13 @@ sub write_families {
 	open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 	for my $elem (@{$fam_id_map->{$str}}) {
 	    my $query = $elem =~ s/\w{3}_singleton_family\d+_//r;
-	    if (exists $seqstore->{$query} && @{$fam_id_map->{$str}} > 1) {
+	    unless (exists $seqstore->{$query}) {
+		say STDERR "\n[ERROR]: $query not found in store of  Tephra::Classify::Fams::write_families. ".
+		    "This is a bug, please report it.";
+		next;
+	    }
+	    
+	    if (@{$fam_id_map->{$str}} > 1) {
 		$famtot++;
 		my $coordsh = $seqstore->{$query};
 		my $coords  = (keys %$coordsh)[0];
@@ -465,7 +472,7 @@ sub write_families {
 		$annot_ids{$query} = $sfname."_family$idx";
 		my ($element) = ($query =~ /($re)/);
 		push @seen, $query;
-
+		
 		if (exists $pdom_famid_map->{$element}) { 
 		    $self->write_fam_pdom_organization({ famid_map => $pdom_famid_map, 
 							 outfh     => $domfh, 
@@ -473,9 +480,6 @@ sub write_families {
 							 elemid    => "$sfname"."_family$idx"."_$query"."_$coords", 
 							 famname   => $sfname."_family$idx"});
 		}
-	    }
-	    else {
-		croak "\n[ERROR]: $query not found in store. Exiting.";
 	    }
 	}
 	close $out;
