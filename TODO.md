@@ -21,6 +21,8 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] investigate why UBN2* domains are being used to classify Gypsy (modified regex in v0.17.7 should solve the problem; 
        need to do full-genome test to confirm)
  - [ ] add DIRS and PLE so we are describing all orders in Wicker's scheme
+ - [ ] LARD annotation method not working for GFF3 as of v0.11.0
+ - [ ] Family number in FASTA/GFF3 not aligned with that in domain organization file
 
 ## Command `tephra findtirs`
  - [x] Find all non-overlapping TIR elements passing thresholds
@@ -52,6 +54,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] write fasta of each superfamily, and combined library
  - [x] identify	fragmented elements with refined full-length elements
  - [x] report domain architecture, as for LTR elements
+ - [ ] add MITE annotation to GFF3
 
 ## Command `tephra findltrs`
  - [x] Find all non-overlapping LTR-RTs under strict and relaxed conditions
@@ -154,7 +157,9 @@ This file is for logging feature requests and bugs during development. Hopefully
        of interest.
  - [ ] Add method to filter LTRs/TIRs that appear to be duplicated genes. This method may fit better in the individual TE
        finding programs since the 'all' command is not the only use case of Tephra.
-
+ - [ ] Remove duplicate header in family-level domain organization file
+ - [ ] Fix Parent IDs getting mixed up when combining LTRs and TRIMs
+ 
 ## Command `tephra reannotate`
 
  - [ ] Add tests!
