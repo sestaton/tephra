@@ -25,7 +25,7 @@ sub opt_spec {
 	[ "allfamilies|a",    "Analyze all LTR-RT families for solo-LTRs (Default: no)."                    ],
 	[ "seq|s=s",          "Extract query sequence from domain alignment."                               ],
 	[ "threads|t=i",      "The number of threads to use for clustering coding domains (Default: 1)"     ],
-	[ "clean",            "Clean up the intermediate alignment files (Default: yes) "                   ],
+	[ "clean=i",          "Clean up the intermediate alignment files (Default: yes) "                   ],
 	[ "debug",            "Show external commands and progress for debugging (Default: no) "            ],
 	[ "help|h",           "Display the usage menu and exit. "                                           ],
 	[ "man|m",            "Display the full manual. "                                                   ],
