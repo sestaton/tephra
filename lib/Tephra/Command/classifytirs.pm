@@ -138,7 +138,9 @@ sub _classify_tir_superfamilies {
 
     if (@fastas && @gffs) {
 	unlink $_ for @fastas;
-
+	
+	$unc_obj->{mite_count} //= 0;
+	$unc_obj->{unc_count} //= 0;
 	my $tot_str = sprintf("%-70s %-10s", "Results - Total number of TIR elements:", $all_ct);
 	my $tc1_str = sprintf("%-70s %-10s", "Results - Number of Tc1-Mariner elements:", $tc1_ct);
 	my $hat_str = sprintf("%-70s %-10s", "Results - Number of hAT elements:", $hat_ct);
