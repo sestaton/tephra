@@ -22,17 +22,17 @@ if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
 
 my $cmd       = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir   = File::Spec->catdir('t', 'test_data');
-#my $outdir    = File::Spec->catdir($testdir,  't_family_domains');
 my $genome    = File::Spec->catfile($testdir, 'ref.fas');
 my $thrlog    = File::Spec->catfile($testdir, 'tephra_fragment_searches.log');
 my $log       = File::Spec->catfile($testdir, 'tephra_full.log');
 my $gff       = File::Spec->catfile($testdir, 'tephra_transposons.gff3');
 my $fas       = File::Spec->catfile($testdir, 'tephra_transposons.fasta');
-my $ctestfile = File::Spec->catfile($testdir, 'tephra_copia_exemplar_repeats.fasta');
-my $gtestfile = File::Spec->catfile($testdir, 'tephra_gypsy_exemplar_repeats.fasta');
-my $ltrcdir   = File::Spec->catdir($testdir,  'ref_tephra_ltrs_trims_classified_results');
-my $cresdir   = File::Spec->catdir($ltrcdir,  'ref_tephra_ltrs_copia');
-my $gresdir   = File::Spec->catdir($ltrcdir,  'ref_tephra_ltrs_gypsy');
+my $finaldb   = File::Spec->catfile($testdir, 'tephra_transposons_complete.fasta');
+#my $ctestfile = File::Spec->catfile($testdir, 'tephra_copia_exemplar_repeats.fasta');
+#my $gtestfile = File::Spec->catfile($testdir, 'tephra_gypsy_exemplar_repeats.fasta');
+#my $ltrcdir   = File::Spec->catdir($testdir,  'ref_tephra_ltrs_trims_classified_results');
+#my $cresdir   = File::Spec->catdir($ltrcdir,  'ref_tephra_ltrs_copia');
+#my $gresdir   = File::Spec->catdir($ltrcdir,  'ref_tephra_ltrs_gypsy');
 
 {
     my @help_args = ($cmd, 'all', '-h');
@@ -45,12 +45,12 @@ SKIP: {
     skip 'skip lengthy tests', 3 unless $devtests;
 
     my $config = write_config($testdir);
-    make_path( $ltrcdir, {verbose => 0, mode => 0771,} );
-    make_path( $cresdir, {verbose => 0, mode => 0771,} );
-    make_path( $gresdir, {verbose => 0, mode => 0771,} );
-    copy $ctestfile, $cresdir or die "\n[ERROR]: copy failed $!";
-    copy $gtestfile, $gresdir or die "\n[ERROR]: copy failed $!";
-
+    #make_path( $ltrcdir, {verbose => 0, mode => 0771,} );
+    #make_path( $cresdir, {verbose => 0, mode => 0771,} );
+    #make_path( $gresdir, {verbose => 0, mode => 0771,} );
+    #copy $ctestfile, $cresdir or die "\n[ERROR]: copy failed $!";
+    #copy $gtestfile, $gresdir or die "\n[ERROR]: copy failed $!";
+    
     my @all_cmd = ($cmd, 'all', '-c', $config);
     say STDERR join q{ }, @all_cmd;
     #my ($astdout, $astderr, @aret) = capture { system([0..5], $all_cmd) };
@@ -61,7 +61,7 @@ SKIP: {
     ok( -e $log, 'Can run full tephra pipeline and log results' );
 
     ## clean up
-    unlink $gff, $fas, $log, $thrlog, $config;
+    unlink $gff, $fas, $log, $thrlog, $config, $finaldb;
 
     my @outfiles;
     find( sub { push @outfiles, $File::Find::name if /^ref_|\.fai$/ }, $testdir);
@@ -77,6 +77,9 @@ unlink $genome.'.fai'
 
 done_testing();
 
+#
+# methods
+#
 sub write_config {
     my ($testdir) = @_;
     my $config = File::Spec->catfile($testdir, 'tephra_all_config.yml');
