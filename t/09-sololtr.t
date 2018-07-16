@@ -48,7 +48,7 @@ SKIP: {
 
     my @find_cmd = ($cmd, 'sololtr', '-i', $outdir, '-g', $masked, '-r', $allstfile, '-o', $outfile,
 		    '-l', 100, '-p', 0, '-s', $seqfile);
-    #say STDERR join q{ }, @find_cmd;    
+    say STDERR join q{ }, @find_cmd;    
     my @ret = capture { system([0..5], @find_cmd) };
     #system([0..5], $find_cmd);
 
@@ -73,13 +73,12 @@ SKIP: {
     }
     close $gff;
     
-    #say STDERR "SOLOCT: $soloct";
+    say STDERR "SOLOCT: $soloct";
     ok( $soloct == 2, 'Correct number of solo-LTRs found' );
     ok( $seqct == $soloct, 'Same number of sequences and elements written to GFF/FASTA' );
 
     # clean up
     unlink $allstfile, $outfile;
-    #remove_tree( $outdir, { safe => 1 } );
     #unlink $masked;
 };
 
