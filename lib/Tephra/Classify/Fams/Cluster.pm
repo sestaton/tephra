@@ -57,7 +57,7 @@ sub extract_ltr_features {
 
     my ($name, $path, $suffix) = fileparse($infile, qr/\.[^.]*/);
     my $type = ($name =~ /(?:gypsy|copia|unclassified)$/i);
-    croak "\n[ERROR]: Unexpected input. Should match /gypsy|copia|unclassified$/i. Exiting."
+    croak "\n[ERROR]: Unexpected input. Should match /(?:gypsy|copia|unclassified)$/i. Exiting."
         unless defined $type;
 
     my $resdir = File::Spec->catdir($dir, $name);
@@ -133,6 +133,7 @@ sub extract_ltr_features {
         }
     }
     close $gffio;
+    #dd \%ltrs;
 
     my (%pdoms, %seen_pdoms);
     my $ltrct = 0;
@@ -155,7 +156,8 @@ sub extract_ltr_features {
 	    my $pptid = join "_", $element, $pptsource, $pptstart, $pptend;
 	    $self->write_element_parts($index, $pptsource, $pptstart, $pptend, $pptfh, $pptid);
 	}
-
+	
+	# ltrs
 	for my $ltr_repeat (@{$ltrs{$ltr}{'ltrs'}}) {
             my ($src, $ltrtag, $s, $e, $strand) = split /\|\|/, $ltr_repeat;
 	    my $ltrid = join "_", $element, $src, $s, $e;
@@ -168,13 +170,15 @@ sub extract_ltr_features {
                 $ltrct++;
             }
         }
+
+	# pdoms
 	if ($ltrs{$ltr}{'pdoms'}) {
             for my $model_name (keys %{$ltrs{$ltr}{'pdoms'}}) {
                 for my $ltr_repeat (@{$ltrs{$ltr}{'pdoms'}{$model_name}}) {
                     my ($src, $pdomtag, $name, $s, $e, $str) = split /\|\|/, $ltr_repeat;
                     #"Ha10||protein_match||UBN2||132013916||132014240|+",
                     next if $model_name =~ /transpos(?:ase)?|mule|(?:dbd|dde)?_tnp_(?:hat)?|duf4216/i; 
-                    # The above is so we do not classify elements based domains derived from or belonging to DNA transposons
+                    # The above is so we do not classify elements based domains derived from, or belonging to, DNA transposons
                     push @{$pdoms{$src}{$element}{$model_name}}, join "||", $s, $e, $str;
                 }
             }
@@ -270,6 +274,7 @@ sub extract_tir_features {
 	my $fullid = join "_", $element, $source, $fstart, $fend;
 	$self->write_element_parts($index, $source, $fstart, $fend, $allfh, $fullid);
 
+	# tirs
 	my $partid;
         for my $tir_repeat (@{$tirs{$tir}{'tirs'}}) {
             my ($src, $tirtag, $s, $e, $strand) = split /\|\|/, $tir_repeat;
@@ -285,6 +290,7 @@ sub extract_tir_features {
             }
         }
 
+	# pdoms
 	if ($tirs{$tir}{'pdoms'}) {
             for my $model_name (keys %{$tirs{$tir}{'pdoms'}}) {
                 for my $tir_repeat (@{$tirs{$tir}{'pdoms'}{$model_name}}) {
@@ -565,7 +571,15 @@ sub parse_clusters {
     my $self = shift;
     my ($clsfile) = @_;
     my $genome = $self->genome->absolute->resolve;
-    
+
+    # If there are no clusters, return here instead of processing the file.
+    # Also, clean up the empty cluster and log file.
+    unless (-s $clsfile) {
+	my $logfile = $clsfile =~ s/.txt/.log/r;
+	unlink $clsfile, $logfile;
+	return {};
+    }
+
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
     if ($name =~ /(\.fa.*)/) {
         $name =~ s/$1//;
@@ -639,7 +653,9 @@ sub _remove_singletons {
             while (my $seqobj = $iter->next_seq) { $seqct++ if defined $seqobj->seq; }
             if ($seqct < 2) {
                 push @singles, $index;
-                unlink $db;
+                #unlink $db; 
+                # Do not remove the file of singletons. This is so we can keep track of all elements
+		# for the solo-LTR search.
             }
             $index++;
             $seqct = 0;
