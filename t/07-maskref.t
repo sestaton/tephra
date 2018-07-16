@@ -18,7 +18,8 @@ $| = 1;
 my $cmd      = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir  = File::Spec->catdir('t', 'test_data');
 my $genome   = File::Spec->catfile($testdir, 'ref.fas');
-my $repeatdb = File::Spec->catfile($testdir, 'repdb.fas');
+#my $repeatdb = File::Spec->catfile($testdir, 'repdb.fas');
+my $repeatdb = File::Spec->catfile($testdir, 'ref_tephra_ltrs_combined_filtered_classified.fasta');
 my $masked   = File::Spec->catfile($testdir, 'ref_masked.fas');
 my $log      = File::Spec->catfile($testdir, 'ref_masked.fas.log');
 
@@ -38,11 +39,11 @@ ok( -e $log, 'Can mask reference' );
 
 for my $line (split /^/, $stdout) { 
     if ($line =~ /Total masked bases:  (\d+.\d+)%/) {
-	ok( $1 > 0, 'Logged non-zero masked bases of output masked genome' );
+	ok( $1 > 20, 'Logged non-zero masked bases of output masked genome' );
     }
 }
 
 ## clean up
-unlink $log;
+unlink $log, $repeatdb;
 
 done_testing();
