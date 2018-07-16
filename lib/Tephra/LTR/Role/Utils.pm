@@ -2,14 +2,16 @@ package Tephra::LTR::Role::Utils;
 
 use 5.014;
 use Moose::Role;
+use Sort::Naturally;
 use File::Spec;
 use File::Find;
 use File::Basename;
+use File::Temp qw(tempfile);
 use File::Path qw(remove_tree);
 use Bio::DB::HTS::Kseq;
 use Carp 'croak';
 use namespace::autoclean;
-#use Data::Dump::Color;
+use Data::Dump::Color;
 
 =head1 NAME
 
@@ -76,35 +78,116 @@ sub get_exemplar_ltrs_for_age {
 
 sub get_exemplar_ltrs_for_sololtrs {
     my $self = shift;
-    my ($dir) = @_;
+    my ($solo_obj) = @_;
 
-    my ($ltrfile, @ltrseqs, %ltrfams);
-    find( sub { $ltrfile = $File::Find::name if -f and /exemplar_repeats.fasta$/ }, $dir);
-    unless (defined $ltrfile) {
-	say STDERR "\n[WARNING]: Exemplar LTR file not found in $dir.\n";
-	return;
+    my ($dir, $allfams) = @{$solo_obj}{qw(input_dir full_analysis)};
+    my ($input, $ltrfile, @ltr_files, @ltrseqs, %ltrfams);
+    my $search = qr/[35]prime-ltrs.fasta/;
+    my $re = qr/(?:LTR|LARD|TRIM)_retrotransposon\d+/;
+
+    if ($allfams) { 
+	find( sub { push @ltr_files, $File::Find::name if -f and /$search$/ }, $dir);
     }
-	    
-    if ($ltrfile =~ /^RL|family\d+/) {
-	croak "\n[ERROR]: Expecting a single file of LTR exemplar sequences but it appears this command has ".
-	    "been run before. This will cause problems. Please re-run 'classifyltrs' or report this issue. Exiting.\n";
-	return;
+    else {
+	$search = qr/exemplar_repeats.fasta/;
+	find( sub { $ltrfile = $File::Find::name if -f and /$search$/ }, $dir);
+	
+	if (defined $ltrfile) { 
+	    if ($ltrfile =~ /^RL|family\d+/) {
+		croak "\n[ERROR]: Expecting a single file of LTR exemplar sequences but it appears this command has ".
+		    "been run before. This will cause problems. Please re-run 'classifyltrs' or report this issue. Exiting.\n";
+		return;
+	    }
+	}
+	else { 
+            say STDERR "\n[WARNING]: Exemplar LTR file not found in $dir. This may indicate no families were found. ".
+                "Will search all elements instead of exemplars.\n";
+            $search = qr/[35]prime-ltrs.fasta/;
+            find( sub { push @ltr_files, $File::Find::name if -f and /$search$/ }, $dir);
+        }
+    }
+    
+    if ($allfams || @ltr_files) {
+	my ($singletons, %name_map);
+	find( sub { $singletons = $File::Find::name if -f and /singletons.fasta$/ }, $dir);
+	unless (defined $singletons) {
+	    croak "\n[ERROR]: Could not find file of LTR singleton families. This indicates an error with the classification. ".
+                "Please re-run 'classifyltrs' or report this issue. Exiting.\n";
+            return;
+	}
+
+	{
+	    my $kseq = Bio::DB::HTS::Kseq->new($singletons);
+            my $iter = $kseq->iterator();
+
+            while ( my $seq = $iter->next_seq() ) {
+		my $id = $seq->name;
+		my $seq = $seq->seq;
+		if ($id =~ /^(?:[35]prime_)?(\w{3}_(?:singleton_)?(?:family\d+_))?($re?_.*)/) { 
+		    my $fam = $1;
+		    my $elemid = $2;
+		    $elemid =~ s/_\d+_\d+$//;
+		    $fam =~ s/^_|_$//;
+		    $name_map{$elemid} = $fam;
+		}
+            }
+
+	}
+	#dd \%name_map;
+	
+	my $file = $ltr_files[0];
+	my ($iname, $ipath, $isuffix) = fileparse($file, qr/\.[^.]*/);
+	$iname =~ s/[35]prime-ltrs.*//;
+	$iname =~ s/^_|_$//;
+	my $tmpiname = $iname.'_ltrseqs_XXXX';
+	my ($tmp_fh, $tmp_filename) = tempfile( TEMPLATE => $tmpiname, DIR => $ipath, SUFFIX => '.fasta', UNLINK => 0 );
+
+	my $ltr_orient;
+	for my $input (nsort @ltr_files) {
+	    $ltr_orient = $input =~ /3prime/ ? '3prime' : '5prime';
+	    my $kseq = Bio::DB::HTS::Kseq->new($input);
+	    my $iter = $kseq->iterator();
+
+	    while ( my $seq = $iter->next_seq() ) {
+		my $id = $seq->name;
+		my $seq = $seq->seq;
+		my $elemid = $id =~ s/_\d+_\d+$//r;
+		if (exists $name_map{$elemid}) {
+		    #say STDERR "ID: $id";
+		    #say STDERR "ELEMID: $elemid";
+		    #say STDERR "MAPPED-NAME: $name_map{$elemid}";
+		    my $name = join "_", $ltr_orient, $name_map{$elemid}, $id;
+		    #say STDERR "NAME: $name";
+		    say $tmp_fh join "\n", ">".$name, $seq;
+		}
+		else {
+		    say STDERR "\n[ERROR]: $id not found in singleton family name map. This is a bug, please report it. Exiting.\n";
+		    return;
+		}
+	    }
+	}
+	close $tmp_fh;
+	$ltrfile = $tmp_filename;
     }
 
     my $kseq = Bio::DB::HTS::Kseq->new($ltrfile);
     my $iter = $kseq->iterator();
-
+    
     while ( my $seq = $iter->next_seq() ) {
 	my $id  = $seq->name;
 	my $seq = $seq->seq;
-	if ($id =~ /^[35]prime_(RL[CGX]_family\d+)_LTR_retrotransposon.*/) {
+	#if ($id =~ /^[35]prime_(RL[CGX]_family\d+)_LTR_retrotransposon.*/) {
+	#if ($id =~ /^(?:[35]prime_)?((\w{3}_)?(?:singleton_)?(?:family\d+_))?$re?_\S+_\d+[-_]\d+/) {
+	if ($id =~ /^(?:[35]prime_)?(\w{3}_(?:singleton_)?(?:family\d+_))?$re?_.*/) {
 	    my $family = $1;
+	    $family =~ s/^_|_$//;
 	    push @{$ltrfams{$family}}, { id => $id, seq => $seq };
 	}
     }
+    #dd \%ltrfams;
 
     for my $family (keys %ltrfams) {
-	my $outfile = File::Spec->catfile($dir, $family.'_exemplar_ltrseqs.fasta');
+	my $outfile = File::Spec->catfile($dir, $family.'_ltrseqs.fasta');
 	open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 	for my $pair (@{$ltrfams{$family}}) {
 	    say $out join "\n", ">".$pair->{id}, $pair->{seq};
