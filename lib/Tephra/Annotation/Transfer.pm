@@ -20,11 +20,11 @@ Tephra::Annotation::Transfer - Transfer annotations from a reference set to Teph
 
 =head1 VERSION
 
-Version 0.11.1
+Version 0.12.0
 
 =cut
 
-our $VERSION = '0.11.1';
+our $VERSION = '0.12.0';
 $VERSION = eval $VERSION;
 
 has infile => (
