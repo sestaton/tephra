@@ -1,7 +1,7 @@
 Revision history for Tephra
 
 Version	Date	Location
-0.11.1	06/19/2018	Vancouver, BC
+0.12.0
 
 - Refactor LTRStats/TIRStats classes to put common methods in GFF Role or Tephra::Stats::Age class.
 - Remove 'ltrage' and 'tirage' commands and create single 'age' command to share refactored/common
@@ -36,6 +36,16 @@ Version	Date	Location
 - Refactor *SoloLTRSearch class to use more descriptive method for finding exemplars, which is now
   in the *LTR::Role::Utils class.
 - Add unclassified LTR elements to solo-LTR search instead of only Gypsy and Copia.
+- Remove delete key statement from loop when creating domain FASTA files for clustering (this fixes
+  a bug with the abundance and family numbers getting out of sync).
+- Properly sort output of families with respect to abundance, and make sure singletons go into singleltons 
+  files and not families.
+- Add fragments to final FASTA repeat datbase so IDs in FASTA and GFF3 are consistent.
+- Do not remove singleton LTR sequences in family-level classification step. This allows all elements
+  to now be considered in solo-LTR search.
+- Modify common LTR/TIR finding method to not delete FASTA file of feature parts from singleton elements.
+  These fix allows us to use all LTR/TIR elements in age calculation and all LTR elements in 
+  solo-LTR search.
 
 0.11.0	04/17/2018	Vancouver, BC
 
