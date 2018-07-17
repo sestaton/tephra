@@ -159,6 +159,7 @@ This file is for logging feature requests and bugs during development. Hopefully
        finding programs since the 'all' command is not the only use case of Tephra.
  - [ ] Remove duplicate header in family-level domain organization file
  - [ ] Fix Parent IDs getting mixed up when combining LTRs and TRIMs
+ - [ ] Add final statistic showing full-length:solo-LTR:truncated ratios
  
 ## Command `tephra reannotate`
 
