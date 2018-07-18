@@ -5,6 +5,7 @@ use Moose;
 use File::Spec;
 use File::Find;
 use File::Basename;
+use File::Path   qw(make_path remove_tree);
 use File::Temp   qw(tempfile);
 use Time::HiRes  qw(gettimeofday);
 use Log::Any     qw($log);
@@ -116,12 +117,17 @@ sub align_features {
     my $threads = $self->threads;
     my $infile = $self->infile->absolute->resolve;
 
-    my $args = $self->collect_align_args;
+    my ($name, $path, $suffix) = fileparse($infile, qr/\.[^.]*/);
+    my $model_dir = File::Spec->catdir($path, 'Tephra_LTR_illrecomb_models');
+    unless ( -e $model_dir ) {
+	make_path( $model_dir, {verbose => 0, mode => 0771,} );
+    }
+
+    my $args = $self->collect_align_args($model_dir);
     my $t0 = gettimeofday();
     my $doms = 0;
 
-    my ($name, $path, $suffix) = fileparse($infile, qr/\.[^.]*/);
-    my $logfile = File::Spec->catfile( abs_path($path), 'all_illrecomb_muscle_reports.log' );
+    my $logfile = File::Spec->catfile( $model_dir, 'all_illrecomb_muscle_reports.log' );
     open my $log, '>>', $logfile or die "\n[ERROR]: Could not open file: $logfile\n";
 
     my $pm = Parallel::ForkManager->new($threads);
@@ -173,14 +179,15 @@ sub align_features {
 
 sub collect_align_args {
     my $self = shift;
+    my ($model_dir) = @_;
     my (@full, @aln, %aln_args);
 
-    my $seqstore = $self->_filter_families_by_size;
+    my $seqstore = $self->_filter_families_by_size($model_dir);
 
     for my $fam (keys %$seqstore) {
 	my ($name, $path, $suffix) = fileparse($seqstore->{$fam}, qr/\.[^.]*/);
-	my $aln = File::Spec->catfile( abs_path($path), $name.'_muscle-out.fas' );
-	my $log = File::Spec->catfile( abs_path($path), $name.'_muscle-out.log' );
+	my $aln = File::Spec->catfile( $model_dir, $name.'_muscle-out.fas' );
+	my $log = File::Spec->catfile( $model_dir, $name.'_muscle-out.log' );
 	
 	my $muscmd  = "muscle -quiet -in $seqstore->{$fam} -out $aln -log $log";
 	$aln_args{$name} = { seqs => $seqstore->{$fam}, args => $muscmd, aln => $aln, log => $log };
@@ -551,6 +558,7 @@ sub collate_gap_stats {
 
 sub _filter_families_by_size {
     my $self = shift;
+    my ($model_dir) = @_;
     my $infile  = $self->infile;
     my $sthresh = $self->family_size;
     my $lthresh = 1.2e4; # elements over 12kb cannot be aligned reliably
@@ -565,7 +573,7 @@ sub _filter_families_by_size {
         my $seq = $seqobj->seq;
         my ($family) = ($id =~ /^(RL[CGX]_family\d+)_LTR/);
         if (defined $family) {
-            $foutfile = File::Spec->catfile($path, $family.'.fas');
+            $foutfile = File::Spec->catfile($model_dir, $family.'.fas');
             if (-e $foutfile && openhandle($fout)) {
                 say $fout join "\n",">$id", $seq;
             }
