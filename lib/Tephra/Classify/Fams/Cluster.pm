@@ -483,7 +483,7 @@ sub cluster_features {
     if ($threads % 3 == 0) {
 	$thr = sprintf("%.0f", $threads/3);
     }
-    elsif ($threads-1 % 3 == 0) {
+    elsif (+($threads-1) % 3 == 0) {
 	$thr = sprintf("%.0f", $threads-1/3);
     }
     else {

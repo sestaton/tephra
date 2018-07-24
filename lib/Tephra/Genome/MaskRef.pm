@@ -136,7 +136,7 @@ sub mask_reference {
     if ($threads % 2 == 0) {
 	$thr = sprintf("%.0f",$threads/2);
     }
-    elsif ($threads-1 % 2 == 0) {
+    elsif (+($threads-1) % 2 == 0) {
 	$thr = sprintf("%.0f",$threads-1/2);
     }
     else {
