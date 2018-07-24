@@ -19,7 +19,7 @@ use Parallel::ForkManager;
 use Carp 'croak';
 use Try::Tiny;
 use Tephra::Annotation::MakeExemplars;
-use Data::Dump::Color;
+#use Data::Dump::Color;
 use namespace::autoclean;
 
 with 'Tephra::Role::Util',
@@ -348,7 +348,7 @@ sub process_blast_args {
     if ($threads % 3 == 0) {
         $thr = sprintf("%.0f",$threads/2);
     }
-    elsif ($threads-1 % 3 == 0) {
+    elsif (+($threads-1) % 3 == 0) {
         $thr = sprintf("%.0f",$threads-1/3);
     }
     else {
