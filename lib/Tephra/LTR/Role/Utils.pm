@@ -11,7 +11,7 @@ use File::Path qw(remove_tree);
 use Bio::DB::HTS::Kseq;
 use Carp 'croak';
 use namespace::autoclean;
-use Data::Dump::Color;
+#use Data::Dump::Color;
 
 =head1 NAME
 
@@ -98,6 +98,24 @@ sub get_exemplar_ltrs_for_sololtrs {
 		    "been run before. This will cause problems. Please re-run 'classifyltrs' or report this issue. Exiting.\n";
 		return;
 	    }
+
+	    my $kseq = Bio::DB::HTS::Kseq->new($ltrfile);
+	    my $iter = $kseq->iterator();
+
+	    while ( my $seq = $iter->next_seq() ) {
+		my $id  = $seq->name;
+		my $seq = $seq->seq;
+		if ($id =~ /^(?:[35]prime_)?(\w{3}_(?:singleton_)?(?:family\d+_))?($re?)_.*/) {
+		    my $family = $1;
+		    my $elemid = $2;
+		    $family =~ s/^_|_$//;
+		    #$elemid =~ s/_\d+_\d+$//;
+		    my $name = join "_", $family, $elemid;
+		    push @{$ltrfams{$name}}, { id => $id, seq => $seq };
+		    #push @{$ltrfams{$family}}, { id => $id, seq => $seq };
+		}
+	    }
+	    #dd \%ltrfams;
 	}
 	else { 
             say STDERR "\n[WARNING]: Exemplar LTR file not found in $dir. This may indicate no families were found. ".
@@ -108,95 +126,73 @@ sub get_exemplar_ltrs_for_sololtrs {
     }
     
     if ($allfams || @ltr_files) {
-	my ($singletons, %name_map);
-	find( sub { $singletons = $File::Find::name if -f and /singletons.fasta$/ }, $dir);
-	unless (defined $singletons) {
-	    croak "\n[ERROR]: Could not find file of LTR singleton families. This indicates an error with the classification. ".
+	my (@classified, %name_map);
+	find( sub { push @classified, $File::Find::name if -f and /^\w{3}_families.fasta$|^\w{3}_singletons.fasta$/ }, $dir);
+	unless (@classified) {
+	    croak "\n[ERROR]: Could not find file of LTR singleton or family FASTA files. This indicates an error with the classification. ".
                 "Please re-run 'classifyltrs' or report this issue. Exiting.\n";
             return;
 	}
 
-	{
-	    my $kseq = Bio::DB::HTS::Kseq->new($singletons);
+	for my $file (@classified) {
+	    my $kseq = Bio::DB::HTS::Kseq->new($file);
             my $iter = $kseq->iterator();
 
             while ( my $seq = $iter->next_seq() ) {
 		my $id = $seq->name;
 		my $seq = $seq->seq;
-		if ($id =~ /^(?:[35]prime_)?(\w{3}_(?:singleton_)?(?:family\d+_))?($re?_.*)/) { 
-		    my $fam = $1;
+		if ($id =~ /^(?:[35]prime_)?(\w{3}_(?:singleton_)?(?:family\d+_))?($re?)_.*/) { 
+		    my $family = $1;
 		    my $elemid = $2;
 		    $elemid =~ s/_\d+_\d+$//;
-		    $fam =~ s/^_|_$//;
-		    $name_map{$elemid} = $fam;
+		    $family =~ s/^_|_$//;
+		    my $name = join "_", $family, $elemid;
+		    $name_map{$name} = $family;
+                    #push @{$ltrfams{$family}}, { id => $id, seq => $seq };
 		}
             }
-
 	}
 	#dd \%name_map;
 	
-	my $file = $ltr_files[0];
-	my ($iname, $ipath, $isuffix) = fileparse($file, qr/\.[^.]*/);
-	$iname =~ s/[35]prime-ltrs.*//;
-	$iname =~ s/^_|_$//;
-	my $tmpiname = $iname.'_ltrseqs_XXXX';
-	my ($tmp_fh, $tmp_filename) = tempfile( TEMPLATE => $tmpiname, DIR => $ipath, SUFFIX => '.fasta', UNLINK => 0 );
-
 	my $ltr_orient;
 	for my $input (nsort @ltr_files) {
 	    $ltr_orient = $input =~ /3prime/ ? '3prime' : '5prime';
 	    my $kseq = Bio::DB::HTS::Kseq->new($input);
 	    my $iter = $kseq->iterator();
-
+	    
 	    while ( my $seq = $iter->next_seq() ) {
 		my $id = $seq->name;
 		my $seq = $seq->seq;
-		my $elemid = $id =~ s/_\d+_\d+$//r;
-		if (exists $name_map{$elemid}) {
+		#my $elemid = $id =~ s/_\d+_\d+$//r;
+		my ($family, $elemid) = ($id =~ /^(?:[35]prime_)?(\w{3}_(?:singleton_)?(?:family\d+_))?($re?)_.*/);
+		#if ($id =~ /^(?:[35]prime_)?(\w{3}_(?:singleton_)?(?:family\d+_))?($re?)_.*/) {
+		#my $family = $1;
+		#my $elemid = $2;
+		$elemid =~ s/_\d+_\d+$//;
+		$family =~ s/^_|_$//;
+		my $name = join "_", $family, $elemid;
+
+		if (exists $name_map{$name}) {
+		    #my $name = join "_", $ltr_orient, $name_map{$elemid}, $id;  
+		    my $ltrid = join "_", $ltr_orient, $id;
+		    push @{$ltrfams{ $name }}, { id => $ltrid, seq => $seq  }; 
 		    #say STDERR "ID: $id";
 		    #say STDERR "ELEMID: $elemid";
 		    #say STDERR "MAPPED-NAME: $name_map{$elemid}";
-		    my $name = join "_", $ltr_orient, $name_map{$elemid}, $id;
+		    #my $name = join "_", $ltr_orient, $name_map{$elemid}, $id;
 		    #say STDERR "NAME: $name";
-		    say $tmp_fh join "\n", ">".$name, $seq;
+		    # say $tmp_fh join "\n", ">".$name, $seq;
 		}
 		else {
-		    say STDERR "\n[ERROR]: $id not found in singleton family name map. This is a bug, please report it. Exiting.\n";
+		    say STDERR "\n[ERROR]: $elemid ($id) not found in family/singleton name map. This is a bug, please report it. Exiting.\n";
 		    return;
 		}
 	    }
 	}
-	close $tmp_fh;
-	$ltrfile = $tmp_filename;
     }
 
-    my $kseq = Bio::DB::HTS::Kseq->new($ltrfile);
-    my $iter = $kseq->iterator();
-    
-    while ( my $seq = $iter->next_seq() ) {
-	my $id  = $seq->name;
-	my $seq = $seq->seq;
-	#if ($id =~ /^[35]prime_(RL[CGX]_family\d+)_LTR_retrotransposon.*/) {
-	#if ($id =~ /^(?:[35]prime_)?((\w{3}_)?(?:singleton_)?(?:family\d+_))?$re?_\S+_\d+[-_]\d+/) {
-	if ($id =~ /^(?:[35]prime_)?(\w{3}_(?:singleton_)?(?:family\d+_))?$re?_.*/) {
-	    my $family = $1;
-	    $family =~ s/^_|_$//;
-	    push @{$ltrfams{$family}}, { id => $id, seq => $seq };
-	}
-    }
-    #dd \%ltrfams;
-
-    for my $family (keys %ltrfams) {
-	my $outfile = File::Spec->catfile($dir, $family.'_ltrseqs.fasta');
-	open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
-	for my $pair (@{$ltrfams{$family}}) {
-	    say $out join "\n", ">".$pair->{id}, $pair->{seq};
-	}
-	close $out;
-	push @ltrseqs, $outfile;
-    }
-
-    return \@ltrseqs;
+    return \%ltrfams;
+    #return \@ltrseqs;
 }
 
 =head1 AUTHOR
