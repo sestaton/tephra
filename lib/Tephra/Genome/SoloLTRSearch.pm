@@ -156,20 +156,8 @@ sub find_soloLTRs {
     croak "\n[ERROR]: Could not find the expected sub-directories ending in 'copia', 'gypsy' and 'unclassified'. ".
 	"Please check input. Exiting.\n" unless @sfs; #== 2;
 
-    #open my $repfh, '>>', $report or die "\n[ERROR]: Could not open file: $report\n";
-    #say $repfh join "\t", "#query", "query_length", "number_of_hits", "hit_name",
-        #"perc_coverage","hsp_length", "hsp_perc_ident","hsp_query_start", "hsp_query_end", "hsp_hit_start", "hsp_hit_end";
-
-    #my ($seqfh, $seqfile);
-    #if ($self->seqfile) {
-	#$write_seqs = 1;
-        #$seqfile = $self->seqfile;
-        #open $seqfh, '>>', $seqfile or die "\n[ERROR]: Could not open file: $seqfile";
-    #}
-
     my $forks = @sfs;
     my $thr = $forks > $self->threads ? $self->threads : $forks;
-    say STDERR "DEBUG: Top thread level: $thr";
 
     my $pm = Parallel::ForkManager->new($thr);
     local $SIG{INT} = sub {
@@ -182,13 +170,10 @@ sub find_soloLTRs {
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			      if (defined $data_ref) { 
 				  my ($model_dir, $reports, $seqfiles) = @{$data_ref}{qw(model_dir reports seqfiles)};
-				  #$self->collate_sololtr_reports($reports, $seqfiles, $repfh, $seqfh);
+
 				  push @model_dirs, $model_dir;
 				  push @soloLTR_reps, @$reports;
 				  push @soloLTR_seqs, @$seqfiles if $write_seqs;
-			  #if ($self->clean) {
-				      #remove_tree( $model_dir, { safe => 1} );
-				  #}
 			      }
 			} );
 
@@ -198,18 +183,13 @@ sub find_soloLTRs {
 	my $sf = (split /_/, $dir)[-1];
 	$pm->start($sf) and next;
 	$SIG{INT} = sub { $pm->finish };
-	#my $data_ref = $self->run_sf_search($sf, $dir, $dirct, $repfh, $seqfh, $seqfile);
 	my $data_ref = $self->run_parallel_model_search($genome, $dir, $write_seqs, $thr);
 	my ($model_dir, $reports, $seqfiles) = @{$data_ref}{qw(model_dir reports seqfiles)};
-	#$self->_collate_sololtr_reports($reports, $repfh);
 	$pm->finish(0, { model_dir => $model_dir, reports => $reports, seqfiles => $seqfiles });
     }
     $pm->wait_all_children;
-    #close $repfh;
-    #close $seqfh if $seqfile;
 
     my $soloct = $self->collate_sololtr_reports(\@soloLTR_reps, \@soloLTR_seqs, $report, $write_seqs);
-    #my $soloct = $self->check_report_summary($report);
 
     if ($soloct > 0) {
 	$self->write_sololtr_gff($report);
@@ -250,12 +230,6 @@ sub run_parallel_model_search {
     #dd $ltrfams and exit;
     return unless defined $ltrfams && %$ltrfams;
     
-    #my ($seqfh, $seqfile);
-    #if ($self->seqfile) {
-        #$seqfile = $self->seqfile;
-        #open $seqfh, '>>', $seqfile or die "\n[ERROR]: Could not open file: $seqfile";
-    #}
-
     my (@parsed_seqfiles, @parsed_reports);
     my %reports;
     my $t0 = gettimeofday();
@@ -265,15 +239,6 @@ sub run_parallel_model_search {
     open my $log, '>>', $logfile or die "\n[ERROR]: Could not open file: $logfile\n";
 
     my $thr;
-    #if ($threads-$thread_level % 3 == 0 && ($threads-$thread_level)/3 > 0) {
-        #$thr = sprintf("%.0f",($threads-$thread_level)/3);
-    #}
-    #elsif (($threads-$thread_level)-1 % 3 == 0) {
-        #$thr = sprintf("%.0f",($threads-$thread_level)-1/3);
-    #}
-    #else {
-        #$thr = 1;
-    #}
     if ($threads > 1) { 
 	if ($threads % 3 == 0) {
 	    $thr = sprintf("%.0f",$threads/3);
@@ -319,17 +284,13 @@ sub run_parallel_model_search {
                         } );
 
 
-    #for my $hmm (nsort @$ltr_hmm_files) {
     my $fam_ct = 0;
     for my $element (nsort keys %$ltrfams) {
 	$fam_ct++;
         $pm->start($element) and next;
         $SIG{INT} = sub { $pm->finish };
-        #my $hmmsearch_out = $self->search_with_models($gname, $hmm, $hmmsearch, $genome, $aln_stats);
 	my ($query, $nhmmer_out, $aln_stats) = 
 	    $self->run_serial_model_search($nhmmer, $gname, $genome, $element, $ltrfams, $model_dir, $fam_ct);
-        #$reports{report} = $nhmmer_out;
-	#$reports{aln_stats} = $aln_stats;
 	%reports = ( query => $query, report => $nhmmer_out, aln_stats => $aln_stats );
 
         $pm->finish(0, \%reports);
@@ -344,12 +305,7 @@ sub run_parallel_model_search {
     say $log "\n========> Finished HMMER search on $fam_ct solo-LTR models in $final_time minutes";
     close $log;
 
-    #print STDERR "Collating results and writing GFF..." if $self->debug;
-    #my (@reports, @seqs);
-    #find( sub { push @reports, $File::Find::name if -f and /\parsed.txt$/ }, $model_dir );
-
     return { reports => \@parsed_reports, seqfiles => \@parsed_seqfiles, model_dir => $model_dir };
-    #return $model_dir;
 }
 
 sub run_serial_model_search {
@@ -359,8 +315,6 @@ sub run_serial_model_search {
     my $allfams = $self->fullanalysis;  
 
     if ($allfams || (!$allfams && $numfams >= $fam_ct)) {
-	#my $tmpiname = $element.'_ltrseqs_XXXX';
-	#my ($tmp_fh, $tmp_filename) = tempfile( TEMPLATE => $tmpiname, DIR => $model_dir, SUFFIX => '.fasta', UNLINK => 0 );
 	my $ltrfile = File::Spec->catfile($model_dir, $element.'_ltrseqs.fasta');
 	open my $ltrfh, '>', $ltrfile or die "\n[ERROR]: Could not open file: $ltrfile\n";
 	
@@ -369,7 +323,6 @@ sub run_serial_model_search {
 	}
 	close $ltrfh;
 	
-	#$aln_ct++;
 	my ($name, $path, $suffix) = fileparse($ltrfile, qr/\.[^.]*/);
 	my $tre = File::Spec->catfile( abs_path($path), $name.'.dnd' );
 	my $aln = File::Spec->catfile( abs_path($path), $name.'_muscle-out.aln' );
@@ -380,20 +333,11 @@ sub run_serial_model_search {
 	my $status;
 	if ($allfams) {
 	    $status = $self->capture_cmd($muscmd);
-	    #if ($status =~ /failed/i) { 
-	    #say STDERR "\n[ERROR]: $muscmd failed. Removing $ltrfile";
-	    #unlink $ltrfile; # && next if $status =~ /failed/i;
-	    #}
 	}
 	else {
 	    if ($numfams >= $fam_ct) {
 		#say STDERR "DEBUG: $numfams -> $fam_ct";
 		$status = $self->capture_cmd($muscmd);
-		#if ($status =~ /failed/i) {
-		#say STDERR "\n[ERROR]: $muscmd failed. Removing $ltrfile";
-		#unlink $ltrfile; # && next if $status =~ /failed/i; 
-		#}
-		#unlink $ltrfile; # && next if $status =~ /failed/i;
 	    }
 	}
 	#unlink $log, $tmp_filename;
@@ -405,10 +349,6 @@ sub run_serial_model_search {
 	}
 	
 	if (defined $aln && -e $aln && -s $aln) {
-	    #say STDERR "\n[ERROR]: '$muscmd' failed. No alignment file produced.";
-	    #return undef;
-	    #}
-
 	    my $query = $aln =~ s/\.aln$//r;
 	    $query = basename($query);
 	    #my $seq_stats = $self->get_seq_len($ltrfile);
@@ -430,9 +370,6 @@ sub run_serial_model_search {
 	    #dd $seq_stats;
 	    #dd $aln_stats;
 
-	    #if (-e $nhmmer_out && -s $nhmmer_out) {
-	    #$self->write_hmmsearch_report($aln_stats, $nhmmer_out);
-	    #}
 	    return ($query, $nhmmer_out, $aln_stats);
 	}
 	else {
@@ -452,24 +389,17 @@ sub search_with_models {
     $nhmmer_out =~ s/\.aln.*$//;
     $nhmmer_out .= '_'.$gname.'.nhmmer';
 
-    ## no -o option in hmmer2
     my $nhmmer_cmd = "$nhmmer --cpu 1 -o $nhmmer_out $aln $genome"; # > $hmmsearch_out";
     say STDERR "DEBUG: $nhmmer_cmd" if $self->debug;
     $self->run_cmd($nhmmer_cmd);
-
-    #if (-e $nhmmer_out) {   
-	#$self->write_hmmsearch_report($aln_stats, $nhmmer_out);
-    #}
     #unlink $aln;
 
     return $nhmmer_out;
-    #return $hmmsearch_out;
 }
 
 sub write_nhmmer_report {
     my $self = shift;
     my ($query, $aln_stats, $search_report, $write_seqs) = @_;
-    #my $genome     = $self->genome->absolute->resolve;
     my $match_pid  = $self->percentid;
     my $match_len  = $self->matchlen;
     
@@ -499,7 +429,6 @@ sub write_nhmmer_report {
 		if ($l =~ /(\S+)\s+len=(\d+)\s+previd=(\S+)/) {
 		    ($sid, $len, $previd) = ($1, $2, $3);
 		}
-		#next if $l =~ /^score|^--|^alignment/i;
 		next if $l =~ /^score|^------\s+|^alignment/i;
 		if ($l =~ /^(?:\!|\?)\s+\d+/) {
 		    ##score  bias    Evalue   hmmfrom    hmm to     alifrom    ali to      envfrom    env to       sq len      acc 
@@ -524,18 +453,19 @@ sub write_nhmmer_report {
 		}
 	    }
 	    ## DEBUG //
-	    unless (defined $seq) {
-		say STDERR "ERROR: seq not defined";
-		dd \@line and exit;
-	    }
-	    unless (defined $sstring) {
-		say STDERR "ERROR: sstring not defined";
-		dd \@line and exit;
-	    }
-	    unless (defined $qid) {
-		say STDERR "query: $query";
-		dd \@line and exit;
-	    }
+	    #unless (defined $seq) {
+		#say STDERR "ERROR: seq not defined";
+		#dd \@line and exit;
+	    #}
+	    #unless (defined $sstring) {
+		#say STDERR "ERROR: sstring not defined";
+		#dd \@line and exit;
+	    #}
+	    #unless (defined $qid) {
+		#say STDERR "query: $query";
+		#dd \@line and exit;
+	    #}
+	    ## \\
 	    my $identical = ($seq =~ tr/a-zA-Z//);
 	    my $qlen = $aln_stats->{$qid};
 	    my $pid = sprintf("%.2f", $identical/$qlen * 100);	
@@ -566,10 +496,7 @@ sub write_nhmmer_report {
 	    
 	    if ($write_seqs) {
 		my $seqid = join '_', '>'.$qid, $sid, $alifrom, $alito;
-		## It makes more sense to show the location of the hit                                                             
-		## Also, this would pave the way for creating a gff of solo-LTRs                                                   
-		## my $seqid = ">".$query."|".$hitid."_".$hstart."-".$hstop                                                        
-		#say STDERR "DEBUG: writing $seqid";
+		## We show the location of the solo-LTR in the header, as in the GFF3.
 		$qstring = uc($qstring);
 		$qstring =~ s/\./N/g;
 		say $seqfh join "\n", $seqid, $qstring;
@@ -608,7 +535,6 @@ sub write_sololtr_gff {
 	next if $line =~ /^#/;
 	my ($model_num, $query, $query_length, $number_of_hits, $hit_name, $perc_coverage, $hsp_length, 
 	    $hsp_perc_ident, $hsp_query_start, $hsp_query_end, $hsp_hit_start, $hsp_hit_end) = split /\t/, $line;
-	#$query =~ s/_ltrseqs_muscle-out//;
 
 	if (exists $seqlen->{$hit_name}) {
 	    $ct++;
@@ -627,13 +553,10 @@ sub write_sololtr_gff {
 
 sub collate_sololtr_reports {
     my $self = shift;
-    #my ($files, $repfh) = @_;
-    #my ($reports, $seqfiles) = @_;
     my ($soloLTR_reps, $soloLTR_seqs, $report, $write_seqs) = @_;
 
     my (%seen, %parsed_alns);
     for my $file (@$soloLTR_reps) {
-	#my ($last_chr, $last_start, $last_end);
 	open my $fh_in, '<', $file or die "\n[ERROR]: Could not open file: $file\n";
 	my $header = <$fh_in>;
 	my $first = <$fh_in>;
@@ -644,33 +567,24 @@ sub collate_sololtr_reports {
 	while (my $line = <$fh_in>) {
 	    chomp $line;
 	    next if $line =~ /^#/;
-	    #my @f = split /\t/, $line;
 	    ($qid, $qlen, $num_hits, $sid, $percent_q_coverage,
 	     $hsplen, $pid, $hmmfrom, $hmmto, $alifrom, $alito) = split /\t/, $line;
-	    #if (exists $seen{$f[3]}{$f[9]}) {
 	    if (exists $seen{$sid}{$alifrom}) {
-		#my ($len, $pid) = split /\|\|/, $seen{$f[3]}{$f[9]};
 		my ($prev_len, $prev_pid) = split /\|\|/, $seen{$sid}{$alifrom};
-		#if ($f[10]-$f[9] > $len && $f[6] > $pid) {
-		    #$parsed_alns{$f[3]}{$f[9]} =  join "||", @f;
 		if ($alito-$alifrom+1 > $prev_len && $pid > $prev_pid) {
-		    #$parsed_alns{$f[3]}{$f[9]} =  join "||", @f;
 		    $parsed_alns{$sid}{$alifrom} =  join "||", ($qid, $qlen, $num_hits, $sid, $percent_q_coverage,
 								$hsplen, $pid, $hmmfrom, $hmmto, $alifrom, $alito);
 		}
 	    }
-	    #$parsed_alns{$f[3]}{$f[9]} =  join "||", @f;
-	    #$seen{$f[3]}{$f[9]} = join "||", $f[10]-$f[9], $f[6];
 	    if ($last_chr eq $sid) { 
 		if ($alifrom > $last_start && $alifrom > $last_end && $alito > $last_end) {
 		    $parsed_alns{$sid}{$alifrom} =  join "||", ($qid, $qlen, $num_hits, $sid, $percent_q_coverage,
 		    					    $hsplen, $pid, $hmmfrom, $hmmto, $alifrom, $alito);
 		    $seen{$sid}{$alifrom} = join "||", $alito-$alifrom+1, $pid;
-		    #next;
 		}
 	    }
 	    else {
-		#hits on a new chromosome
+		# solo-LTRs on a new chromosome
 		$parsed_alns{$sid}{$alifrom} =  join "||", ($qid, $qlen, $num_hits, $sid, $percent_q_coverage,
 							    $hsplen, $pid, $hmmfrom, $hmmto, $alifrom, $alito);
 		$seen{$sid}{$alifrom} = join "||", $alito-$alifrom+1, $pid;
@@ -680,14 +594,6 @@ sub collate_sololtr_reports {
 	close $fh_in;
     }
    
-    #open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
-    #if (! -s $outfile) { 
-	#say $out join "\t", "#query", "query_length", "number_of_hits", "hit_name",
-            #"perc_coverage","hsp_length", "hsp_perc_ident","hsp_query_start", "hsp_query_end",
-            #"hsp_hit_start", "hsp_hit_end","search_type";
-
-    #}
-    
     open my $repfh, '>>', $report or die "\n[ERROR]: Could not open file: $report\n";
     say $repfh join "\t", "#model_num", "query", "query_length", "number_of_hits", "hit_name",
         "perc_coverage","hsp_length", "hsp_perc_ident","hsp_query_start", "hsp_query_end", "hsp_hit_start", "hsp_hit_end";
@@ -702,7 +608,6 @@ sub collate_sololtr_reports {
 	    $id_map{ $f[0].'_'.$chr.'_'.$start.'_'.$f[10] } = "solo_LTR$solo_ct".'_'.$f[0].'_'.$chr.'_'.$start.'_'.$f[10];
 	}
     }
-    #close $out;
     #dd \%id_map;
     #dd $soloLTR_seqs;
 
@@ -717,15 +622,11 @@ sub collate_sololtr_reports {
 		my $id = $seqo->name;
 		my $seq = $seqo->seq;
 		$seq =~ s/.{60}\K/\n/g;
-		#'>'.$qid, $sid, $alifrom, $alito;
 		if (exists $id_map{$id}) { 
+		    # Do not warn if the IDs were not found; that means they were overlapping and removed.
 		    say $seqfh join "\n", '>'.$id_map{$id}, $seq;
 		}
-		#else {
-		    #say STDERR "\n[ERROR]: '$id' not found in solo-LTR ID map. This is a bug, please report it.\n";
-		#}
 	    }
-	    #$self->collate($file, $seqfh);
 	}
     }
 
