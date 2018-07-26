@@ -257,10 +257,7 @@ sub run_parallel_model_search {
 	$thr = 1;
     }
 
-    say STDERR "DEBUG: child thread level: $thr";
-    say STDERR "DEBUG: total threads should be: ",$thr*$thread_level;
-
-    my $pm = Parallel::ForkManager->new($thr);
+    my $pm = Parallel::ForkManager->new($thr, $gpath);
     local $SIG{INT} = sub {
         warn "Caught SIGINT; Waiting for child processes to finish.";
         $pm->wait_all_children;
@@ -340,7 +337,7 @@ sub run_serial_model_search {
 		$status = $self->capture_cmd($muscmd);
 	    }
 	}
-	#unlink $log, $tmp_filename;
+	#unlink $log, $ltrfile;
 
 	if (defined $status && $status =~ /failed/i) {
 	    say STDERR "\n[ERROR]: $muscmd failed. Removing $ltrfile";
@@ -367,8 +364,6 @@ sub run_serial_model_search {
 	    my ($len) = values %$aln_stats;
 	    return undef unless $len =~ /\d+/;
 	    my $nhmmer_out = $self->search_with_models($gname, $aln, $nhmmer, $genome);
-	    #dd $seq_stats;
-	    #dd $aln_stats;
 
 	    return ($query, $nhmmer_out, $aln_stats);
 	}
@@ -389,7 +384,7 @@ sub search_with_models {
     $nhmmer_out =~ s/\.aln.*$//;
     $nhmmer_out .= '_'.$gname.'.nhmmer';
 
-    my $nhmmer_cmd = "$nhmmer --cpu 1 -o $nhmmer_out $aln $genome"; # > $hmmsearch_out";
+    my $nhmmer_cmd = "$nhmmer --cpu 1 -o $nhmmer_out $aln $genome";
     say STDERR "DEBUG: $nhmmer_cmd" if $self->debug;
     $self->run_cmd($nhmmer_cmd);
     #unlink $aln;
@@ -408,9 +403,34 @@ sub write_nhmmer_report {
     open my $outfh, '>', $parsed_report or die "\n[ERROR]: Could not open file: $parsed_report\n";
     open my $seqfh, '>', $parsed_seqs or die "\n[ERROR]: Could not open file: $parsed_seqs\n"
 	if $write_seqs;
-
+    
     my $num_hits = 0;
-    my %results;
+    my (%results, %ids);
+    open my $fh, '<', $search_report or die "\n[ERROR]: Could not open file: $search_report\n";;
+
+    while (my $line = <$fh>) {
+	chomp $line;
+	$line =~ s/^\s+|\s+$//;
+	next if $line =~ /^#|^[-]+|E-value|Scores/;
+	last if $line =~ /Annotation for each hit/i;
+	my $q;
+	#Query:       RLC_family5_LTR_retrotransposon595_ltrseqs_muscle-out  [M=158]
+	#Scores for complete hits:
+	#  E-value  score  bias  Sequence    start      end  Description
+	#  ------- ------ -----  --------    -----    -----  -----------
+	#  0.00081   25.6   6.6  Chr5     20120128 20120038  
+	if ($line =~ /^Query:\s+(\S+)\s+\S+/) { 
+	    $q = $1;
+	    $ids{query}{$q} = 1;
+	}
+	else { 
+	    my @f = split /\s+/, $line;
+	    if (@f == 6) {
+		$ids{subject}{$f[3]} = 1;
+	    }
+	}
+    }
+    close $fh;
 
     {
 	open my $in, '<', $search_report or die "\n[ERROR]: Could not open file: $search_report\n";;
@@ -421,13 +441,13 @@ sub write_nhmmer_report {
 	    next if $line =~ /^#/;
 	    my @line = split /\n/, $line;
 	    $num_hits++;
-	    #dd \@line and exit;
 	    my ($qid, $qstring, $sstring, $sid, $len, $previd, $score, $bias, $evale, $hmmfrom, $hmmto, 
 		$alifrom, $alito, $envfrom, $envto, $seqlen, $acc, $seq);
 	    for my $l (@line) {
 		$l =~ s/^\s+//;
-		if ($l =~ /(\S+)\s+len=(\d+)\s+previd=(\S+)/) {
-		    ($sid, $len, $previd) = ($1, $2, $3);
+		if ($l =~ /(\S+)\s+?.*/) {
+		    my $id = $1;
+		    $sid = $id if exists $ids{subject}{$id};
 		}
 		next if $l =~ /^score|^------\s+|^alignment/i;
 		if ($l =~ /^(?:\!|\?)\s+\d+/) {
@@ -436,14 +456,17 @@ sub write_nhmmer_report {
 		    ($score, $bias, $evale, $hmmfrom, $hmmto, $alifrom, $alito, $envfrom, $envto, $seqlen, $acc) = 
 			@info[1..5,7..8,10..11,13..14];
 		}
-		if ($l =~ /^(\S+)\s+\d+\s+([atcgnATCGN.*-]+)\s+\d+/) {
+		if ($l =~ /^(\S+)\s+\d+\s+([atcgnATCGNRYSWKMBDHVU.*-]+)\s+\d+/) {
 		    my $id = $1;
+		    my $seqstr = $2;
+		    #say STDERR join qq{\n}, "'$id'", "'$query'";
 		    if ($id eq $sid) {
-			$sstring .= $2;
+			$sstring .= $seqstr;
 		    }
-		    elsif ($id eq $query) {
+		    if ($id eq $query && exists $ids{query}{$id}) {
 			$qid = $id;
-			$qstring .= $2;
+			$qstring .= $seqstr;
+			#say STDERR "QID: $qid";
 		    }
 		    
 		}
@@ -453,18 +476,18 @@ sub write_nhmmer_report {
 		}
 	    }
 	    ## DEBUG //
-	    #unless (defined $seq) {
-		#say STDERR "ERROR: seq not defined";
-		#dd \@line and exit;
-	    #}
-	    #unless (defined $sstring) {
-		#say STDERR "ERROR: sstring not defined";
-		#dd \@line and exit;
-	    #}
-	    #unless (defined $qid) {
-		#say STDERR "query: $query";
-		#dd \@line and exit;
-	    #}
+	    unless (defined $seq) {
+		say STDERR "ERROR: seq not defined";
+		dd \@line and exit;
+	    }
+	    unless (defined $sstring) {
+		say STDERR "ERROR: sstring not defined";
+		dd \@line and exit;
+	    }
+	    unless (defined $qid) {
+		say STDERR "query: $query";
+		dd \@line and exit;
+	    }
 	    ## \\
 	    my $identical = ($seq =~ tr/a-zA-Z//);
 	    my $qlen = $aln_stats->{$qid};
@@ -483,7 +506,7 @@ sub write_nhmmer_report {
 	}
 	close $in;
     }
-    
+
     my $solo_ct = 0;
     for my $qid (nsort_by { m/\S+\|\|(\d+)/ and $1 } keys %results) {
 	for my $res (@{$results{$qid}}) {
@@ -555,10 +578,10 @@ sub collate_sololtr_reports {
     my $self = shift;
     my ($soloLTR_reps, $soloLTR_seqs, $report, $write_seqs) = @_;
 
+    #dd $soloLTR_reps;
     my (%seen, %parsed_alns);
-    for my $file (@$soloLTR_reps) {
+    for my $file (grep { -s $_ } @$soloLTR_reps) {
 	open my $fh_in, '<', $file or die "\n[ERROR]: Could not open file: $file\n";
-	my $header = <$fh_in>;
 	my $first = <$fh_in>;
 	my ($qid, $qlen, $num_hits, $sid, $percent_q_coverage,
 	    $hsplen, $pid, $hmmfrom, $hmmto, $alifrom, $alito) = split /\t/, $first;
@@ -567,33 +590,40 @@ sub collate_sololtr_reports {
 	while (my $line = <$fh_in>) {
 	    chomp $line;
 	    next if $line =~ /^#/;
+	    next unless $line =~ /\S/;
 	    ($qid, $qlen, $num_hits, $sid, $percent_q_coverage,
 	     $hsplen, $pid, $hmmfrom, $hmmto, $alifrom, $alito) = split /\t/, $line;
 	    if (exists $seen{$sid}{$alifrom}) {
 		my ($prev_len, $prev_pid) = split /\|\|/, $seen{$sid}{$alifrom};
 		if ($alito-$alifrom+1 > $prev_len && $pid > $prev_pid) {
-		    $parsed_alns{$sid}{$alifrom} =  join "||", ($qid, $qlen, $num_hits, $sid, $percent_q_coverage,
-								$hsplen, $pid, $hmmfrom, $hmmto, $alifrom, $alito);
+		    $parsed_alns{$sid}{$alifrom} = join "||", ($qid, $qlen, $num_hits, $sid, $percent_q_coverage,
+							       $hsplen, $pid, $hmmfrom, $hmmto, $alifrom, $alito);
 		}
 	    }
 	    if ($last_chr eq $sid) { 
 		if ($alifrom > $last_start && $alifrom > $last_end && $alito > $last_end) {
-		    $parsed_alns{$sid}{$alifrom} =  join "||", ($qid, $qlen, $num_hits, $sid, $percent_q_coverage,
-		    					    $hsplen, $pid, $hmmfrom, $hmmto, $alifrom, $alito);
+		    $parsed_alns{$sid}{$alifrom} = join "||", ($qid, $qlen, $num_hits, $sid, $percent_q_coverage,
+							       $hsplen, $pid, $hmmfrom, $hmmto, $alifrom, $alito);
 		    $seen{$sid}{$alifrom} = join "||", $alito-$alifrom+1, $pid;
 		}
 	    }
 	    else {
 		# solo-LTRs on a new chromosome
-		$parsed_alns{$sid}{$alifrom} =  join "||", ($qid, $qlen, $num_hits, $sid, $percent_q_coverage,
-							    $hsplen, $pid, $hmmfrom, $hmmto, $alifrom, $alito);
+		$parsed_alns{$sid}{$alifrom} = join "||", ($qid, $qlen, $num_hits, $sid, $percent_q_coverage,
+							   $hsplen, $pid, $hmmfrom, $hmmto, $alifrom, $alito);
 		$seen{$sid}{$alifrom} = join "||", $alito-$alifrom+1, $pid;
 	    }
 	    ($last_chr, $last_start, $last_end) = ($sid, $alifrom, $alito);
 	}
 	close $fh_in;
+
+	# if there was only one line in the report, store that now
+	unless (%parsed_alns) {
+	    $parsed_alns{$sid}{$alifrom} = join "||", ($qid, $qlen, $num_hits, $sid, $percent_q_coverage,
+						       $hsplen, $pid, $hmmfrom, $hmmto, $alifrom, $alito);
+	}
     }
-   
+
     open my $repfh, '>>', $report or die "\n[ERROR]: Could not open file: $report\n";
     say $repfh join "\t", "#model_num", "query", "query_length", "number_of_hits", "hit_name",
         "perc_coverage","hsp_length", "hsp_perc_ident","hsp_query_start", "hsp_query_end", "hsp_hit_start", "hsp_hit_end";
@@ -605,7 +635,7 @@ sub collate_sololtr_reports {
 	    $solo_ct++;
 	    my @f = split /\|\|/, $parsed_alns{$chr}{$start};
 	    say $repfh join "\t", "solo_LTR$solo_ct", @f;
-	    $id_map{ $f[0].'_'.$chr.'_'.$start.'_'.$f[10] } = "solo_LTR$solo_ct".'_'.$f[0].'_'.$chr.'_'.$start.'_'.$f[10];
+	        $id_map{ $f[0].'_'.$chr.'_'.$start.'_'.$f[10] } = "solo_LTR$solo_ct".'_'.$f[0].'_'.$chr.'_'.$start.'_'.$f[10];
 	}
     }
     #dd \%id_map;
