@@ -46,6 +46,11 @@ Version	Date	Location
 - Modify common LTR/TIR finding method to not delete FASTA file of feature parts from singleton elements.
   These fix allows us to use all LTR/TIR elements in age calculation and all LTR elements in 
   solo-LTR search.
+- Complete re-write of solo-LTR search method. Now the 'sololtr' command uses nhmmer from HMMERv3
+  and works straight from the LTR alignment so no model is constructed for the search. In addition, we
+  now write the files as they are processed instead of writing all LTR FASTA files, to disk, then writing
+  all alignments, etc. for each step in the process. This saves an enormous amount of time and space, and
+  the method is more stable now as we're not writing thousands of files to disk.
 
 0.11.0	04/17/2018	Vancouver, BC
 
