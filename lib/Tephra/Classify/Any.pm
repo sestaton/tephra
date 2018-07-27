@@ -114,7 +114,6 @@ sub process_blast_args {
 
     my @dbfiles = glob "$blastdb*";
     unlink @dbfiles;
-    #unlink $query;
 
     return $blast_report;
 }
@@ -141,8 +140,6 @@ sub parse_blast {
 	my $qlen = $qend - $qstart + 1;
 	my $hlen = $hend - $hstart + 1;
 	my $minlen = min($qlen, $hlen); # we want to measure the coverage of the smaller element
-	#my ($coords) = ($queryid =~ /_(\d+_\d+)$/);
-        #$queryid =~ s/_$coords//;
 	#DHH_helitron1_singleton_family0_Contig57_HLAC-254L24_106214_107555
 	my ($elem) = ($hitid =~ /(non_LTR_retrotransposon\d+|helitron\d+)_/);
 	#my ($family, $elem) = ($hitid =~ /^(\w{3})_(non_LTR_retrotransposon\d+|helitron\d+)_/);
@@ -165,11 +162,6 @@ sub write_families {
 
     my ($name, $path, $suffix) = fileparse($tefas, qr/\.[^.]*/);
     my $dir  = basename($path);
-    #my ($sf) = ($dir =~ /_(\w+)$/);
-    #my ($sf) = ($dir =~ /_((?:\w+\d+-)?\w+)$/);
-    #unless (defined $sf) {
-        #say STDERR "\n[ERROR]: Can't get sf from $dir $.";
-    #}
 
     my $seqstore = $self->_store_seq($tefas);
     #dd $seqstore;
@@ -193,8 +185,6 @@ sub write_families {
 		$chr =~ s/${id}_//;
 		$chr =~ s/_$start.*//;
 		my $sfcode = $sf_elem_map->{$id};
-		#my $sfcode = $sf_elem_map->{$elem};
-		#say $out join "\n", ">$elem"."_family$idx", $seqstore->{$elem};
 		say $out join "\n", ">$sfcode"."_family$idx"."_$id"."_$chr"."_$start"."_$stop", $seqstore->{$elem};
 		delete $seqstore->{$elem};
 	    }
@@ -218,12 +208,10 @@ sub write_families {
 	    $seqstore->{$k} =~ s/.{60}\K/\n/g;
 	    my $chr = $k;
 	    my ($id) = ($k =~ /(helitron\d+|non_LTR_retrotransposon\d+)_/); 
-	    #my ($sfcode, $id) = ($k =~ /(\w{3})_(helitron\d+|non_LTR_retrotransposon\d+)_/);
 	    my ($start, $stop) = ($k =~ /(\d+)_(\d+)$/);
 	    $chr =~ s/${id}_//;
 	    $chr =~ s/_$start.*//;
 	    my $sfcode = $sf_elem_map->{$id};
-	    #say $outx join "\n", ">$id"."_singleton_family$idx"."_$chr"."_$start"."_$stop", $seqstore->{$k};
 	    say $outx join "\n", ">$sfcode"."_singleton_family$idx"."_$id"."_$chr"."_$start"."_$stop", $seqstore->{$k};
 	    $annot_ids{$k} = "singleton_family$idx";
 	    $idx++;
@@ -242,7 +230,7 @@ sub write_families {
 
 sub combine_families {
     my ($self) = shift;
-    my ($outfiles, $outfile) = @_; #$sf_elem_map) = @_;
+    my ($outfiles, $outfile) = @_;
     
     #dd $sf_elem_map;
     open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
@@ -256,11 +244,9 @@ sub combine_families {
 	    my $id  = $seqobj->name;
 	    my $seq = $seqobj->seq;
 	    $seq =~ s/.{60}\K/\n/g;
-	    #say $out join "\n", ">$sf_elem_map->{$key}"."_$id", $seq;
 	    say $out join "\n", ">$id", $seq;
 	    $ct++;
 	}
-	#unlink $file;
     }
     close $out;
 
@@ -288,7 +274,6 @@ sub annotate_gff {
 		if (exists $annot_ids->{$key}) {
 		    my $family = $annot_ids->{$key};
 		    my $sfamily = $sf_elem_map->{$id};
-		    #my $fid = $sfamily."_$id";
 		    my $fid = $sfamily."_$family";
 		    $f[8] =~ s/ID=$id\;/ID=$id;family=$fid;/;
 		    say $out join "\t", @f;
