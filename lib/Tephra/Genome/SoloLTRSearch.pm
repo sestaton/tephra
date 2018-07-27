@@ -23,7 +23,7 @@ use Set::IntervalTree;
 use Carp 'croak';
 use Tephra::Config::Exe;
 use namespace::autoclean;
-use Data::Dump::Color;
+#use Data::Dump::Color;
 
 with 'Tephra::Role::Util',
      'Tephra::Role::Run::Any',
@@ -302,6 +302,13 @@ sub run_parallel_model_search {
     say $log "\n========> Finished HMMER search on $fam_ct solo-LTR models in $final_time minutes";
     close $log;
 
+    # Each process stores the child's data structure and I've found this can cause issues with the
+    # default /tmp directory in some cases, so we store this data in the working directory and clean up the
+    # files manually. 
+    my @process_logs;
+    find( sub { push @process_logs, $File::Find::name if -f and /Parallel-ForkManager*.txt/ }, $gpath );
+    unlink @process_logs;
+
     return { reports => \@parsed_reports, seqfiles => \@parsed_seqfiles, model_dir => $model_dir };
 }
 
@@ -333,7 +340,6 @@ sub run_serial_model_search {
 	}
 	else {
 	    if ($numfams >= $fam_ct) {
-		#say STDERR "DEBUG: $numfams -> $fam_ct";
 		$status = $self->capture_cmd($muscmd);
 	    }
 	}
@@ -341,7 +347,7 @@ sub run_serial_model_search {
 
 	if (defined $status && $status =~ /failed/i) {
 	    say STDERR "\n[ERROR]: $muscmd failed. Removing $ltrfile";
-	    unlink $ltrfile; # && next if $status =~ /failed/i;                                                                            
+	    unlink $ltrfile;
 	    return undef;
 	}
 	
@@ -387,7 +393,6 @@ sub search_with_models {
     my $nhmmer_cmd = "$nhmmer --cpu 1 -o $nhmmer_out $aln $genome";
     say STDERR "DEBUG: $nhmmer_cmd" if $self->debug;
     $self->run_cmd($nhmmer_cmd);
-    #unlink $aln;
 
     return $nhmmer_out;
 }
@@ -459,14 +464,12 @@ sub write_nhmmer_report {
 		if ($l =~ /^(\S+)\s+\d+\s+([atcgnATCGNRYSWKMBDHVU.*-]+)\s+\d+/) {
 		    my $id = $1;
 		    my $seqstr = $2;
-		    #say STDERR join qq{\n}, "'$id'", "'$query'";
 		    if ($id eq $sid) {
 			$sstring .= $seqstr;
 		    }
 		    if ($id eq $query && exists $ids{query}{$id}) {
 			$qid = $id;
 			$qstring .= $seqstr;
-			#say STDERR "QID: $qid";
 		    }
 		    
 		}
@@ -475,20 +478,20 @@ sub write_nhmmer_report {
 		    $seq .= $l;
 		}
 	    }
-	    ## DEBUG //
-	    unless (defined $seq) {
-		say STDERR "ERROR: seq not defined";
-		dd \@line and exit;
-	    }
-	    unless (defined $sstring) {
-		say STDERR "ERROR: sstring not defined";
-		dd \@line and exit;
-	    }
-	    unless (defined $qid) {
-		say STDERR "query: $query";
-		dd \@line and exit;
-	    }
-	    ## \\
+	    ## for DEBUG 
+	    #unless (defined $seq) {
+	        #say STDERR "ERROR: seq not defined";
+		#dd \@line and exit;
+	    #}
+	    #unless (defined $sstring) {
+		#say STDERR "ERROR: sstring not defined";
+		#dd \@line and exit;
+	    #}
+	    #unless (defined $qid) {
+		#say STDERR "query: $query";
+		#dd \@line and exit;
+	    #}
+	    ## 
 	    my $identical = ($seq =~ tr/a-zA-Z//);
 	    my $qlen = $aln_stats->{$qid};
 	    my $pid = sprintf("%.2f", $identical/$qlen * 100);	
@@ -578,7 +581,6 @@ sub collate_sololtr_reports {
     my $self = shift;
     my ($soloLTR_reps, $soloLTR_seqs, $report, $write_seqs) = @_;
 
-    #dd $soloLTR_reps;
     my (%seen, %parsed_alns);
     for my $file (grep { -s $_ } @$soloLTR_reps) {
 	open my $fh_in, '<', $file or die "\n[ERROR]: Could not open file: $file\n";
@@ -679,23 +681,6 @@ sub check_report_summary {
     return $ct;
 }
     
-sub _find_hmmer {
-    my $self = shift; 
-
-    my $config      = Tephra::Config::Exe->new->get_config_paths;
-    my ($hmmer2bin) = @{$config}{qw(hmmer2bin)};
-    my $hmmbuild    = File::Spec->catfile($hmmer2bin, 'hmmbuild');
-    my $hmmsearch   = File::Spec->catfile($hmmer2bin, 'hmmsearch');
-
-    if (-e $hmmbuild && -x $hmmbuild &&
-	-e $hmmsearch && -x $hmmsearch) {
-	return ($hmmbuild, $hmmsearch);
-    }
-    else {
-	croak "\n[ERROR]: Could not get HMMERv2 PATH. This indicates that Tephra was not configured correctly. Exiting.\n";
-    }
-}
-
 sub get_seq_len {
     my $self = shift;
     my ($genome) = @_;
@@ -720,7 +705,6 @@ sub get_aln_len {
     
     my %aln_stats;
 
-    #for my $aligned (@$aln_files) {
     my $ltr_retro = basename($aln);
     $ltr_retro =~ s/\.aln//;
     my $aln_in = Bio::AlignIO->new(-file => $aln, -format => 'clustalw');
@@ -729,7 +713,6 @@ sub get_aln_len {
     while ( my $aln_obj = $aln_in->next_aln() ) {
 	$aln_stats{$ltr_retro} = $aln_obj->length;
     }	
-    #}
 
     return \%aln_stats;
 }
