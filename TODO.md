@@ -21,14 +21,14 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] investigate why UBN2* domains are being used to classify Gypsy (modified regex in v0.17.7 should solve the problem; 
        need to do full-genome test to confirm)
  - [ ] add DIRS and PLE so we are describing all orders in Wicker's scheme
- - [ ] LARD annotation method not working for GFF3 as of v0.11.0
+ - [x] LARD annotation method not working for GFF3 as of v0.11.0
  - [ ] Family number in FASTA/GFF3 not aligned with that in domain organization file
 
 ## Command `tephra findtirs`
  - [x] Find all non-overlapping TIR elements passing thresholds
  - [x] Generate combined GFF3 of high-quality TIRs
  - [x] Check for index (if given)
- - [ ] Add optional test for the presence of coding domains similar to 'LTRRefine' class. This should reduce the
+ - [x] Add optional test for the presence of coding domains similar to 'LTRRefine' class. This should reduce the
        number of DTX elements. Add this to the configuration file for the 'all' command the same as for LTRs.
  - [x] Mark short elements with no coding potential as MITEs
  - [x] Output FASTA along with GFF3 like other commands
@@ -44,7 +44,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] add option to pick on the top 20 families to speed up execution
  - [x] consider preprocessing all LTR files so we don't block on one superfamily waiting for threads to finish
  - [x] if the soloLTR sequence file is empty, delete all other files and warn no soloLTRs were found
- - [ ] evaluate search results as the process completes so the number of (potentially empty) files does not
+ - [x] evaluate search results as the process completes so the number of (potentially empty) files does not
        grow too large
 
 ## Command `tephra classifytirs`
@@ -54,7 +54,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] write fasta of each superfamily, and combined library
  - [x] identify	fragmented elements with refined full-length elements
  - [x] report domain architecture, as for LTR elements
- - [ ] add MITE annotation to GFF3
+ - [x] add MITE annotation to GFF3
 
 ## Command `tephra findltrs`
  - [x] Find all non-overlapping LTR-RTs under strict and relaxed conditions
@@ -136,6 +136,8 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] Investigate the apparent disagreement between the query/subject string and homology strings
  - [ ] Summarize the stats in a more intuitive way so it is clear what the gap summaries mean
  - [ ] Calculate stats from complete repeat database instead of just with LTRs
+ - [ ] Do not write all families to disk before processing; do the analysis iteratively as we read the 
+       repeat database
 
 ## Command `tephra tirage`
 
@@ -152,13 +154,13 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] Generate HTML output for all command. Will need to store JSON data for graphs and tables.
  - [x] Add tirage options to configuration file.
  - [x] Remove FASTA/GFF3 files of unclassified elements once the classification process is complete. 
- - [ ] Consider removing all FASTA/GFF3 files except the final annotated products. Could add a 'splitgff3' command
+ - [x] Consider removing all FASTA/GFF3 files except the final annotated products. Could add a 'splitgff3' command
        to produce separate FASTA/GFF3 files from a single GFF3 if going back to files split by TE type is 
        of interest.
  - [ ] Add method to filter LTRs/TIRs that appear to be duplicated genes. This method may fit better in the individual TE
        finding programs since the 'all' command is not the only use case of Tephra.
- - [ ] Remove duplicate header in family-level domain organization file
- - [ ] Fix Parent IDs getting mixed up when combining LTRs and TRIMs
+ - [x] Remove duplicate header in family-level domain organization file
+ - [x] Fix Parent IDs getting mixed up when combining LTRs and TRIMs
  - [ ] Add final statistic showing full-length:solo-LTR:truncated ratios
  
 ## Command `tephra reannotate`
@@ -193,4 +195,4 @@ This file is for logging feature requests and bugs during development. Hopefully
        for the commands for helitrons and tirs
  - [ ] modify header to include element number in family. The element number should be listed numerically according 
        to chromosome position? (Wicker et al., 2007)
- - [ ] add tryrosine recombinases, endonucleases, Helitron_like_N models from Pfam to HMM db
+ - [x] add tryrosine recombinases, endonucleases, Helitron_like_N models from Pfam to HMM db
