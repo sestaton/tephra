@@ -109,10 +109,8 @@ sub get_exemplar_ltrs_for_sololtrs {
 		    my $family = $1;
 		    my $elemid = $2;
 		    $family =~ s/^_|_$//;
-		    #$elemid =~ s/_\d+_\d+$//;
 		    my $name = join "_", $family, $elemid;
 		    push @{$ltrfams{$name}}, { id => $id, seq => $seq };
-		    #push @{$ltrfams{$family}}, { id => $id, seq => $seq };
 		}
 	    }
 	    #dd \%ltrfams;
@@ -148,7 +146,6 @@ sub get_exemplar_ltrs_for_sololtrs {
 		    $family =~ s/^_|_$//;
 		    my $name = join "_", $family, $elemid;
 		    $name_map{$name} = $family;
-                    #push @{$ltrfams{$family}}, { id => $id, seq => $seq };
 		}
             }
 	}
@@ -163,11 +160,7 @@ sub get_exemplar_ltrs_for_sololtrs {
 	    while ( my $seq = $iter->next_seq() ) {
 		my $id = $seq->name;
 		my $seq = $seq->seq;
-		#my $elemid = $id =~ s/_\d+_\d+$//r;
 		my ($family, $elemid) = ($id =~ /^(?:[35]prime_)?(\w{3}_(?:singleton_)?(?:family\d+_))?($re?)_.*/);
-		#if ($id =~ /^(?:[35]prime_)?(\w{3}_(?:singleton_)?(?:family\d+_))?($re?)_.*/) {
-		#my $family = $1;
-		#my $elemid = $2;
 		$elemid =~ s/_\d+_\d+$//;
 		$family =~ s/^_|_$//;
 		my $name = join "_", $family, $elemid;
@@ -176,12 +169,6 @@ sub get_exemplar_ltrs_for_sololtrs {
 		    #my $name = join "_", $ltr_orient, $name_map{$elemid}, $id;  
 		    my $ltrid = join "_", $ltr_orient, $id;
 		    push @{$ltrfams{ $name }}, { id => $ltrid, seq => $seq  }; 
-		    #say STDERR "ID: $id";
-		    #say STDERR "ELEMID: $elemid";
-		    #say STDERR "MAPPED-NAME: $name_map{$elemid}";
-		    #my $name = join "_", $ltr_orient, $name_map{$elemid}, $id;
-		    #say STDERR "NAME: $name";
-		    # say $tmp_fh join "\n", ">".$name, $seq;
 		}
 		else {
 		    say STDERR "\n[ERROR]: $elemid ($id) not found in family/singleton name map. This is a bug, please report it. Exiting.\n";
@@ -192,7 +179,6 @@ sub get_exemplar_ltrs_for_sololtrs {
     }
 
     return \%ltrfams;
-    #return \@ltrseqs;
 }
 
 =head1 AUTHOR
