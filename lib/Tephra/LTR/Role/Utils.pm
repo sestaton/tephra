@@ -113,7 +113,6 @@ sub get_exemplar_ltrs_for_sololtrs {
 		    push @{$ltrfams{$name}}, { id => $id, seq => $seq };
 		}
 	    }
-	    #dd \%ltrfams;
 	}
 	else { 
             say STDERR "\n[WARNING]: Exemplar LTR file not found in $dir. This may indicate no families were found. ".
@@ -122,7 +121,7 @@ sub get_exemplar_ltrs_for_sololtrs {
             find( sub { push @ltr_files, $File::Find::name if -f and /$search$/ }, $dir);
         }
     }
-    
+
     if ($allfams || @ltr_files) {
 	my (@classified, %name_map);
 	find( sub { push @classified, $File::Find::name if -f and /^\w{3}_families.fasta$|^\w{3}_singletons.fasta$/ }, $dir);
@@ -131,21 +130,30 @@ sub get_exemplar_ltrs_for_sololtrs {
                 "Please re-run 'classifyltrs' or report this issue. Exiting.\n";
             return;
 	}
+	#dd \@classified;
 
 	for my $file (@classified) {
 	    my $kseq = Bio::DB::HTS::Kseq->new($file);
             my $iter = $kseq->iterator();
-
+	    
             while ( my $seq = $iter->next_seq() ) {
+		my $name;
 		my $id = $seq->name;
 		my $seq = $seq->seq;
-		if ($id =~ /^(?:[35]prime_)?(\w{3}_(?:singleton_)?(?:family\d+_))?($re?)_.*/) { 
-		    my $family = $1;
-		    my $elemid = $2;
+		my ($family, $elemid) = ($id =~ /^(?:[35]prime_)?(\w{3}_(?:singleton_)?(?:family\d+_))?($re?)_.*/); # { 
+
+		if (defined $family && defined $elemid) { 
 		    $elemid =~ s/_\d+_\d+$//;
 		    $family =~ s/^_|_$//;
-		    my $name = join "_", $family, $elemid;
-		    $name_map{$name} = $family;
+		    $name = join "_", $family, $elemid;
+		    #$name_map{$name} = $family;
+		    $name_map{$elemid} = $family;
+		}
+		elsif (defined $elemid) {
+		    $name_map{$elemid} = 'Unclassified';
+		}
+		else {
+		    $name_map{$id} = 'Unclassified';
 		}
             }
 	}
@@ -158,12 +166,22 @@ sub get_exemplar_ltrs_for_sololtrs {
 	    my $iter = $kseq->iterator();
 	    
 	    while ( my $seq = $iter->next_seq() ) {
+		my $name;
 		my $id = $seq->name;
 		my $seq = $seq->seq;
 		my ($family, $elemid) = ($id =~ /^(?:[35]prime_)?(\w{3}_(?:singleton_)?(?:family\d+_))?($re?)_.*/);
-		$elemid =~ s/_\d+_\d+$//;
-		$family =~ s/^_|_$//;
-		my $name = join "_", $family, $elemid;
+		if (defined $family && defined $elemid) { 
+		    $elemid =~ s/_\d+_\d+$//;
+		    $family =~ s/^_|_$//;
+		    $name = join "_", $family, $elemid;
+		}
+		elsif (defined $elemid) { 
+		    # This repeat database does not come from Tephra, which is just fine. 
+		    $name = $elemid;  
+		}
+		else {
+		    $name = $id;
+		}
 
 		if (exists $name_map{$name}) {
 		    #my $name = join "_", $ltr_orient, $name_map{$elemid}, $id;  
