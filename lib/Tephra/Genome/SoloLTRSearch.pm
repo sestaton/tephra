@@ -170,10 +170,12 @@ sub find_soloLTRs {
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			      if (defined $data_ref) { 
 				  my ($model_dir, $reports, $seqfiles) = @{$data_ref}{qw(model_dir reports seqfiles)};
-
-				  push @model_dirs, $model_dir;
-				  push @soloLTR_reps, @$reports;
-				  push @soloLTR_seqs, @$seqfiles if $write_seqs;
+				  if (defined $model_dir && defined $reports) { 
+				      push @model_dirs, $model_dir;
+				      push @soloLTR_reps, @$reports;
+				  }
+				  push @soloLTR_seqs, @$seqfiles 
+				      if defined $seqfiles && $write_seqs;
 			      }
 			} );
 
@@ -269,8 +271,10 @@ sub run_parallel_model_search {
                               if (defined $nhmmer_out && -e $nhmmer_out && -s $nhmmer_out) {
                                   my ($parsed_report, $parsed_seqs) = 
 				      $self->write_nhmmer_report($query, $aln_stats, $nhmmer_out, $write_seqs);
-				  push @parsed_seqfiles, $parsed_seqs if $write_seqs;
-				  push @parsed_reports, $parsed_report;
+				  push @parsed_reports, $parsed_report
+				      if defined $parsed_report;
+				  push @parsed_seqfiles, $parsed_seqs 
+				      if defined $parsed_report && $write_seqs;
 			      }
                               #unlink $_ for keys %$data_ref;
                               my $t1 = gettimeofday();
@@ -347,7 +351,7 @@ sub run_serial_model_search {
 
 	if (defined $status && $status =~ /failed/i) {
 	    say STDERR "\n[ERROR]: $muscmd failed. Removing $ltrfile";
-	    unlink $ltrfile;
+	    #unlink $ltrfile;
 	    return undef;
 	}
 	
@@ -405,9 +409,6 @@ sub write_nhmmer_report {
     
     my $parsed_report = $search_report =~ s/\.nhmmer/_parsed.txt/r;
     my $parsed_seqs = $search_report =~ s/\.nhmmer/_seqs.fasta/r;
-    open my $outfh, '>', $parsed_report or die "\n[ERROR]: Could not open file: $parsed_report\n";
-    open my $seqfh, '>', $parsed_seqs or die "\n[ERROR]: Could not open file: $parsed_seqs\n"
-	if $write_seqs;
     
     my $num_hits = 0;
     my (%results, %ids);
@@ -418,6 +419,7 @@ sub write_nhmmer_report {
 	$line =~ s/^\s+|\s+$//;
 	next if $line =~ /^#|^[-]+|E-value|Scores/;
 	last if $line =~ /Annotation for each hit/i;
+	last if $line =~ /No hits detected/i;
 	my $q;
 	#Query:       RLC_family5_LTR_retrotransposon595_ltrseqs_muscle-out  [M=158]
 	#Scores for complete hits:
@@ -431,21 +433,31 @@ sub write_nhmmer_report {
 	else { 
 	    my @f = split /\s+/, $line;
 	    if (@f == 6) {
+		$num_hits++;
 		$ids{subject}{$f[3]} = 1;
 	    }
 	}
     }
     close $fh;
 
+    if ($num_hits == 0) {
+	say STDERR "\n[WARNING]: No hits found for: $search_report.\n" if $self->debug;
+	unlink $search_report;
+	return undef;
+    }
+
+    open my $outfh, '>', $parsed_report or die "\n[ERROR]: Could not open file: $parsed_report\n";
+    open my $seqfh, '>', $parsed_seqs or die "\n[ERROR]: Could not open file: $parsed_seqs\n"
+        if $write_seqs;
+
     {
-	open my $in, '<', $search_report or die "\n[ERROR]: Could not open file: $search_report\n";;
+	open my $in, '<', $search_report or die "\n[ERROR]: Could not open file: $search_report\n";
 	local $/ = "\n>>";
 	
 	while (my $line = <$in>) {
 	    chomp $line;
 	    next if $line =~ /^#/;
 	    my @line = split /\n/, $line;
-	    $num_hits++;
 	    my ($qid, $qstring, $sstring, $sid, $len, $previd, $score, $bias, $evale, $hmmfrom, $hmmto, 
 		$alifrom, $alito, $envfrom, $envto, $seqlen, $acc, $seq);
 	    for my $l (@line) {
@@ -532,19 +544,19 @@ sub write_nhmmer_report {
     }
     close $outfh;
     close $seqfh if $write_seqs;
-    unlink $search_report;
+    #unlink $search_report;
 
     return ($parsed_report, $parsed_seqs);
 }
 
 sub write_sololtr_gff {
     my $self = shift;
-    my ($hmmsearch_summary) = @_;
+    my ($report) = @_;
     my $genome  = $self->genome->absolute->resolve;
     my $outfile = $self->outfile;;
 
     my $seqlen = $self->get_seq_len($genome);
-    open my $in, '<', $hmmsearch_summary or die "\n[ERROR]: Could not open file: $hmmsearch_summary\n";
+    open my $in, '<', $report or die "\n[ERROR]: Could not open file: $report\n";
     open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 
     if (! -s $outfile) {
@@ -559,6 +571,7 @@ sub write_sololtr_gff {
     while (my $line = <$in>) {
 	chomp $line;
 	next if $line =~ /^#/;
+	next unless $line =~ /\S/;
 	my ($model_num, $query, $query_length, $number_of_hits, $hit_name, $perc_coverage, $hsp_length, 
 	    $hsp_perc_ident, $hsp_query_start, $hsp_query_end, $hsp_hit_start, $hsp_hit_end) = split /\t/, $line;
 
@@ -636,8 +649,9 @@ sub collate_sololtr_reports {
 	for my $start (sort { $a <=> $b } keys %{$parsed_alns{$chr}}) {
 	    $solo_ct++;
 	    my @f = split /\|\|/, $parsed_alns{$chr}{$start};
+	    chomp $f[10];
 	    say $repfh join "\t", "solo_LTR$solo_ct", @f;
-	        $id_map{ $f[0].'_'.$chr.'_'.$start.'_'.$f[10] } = "solo_LTR$solo_ct".'_'.$f[0].'_'.$chr.'_'.$start.'_'.$f[10];
+	    $id_map{ $f[0].'_'.$chr.'_'.$start.'_'.$f[10] } = "solo_LTR$solo_ct".'_'.$f[0].'_'.$chr.'_'.$start.'_'.$f[10];
 	}
     }
     #dd \%id_map;
