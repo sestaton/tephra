@@ -176,7 +176,7 @@ sub get_exemplar_ltrs_for_sololtrs {
 		    $name = join "_", $family, $elemid;
 		}
 		elsif (defined $elemid) { 
-		    # This repeat database does not come from Tephra, which is just fine. 
+		    # No family is defined for this element
 		    $name = $elemid;  
 		}
 		else {
