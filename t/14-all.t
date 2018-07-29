@@ -28,6 +28,7 @@ my $log       = File::Spec->catfile($testdir, 'tephra_full.log');
 my $gff       = File::Spec->catfile($testdir, 'tephra_transposons.gff3');
 my $fas       = File::Spec->catfile($testdir, 'tephra_transposons.fasta');
 my $finaldb   = File::Spec->catfile($testdir, 'tephra_transposons_complete.fasta');
+my $illrecdir = File::Spec->catfile($testdir, 'Tephra_LTR_illrecomb_models');
 #my $ctestfile = File::Spec->catfile($testdir, 'tephra_copia_exemplar_repeats.fasta');
 #my $gtestfile = File::Spec->catfile($testdir, 'tephra_gypsy_exemplar_repeats.fasta');
 #my $ltrcdir   = File::Spec->catdir($testdir,  'ref_tephra_ltrs_trims_classified_results');
@@ -71,6 +72,7 @@ SKIP: {
 	remove_tree( $res, { safe => 1 } ) 
 	    if -d $res;
     }
+    remove_tree( $illrecdir, { safe => 1 } )
 }
 unlink $genome.'.fai' 
     if -e $genome.'.fai';
