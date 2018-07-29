@@ -47,8 +47,8 @@ SKIP: {
     }
 
     my @find_cmd = ($cmd, 'sololtr', '-i', $outdir, '-g', $masked, '-r', $allstfile, '-o', $outfile,
-		    '-l', 100, '-p', 0, '-s', $seqfile);
-    say STDERR join q{ }, @find_cmd;    
+		    '-l', 100, '-p', 0, '-s', $seqfile, '-a');
+    say STDERR join q{ }, @find_cmd;
     my @ret = capture { system([0..5], @find_cmd) };
     #system([0..5], $find_cmd);
 
@@ -59,7 +59,7 @@ SKIP: {
     my $seqct = 0;
     open my $in, '<', $seqfile;
     while (<$in>) { $seqct++ if /^>/; }
-    ok( $seqct == 2, 'Correct number of solo-LTR sequences above thresholds' );
+    ok( $seqct == 1, 'Correct number of solo-LTR sequences above thresholds' );
     close $in;
 
     my $soloct = 0;
@@ -73,8 +73,8 @@ SKIP: {
     }
     close $gff;
     
-    say STDERR "SOLOCT: $soloct";
-    ok( $soloct == 2, 'Correct number of solo-LTRs found' );
+    #say STDERR "SOLOCT: $soloct";
+    ok( $soloct == 1, 'Correct number of solo-LTRs found' );
     ok( $seqct == $soloct, 'Same number of sequences and elements written to GFF/FASTA' );
 
     # clean up
