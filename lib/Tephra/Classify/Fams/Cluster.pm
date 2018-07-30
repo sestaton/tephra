@@ -105,7 +105,7 @@ sub extract_ltr_features {
             }
         }
         elsif ($feature->{type} eq 'primer_binding_site') {
-            my $name = $feature->{attributes}{trna};
+            my $name = @{$feature->{attributes}{trna}}[0];
             my $parent = @{$feature->{attributes}{Parent}}[0];
             my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
             if ($seq_id eq $feature->{seq_id}) {
@@ -119,7 +119,8 @@ sub extract_ltr_features {
             my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
             if ($seq_id eq $feature->{seq_id}) {
                 my $pdomkey = join "||", @{$feature}{qw(seq_id type)}, $name, @{$feature}{qw(start end strand)};
-                push @{$ltrs{$pkey}{'pdoms'}{$name}}, $pdomkey unless exists $seen{$pdomkey};
+                #push @{$ltrs{$pkey}{'pdoms'}{$name}}, $pdomkey unless exists $seen{$pdomkey};
+		push @{$ltrs{$pkey}{'pdoms'}}, $pdomkey unless exists $seen{$pdomkey};
                 $seen{$pdomkey} = 1;
             }
 	}
@@ -135,7 +136,7 @@ sub extract_ltr_features {
     close $gffio;
     #dd \%ltrs;
 
-    my (%pdoms, %seen_pdoms);
+    my (%pdoms, %seen_pdoms, %lrange);
     my $ltrct = 0;
     for my $ltr (sort keys %ltrs) {
         my ($element, $rstart, $rend) = split /\|\|/, $ltr;
@@ -173,14 +174,13 @@ sub extract_ltr_features {
 
 	# pdoms
 	if ($ltrs{$ltr}{'pdoms'}) {
-            for my $model_name (keys %{$ltrs{$ltr}{'pdoms'}}) {
-                for my $ltr_repeat (@{$ltrs{$ltr}{'pdoms'}{$model_name}}) {
-                    my ($src, $pdomtag, $name, $s, $e, $str) = split /\|\|/, $ltr_repeat;
-                    #"Ha10||protein_match||UBN2||132013916||132014240|+",
-                    next if $model_name =~ /transpos(?:ase)?|mule|(?:dbd|dde)?_tnp_(?:hat)?|duf4216/i; 
-                    # The above is so we do not classify elements based domains derived from, or belonging to, DNA transposons
-                    push @{$pdoms{$src}{$element}{$model_name}}, join "||", $s, $e, $str;
-                }
+ 	    for my $ltr_repeat (@{$ltrs{$ltr}{'pdoms'}}) {
+		my ($src, $pdomtag, $name, $s, $e, $str) = split /\|\|/, $ltr_repeat;
+		#"Ha10||protein_match||UBN2||132013916||132014240|+",
+		next if $name =~ /transpos(?:ase)?|mule|(?:dbd|dde)?_tnp_(?:hat)?|duf4216/i; 
+		# The above is so we do not classify elements based domains derived from, or belonging to, DNA transposons
+		push @{$pdoms{$src}{$element}}, join "||", $name, $s, $e, $str;
+		push @{$lrange{$src}{$element}{$name}}, "$s..$e";
             }
         }
     }
@@ -190,7 +190,8 @@ sub extract_ltr_features {
     close $fivefh;
     close $threfh;
 
-    my $pdom_fam_map = $self->merge_overlapping_hits($index, $resdir, \%pdoms);
+    my $pdom_fam_map = $self->merge_overlapping_hits($index, $resdir, \%pdoms, \%lrange);
+    #dd $pdom_fam_map;
 
     for my $file ($comp, $ppts, $pbs, $five_pr_ltrs, $three_pr_ltrs) {
         unlink $file if ! -s $file;
@@ -258,14 +259,15 @@ sub extract_tir_features {
             my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
             if ($seq_id eq $feature->{seq_id}) {
                 my $pdomkey = join "||", @{$feature}{qw(seq_id type)}, $name, @{$feature}{qw(start end strand)};
-                push @{$tirs{$pkey}{'pdoms'}{$name}}, $pdomkey unless exists $seen{$pdomkey};
+                #push @{$tirs{$pkey}{'pdoms'}{$name}}, $pdomkey unless exists $seen{$pdomkey};
+		push @{$tirs{$pkey}{'pdoms'}}, $pdomkey unless exists $seen{$pdomkey};
                 $seen{$pdomkey} = 1;
             }
         }
     }
     close $gffio;
 
-    my (%pdoms, %seen_pdoms);
+    my (%pdoms, %seen_pdoms, %lrange);
     my $tirct = 0;
     for my $tir (sort keys %tirs) {
         my ($element, $rstart, $rend) = split /\|\|/, $tir;
@@ -292,15 +294,14 @@ sub extract_tir_features {
 
 	# pdoms
 	if ($tirs{$tir}{'pdoms'}) {
-            for my $model_name (keys %{$tirs{$tir}{'pdoms'}}) {
-                for my $tir_repeat (@{$tirs{$tir}{'pdoms'}{$model_name}}) {
-                    my ($src, $pdomtag, $name, $s, $e, $str) = split /\|\|/, $tir_repeat;
-                    #"Ha10||protein_match||UBN2||132013916||132014240|+",
-                    next unless $model_name =~ /transpos(?:ase)?|mule|(?:dbd|dde)?_tnp_(?:hat)?|duf4216/i; 
-		    #next if $model_name =~ /rve|rvt|rvp|gag|chromo|rnase|athila|zf/i)
-		    # The above is so we do not classify elements based domains derived from or belonging to DNA transposons
-                    push @{$pdoms{$src}{$element}{$model_name}}, join "||", $s, $e, $str;
-                }
+	    for my $tir_repeat (@{$tirs{$tir}{'pdoms'}}) {
+		my ($src, $pdomtag, $name, $s, $e, $str) = split /\|\|/, $tir_repeat;
+		#"Ha10||protein_match||UBN2||132013916||132014240|+",
+		next unless $name =~ /transpos(?:ase)?|mule|(?:dbd|dde)?_tnp_(?:hat)?|duf4216/i; 
+		#next if $model_name =~ /rve|rvt|rvp|gag|chromo|rnase|athila|zf/i)
+		# The above is so we do not classify elements based domains derived from or belonging to DNA transposons
+		push @{$pdoms{$src}{$element}}, join "||", $name, $s, $e, $str;
+		push @{$lrange{$src}{$element}{$name}}, "$s..$e";
             }
         }
     }
@@ -308,7 +309,7 @@ sub extract_tir_features {
     close $fivefh;
     close $threfh;
     
-    my $pdom_fam_map = $self->merge_overlapping_hits($index, $resdir, \%pdoms);
+    my $pdom_fam_map = $self->merge_overlapping_hits($index, $resdir, \%pdoms, \%lrange);
 
     for my $file ($comp, $five_pr_tirs, $three_pr_tirs) {
         unlink $file if ! -s $file;
@@ -319,59 +320,67 @@ sub extract_tir_features {
 
 sub merge_overlapping_hits {
     my $self = shift;
-    my ($index, $resdir, $pdoms) = @_;
+    my ($index, $resdir, $pdoms, $lrange) = @_;
 
     #dd $pdoms and exit;
     ## This is where we merge overlapping hits in a chain and concatenate non-overlapping hits
     ## to create a single domain sequence for each element
-    my (%pdom_fam_map, %element_map, @pdomains);
+    my (%pdom_fam_map, %element_map, @pdomains, %seen);
     for my $src (keys %$pdoms) {
         for my $element (keys %{$pdoms->{$src}}) {
-            my ($pdom_s, $pdom_e, $str);
-            for my $pdom_type (keys %{$pdoms->{$src}{$element}}) {
-                my (%lrange, %seqs, $union);
-                my $pdom_file = File::Spec->catfile( abs_path($resdir), $pdom_type.'_pdom.fasta' );
+            my ($pdom_name, $pdom_s, $pdom_e, $str);
+	    
+	    for my $pdom_type (@{$pdoms->{$src}{$element}}) {
+		my (%seqs, $union);                                                                                               
+		my ($pdom_name, $pdom_start, $pdom_eend, $strand) = split /\|\|/, $pdom_type;
+
+                my $pdom_file = File::Spec->catfile( abs_path($resdir), $pdom_name.'_pdom.fasta' );        
                 open my $fh, '>>', $pdom_file or die "\n[ERROR]: Could not open file: $pdom_file\n";
-                for my $split_dom (@{$pdoms->{$src}{$element}{$pdom_type}}) {
-                    ($pdom_s, $pdom_e, $str) = split /\|\|/, $split_dom;
-                    push @{$lrange{$src}{$element}{$pdom_type}}, "$pdom_s..$pdom_e";
-                }
-                
-                if (@{$lrange{$src}{$element}{$pdom_type}} > 1) {
-                    {
-                        no warnings; # Number::Range warns on EVERY single interger that overlaps
-                        my $range = Number::Range->new(@{$lrange{$src}{$element}{$pdom_type}});
-                        $union = $range->range;
-                    }
-                            
-                    for my $r (split /\,/, $union) {
-                        my ($ustart, $uend) = split /\.\./, $r;
+	    
+		if (@{$lrange->{$src}{$element}{$pdom_name}} > 1) {
+		    next if exists $seen{$src}{$element}{$pdom_name};
+		    {
+			no warnings; # Number::Range warns on EVERY single interger that overlaps
+			my $range = Number::Range->new(@{$lrange->{$src}{$element}{$pdom_name}});
+			$union = $range->range;
+		    }
+
+		    dd $union;
+		    for my $r (split /\,/, $union) {
+			my ($ustart, $uend) = split /\.\./, $r;
 			my ($seq, $length) = $self->get_full_seq($index, $src, $ustart, $uend);
-                        my $k = join "_", $ustart, $uend;
-                        $seqs{$k} = $seq;
-                    }
-                            
-                    $self->concat_pdoms($src, $element, \%seqs, $fh);
+			my $k = join "_", $ustart, $uend;
+			$seqs{$k} = $seq;
+		    }
+	
+		    say STDERR "concatenating: $pdom_file";
+		    dd \%seqs;
+		    $self->concat_pdoms($src, $element, \%seqs, $fh);
 		    #push @pdomains, $pdom_type for @{$pdoms->{$src}{$element}{$pdom_type}};
-                }
-                else {
-                    my ($nustart, $nuend, $str) = split /\|\|/, @{$pdoms->{$src}{$element}{$pdom_type}}[0];
+		    $seen{$src}{$element}{$pdom_name} = 1;
+		}
+		else {
+		    #my ($nustart, $nuend, $str) = split /\|\|/, @{$pdoms->{$src}{$element}{$pdom_type}}[0];
+		    #for my $pdom_type (@{$pdoms->{$src}{$element}}) {
+		    my ($nuname, $nustart, $nuend, $str) = split /\|\|/, $pdom_type;
 		    my $id = join "_", $element, $src, $nustart, $nuend;
 		    $self->write_element_parts($index, $src, $nustart, $nuend, $fh, $id);
+		    #push @pdomains, $pdom_type;
 		    #push @pdomains, @{$pdoms->{$src}{$element}{$pdom_type}}[0];
-                }
-                close $fh;
-                %seqs   = ();
-                %lrange = ();
-                unlink $pdom_file if ! -s $pdom_file;
-		push @pdomains, $pdom_type;
+		}
+		close $fh;
+		%seqs   = ();
+		#%lrange = ();
+		unlink $pdom_file if ! -s $pdom_file;
+		push @pdomains, $pdom_name;
 		#@{$pdoms->{$src}{$element}{$pdom_type}}[0]
 		#push @{$pdom_fam_map{$element}{pdoms}}, $pdom_type;
-            }
+	    }
+	#}
 	    $pdom_fam_map{$element}{pdoms} = join ",", @pdomains
 		if @pdomains;
 	    @pdomains = ();
-        }
+	}
     }
 
     #dd \%pdom_fam_map; # and exit;
@@ -393,6 +402,8 @@ sub concat_pdoms {
 
     $concat_seq =~ s/.{60}\K/\n/g;
     say $fh_out join "\n", ">$id", $concat_seq;
+
+    return;
 }
 
 sub collect_feature_args {
@@ -412,12 +423,12 @@ sub collect_feature_args {
 	my $ltr5name = File::Spec->catfile( abs_path($dir), 'dbcluster-5primeseqs' );
 	my $fiveargs = "-qspeedup 2 -dbcluster 80 0 $ltr5name -p -d -seedlength 30 ";
 	$fiveargs .= "-exdrop 7 -l 80 -showdesc 0 -sort ld -best 10000 -identity 80";
-	$vmatch_args{fivetir} = { seqs => \@fiveltrs, args => $fiveargs };
+	$vmatch_args{fiveltr} = { seqs => \@fiveltrs, args => $fiveargs };
 
 	my $ltr3name  = File::Spec->catfile( abs_path($dir), 'dbcluster-3primeseqs' );
 	my $threeargs = "-qspeedup 2 -dbcluster 80 0 $ltr3name -p -d -seedlength 30 ";
 	$threeargs .= "-exdrop 7 -l 80 -showdesc 0 -sort ld -best 10000 -identity 80";
-	$vmatch_args{threetir} = { seqs => \@threeltrs, args => $threeargs };
+	$vmatch_args{threeltr} = { seqs => \@threeltrs, args => $threeargs };
 	
 	# pbs/ppt
 	my $pbsname = File::Spec->catfile( abs_path($dir), 'dbcluster-pbs' );
@@ -470,6 +481,7 @@ sub cluster_features {
 
     my $args = $self->collect_feature_args($dir);
     $self->_remove_singletons($args);
+    #dd $args;
 
     my $t0 = gettimeofday();
     my $doms = 0;
