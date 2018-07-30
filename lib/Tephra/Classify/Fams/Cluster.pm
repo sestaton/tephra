@@ -345,7 +345,6 @@ sub merge_overlapping_hits {
 			$union = $range->range;
 		    }
 
-		    dd $union;
 		    for my $r (split /\,/, $union) {
 			my ($ustart, $uend) = split /\.\./, $r;
 			my ($seq, $length) = $self->get_full_seq($index, $src, $ustart, $uend);
@@ -353,30 +352,19 @@ sub merge_overlapping_hits {
 			$seqs{$k} = $seq;
 		    }
 	
-		    say STDERR "concatenating: $pdom_file";
-		    dd \%seqs;
 		    $self->concat_pdoms($src, $element, \%seqs, $fh);
-		    #push @pdomains, $pdom_type for @{$pdoms->{$src}{$element}{$pdom_type}};
 		    $seen{$src}{$element}{$pdom_name} = 1;
 		}
 		else {
-		    #my ($nustart, $nuend, $str) = split /\|\|/, @{$pdoms->{$src}{$element}{$pdom_type}}[0];
-		    #for my $pdom_type (@{$pdoms->{$src}{$element}}) {
 		    my ($nuname, $nustart, $nuend, $str) = split /\|\|/, $pdom_type;
 		    my $id = join "_", $element, $src, $nustart, $nuend;
 		    $self->write_element_parts($index, $src, $nustart, $nuend, $fh, $id);
-		    #push @pdomains, $pdom_type;
-		    #push @pdomains, @{$pdoms->{$src}{$element}{$pdom_type}}[0];
 		}
 		close $fh;
 		%seqs   = ();
-		#%lrange = ();
 		unlink $pdom_file if ! -s $pdom_file;
 		push @pdomains, $pdom_name;
-		#@{$pdoms->{$src}{$element}{$pdom_type}}[0]
-		#push @{$pdom_fam_map{$element}{pdoms}}, $pdom_type;
 	    }
-	#}
 	    $pdom_fam_map{$element}{pdoms} = join ",", @pdomains
 		if @pdomains;
 	    @pdomains = ();
