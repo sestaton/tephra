@@ -206,8 +206,7 @@ sub run_family_classification {
     if ($tetype eq 'TIR') {
 	($dir, $pdom_famid_map) = $self->extract_tir_features($gff);
     }
-    #dd $pdom_famid_map and exit;
-
+ 
     my $clusters = $self->cluster_features($dir);
     my $dom_orgs = $self->parse_clusters($clusters);
     my ($dom_fam_map, $fas_obj, $unmerged_stats) = 
@@ -484,7 +483,12 @@ sub write_families {
 	}
 	close $out;
 	$idx++;
-	$fastas{$outfile} = 1;
+	if (-s $outfile) { 
+	    $fastas{$outfile} = 1;
+	}
+	else {
+	    unlink $outfile;
+	}
     }
     my $famct = $idx;
     $idx = 0;
