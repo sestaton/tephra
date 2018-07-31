@@ -325,11 +325,10 @@ sub merge_overlapping_hits {
     my $self = shift;
     my ($index, $resdir, $pdoms, $lrange) = @_;
 
-    my $re = qr/helitron\d+|(?:non_)?(?:LTR|LARD|TRIM)_retrotransposon\d+|terminal_inverted_repeat_element\d+|MITE\d+/;
     #dd $pdoms and exit;
     ## This is where we merge overlapping hits in a chain and concatenate non-overlapping hits
     ## to create a single domain sequence for each element
-    my (%pdom_fam_map, %element_map, @pdomains, %seen, %doms);
+    my (%pdom_fam_map, %element_map, %seen, %doms);
     for my $src (keys %$pdoms) {
         for my $element (keys %{$pdoms->{$src}}) {
             my ($pdom_name, $pdom_s, $pdom_e, $str);
@@ -337,14 +336,11 @@ sub merge_overlapping_hits {
 	    for my $pdom_type (@{$pdoms->{$src}{$element}}) {
 		my (%seqs, $union);                                                                                               
 		my ($pdom_name, $pdom_start, $pdom_eend, $strand) = split /\|\|/, $pdom_type;
-		push @pdomains, $pdom_name;
 
                 my $pdom_file = File::Spec->catfile( abs_path($resdir), $pdom_name.'_pdom.fasta' );        
                 open my $fh, '>>', $pdom_file or die "\n[ERROR]: Could not open file: $pdom_file\n";
 	    
 		if (@{$lrange->{$src}{$element}{$pdom_name}} > 1) {
-		    #next if exists $seen{$src}{$element}{$pdom_name};
-		    #say STDERR "DEBUG: $element -> $pdom_name";
 		    unless (exists $seen{$src}{$element}{$pdom_name}) {
 			{
 			    no warnings; # Number::Range warns on EVERY single interger that overlaps
@@ -352,14 +348,9 @@ sub merge_overlapping_hits {
 			    $union = $range->range;
 			}
 
-			my $dom_num = split /\,/, $union;
-			#say STDERR "DEBUG: $element -> $pdom_name",join ",",@{$lrange->{$src}{$element}{$pdom_name}};
-			#dd $union;
-			#my ($fstart, $fend) = map { split /\.\./, (split /\,/, $union
-			#my ($fstart, $feend) = split /\.\./, (split /\,/, $union)[0];
+			#my $dom_num = split /\,/, $union;
 			for my $dom (split /\,/, $union) {
 			    my ($ustart, $uend) = split /\.\./, $dom;
-			    #push @{$doms{$element}{$pdom_name}}, join "||", $ustart, $uend;
 			    push @{$doms{$element}}, join "||", $pdom_name, $ustart, $uend;
 			    my ($seq, $length) = $self->get_full_seq($index, $src, $ustart, $uend);
 			    my $k = join "||", $pdom_name, $ustart, $uend;
@@ -367,13 +358,11 @@ sub merge_overlapping_hits {
 			}
 	
 			$self->concat_pdoms($index, $src, $pdom_name, $element, \%seqs, $fh);
-			#$self->concat_pdoms($index, $src, $element, $union, $fh);
 		    }
 		    $seen{$src}{$element}{$pdom_name} = 1;
 		}
 		else {
 		    my ($nuname, $nustart, $nuend, $str) = split /\|\|/, $pdom_type;
-		    #push @{$doms{$element}{$nuname}}, join "||", $nustart, $nuend;
 		    push @{$doms{$element}}, join "||", $nuname, $nustart, $nuend;
 		    my $id = join "_", $element, $src, $nuname, $nustart, $nuend;
 		    $self->write_element_parts($index, $src, $nustart, $nuend, $fh, $id);
@@ -381,20 +370,16 @@ sub merge_overlapping_hits {
 		close $fh;
 		%seqs = ();
 		unlink $pdom_file if ! -s $pdom_file;
-		#push @pdomains, $pdom_name;
 	    }
-	    if (@pdomains) { 
+	    if (@{$doms{$element}}) {
 		my @dom_order;
 		for my $dom (nsort_by { m/\S+\|\|(\d+)\|\|\d+/ and $1 } @{$doms{$element}}) {
 		    my ($dom_name, $start, $end) = split /\|\|/, $dom; 
 		    push @dom_order, $dom_name."{$start-$end}";
 		}
 		$pdom_fam_map{$element}{pdoms} = join ",", @dom_order;
-	    #}
-	    #$pdom_fam_map{$element}{pdoms} = join ",", @pdomains
-		#if @pdomains;
 	    }
-	    @pdomains = ();
+	    %doms = ();
 	}
     }
 
