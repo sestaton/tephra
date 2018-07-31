@@ -113,9 +113,11 @@ sub find_gypsy_copia {
 	    # NAME  UBN2_2
 	    # DESC  gag-polypeptide of LTR copia-type
 	    # NAME  UBN2_3
+
 	    # DESC  gag-polypeptide of LTR copia-type
 	    # NAME  UBN2
 	    # DESC  gag-polypeptide of LTR copia-type
+	    # REF   The nucleotide sequence of Drosophila melanogaster copia-specific 2.1-kb mRNA.Nucleic Acids Res. 1989 Mar 11; 17(5):2134
 	    # NAME  Retrotrans_gag
 	    # DESC  Retrotransposon gag protein
 	    
