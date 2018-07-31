@@ -19,7 +19,7 @@ use Parallel::ForkManager;
 use Carp 'croak';
 use Try::Tiny;
 use Tephra::Config::Exe;
-#use Data::Dump::Color;
+use Data::Dump::Color;
 use namespace::autoclean;
 
 with 'Tephra::Role::GFF',
@@ -190,8 +190,10 @@ sub extract_ltr_features {
     close $fivefh;
     close $threfh;
 
+    #dd \%pdoms;
+    dd \%lrange;
     my $pdom_fam_map = $self->merge_overlapping_hits($index, $resdir, \%pdoms, \%lrange);
-    #dd $pdom_fam_map;
+    dd $pdom_fam_map;
 
     for my $file ($comp, $ppts, $pbs, $five_pr_ltrs, $three_pr_ltrs) {
         unlink $file if ! -s $file;
@@ -333,26 +335,35 @@ sub merge_overlapping_hits {
 	    for my $pdom_type (@{$pdoms->{$src}{$element}}) {
 		my (%seqs, $union);                                                                                               
 		my ($pdom_name, $pdom_start, $pdom_eend, $strand) = split /\|\|/, $pdom_type;
+		push @pdomains, $pdom_name;
 
                 my $pdom_file = File::Spec->catfile( abs_path($resdir), $pdom_name.'_pdom.fasta' );        
                 open my $fh, '>>', $pdom_file or die "\n[ERROR]: Could not open file: $pdom_file\n";
 	    
 		if (@{$lrange->{$src}{$element}{$pdom_name}} > 1) {
-		    next if exists $seen{$src}{$element}{$pdom_name};
-		    {
-			no warnings; # Number::Range warns on EVERY single interger that overlaps
-			my $range = Number::Range->new(@{$lrange->{$src}{$element}{$pdom_name}});
-			$union = $range->range;
-		    }
+		    #next if exists $seen{$src}{$element}{$pdom_name};
+		    #say STDERR "DEBUG: $element -> $pdom_name";
+		    unless (exists $seen{$src}{$element}{$pdom_name}) {
+			{
+			    no warnings; # Number::Range warns on EVERY single interger that overlaps
+			    my $range = Number::Range->new(@{$lrange->{$src}{$element}{$pdom_name}});
+			    $union = $range->range;
+			}
 
-		    for my $r (split /\,/, $union) {
-			my ($ustart, $uend) = split /\.\./, $r;
-			my ($seq, $length) = $self->get_full_seq($index, $src, $ustart, $uend);
-			my $k = join "_", $ustart, $uend;
-			$seqs{$k} = $seq;
-		    }
+			#say STDERR "DEBUG: $element -> $pdom_name",join ",",@{$lrange->{$src}{$element}{$pdom_name}};
+			#dd $union;
+			#my ($fstart, $fend) = map { split /\.\./, (split /\,/, $union
+			#my ($fstart, $feend) = split /\.\./, (split /\,/, $union)[0];
+			for my $r (split /\,/, $union) {
+			    my ($ustart, $uend) = split /\.\./, $r;
+			    my ($seq, $length) = $self->get_full_seq($index, $src, $ustart, $uend);
+			    my $k = join "||", $pdom_name, $ustart, $uend;
+			    $seqs{$k} = $seq;
+			}
 	
-		    $self->concat_pdoms($src, $element, \%seqs, $fh);
+			$self->concat_pdoms($index, $src, $pdom_name, $element, \%seqs, $fh);
+			#$self->concat_pdoms($index, $src, $element, $union, $fh);
+		    }
 		    $seen{$src}{$element}{$pdom_name} = 1;
 		}
 		else {
@@ -361,9 +372,9 @@ sub merge_overlapping_hits {
 		    $self->write_element_parts($index, $src, $nustart, $nuend, $fh, $id);
 		}
 		close $fh;
-		%seqs   = ();
+		%seqs = ();
 		unlink $pdom_file if ! -s $pdom_file;
-		push @pdomains, $pdom_name;
+		#push @pdomains, $pdom_name;
 	    }
 	    $pdom_fam_map{$element}{pdoms} = join ",", @pdomains
 		if @pdomains;
@@ -377,17 +388,64 @@ sub merge_overlapping_hits {
 
 sub concat_pdoms {
     my $self = shift;
-    my ($src, $elem, $seqs, $fh_out) = @_;
-    my @ranges = map { split /\_/, $_ } keys %$seqs;
-    my $start  = min(@ranges);
-    my $end    = max(@ranges);
-    my $id     = join "_", $elem, $src, $start, $end;
+    my ($index, $src, $pdom_name, $element, $seqs, $fh_out) = @_;
+    #my ($src, $pdom_name, $elem, $seqs, $fh_out) = @_;
+    #my @ranges = map { split /\_/, $_ } keys %$seqs;
+    #dd \@ranges;
+    #my $start  = min(@ranges);
+    #my $end    = max(@ranges);
+    #my $id     = join "_", $elem, $src, $start, $end;
+    my $id = join "_", $element, $src, $pdom_name;
 
+    #dd $union;
+    #my %ranges; 
+    #my ($prev_start, $prev_end) = split /\.\./, (split /\,/, $union)[0];
+    #for my $pair (split /\,/, $union) {                                                                                    
+	#next if $pair eq $prev_start.'..'.$prev_end;
+	#my ($new_start, $new_end) = split /\.\./, $pair;
+	#say STDERR "DEBUG: $element $new_start >= $prev_start $new_start <= $prev_end";
+	#if ($new_start >= $prev_start && $new_start <= $prev_end) { # && $new_end > $prev_end) {
+	#    my $new_pair = join "-", $prev_start, $new_end;
+	#    say STDERR "NEW PAIR: $new_pair -> $element";
+	#    $ranges{$new_pair} = 1;
+	#    $prev_end = $new_end;
+	#}
+	#elsif ($new_start >= $prev_start && $new_start <= $prev_end && $new_end <= $prev_end) {
+	#    next;
+	#}
+	#elsif ($new_start > $prev_end) {
+	 #   my $prev_pair = join "-", $prev_start, $prev_end;
+	 #   #say STDERR "$prev_pair -> $pair";
+	 #   $ranges{$prev_pair} = 1;
+	 #   $pair =~ s/\.\./-/;
+	 #   $ranges{$pair} = 1;
+	 #   $prev_start = $new_start;
+         #   $prev_end = $new_end;
+	#}
+    #}
+    #dd \%ranges;
+
+    #for my $dom (nsort keys %ranges) { 
+	#my ($ustart, $uend) = split /\-/, $dom;
+	#my ($seq, $length) = $self->get_full_seq($index, $src, $ustart, $uend);
+	#my $id = join "_", $element, $src, $ustart, $uend;
+	#$concat_seq =~ s/.{60}\K/\n/g;
+	#say $fh join "\n", ">$id", $seq;
+    #}
+
+    #my $concat_seq;
+    #for my $seq (values %$seqs) {
+        #$concat_seq .= $seq;
+    #}
+
+    #$concat_seq =~ s/.{60}\K/\n/g;
+    #say $fh_out join "\n", ">$id", $concat_seq;
     my $concat_seq;
-    for my $seq (values %$seqs) {
-        $concat_seq .= $seq;
+    for my $dom (keys %$seqs) {
+	my ($name, $start, $end) = split /\|\|/, $dom;
+	$id .= "_", join "_", $start, $end;
+	$concat_seq .= $seqs->{$dom};
     }
-
     $concat_seq =~ s/.{60}\K/\n/g;
     say $fh_out join "\n", ">$id", $concat_seq;
 
@@ -469,7 +527,6 @@ sub cluster_features {
 
     my $args = $self->collect_feature_args($dir);
     $self->_remove_singletons($args);
-    #dd $args;
 
     my $t0 = gettimeofday();
     my $doms = 0;
