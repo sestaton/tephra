@@ -95,7 +95,7 @@ sub find_illegitimate_recombination {
     my $self = shift;
     my $statsfile = $self->allstatsfile;
 
-    my $alignments = $self->align_features;
+    my ($alignments, $model_dir) = $self->align_features;
  
     my $all_gap_stats = {};
     for my $aln_file (@$alignments) {
@@ -107,6 +107,7 @@ sub find_illegitimate_recombination {
     }
 
     $self->collate_gap_stats($all_gap_stats, $statsfile);
+    remove_tree( $model_dir, { safe => 1 } );
 
     return;
 }
@@ -174,7 +175,7 @@ sub align_features {
 	push @aligns, $args->{$k}{aln};
     }
 
-    return \@aligns;
+    return (\@aligns, $model_dir);
 }
 
 sub collect_align_args {
