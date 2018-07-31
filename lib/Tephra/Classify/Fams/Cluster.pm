@@ -20,7 +20,7 @@ use Parallel::ForkManager;
 use Carp 'croak';
 use Try::Tiny;
 use Tephra::Config::Exe;
-use Data::Dump::Color;
+#use Data::Dump::Color;
 use namespace::autoclean;
 
 with 'Tephra::Role::GFF',
@@ -192,9 +192,9 @@ sub extract_ltr_features {
     close $threfh;
 
     #dd \%pdoms;
-    dd \%lrange;
+    #dd \%lrange;
     my $pdom_fam_map = $self->merge_overlapping_hits($index, $resdir, \%pdoms, \%lrange);
-    dd $pdom_fam_map;
+    #dd $pdom_fam_map;
 
     for my $file ($comp, $ppts, $pbs, $five_pr_ltrs, $three_pr_ltrs) {
         unlink $file if ! -s $file;
