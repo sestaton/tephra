@@ -23,6 +23,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] add DIRS and PLE so we are describing all orders in Wicker's scheme
  - [x] LARD annotation method not working for GFF3 as of v0.11.0
  - [ ] Family number in FASTA/GFF3 not aligned with that in domain organization file
+ - [ ] Domain order is incorrect in family-level domain classication file as of v0.11.0
 
 ## Command `tephra findtirs`
  - [x] Find all non-overlapping TIR elements passing thresholds
