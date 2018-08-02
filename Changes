@@ -1,12 +1,12 @@
 Revision history for Tephra
 
 Version	Date	Location
-0.12.0
+0.12.0	08/02/2018	Vancouver, BC
 
+New features:
 - Refactor LTRStats/TIRStats classes to put common methods in GFF Role or Tephra::Stats::Age class.
 - Remove 'ltrage' and 'tirage' commands and create single 'age' command to share refactored/common
   methods (updated tests for these changes).
-- Bug fix for 'maskref' command not cleaning up intermediate sub-directories. Fixes #24 on github.
 - Add 6 new HMM models to local Pfam database for tryrosine recombinases, endonucleases, and
   Helitron_like_N for classifying DIRs, non-LTRs, and Helitron elements, respectively.
 - Add methods to now handle unformatted repeat database with 'maskref' command. Previous versions
@@ -15,6 +15,24 @@ Version	Date	Location
   the number of masked bases will be reported.
 - Remove redundant methods for finding LTR exemplars and place in common role under the LTR 
   namespace (called *LTR::Role::Utils).
+- Add method to properly check for and annotate LARD elements. The statistics for these elements
+  are now logged along with other LTR-RTs.
+- Add methods for finding TIR exemplars and place in common role under the TIR
+  namespace (called *TIR::Role::Utils).
+- Refactor the control-flow for the 'age' command option and use new methods for getting exemplars,
+  or if the --all option is given, use new logic to set output directory for both LTR/TIR types.
+- Refactor *SoloLTRSearch class to use more descriptive method for finding exemplars, which is now
+  in the *LTR::Role::Utils class.
+- Add unclassified LTR elements to solo-LTR search instead of only Gypsy and Copia.
+- Add location of protein domains to family-level domain classfication report.
+- Complete re-write of solo-LTR search method. Now the 'sololtr' command uses nhmmer from HMMERv3
+  and works straight from the LTR alignment so no model is constructed for the search. In addition, we
+  now write the files as they are processed instead of writing all LTR FASTA files, to disk, then writing
+  all alignments, etc. for each step in the process. This saves an enormous amount of time and space, and
+  the method is more stable now as we're not writing thousands of files to disk.
+
+Bug fixes:
+- Bug fix for 'maskref' command not cleaning up intermediate sub-directories. Fixes #24 on github.
 - Fix minor bug with header being printed multiple times in famliy-level domain architecture
   log file.
 - Fix major bug caused by a delete hash key statment in the write_families method in the 
@@ -25,17 +43,8 @@ Version	Date	Location
   but now they are consistent. This change is in the *Classify::Fams class, but required changes
   to both the 'classifyltrs' and 'classifytirs' commands to pass new object references containing
   a mapping of updated IDs.
-- Add method to properly check for and annotate LARD elements. The statistics for these elements
-  are now logged along with other LTR-RTs.
 - Modify output in domain architecture log file so the results are printed in descending order
   by occurrence for easier interpretation of the results.
-- Add methods for finding TIR exemplars and place in common role under the TIR
-  namespace (called *TIR::Role::Utils).
-- Refactor the control-flow for the 'age' command option and use new methods for getting exemplars,
-  or if the --all option is given, use new logic to set output directory for both LTR/TIR types.
-- Refactor *SoloLTRSearch class to use more descriptive method for finding exemplars, which is now
-  in the *LTR::Role::Utils class.
-- Add unclassified LTR elements to solo-LTR search instead of only Gypsy and Copia.
 - Remove delete key statement from loop when creating domain FASTA files for clustering (this fixes
   a bug with the abundance and family numbers getting out of sync).
 - Properly sort output of families with respect to abundance, and make sure singletons go into singleltons 
@@ -46,11 +55,16 @@ Version	Date	Location
 - Modify common LTR/TIR finding method to not delete FASTA file of feature parts from singleton elements.
   These fix allows us to use all LTR/TIR elements in age calculation and all LTR elements in 
   solo-LTR search.
-- Complete re-write of solo-LTR search method. Now the 'sololtr' command uses nhmmer from HMMERv3
-  and works straight from the LTR alignment so no model is constructed for the search. In addition, we
-  now write the files as they are processed instead of writing all LTR FASTA files, to disk, then writing
-  all alignments, etc. for each step in the process. This saves an enormous amount of time and space, and
-  the method is more stable now as we're not writing thousands of files to disk.
+- Minor bug fix for family-level classification when concatenating duplicate/split domains for clustering.
+  Previously, the entire span of the domains was written as the location, which would be inclusive
+  of other domains. This is corrected in the header now.
+- Bug fix for reporting order of protein domains in the family-level domain classification reports. The
+  logic was correct previously, but the use of "keys" instead of a for-loop over an array
+  caused the domain order to be randomized in the report.
+- We now only report one protein domain in the family-level domain classifcation report when two or more
+  adjacent domains of the same type have been merged into one span. This is how the classification
+  works, and hopefully the reporting is more logical now.
+
 
 0.11.0	04/17/2018	Vancouver, BC
 
