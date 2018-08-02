@@ -78,7 +78,7 @@ Tephra is a command-line program only for now. The command `tephra` itself contr
 
     $ tephra 
 
-    Tephra version 0.11.1
+    Tephra version 0.12.0
     
     Copyright (C) 2015-2018 S. Evan Staton
     LICENSE -- MIT
@@ -99,7 +99,7 @@ Tephra is a command-line program only for now. The command `tephra` itself contr
     
     Available commands:
          
-	        age: Calculate the age distribution of LTR or TIR transposons.
+                age: Calculate the age distribution of LTR or TIR transposons.
                 all: Run all subcommands and generate annotations for all transposon types.
        classifyltrs: Classify LTR retrotransposons into superfamilies and families.
        classifytirs: Classify TIR transposons into superfamilies.
