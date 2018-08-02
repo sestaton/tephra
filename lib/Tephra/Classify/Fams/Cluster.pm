@@ -191,10 +191,7 @@ sub extract_ltr_features {
     close $fivefh;
     close $threfh;
 
-    #dd \%pdoms;
-    #dd \%lrange;
     my $pdom_fam_map = $self->merge_overlapping_hits($index, $resdir, \%pdoms, \%lrange);
-    #dd $pdom_fam_map;
 
     for my $file ($comp, $ppts, $pbs, $five_pr_ltrs, $three_pr_ltrs) {
         unlink $file if ! -s $file;
@@ -348,12 +345,12 @@ sub merge_overlapping_hits {
 			    $union = $range->range;
 			}
 
-			#my $dom_num = split /\,/, $union;
 			for my $dom (split /\,/, $union) {
 			    my ($ustart, $uend) = split /\.\./, $dom;
 			    push @{$doms{$element}}, join "||", $pdom_name, $ustart, $uend;
+			    #push @{$doms{$element}}, join "||", $ustart, $uend;
 			    my ($seq, $length) = $self->get_full_seq($index, $src, $ustart, $uend);
-			    my $k = join "||", $pdom_name, $ustart, $uend;
+			    my $k = join "||", $ustart, $uend;
 			    $seqs{$k} = $seq;
 			}
 	
@@ -364,7 +361,8 @@ sub merge_overlapping_hits {
 		else {
 		    my ($nuname, $nustart, $nuend, $str) = split /\|\|/, $pdom_type;
 		    push @{$doms{$element}}, join "||", $nuname, $nustart, $nuend;
-		    my $id = join "_", $element, $src, $nuname, $nustart, $nuend;
+		    #push @{$doms{$element}}, join "||", $nustart, $nuend;
+		    my $id = join "_", $element, $src, $nustart, $nuend;
 		    $self->write_element_parts($index, $src, $nustart, $nuend, $fh, $id);
 		}
 		close $fh;
@@ -390,14 +388,15 @@ sub merge_overlapping_hits {
 sub concat_pdoms {
     my $self = shift;
     my ($index, $src, $pdom_name, $element, $seqs, $fh_out) = @_;
-    my $id = join "_", $element, $src, $pdom_name."_";
+    my $id = join "_", $element, $src."_"; #, $pdom_name."_";
 
     my $concat_seq;
     for my $dom (keys %$seqs) {
-	my ($name, $start, $end) = split /\|\|/, $dom;
-	$id .= join "_", $start, $end;
+	my ($start, $end) = split /\|\|/, $dom;
+	$id .= join "_", $start, $end."_";
 	$concat_seq .= $seqs->{$dom};
     }
+    $id =~ s/\_$//;
     $concat_seq =~ s/.{60}\K/\n/g;
     say $fh_out join "\n", ">$id", $concat_seq;
 
@@ -612,7 +611,12 @@ sub parse_clusters {
         }
         elsif ($line =~ /^\s+(\S+)/) {
             my $element = $1;
-            $element =~ s/_\d+-?_?\d+$//;
+            #$element =~ s/_\d+-?_?\d+$//;
+	    # Below is a protein domain that was potentially concatenated from
+	    # multiple domains of the same type. The coordinates of each
+	    # subdomain are removed so the element and chromosome are left.
+	    $element =~ s/_\d+-?_?\d+$//
+		while $element =~ /_\d+-?_?\d+$/;
             push @{$cls{$dom}{$clusnum}}, $element;
         }
     }
