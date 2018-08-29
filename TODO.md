@@ -197,3 +197,4 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] modify header to include element number in family. The element number should be listed numerically according 
        to chromosome position? (Wicker et al., 2007)
  - [x] add tryrosine recombinases, endonucleases, Helitron_like_N models from Pfam to HMM db
+ - [ ] add 'solotir' command for discovering solo-TIRs
