@@ -4,8 +4,6 @@ use 5.010;
 use strict;
 use warnings FATAL => 'all';
 use Net::FTP;
-use HTTP::Tiny;
-use HTML::TreeBuilder;
 use File::Spec;
 use File::Copy          qw(move);
 use File::Path          qw(make_path);
