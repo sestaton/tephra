@@ -8,7 +8,7 @@ RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
     build-essential wget default-jre zlib1g-dev unzip libncurses5 libncurses5-dev libdb-dev git cpanminus libexpat1 libexpat1-dev libidn11 \
     && cpanm Data::Stag DB_File \
-    && echo "n" | cpanm -q -n Bio::Root::Version Bio::SearchIO::blastxml \
+    && echo "n" | cpanm -q -n Bio::Root::Version \
     && git clone https://github.com/sestaton/tephra.git \
     && cd tephra \
     && cpanm -q --installdeps . \
