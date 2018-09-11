@@ -7,10 +7,6 @@ A tool for discovering transposable elements and describing patterns of genome e
 
 Tephra is a command line application to annotate [transposable elements](http://en.wikipedia.org/wiki/Transposable_element) from a genome assembly. The goal is to provide a high quality set of *de novo* annotations for all transposon types, describe the structure and evolution of those sequences, and do it without a reference set of transposon sequences (therefore being unbiased as possible).
 
-**DEPENDENCIES**
-
-Part of the utility of Tephra is to provide family-level TE classifications and infer patterns of molecular evoltion. To be efficient as possible, these tasks require a few external programs. Specifically, you will need to download [MUSCLE](http://http://drive5.com/muscle/) and add this program to your system PATH. This program is free, but it has a special license so I cannot distribute it. If you are only interested in TE identification and classification, you can skip the installation of this program (it is only used for calculating the insertion age of transposons).
-
 **INSTALLATION**
 
 The following commands will install the core dependencies for Debian-based systems (e.g., Ubuntu):
