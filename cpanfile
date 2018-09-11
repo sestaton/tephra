@@ -19,8 +19,9 @@ requires 'YAML::Tiny';
 requires 'HTML::TreeBuilder';
 requires 'autodie';
 requires 'Net::FTP';
-requires 'Bio::GFF3::LowLevel';
-requires  'Lingua::EN::Inflect';
+requires 'Lingua::EN::Inflect';
 requires 'DateTime';
+requires 'Bio::GFF3::LowLevel';
 requires 'XML::SAX::Expat'; # for 'blastxml' format parsing in Bio::SearchIO
+requires 'Bio::SearchIO::blastxml';
 #requires 'Data::Dump::Color';
