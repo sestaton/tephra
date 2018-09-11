@@ -32,8 +32,8 @@ ok( -x $cmd, 'Can execute tephra' );
 }
 
 my $config = Tephra::Config::Exe->new->get_config_paths;
-my ($gt, $vmbin, $hscan, $hmm2bin, $hmm3bin, $moddir, $chrdir, $mgescan, $trans, $pamlbin, $transeq, $htslibdir, $blast)
-    = @{$config}{qw(gt vmatchbin hscanjar hmmer2bin hmmer3bin modeldir hmmdir mgescan transcmd pamlbin transeq htslibdir blastpath)};
+my ($gt, $vmbin, $hscan, $hmm2bin, $hmm3bin, $moddir, $chrdir, $mgescan, $trans, $pamlbin, $transeq, $htslibdir, $blast, $muscle)
+    = @{$config}{qw(gt vmatchbin hscanjar hmmer2bin hmmer3bin modeldir hmmdir mgescan transcmd pamlbin transeq htslibdir blastpath muscle)};
 
 my $hmm2search = File::Spec->catfile($hmm2bin, 'hmmsearch');
 my $hmm3search = File::Spec->catfile($hmm3bin, 'hmmsearch');
@@ -55,6 +55,7 @@ ok( -e $pamlbin,    'Can build paml for analyzing LTR demography' );
 ok( -e $transeq,    'Can build transeq for identify coding domains' );
 ok( -e $blastn,     'Can build blastn for sequence searches' );
 ok( -e $htslibdir,  'Can build HTSlib for indexing and parsing sequence files' );
+ok( -e $muscle,     'Can build muslce for multi-sequence alignments' );
 
 if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
     my $wd = getcwd();
