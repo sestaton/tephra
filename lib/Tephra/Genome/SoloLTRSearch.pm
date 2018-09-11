@@ -335,8 +335,11 @@ sub run_serial_model_search {
 	my $tre = File::Spec->catfile( abs_path($path), $name.'.dnd' );
 	my $aln = File::Spec->catfile( abs_path($path), $name.'_muscle-out.aln' );
 	my $log = File::Spec->catfile( abs_path($path), $name.'_muscle-out.log' );
-	
-	my $muscmd = "muscle -quiet -clwstrict -in $ltrfile -out $aln -log $log";
+
+	my $config  = Tephra::Config::Exe->new->get_config_paths;
+	my ($muscle) = @{$config}{qw(muscle)};
+
+	my $muscmd = "$muscle -quiet -clwstrict -in $ltrfile -out $aln -log $log";
 	say STDERR "DEBUG: $muscmd" if $self->debug;
 	my $status;
 	if ($allfams) {

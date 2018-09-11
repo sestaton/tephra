@@ -183,6 +183,9 @@ sub collect_align_args {
     my ($model_dir) = @_;
     my (@full, @aln, %aln_args);
 
+    my $config  = Tephra::Config::Exe->new->get_config_paths;
+    my ($muscle) = @{$config}{qw(muscle)};
+
     my $seqstore = $self->_filter_families_by_size($model_dir);
 
     for my $fam (keys %$seqstore) {
@@ -190,7 +193,7 @@ sub collect_align_args {
 	my $aln = File::Spec->catfile( $model_dir, $name.'_muscle-out.fas' );
 	my $log = File::Spec->catfile( $model_dir, $name.'_muscle-out.log' );
 	
-	my $muscmd  = "muscle -quiet -in $seqstore->{$fam} -out $aln -log $log";
+	my $muscmd  = "$muscle -quiet -in $seqstore->{$fam} -out $aln -log $log";
 	$aln_args{$name} = { seqs => $seqstore->{$fam}, args => $muscmd, aln => $aln, log => $log };
     }
 
