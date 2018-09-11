@@ -19,6 +19,7 @@ use Parallel::ForkManager;
 use Carp 'croak';
 use Try::Tiny;
 use Tephra::Alignment::Utils;
+use Tephra::Config::Exe;
 #use Data::Dump::Color;
 use namespace::autoclean;
 
@@ -291,6 +292,9 @@ sub process_align_args {
     my $self = shift;
     my ($db, $resdir) = @_;
 
+    my $config  = Tephra::Config::Exe->new->get_config_paths;
+    my ($muscle) = @{$config}{qw(muscle)};
+
     my ($name, $path, $suffix) = fileparse($db, qr/\.[^.]*/);
     my $pdir = File::Spec->catdir( abs_path($path), $name.'_pamltmp' );
     make_path( $pdir, {verbose => 0, mode => 0771,} );
@@ -305,8 +309,8 @@ sub process_align_args {
     my $alog = File::Spec->catfile($pdir, $name.'_muscle-out.alnlog');
     my $tlog = File::Spec->catfile($pdir, $name.'_muscle-out.trelog');
 
-    my $muscmd = "muscle -clwstrict -in $fas -out $aln 2>$alog";
-    my $trecmd = "muscle -maketree -in $fas -out $tre -cluster neighborjoining 2>$tlog";
+    my $muscmd = "$muscle -clwstrict -in $fas -out $aln 2>$alog";
+    my $trecmd = "$muscle -maketree -in $fas -out $tre -cluster neighborjoining 2>$tlog";
     my $status = $self->capture_cmd($muscmd);
     unlink $db && return if $status =~ /failed/i;
     $status = $self->capture_cmd($trecmd);
