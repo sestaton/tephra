@@ -55,6 +55,7 @@ sub get_config_paths {
     my $transeq = File::Spec->catdir($root,    'EMBOSS-6.5.7', 'bin', 'transeq');
     my $blastph = File::Spec->catdir($root,    'ncbi-blast+', 'bin');
     my $htsdir  = File::Spec->catdir($root,    'htslib-1.3.1', 'htslib');
+    my $musbin  = File::Spec->catdir($root,    'muscle', 'muscle');
 
     # this is to avoid building each time
     my @path = split /:|;/, $ENV{PATH};    
@@ -84,7 +85,8 @@ sub get_config_paths {
         pamlbin    => $pamlbin,
         transeq    => $transeq,
         blastpath  => $blastph,
-	htslibdir  => $htsdir });
+	htslibdir  => $htsdir,
+	muscle     => $musbin });
 }
 
 =head1 AUTHOR

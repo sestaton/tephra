@@ -138,6 +138,12 @@ sub configure_root {
 	print STDERR ".";
     }
 
+    unless (-e $config->{muscle}) {
+        #say STDERR "getting htslib"; 
+        $config->{muscle} = $self->fetch_muscle;
+        print STDERR ".";
+    }
+
     print STDERR "Done.\n";
 
     return $config;
@@ -489,6 +495,50 @@ sub fetch_htslib {
     my @results = capture { system('cpanm', '-q', 'Bio::DB::HTS') };
 
     return $libdir;
+}
+
+sub fetch_muscle {
+    my $self = shift;
+    my $root = $self->basedir->absolute->resolve;
+    my $wd   = $self->workingdir->absolute->resolve;
+    
+    my $host = 'http://www.drive5.com';
+    my $dir  = 'muscle';
+    my $page = 'downloads.htm';
+    my $file = 'muscle_distlisting.html';
+    my $endpoint = join "/", $host, $dir, $page;
+    $self->fetch_file($file, $endpoint);
+    
+    my $tree = HTML::TreeBuilder->new;
+    $tree->parse_file($file);
+    
+    my ($dist, $ldist, $ldir, $musbin);
+    for my $tag ($tree->look_down(_tag => 'a')) {
+        if ($tag->attr('href')) {
+            if ($tag->as_text =~ /muscle(\d+\.\d+\.\d+)_i86linux64.tar.gz\z/) {
+		my $ver = $1;
+		my $vdir = "downloads$ver";
+                $dist = $tag->as_text;
+                my $archive = join "/", $host, $dir, $vdir, $dist;
+                $self->fetch_file($dist, $archive);
+                
+                $ldist = $dist;
+                $ldist =~ s/\.tar.gz\z//;
+                $ldir = File::Spec->catdir($root, 'muscle'); #$ldist);
+		make_path( $ldir, {verbose => 0, mode => 0771,} );
+                $musbin = File::Spec->catfile($ldir, 'muscle');
+                system("tar xzf $dist") == 0 or die $!;
+                
+                move $ldist, $musbin or die "\n[ERROR]: move failed: $!\n";
+                unlink $dist;
+            }
+        }
+    }
+    unlink $file;
+    
+    #my $musbin = File::Spec->catfile($ldir, 'muscle');
+
+    return $musbin;
 }
 
 sub fetch_trnadb {
