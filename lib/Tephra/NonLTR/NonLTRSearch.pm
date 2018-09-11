@@ -21,11 +21,11 @@ Tephra::NonLTR::NonLTRSearch - Search a genome for non-LTR retrotransposons
 
 =head1 VERSION
 
-Version 0.12.0
+Version 0.12.1
 
 =cut
 
-our $VERSION = '0.12.0';
+our $VERSION = '0.12.1';
 $VERSION = eval $VERSION;
 
 has genome  => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
