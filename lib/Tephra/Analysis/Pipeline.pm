@@ -430,7 +430,7 @@ sub make_combined_repeatdb {
     my $st = strftime('%d-%m-%Y %H:%M:%S', localtime);
     my ($str, $customRepDB);
     if (defined $task && $task eq 'complete') {
-	$str = "Command - Generating combined FASTA file of complete elements at:               $st.";
+	$str = "Command - Generating combined FASTA file of complete elements at: $st.";
 	$customRepDB = $global_opts->{outfile} =~ s/\.gff.*/_complete.fasta/r;
     }
     elsif (defined $task && $task eq 'all') {
@@ -461,7 +461,7 @@ sub make_combined_repeatdb {
     my $ft = strftime('%d-%m-%Y %H:%M:%S', localtime);
     my $estr;
     if ($task eq 'complete') {
-	$estr = "Results - Finished generating combined FASTA file of complete elements at:               $ft. Final output files:";
+	$estr = "Results - Finished generating combined FASTA file of complete elements at: $ft. Final output files:";
     }
     elsif ($task eq 'all') {
 	$estr = "Results - Finished generating combined FASTA file of fragments and complete elements at: $ft. Final output files:";
