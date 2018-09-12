@@ -461,10 +461,10 @@ sub make_combined_repeatdb {
     my $ft = strftime('%d-%m-%Y %H:%M:%S', localtime);
     my $estr;
     if ($task eq 'complete') {
-	$str = "Results - Finished generating combined FASTA file of complete elements at:               $ft. Final output files:";
+	$estr = "Results - Finished generating combined FASTA file of complete elements at:               $ft. Final output files:";
     }
     elsif ($task eq 'all') {
-	$str = "Results - Finished generating combined FASTA file of fragments and complete elements at: $ft. Final output files:";
+	$estr = "Results - Finished generating combined FASTA file of fragments and complete elements at: $ft. Final output files:";
     }
     
     $log->info($estr);
