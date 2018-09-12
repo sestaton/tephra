@@ -5,6 +5,8 @@ Version	Date	Location
 
 - Update Dockerfile to git for creating an image from latest builds.
 - Add method to get muscle so all dependencies are handled during configuration.
+- Bug fix with making combined repeat library with 'all' command and not setting 
+  variable for logging results.
 
 0.12.0	08/02/2018	Vancouver, BC
 
