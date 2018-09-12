@@ -1,7 +1,7 @@
 Revision history for Tephra
 
 Version	Date	Location
-0.12.1	09/11/2018	Vancouver, Bc
+0.12.1	09/11/2018	Vancouver, BC
 
 - Update Dockerfile to git for creating an image from latest builds.
 - Add method to get muscle so all dependencies are handled during configuration.
@@ -9,6 +9,7 @@ Version	Date	Location
   variable for logging results.
 - Add Bio::SearchIO::blastxml dependency to cpanfile. This was split out of BioPerl in
   in the 1.7x release.
+- Add Docker support to this version, and move core install to separate file.
 
 0.12.0	08/02/2018	Vancouver, BC
 
