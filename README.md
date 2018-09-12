@@ -7,74 +7,35 @@ A tool for discovering transposable elements and describing patterns of genome e
 
 Tephra is a command line application to annotate [transposable elements](http://en.wikipedia.org/wiki/Transposable_element) from a genome assembly. The goal is to provide a high quality set of *de novo* annotations for all transposon types, describe the structure and evolution of those sequences, and do it without a reference set of transposon sequences (therefore being unbiased as possible).
 
-**INSTALLATION**
+**RECOMMENDED USAGE**
 
-The following commands will install the core dependencies for Debian-based systems (e.g., Ubuntu):
+With [Docker](https://www.docker.com/), you can create a container to run Tephra with the following command:
 
-    sudo apt-get install -y -qq build-essential zlib1g-dev unzip
-    sudo apt-get install -y -qq libncurses5 libncurses5-dev libdb-dev git cpanminus libexpat1 libexpat1-dev
+    docker run -it --name tephra-con sestaton/tephra
 
-For RHEL-based systems (e.g., CentOS/Fedora):
+That command will create a container called "tephra-con" and start an interactive shell. The next step is to fetch the configuration file:
 
-    sudo yum groupinstall -y "Development Tools"
-    sudo yum install -y perl-App-cpanminus ncurses ncurses-devel libdb-devel expat expat-devel zlib-devel java-1.7.0-openjdk
+    wget -o tephra_config.yml https://git.io/v5HFq
 
-The next two commands install BioPerl, and these can be skipped if BioPerl is installed:
-    
-    cpanm Data::Stag DB_File
-    echo "n" | cpanm -n Bio::Root::Version
+After editing that file according to your [input parameters](https://github.com/sestaton/tephra/wiki/Specifications-and-example-usage), you can launch the whole annotation process with `tephra all` or run a subcommand to restrict the analysis to one transposon type. See below for more information.
 
-Finally, download the [latest release](https://github.com/sestaton/tephra/releases/latest) and run the following commands from the root directory:
+I recommend starting the process with the `nohup` command like so:
 
-    cpanm --installdeps .
-    perl Makefile.PL
-    make test
-    make install
+    nohup tephra all -c tephra_config.yml 2>&1 > tephra.out &
 
-Please note, the above instructions will install Tephra for a single user. If you would like to configure Tephra to be installed for all users on a cluster, you will need to set the TEPHRA_DIR environment variable. For example,
+This will allow you to exit the container and return to the host command prompt. If you want to check the progress later you can use `bash` to open a shell to the running container:
 
-    export TEPHRA_DIR=/usr/local/tephra
-    perl Makefile.PL
-    make test
-    make install
+    docker exec -it tephra-con bash
 
-will configure the software for all users. Please note that if Tephra is configured in a custom location this way it will be necessary to set this variable prior to using Tephra so the configuration can be found. In this case, just export the variable the same way. For a regular user, this can be done with a single line as below (note that this is the same command used to install/configure Tephra):
+If you cannot use Docker, please see the [INSTALL](https://github.com/sestaton/tephra/blob/master/INSTALL.md) file included with this distribution to install Tephra on various operating systems.
 
-    export TEPHRA_DIR=/usr/local/tephra
-
-Now you can type any command to use the usage, for example:
-
-    tephra findltrs -h
-
-For developers, please run the tests with:
-
-    export TEPHRA_ENV='development' && make test
-
-Please report any test failures or installation issues with the [issue tracker](https://github.com/sestaton/tephra/issues).
-
-**SUPPORT AND DOCUMENTATION**
-
-You can get usage information at the command line with the following command:
-
-    perldoc tephra
-
-The `tephra` program will also print a diagnostic help message when executed with no arguments, and display the available subcommands.
-
-You can also look for information at:
-
-    Tephra wiki
-            https://github.com/sestaton/tephra/wiki
-
-    Tephra issue tracker
-            https://github.com/sestaton/tephra/issues
-
-**USAGE**
+**BASIC USAGE**
 
 Tephra is a command-line program only for now. The command `tephra` itself controls all the action of the subcommands, which perform specific tasks. Typing the command `tephra` will show the available commands. Here is an example,
 
     $ tephra 
 
-    Tephra version 0.12.0
+    Tephra version 0.12.1
     
     Copyright (C) 2015-2018 S. Evan Staton
     LICENSE -- MIT
@@ -157,6 +118,23 @@ Typing a subcommand will show the usage of that command, for example:
         -p|pdir       :   Location of the HMM models (Default: configured automatically).
         -t|threads    :   The number of threads to use for BLAST searches (Default: 1).
         -v|verbose    :   Display progress for each chromosome (Default: no).
+
+
+**SUPPORT AND DOCUMENTATION**
+
+You can get usage information at the command line with the following command:
+
+    perldoc tephra
+
+The `tephra` program will also print a diagnostic help message when executed with no arguments, and display the available subcommands.
+
+You can also look for information at:
+
+    Tephra wiki
+            https://github.com/sestaton/tephra/wiki
+
+    Tephra issue tracker
+            https://github.com/sestaton/tephra/issues
 
  
 **CITATION**
