@@ -7,6 +7,8 @@ Version	Date	Location
 - Add method to get muscle so all dependencies are handled during configuration.
 - Bug fix with making combined repeat library with 'all' command and not setting 
   variable for logging results.
+- Add Bio::SearchIO::blastxml dependency to cpanfile. This was split out of BioPerl in
+  in the 1.7x release.
 
 0.12.0	08/02/2018	Vancouver, BC
 
