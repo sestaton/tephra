@@ -13,19 +13,7 @@ With [Docker](https://www.docker.com/), you can create a container to run Tephra
 
     docker run -it --name tephra-con sestaton/tephra
 
-That command will create a container called "tephra-con" and start an interactive shell. The next step is to fetch the configuration file:
-
-    wget -o tephra_config.yml https://git.io/v5HFq
-
-After editing that file according to your [input parameters](https://github.com/sestaton/tephra/wiki/Specifications-and-example-usage), you can launch the whole annotation process with `tephra all` or run a subcommand to restrict the analysis to one transposon type. See below for more information.
-
-I recommend starting the process with the `nohup` command like so:
-
-    nohup tephra all -c tephra_config.yml 2>&1 > tephra.out &
-
-This will allow you to exit the container and return to the host command prompt. If you want to check the progress later you can use `bash` to open a shell to the running container:
-
-    docker exec -it tephra-con bash
+That will create a container called "tephra-con" and start an interactive shell. Note that the image is minimal and has no text editor. You can use Docker volumes for managing data, or bind mounting to work with files directly on the host and avoid moving anything. 
 
 If you cannot use Docker, please see the [INSTALL](https://github.com/sestaton/tephra/blob/master/INSTALL.md) file included with this distribution to install Tephra on various operating systems.
 
