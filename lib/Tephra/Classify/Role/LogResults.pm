@@ -12,11 +12,11 @@ Tephra::Classify::Role::LogResults - Reusable methods for calculating and loggin
 
 =head1 VERSION
 
-Version 0.12.1
+Version 0.12.2
 
 =cut
 
-our $VERSION = '0.12.1';
+our $VERSION = '0.12.2';
 $VERSION = eval $VERSION;
 
 #

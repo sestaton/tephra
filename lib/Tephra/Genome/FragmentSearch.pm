@@ -24,11 +24,11 @@ Tephra::Genome::FragmentSearch - Find fragmented transposons in a refence genome
 
 =head1 VERSION
 
-Version 0.12.1
+Version 0.12.2
 
 =cut
 
-our $VERSION = '0.12.1';
+our $VERSION = '0.12.2';
 $VERSION = eval $VERSION;
 
 has genome => (
