@@ -129,8 +129,9 @@ sub mask_reference {
 	make_path( $genome_dir, {verbose => 0, mode => 0771,} );
     }
 
-    my $files = $self->_split_genome($genome, $genome_dir);
-    die "\n[ERROR]: No FASTA files found in genome directory. Exiting.\n" if @$files == 0;
+    my ($chr_files, $short_files) = $self->_split_genome($genome, $genome_dir);
+    die "\n[ERROR]: No FASTA files found in genome directory. Exiting.\n" 
+	unless (@$chr_files > 0 || @$short_files > 0);
 
     my $thr;
     if ($threads % 2 == 0) {
@@ -164,8 +165,25 @@ sub mask_reference {
                               say $log basename($ident),
                               " just finished with PID $pid and exit code: $exit_code in $time minutes";
                         } );
+	
+    # Pre-process short contigs first so we maximize the number of processes
+    # being used. Otherwise we will just use 2 threads at a time with the algorithm below.
+    if (@$short_files) { 
+	for my $chr (nsort @$short_files) {
+	    $pm->start($chr) and next;
+	    @{$SIG}{qw(INT TERM)} = sub { $pm->finish };
+	    my $mask_struct = $self->run_masking(0, 1, $chr->{file}, $chr->{file});
+	    
+	    $pm->finish(0, $mask_struct);
+	}
+	$pm->wait_all_children;
 
-    for my $chr (nsort @$files) {
+	# remove dirs outside of loop to not cause problems
+	remove_tree( $_->{dir}, { safe => 1 } )
+	    for @$short_files;
+    }
+
+    for my $chr (nsort @$chr_files) {
 	my $chr_windows = $self->_split_chr_windows($chr->{file});
 	my $window_ct = keys %$chr_windows;
 	for my $seq_index (sort { $a <=> $b } keys %$chr_windows) {
@@ -562,22 +580,35 @@ sub _get_seq {
 sub _split_genome {
     my $self = shift;
     my ($genome, $genome_dir) = @_;
+    my $split_size = $self->splitsize;
 
-    my @files;
+    my (@chr_files, @short_files);
     my $kseq = Bio::DB::HTS::Kseq->new($genome);
     my $iter = $kseq->iterator;
+
     while (my $seqobj = $iter->next_seq) {
 	my $id = $seqobj->name;
+	my $seq = $seqobj->seq;
+	my $seqlen = length($seq);
+
 	my $dir = File::Spec->catdir($genome_dir, $id);
 	make_path( $dir, {verbose => 0, mode => 0771,} );
 	my $outfile = File::Spec->catfile($dir, $id.'.fasta');
+	my $struc = { file => $outfile, dir => $dir };
+	
 	open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
-	say $out join "\n", ">".$id, $seqobj->seq;
+	say $out join "\n", ">".$id, $seq;
 	close $out;
-	push @files, { file => $outfile, dir => $dir };
+
+	if ($seqlen > $split_size) { 
+	    push @chr_files, $struc;
+	}
+	else {
+	    push @short_files, $struc;
+	}
     }
     
-    return \@files;
+    return (\@chr_files, \@short_files);
 }
 
 sub _split_chr_windows {
