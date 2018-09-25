@@ -1,6 +1,13 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.12.2	09/24/2018	Vancouver, BC
+
+- Modify the algoritm for how chromosomes/contigs are processed with the 'maskref'
+  command to pre-process contigs shorter than the split size. This ensures that
+  the max number of requested threads is always being used, and greatly reduces
+  the time required to mask large genomes.
+
 0.12.1	09/11/2018	Vancouver, BC
 
 - Update Dockerfile to git for creating an image from latest builds.
