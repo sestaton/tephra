@@ -11,9 +11,11 @@ Tephra is a command line application to annotate [transposable elements](http://
 
 With [Docker](https://www.docker.com/), you can create a container to run Tephra with the following command:
 
-    docker run -it --name tephra-con sestaton/tephra
+    docker run -it --name tephra-con -v $(pwd)/db:/db sestaton/tephra
 
-That will create a container called "tephra-con" and start an interactive shell. Note that the image is minimal and has no text editor. You can use Docker volumes for managing data, or bind mounting to work with files directly on the host and avoid moving anything. 
+That will create a container called "tephra-con" and start an interactive shell. The above assumes you have a directory called "db" in the working directory that contains your database files and the Tephra configuration. To run the full analysis, change to that mounted directory and run the following:
+
+    tephra all -c tephra_config.yml
 
 If you cannot use Docker, please see the [INSTALL](https://github.com/sestaton/tephra/blob/master/INSTALL.md) file included with this distribution to install Tephra on various operating systems.
 
