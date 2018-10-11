@@ -13,9 +13,11 @@ With [Docker](https://www.docker.com/), you can create a container to run Tephra
 
     docker run -it --name tephra-con -v $(pwd)/db:/db sestaton/tephra
 
-That will create a container called "tephra-con" and start an interactive shell. The above assumes you have a directory called "db" in the working directory that contains your database files and the Tephra configuration. To run the full analysis, change to that mounted directory and run the following:
+That will create a container called "tephra-con" and start an interactive shell. The above assumes you have a directory called `db` in the working directory that contains your database files and the Tephra configuration. To run the full analysis, change to the mounted directory with `cd db` in your container and run the following command:
 
     tephra all -c tephra_config.yml
+
+I recommend using `nohup` and then logging out, which will allow you to leave the container running in the background (I will expand this part of the install by v0.13.0).
 
 If you cannot use Docker, please see the [INSTALL](https://github.com/sestaton/tephra/blob/master/INSTALL.md) file included with this distribution to install Tephra on various operating systems.
 
