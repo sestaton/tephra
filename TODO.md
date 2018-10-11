@@ -200,6 +200,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] add tryrosine recombinases, endonucleases, Helitron_like_N models from Pfam to HMM db
  - [ ] add 'solotir' command for discovering solo-TIRs
  - [x] add method to install MUSCLE along with other deps (added in v0.12.1)
+ - [ ] check to see if we are calculating examplars for all TE types
 
 ## Docker image
  - [ ] reduce EMBOSS install to only required programs
