@@ -18,7 +18,7 @@ sub opt_spec {
 	[ "recombstats|r=s", "The file to write the alignment stats for illegetimate recombination sites " ],
 	[ "repeatpid|p=i",   "The percent identity threshold for retaining repeats that flank gaps. "      ],
 	[ "threads|t=i",     "The number of threads to use for alignments (Default: 1) "                   ],
-	[ "clean|c",         "Clean up the intermediate alignment files (Default: yes) "                   ],
+	[ "clean|c=i",       "Clean up the intermediate alignment files (Default: yes) "                   ],
 	[ "help|h",          "Display the usage menu and exit. "                                           ],
         [ "man|m",           "Display the full manual. "                                                   ],
 	);
