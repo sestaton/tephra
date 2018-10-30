@@ -616,11 +616,11 @@ sub annotate_gff {
 		    $feature->{attributes}{family}[0] = $annot_ids->{$key};		    
 		}
 	    }
-	    else {
-		if ($is_lard_mite) {
-		    $feature->{attributes}{Parent}[0] = $new_id;
-		}
+
+	    if ($is_lard_mite) {
+		$feature->{attributes}{Parent}[0] = $new_id;
 	    }
+
 	    my $gff_feat = gff3_format_feature($feature);
 	    $gff_str .= $gff_feat;
 	}
