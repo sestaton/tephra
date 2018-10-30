@@ -26,7 +26,7 @@ sub opt_spec {
 	[ "outfile|o=s", "The final combined and filtered GFF3 file of TRIMs "                        ],
 	[ "logfile|l=s", "The file to use for logging results in addition to the screen "             ],
 	[ "threads|t=i", "The number of threads to use for the TRIM search"                           ],
-	[ "clean",       "Clean up the index files (Default: No) "                                    ],
+	[ "clean|c=i",   "Clean up the index files (Default: Yes) "                                   ],
 	[ "debug",       "Show external command for debugging (Default: No) "                         ],
 	[ "help|h",      "Display the usage menu and exit. "                                          ],
         [ "man|m",       "Display the full manual. "                                                  ],
@@ -114,7 +114,7 @@ sub _run_trim_search {
     my $genome  = $opt->{genome};
     my $hmmdb   = $using_tephra_db ? $tmp_hmmdb : $opt->{hmmdb};
     my $trnadb  = $opt->{trnadb} // $tephra_trnadb;
-    my $clean   = $opt->{clean} // 0;
+    my $clean   = $opt->{clean} // 1;
     my $debug   = $opt->{debug} // 0;
     my $threads = $opt->{threads} // 1;
     my $logfile = $opt->{logfile} // File::Spec->catfile($path, 'tephra_findtrims.log');
