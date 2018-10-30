@@ -113,6 +113,7 @@ sub _filter_tir_gff {
     }
 
     my ($seq_id, $source, $tir_start, $tir_end, $tir_feats, $strand);
+    my $skip_region = 0;
     for my $rep_region (nsort_by { m/repeat_region\d+\|\|(\d+)\|\|\d+/ and $1 } keys %$features) {
 	my ($rreg_id, $start, $end) = split /\|\|/, $rep_region;
 	my $len = $end - $start + 1;
@@ -122,17 +123,29 @@ sub _filter_tir_gff {
 		my $elem_id = $tir_feature->{attributes}{ID}[0];
 		($seq_id, $source, $tir_start, $tir_end, $strand) 
 		    = @{$tir_feature}{qw(seq_id source start end strand)};
-		my $id = join "_", $elem_id, $seq_id, $tir_start, $tir_end;
-		$self->write_element_parts($index, $seq_id, $tir_start, $tir_end, $faout, $id);
             }
+	    ## NB: This is to bypass a bug in TIRvish which outputs a TIR element with two TIRs 
+	    ## of identical length to the full element (10/29/2018 SES)
+	    if ($tir_feature->{type} eq 'terminal_inverted_repeat') {
+		my ($rep_seq_id, $rep_source, $rep_tir_start, $rep_tir_end, $rep_strand)
+                    = @{$tir_feature}{qw(seq_id source start end strand)};
+		if ($tir_start == $rep_tir_start && $tir_end == $rep_tir_end) {
+		    $skip_region++;
+		}
+	    }
+
 	    my $gff3_str = gff3_format_feature($tir_feature);
 	    $tir_feats .= $gff3_str;
 	}
-	chomp $tir_feats;
-	say $out join "\t", $seq_id, $source, 'repeat_region', $start, $end, '.', $strand, '.', "ID=$rreg_id";
-	say $out $tir_feats;
+
+	unless ($skip_region == 2) {
+	    chomp $tir_feats;
+	    say $out join "\t", $seq_id, $source, 'repeat_region', $start, $end, '.', $strand, '.', "ID=$rreg_id";
+	    say $out $tir_feats;
+	}
 
 	undef $tir_feats;
+	$skip_region = 0;
     }
     close $out;
 
