@@ -113,9 +113,9 @@ sub _run_ltr_search {
     my @indexfiles;
     if (defined $opt->{index}) {
 	my ($name, $path, $suffix) = fileparse($opt->{index}, qr/\.[^.]*/);
-	my $matchstr = join "|", map { $opt->{index}.$_ } ('.des', '.lcp', '.llv', '.md5', '.prj', '.sds', '.suf');
+	my $matchstr = join "|", map { $name.$suffix.$_ } ('.des', '.lcp', '.llv', '.md5', '.prj', '.sds', '.suf');
 
-	find( sub { push @indexfiles, $File::Find::name if -f and /$matchstr/ }, $path );
+	find( sub { push @indexfiles, $File::Find::name if -f and /$matchstr/ }, abs_path($path) );
     }
     
     my $config = Tephra::Config::Exe->new->get_config_paths;
@@ -128,7 +128,7 @@ sub _run_ltr_search {
     my ($name, $path, $suffix) = fileparse($global_opts->{genome}, qr/\.[^.]*/);
 
     my $using_tephra_db = 0;
-    if ($global_opts->{hmmdb} =~ /TephraDB/) { 
+    if ($global_opts->{hmmdb} =~ /TephraDB/i) { 
 	$using_tephra_db = 1;
 	my $tmpiname  = 'tephra_transposons_hmmdb_XXXX';
 	my ($tmp_fh, $tmp_hmmdb) = tempfile( TEMPLATE => $tmpiname, DIR => $path, SUFFIX => '.hmm', UNLINK => 0 );
