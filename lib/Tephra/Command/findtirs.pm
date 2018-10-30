@@ -7,8 +7,9 @@ use warnings;
 use Pod::Find     qw(pod_where);
 use Pod::Usage    qw(pod2usage);
 use Capture::Tiny qw(capture_merged);
-use Cwd           qw(getcwd);
+use Cwd           qw(getcwd abs_path);
 use File::Copy    qw(copy);
+use File::Temp    qw(tempfile);
 use File::Find;
 use File::Basename;
 use Tephra -command;
@@ -23,7 +24,7 @@ sub opt_spec {
 	[ "index|i=s",   "The suffixerator index to use for the TIR search "              ],
 	[ "threads|t=i", "The number of threads to use for the TIR search (Default: 1) "  ],
 	[ "logfile|l=s", "The file to use for logging results in addition to the screen " ],
-	[ "clean",       "Clean up the index files (Default: yes) "                       ],
+	[ "clean|c=i",   "Clean up the index files (Default: yes) "                       ],
 	[ "debug",       "Show external command for debugging (Default: no) "             ],
 	[ "help|h",      "Display the usage menu and exit. "                              ],
         [ "man|m",       "Display the full manual. "                                      ],
@@ -58,29 +59,36 @@ sub _run_tir_search {
 
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($tephra_hmmdb) = @{$config}{qw(hmmdb)};
-    my $hmmdb = $opt->{hmmdb} // $tephra_hmmdb;
     my $dir   = getcwd();
+    my ($name, $path, $suffix) = fileparse($opt->{genome}, qr/\.[^.]*/);
 
+    my ($tmp_fh, $tmp_hmmdb);
+    my $using_tephra_db = 0;
+    unless (defined $opt->{hmmdb} && -e $opt->{hmmdb}) {
+	$using_tephra_db = 1;
+        my $tmpiname  = 'tephra_transposons_hmmdb_XXXX';
+        ($tmp_fh, $tmp_hmmdb) = tempfile( TEMPLATE => $tmpiname, DIR => $path, SUFFIX => '.hmm', UNLINK => 0 );
+	close $tmp_fh;
+        copy $tephra_hmmdb, $tmp_hmmdb or die "Copy failed: $!";
+        #$hmmdb = $tmp_hmmdb;
+    }
+
+    my @indexfiles;
+    if (defined $opt->{index}) {
+        my ($name, $path, $suffix) = fileparse($opt->{index}, qr/\.[^.]*/);
+	my $matchstr = join "|", map { $name.$suffix.$_ } ('.des', '.lcp', '.llv', '.md5', '.prj', '.sds', '.suf');
+
+        find( sub { push @indexfiles, $File::Find::name if -f and /$matchstr/ }, abs_path($path) );
+    }
+
+    my $hmmdb   = $using_tephra_db ? $tmp_hmmdb : $opt->{hmmdb};
     my $genome  = $opt->{genome};
     my $index   = $opt->{index};
     my $outfile = $opt->{outfile};
-    my $clean   = $opt->{clean} // 0;
+    my $clean   = $opt->{clean} // 1;
     my $debug   = $opt->{debug} // 0;
     my $threads = $opt->{threads} // 1;
     my $logfile = $opt->{logfile} // File::Spec->catfile($dir, 'tephra_findtirs.log');
-    #say $logfile;
-
-    my @indexfiles;
-    if (defined $index) {
-        my ($name, $path, $suffix) = fileparse($index, qr/\.[^.]*/);
-        my @files;
-	for my $suf ('.des', '.lcp', '.llv', '.md5', '.prj', '.sds', '.suf')  {
-            push @files, $index.$suf;
-        }
-
-	my $matchstr = join "|", @files;
-        find( sub { push @indexfiles, $File::Find::name if -f and /$matchstr/ }, $path );
-    }
 
     my $tir_search = Tephra::TIR::TIRSearch->new( 
 	genome  => $genome, 
@@ -102,6 +110,7 @@ sub _run_tir_search {
     
     my ($gff, $fas) = $tir_search->tir_search($index);
     unlink $logfile unless -s $logfile;
+    unlink $hmmdb if $using_tephra_db; # this is just a temp file to keep tirvish from crashing
 
     return $gff;
 }
@@ -126,7 +135,7 @@ Options:
     -i|index      :   The suffixerator index to use for the TIR search.
     -d|hmmdb      :   The HMM db in HMMERv3 format to search for coding domains.    
     -t|threads    :   The number of threads to use for the TIR search (Default: 1).
-    --clean       :   Clean up the index files (Default: yes).
+    -c|clean      :   Clean up the index files (INT: 0/1; Default: yes (1)).
     --debug       :   Show external commands for debugging (Default: no).
 
 END
