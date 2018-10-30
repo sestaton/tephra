@@ -19,7 +19,7 @@ sub opt_spec {
 	[ "threads|t=i",   "The number of threads to use for clustering coding domains "                ],
 	[ "indir|i=s",     "The input directory of superfamily exemplars "                              ],
 	[ "all|a",         "Calculate age of all LTRs/TIRs in <gff> instead of exemplars in <indir> "   ],
-	[ "clean|c",       "Clean up all the intermediate files from PAML and clustalw (Default: yes) " ],
+	[ "clean|c=i",     "Clean up all the intermediate files from PAML and clustalw (Default: yes) " ],
 	[ "type=s",        "Type of transposon to calculate age for (must be 'ltr' or 'tir') "          ],
 	[ "help|h",        "Display the usage menu and exit. "                                          ],
         [ "man|m",         "Display the full manual. "                                                  ],
@@ -78,7 +78,7 @@ sub _calculate_age_stats {
     $agestats_opts{gff}       = $opt->{gff} // 0;
     $agestats_opts{subs_rate} = $opt->{subs_rate} // 1e-8;
     $agestats_opts{threads}   = $opt->{threads} // 1;
-    $agestats_opts{clean}     = $opt->{clean} // 0;
+    $agestats_opts{clean}     = $opt->{clean} // 1;
     $agestats_opts{type}      = lc($opt->{type});
 
     my $stats_obj = Tephra::Stats::Age->new(%agestats_opts);
