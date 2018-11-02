@@ -106,14 +106,15 @@ sub extract_ltr_sequences {
                 $ltrs{$key}{'full'} = join "||", @{$ltr_feature}{qw(seq_id type start end)};
                 $coord_map{$elem_id} = join "||", @{$ltr_feature}{qw(seq_id start end)};
             }
-            if ($ltr_feature->{type} eq 'long_terminal_repeat') {
+            if ($ltr_feature->{type} eq 'long_terminal_repeat') { # &&
+		#$ltr_feature-{start} == $start || $ltr_feature->{end} == $end) {
                 my $parent = @{$ltr_feature->{attributes}{Parent}}[0];
                 my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
                 if ($seq_id eq $ltr_feature->{seq_id}) {
-                    my ($type, $start, $end, $strand) = 
+                    my ($ltr_type, $ltr_start, $ltr_end, $ltr_strand) = 
                         @{$ltr_feature}{qw(type start end strand)};
-                    $strand //= '?';
-                    my $ltrkey = join "||", $seq_id, $type, $start, $end, $strand;
+                    $ltr_strand //= '?';
+                    my $ltrkey = join "||", $seq_id, $ltr_type, $ltr_start, $ltr_end, $ltr_strand;
                     my $parent_key = join "||", $family, $pkey;
                     push @{$ltrs{$parent_key}{'ltrs'}}, $ltrkey unless exists $seen{$ltrkey};
                     $seen{$ltrkey} = 1;
@@ -121,6 +122,7 @@ sub extract_ltr_sequences {
             }
         }
     }
+    #dd \%ltrs and exit;
 
     my @files;
     my $ltrct = 0;
@@ -134,6 +136,11 @@ sub extract_ltr_sequences {
             "results and try again. Exiting.\n" if -e $ltrs_out;
         push @files, $ltrs_out;
         open my $ltrs_outfh, '>>', $ltrs_out or die "\n[ERROR]: Could not open file: $ltrs_out\n";
+
+	if (@{$ltrs{$ltr}{'ltrs'}} != 2) {
+            say STDERR "[ERROR]: $ltr contains ",scalar(@{$ltrs{$ltr}{'ltrs'}})," sequences";
+            exit;
+	}
 
         for my $ltr_repeat (@{$ltrs{$ltr}{'ltrs'}}) {
             #ltr: Contig57_HLAC-254L24||long_terminal_repeat||60101||61950||+
@@ -194,10 +201,10 @@ sub extract_tir_sequences {
                 my $parent = @{$tir_feature->{attributes}{Parent}}[0];
                 my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
                 if ($seq_id eq $tir_feature->{seq_id}) {
-                    my ($type, $start, $end, $strand) = 
+                    my ($tir_type, $tir_start, $tir_end, $tir_strand) = 
                         @{$tir_feature}{qw(type start end strand)};
-                    $strand //= '?';
-                    my $tirkey = join "||", $seq_id, $type, $start, $end, $strand;
+                    $tir_strand //= '?';
+                    my $tirkey = join "||", $seq_id, $tir_type, $tir_start, $tir_end, $tir_strand;
                     $pkey = defined $family ? join "||", $family, $pkey : $pkey;
                     push @{$tirs{$pkey}{'tirs'}}, $tirkey unless exists $seen{$tirkey};
                     $seen{$tirkey} = 1;
@@ -218,6 +225,11 @@ sub extract_tir_sequences {
             "results and try again. Exiting.\n" if -e $tirs_out;
         push @files, $tirs_out;
         open my $tirs_outfh, '>>', $tirs_out or die "\n[ERROR]: Could not open file: $tirs_out\n";
+	
+	if (@{$tirs{$tir}{'tirs'}} != 2) {
+	    say STDERR "[ERROR]: $tir contains ",scalar(@{$tirs{$tir}{'tirs'}})," sequences";
+	    exit;
+	}
 
         for my $tir_repeat (@{$tirs{$tir}{'tirs'}}) {
             #Contig57_HLAC-254L24||terminal_inverted_repeat||60101||61950||+
