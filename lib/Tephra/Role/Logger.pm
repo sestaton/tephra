@@ -81,8 +81,6 @@ sub log_interval {
     my $self = shift;
     my ($t0, $log) = @_;
     
-    #load_classes('DateTime', 'Time::HiRes', 'Lingua::EN::Inflect', 'POSIX');
-
     my $t1    = [Time::HiRes::gettimeofday()];
     my $t0_t1 = Time::HiRes::tv_interval($t0, $t1);
     my $dt    = DateTime->from_epoch( epoch => 0 );
@@ -91,6 +89,8 @@ sub log_interval {
     $dt = $dt - DateTime->from_epoch( epoch => 0 );
     
     my @time;
+    push @time, $dt->months . Lingua::EN::Inflect::PL_N( ' month', $dt->months ) if $dt->months;
+    push @time, $dt->weeks . Lingua::EN::Inflect::PL_N( ' week', $dt->weeks ) if $dt->weeks;
     push @time, $dt->days . Lingua::EN::Inflect::PL_N( ' day', $dt->days ) if $dt->days;
     push @time, $dt->hours . Lingua::EN::Inflect::PL_N( ' hour', $dt->hours ) if $dt->hours;
     push @time, $dt->minutes . Lingua::EN::Inflect::PL_N( ' minute', $dt->minutes ) if $dt->minutes;
