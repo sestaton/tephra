@@ -596,7 +596,6 @@ sub annotate_gff {
     for my $rep_region (nsort_by { m/repeat_region\d+\|\|(\d+)\|\|\d+/ and $1 } keys %$features) {
 	my ($rreg_id, $s, $e) = split /\|\|/, $rep_region;
         for my $feature (@{$features->{$rep_region}}) {
-	    next if $feature->{type} eq 'target_site_duplication'; # this should not be relabelled since is a child of the repeat_region (part of the host genome)
 	    if ($feature->{type} =~ /(?:LTR|TRIM|LARD)_retrotransposon|terminal_inverted_repeat_element|MITE/) {
 		$is_lard_mite = 1;
 		
@@ -617,9 +616,12 @@ sub annotate_gff {
 		    $feature->{attributes}{family}[0] = $annot_ids->{$key};		    
 		}
 	    }
-
-	    if ($is_lard_mite) {
-		$feature->{attributes}{Parent}[0] = $new_id;
+	    else {
+		if ($is_lard_mite) {
+		    # the TSD should not be relabelled since is a child of the repeat_region (part of the host genome)  
+		    $feature->{attributes}{Parent}[0] = $new_id
+			unless $feature->{type} eq 'target_site_duplication';
+		}
 	    }
 
 	    my $gff_feat = gff3_format_feature($feature);
