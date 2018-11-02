@@ -119,8 +119,7 @@ sub collect_features {
 	    $intervals{$region."_".$pid_thresh} = join "||", $start, $end, $length;
 	}
 	
-	#if ($feature->{type} ne 'repeat_region') {
-	if ($feature->{type} =~ /repeat_region|target_site_duplication/) {
+	if ($feature->{type} ne 'repeat_region') {
 	    my $id = @{$feature->{attributes}{ID}}[0];
 	    my $parent = @{$feature->{attributes}{Parent}}[0];
 	        
