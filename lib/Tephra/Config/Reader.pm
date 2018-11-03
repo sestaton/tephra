@@ -4,6 +4,7 @@ use 5.014;
 use Moose;
 use YAML::Tiny;
 use File::Spec;
+use File::Basename;
 use File::Temp qw(tempfile);
 #use Data::Dump::Color;
 use namespace::autoclean;
@@ -322,6 +323,7 @@ sub check_if_compressed {
 
 	my $tmpfname;
 	my ($name, $path, $suffix) = fileparse($infile, qr/\.[^.]*/);
+	$name =~ s/\.fa.*$//;
 	$tmpfname = $name.'_tephra_tmp_genome_XXXX' if $is_genome;
 	$tmpfname = $name.'_tephra_tmp_repeatdb_XXXX' if $is_repeatdb;
 
