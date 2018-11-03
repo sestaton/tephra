@@ -112,7 +112,7 @@ sub _run_all_commands {
 
     if (-e $trims_fas && -e $trims_gff) {
 	$has_trims = 1;
-	my $unmask = Tephra::Genome::Unmask->new(genome => $global_opts->{genome}, repeatdb => $trims_fas);
+	my $unmask = Tephra::Genome::Unmask->new( genome => $global_opts->{genome}, repeatdb => $trims_fas );
 	$unmask->unmask_repeatdb;
     }
 
@@ -211,7 +211,7 @@ sub _run_all_commands {
     my ($hel_fas, $hel_gff) = $tephra_obj->find_helitrons($log, $hel_ref);
 
     if (-e $hel_gff && -e $hel_fas) {
-	my $unmask = Tephra::Genome::Unmask->new(genome => $global_opts->{genome}, repeatdb => $hel_fas);
+	my $unmask = Tephra::Genome::Unmask->new( genome => $global_opts->{genome}, repeatdb => $hel_fas );
 	$unmask->unmask_repeatdb;
 	$log->info("Output files - $hel_gff");
 	$log->info("Output files - $hel_fas");
@@ -375,6 +375,15 @@ sub _run_all_commands {
 	}
     }
 
+    if ($global_opts->{genome_is_compressed}) {
+	unlink $global_opts->{genome};
+	$log->info("Clean up - Removing temporary file - $global_opts->{genome}");
+    }
+    if ($global_opts->{repeatdb_is_compressed}) {
+	unlink $global_opts->{repeatdb};
+	$log->info("Clean up - Removing temporary file - $global_opts->{repeatdb}");
+    }
+
     # Log summary of results
     $tephra_obj->log_interval( $tzero, $log );
 }
@@ -382,64 +391,64 @@ sub _run_all_commands {
 #
 # methods
 #
-sub _get_all_opts {
-    my ($config) = @_;
+#sub _get_all_opts {
+#    my ($config) = @_;
 
-    my ($logfile, $genome, $repeatdb, $hmmdb, $trnadb, $outfile, $clean, $debug, $threads, $subs_rate);
-    my ($name, $path, $suffix); # genome file specs
+#    my ($logfile, $genome, $repeatdb, $hmmdb, $trnadb, $outfile, $clean, $debug, $threads, $subs_rate);
+#    my ($name, $path, $suffix); # genome file specs
     #dd $config->{all};
 
-    if (defined $config->{all}{genome} && -e $config->{all}{genome}) {
-        $genome = $config->{all}{genome};
-    }
-    else {
+#    if (defined $config->{all}{genome} && -e $config->{all}{genome}) {
+#        $genome = $config->{all}{genome};
+#    }
+#    else {
 	#dd $config->{all};
-        say STDERR "\n[ERROR]: genome file was not defined in configuration or does not exist. Check input. Exiting.\n";
-        exit(1);
-    }
+#        say STDERR "\n[ERROR]: genome file was not defined in configuration or does not exist. Check input. Exiting.\n";
+#        exit(1);
+#    }
 
-    if (defined $config->{all}{repeatdb} && -e $config->{all}{repeatdb}) {
-        $repeatdb = $config->{all}{repeatdb};
-    }   
-    else {
-        say STDERR "\n[ERROR]: repeatdb file was not defined in configuration or does not exist. Check input. Exiting.\n";
-        exit(1);
-    }
+#    if (defined $config->{all}{repeatdb} && -e $config->{all}{repeatdb}) {
+#        $repeatdb = $config->{all}{repeatdb};
+#    }   
+#    else {
+#        say STDERR "\n[ERROR]: repeatdb file was not defined in configuration or does not exist. Check input. Exiting.\n";
+#        exit(1);
+#    }
 
-    if (defined $config->{all}{outfile}) {
-	$outfile = $config->{all}{outfile};
-    }
-    else {
-	($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
-	$outfile = File::Spec->catfile( abs_path($path), $name.'_tephra_transposons.gff3' );
-	$logfile = $config->{all}{logfile} // File::Spec->catfile( abs_path($path), $name.'_tephra_full.log' );
-    }
+#    if (defined $config->{all}{outfile}) {
+#	$outfile = $config->{all}{outfile};
+#    }
+#    else {
+#	($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
+#	$outfile = File::Spec->catfile( abs_path($path), $name.'_tephra_transposons.gff3' );
+#	$logfile = $config->{all}{logfile} // File::Spec->catfile( abs_path($path), $name.'_tephra_full.log' );
+#    }
 
-    my $execonfig = Tephra::Config::Exe->new->get_config_paths;
-    my ($tephra_hmmdb, $tephra_trnadb) = @{$execonfig}{qw(hmmdb trnadb)};
+#    my $execonfig = Tephra::Config::Exe->new->get_config_paths;
+#    my ($tephra_hmmdb, $tephra_trnadb) = @{$execonfig}{qw(hmmdb trnadb)};
     
-    $hmmdb  = defined $config->{all}{hmmdb}  && $config->{all}{hmmdb} =~ /tephradb/i ? 
-	$tephra_hmmdb : $config->{all}{hmmdb};
-    $trnadb = defined $config->{all}{trnadb} && $config->{all}{trnadb} =~ /tephradb/i ? 
-	$tephra_trnadb : $config->{all}{trnadb};
+#    $hmmdb = defined $config->{all}{hmmdb}  && $config->{all}{hmmdb} =~ /tephradb/i ? #
+#	$tephra_hmmdb : $config->{all}{hmmdb};
+#    $trnadb = defined $config->{all}{trnadb} && $config->{all}{trnadb} =~ /tephradb/i ? 
+#	$tephra_trnadb : $config->{all}{trnadb};
 
-    $clean = defined $config->{all}{clean} && $config->{all}{clean} =~ /yes/i ? 1 : 0;
-    $debug = defined $config->{all}{debug} && $config->{all}{debug} =~ /yes/i ? 1 : 0;
-    $threads = $config->{all}{threads} // 1;
-    $subs_rate = $config->{all}{subs_rate} // 1e-8;
-    $logfile = $config->{all}{logfile} // File::Spec->catfile( abs_path($path), $name.'_tephra_full.log' );
+#    $clean = defined $config->{all}{clean} && $config->{all}{clean} =~ /yes/i ? 1 : 0;
+#    $debug = defined $config->{all}{debug} && $config->{all}{debug} =~ /yes/i ? 1 : 0;
+#    $threads = $config->{all}{threads} // 1;
+#    $subs_rate = $config->{all}{subs_rate} // 1e-8;
+#    $logfile = $config->{all}{logfile} // File::Spec->catfile( abs_path($path), $name.'_tephra_full.log' );#
 
-    return { logfile   => $logfile,
-	     genome    => $genome, 
-	     repeatdb  => $repeatdb, 
-	     hmmdb     => $hmmdb, 
-	     trnadb    => $trnadb, 
-	     outfile   => $outfile, 
-	     clean     => $clean, 
-	     debug     => $debug, 
-	     threads   => $threads, 
-	     subs_rate => $subs_rate };
-}
+#    return { logfile   => $logfile,
+#	     genome    => $genome, 
+#	     repeatdb  => $repeatdb, 
+#	     hmmdb     => $hmmdb, 
+#	     trnadb    => $trnadb, 
+#	     outfile   => $outfile, 
+#	     clean     => $clean, 
+#	     debug     => $debug, 
+#	     threads   => $threads, 
+#	     subs_rate => $subs_rate };
+#}
 
 sub help {
     my $desc = capture_merged {
