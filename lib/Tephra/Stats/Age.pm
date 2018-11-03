@@ -23,8 +23,8 @@ use Tephra::Config::Exe;
 #use Data::Dump::Color;
 use namespace::autoclean;
 
-with 'Tephra::Role::GFF',
-     'Tephra::Role::Util',
+with 'Tephra::Role::File',
+     'Tephra::Role::GFF',
      'Tephra::Role::Run::Any',
      'Tephra::Role::Run::PAML',
      'Tephra::LTR::Role::Utils',
