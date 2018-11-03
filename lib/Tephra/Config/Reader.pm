@@ -3,8 +3,12 @@ package Tephra::Config::Reader;
 use 5.014;
 use Moose;
 use YAML::Tiny;
+use File::Spec;
+use File::Temp qw(tempfile);
 #use Data::Dump::Color;
 use namespace::autoclean;
+
+with 'Tephra::Role::File';
 
 =head1 NAME
 
@@ -249,11 +253,11 @@ sub get_all_opts {
     my $self = shift;
     my ($config) = @_;
 
-    my ($logfile, $genome, $repeatdb, $hmmdb, $trnadb, $outfile, $clean, $debug, $threads, $subs_rate);
-    my ($name, $path, $suffix); # genome file specs
+    my ($logfile, $genome, $repeatdb, $hmmdb, $trnadb, $outfile, $clean, $debug, 
+	$threads, $subs_rate, $genome_compressed, $repeatdb_compressed);
 
     if (defined $config->{all}{genome} && -e $config->{all}{genome}) {
-        $genome = $config->{all}{genome};
+        ($genome, $genome_compressed) = $self->check_if_compressed({ infile => $config->{all}{genome}, is_genome => 1, is_repeatdb => 0 });
     }
     else {
         say STDERR "\n[ERROR]: genome file was not defined in configuration or does not exist. Check input. Exiting.\n";
@@ -261,13 +265,14 @@ sub get_all_opts {
     }
 
     if (defined $config->{all}{repeatdb} && -e $config->{all}{repeatdb}) {
-        $repeatdb = $config->{all}{repeatdb};
+        ($repeatdb, $repeatdb_compressed) = $self->check_if_compressed({ infile => $config->{all}{repeatdb}, is_genome => 0, is_repeatdb => 1 });
     }   
     else {
         say STDERR "\n[ERROR]: repeatdb file was not defined in configuration or does not exist. Check input. Exiting.\n";
         exit(1);
     }
 
+    my ($name, $path, $suffix); # genome file specs
     if (defined $config->{all}{outfile}) {
         $outfile = $config->{all}{outfile};
     }
@@ -300,9 +305,41 @@ sub get_all_opts {
              clean     => $clean, 
              debug     => $debug, 
              threads   => $threads, 
-             subs_rate => $subs_rate };
+             subs_rate => $subs_rate, 
+             genome_is_compressed   => $genome_compressed,
+             repeatdb_is_compressed => $repeatdb_compressed };
 }
-    
+
+sub check_if_compressed {
+    my $self = shift;
+    my ($struc) = @_;
+    my ($infile, $is_genome, $is_repeatdb) =
+	@{$struc}{qw(infile is_genome is_repeatdb)};
+
+    my $is_compressed = 0;
+    if ($infile =~ /\.gz\z|\.bz2\z/) {
+	my $fh = $self->get_fh($infile);
+
+	my $tmpfname;
+	my ($name, $path, $suffix) = fileparse($infile, qr/\.[^.]*/);
+	$tmpfname = $name.'_tephra_tmp_genome_XXXX' if $is_genome;
+	$tmpfname = $name.'_tephra_tmp_repeatdb_XXXX' if $is_repeatdb;
+
+	my ($outf, $ffilename) = tempfile( TEMPLATE => $tmpfname, DIR => $path, UNLINK => 0, SUFFIX => '.fasta' );
+	while (my $line = <$fh>) {
+	    chomp $line;
+	    say $outf $line;
+	}
+	close $outf;
+	close $fh;
+
+	$infile = $ffilename;
+	$is_compressed = 1;
+    }
+
+    return ($infile, $is_compressed);
+}
+
 =head1 AUTHOR
 
 S. Evan Staton, C<< <evan at evanstaton.com> >>
