@@ -117,7 +117,7 @@ sub _build_fh {
 
 sub get_fh {
     my $self = shift;
-    my $file = $self->file;
+    my ($file) = @_;
 
     my $fh;
     if ($file =~ /\.gz$/) {
