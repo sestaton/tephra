@@ -25,6 +25,7 @@ use namespace::autoclean;
 
 with 'Tephra::Role::File',
      'Tephra::Role::GFF',
+     'Tephra::Role::Util',
      'Tephra::Role::Run::Any',
      'Tephra::Role::Run::PAML',
      'Tephra::LTR::Role::Utils',
