@@ -15,7 +15,8 @@ use Tephra::Annotation::Util;
 use namespace::autoclean;
 #use Data::Dump::Color;
 
-with 'Tephra::Role::Logger',
+with 'Tephra::Role::File',
+     'Tephra::Role::Logger',
      'Tephra::Role::Run::Any',
      'Tephra::Role::Run::TephraCmd';
 
@@ -446,12 +447,13 @@ sub make_combined_repeatdb {
     open my $out, '>', $customRepDB or die "\n[ERROR]: Could not open file: $customRepDB\n";
 
     for my $file (@$fas_files) {
-        my $lines = do { 
-            local $/ = undef; 
-            open my $fh_in, '<', $file or die "\n[ERROR]: Could not open file: $file\n";
-            <$fh_in>;
-        };
-        print $out $lines;
+        #my $lines = do { 
+            #local $/ = undef; 
+            #open my $fh_in, '<', $file or die "\n[ERROR]: Could not open file: $file\n";
+            #<$fh_in>;
+        #};
+        #print $out $lines;
+	$self->collate($file, $out);
     }
     close $out;
 
@@ -569,9 +571,7 @@ sub combine_age_files {
     my $t0 = gettimeofday();
     my $st = strftime('%d-%m-%Y %H:%M:%S', localtime);
 
-
     my $re = qr/helitron\d+|(?:non_)?(?:LTR|LARD|TRIM)_retrotransposon\d+|terminal_inverted_repeat_element\d+|MITE\d+/;
-    #my ($chr, $start, $end) = ($id =~ /^(?:\w{3}_)?(?:singleton_)?(?:family\d+_)?$re?_(\S+)_(\d+)[-_](\d+)/);
 
     my $util = Tephra::Annotation::Util->new;
     my $repeat_map = $util->build_repeat_map;
@@ -601,7 +601,6 @@ sub combine_age_files {
     #dd \%families and exit;
 
     for my $agefile (@$ages) { 
-        #say STDERR "working on... $agefile";
         open my $tab, '<', $agefile or die "\n[ERROR]: Could not open file: $agefile\n";
         
         while (my $line = <$tab>) {
@@ -610,8 +609,6 @@ sub combine_age_files {
             #LTR-ID Divergence Age Ts:Tv
             my ($id, $div, $age, $tstv) = split /\t/, $line;
             if ($id =~ /^((?:\w{3}_)?(?:singleton_)?(?:family\d+_))?(?:exemplar_)?(?:($re)?_\S+_\d+[-_]\d+)?/) {  
-                #/^((?:\w{3}_)?(?:singleton_)?(?:family\d+_))?(?:exemplar_)?($re)?_\S+_\d+[-_]\d+/
-                #/^([A-Z]{3}(?:_singleton_)?(?:_?family\d+)?)_(?:LTR|TRIM|terminal)/) {
                 $famname = $1;
                 my $type = $2;
                 #$type =~ s/\d+$//;
@@ -624,20 +621,13 @@ sub combine_age_files {
                 }
                 elsif (!defined $type && defined $famname) {
                     my ($sfam_code) = ($famname =~ /(^\w{3})_?/);
-                    #say join q{ }, $sfam_code, $famname;
                     my $order = $repeat_map->{$sfam_code}{order};
-                    #dd $order;
-                    #my $order = $sf_map->{order};
-                    #say join q{ }, $sfam_code, $order and exit;
                     $type = $order =~ /LTR/i ? 'LTR_retrotransposon' 
                         : $order =~ /TIR/i ? 'terminal_inverted_repeat_element' : $order;
                 }
 
-		#say join q{ }, $type, $famname;
                 if (exists $families{$type}{$famname}) {
-                    #say join q{ }, $type, $famname;
                     my $famsize = @{$families{$type}{$famname}};
-                    #push @{$ages{$type}{$famsize}{$famname}}, join "||", $id, $div, $age, $tstv;
                     push @{$ages{$type}{$famname}{$famsize}}, join "||", $id, $div, $age, $tstv;
                 }
             }
@@ -653,9 +643,6 @@ sub combine_age_files {
     for my $type (nsort keys %ages) {
         for my $fam (nsort keys %{$ages{$type}}) {
             for my $famsize (reverse sort { $a <=> $b } keys %{$ages{$type}{$fam}}) {
-        #for my $famsize (keys %{$ages{$type}}) { #reverse sort { $a <=> $b } keys %{$ages{$type}}) {
-            #for my $fam (nsort keys %{$ages{$type}{$famsize}}) { 
-                #for my $agestr (@{$ages{$type}{$famsize}{$fam}}) {
                 for my $agestr (@{$ages{$type}{$fam}{$famsize}}) {
                     $ct++;
                     my ($id, $div, $age, $tstv) = split /\|\|/, $agestr;
