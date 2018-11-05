@@ -75,6 +75,8 @@ SKIP: {
 unlink $genome.'.fai' 
     if -e $genome.'.fai';
 
+system('gunzip', "$testdir/ref.fas.gz") == 0 or die $!;
+
 done_testing();
 
 #
@@ -84,9 +86,11 @@ sub write_config {
     my ($testdir) = @_;
     my $config = File::Spec->catfile($testdir, 'tephra_all_config.yml');
 
+    system('gzip', "$testdir/ref.fas") == 0 or die $!;
+
     my $conf = "all:
   - logfile:          $testdir/tephra_full.log
-  - genome:           $testdir/ref.fas
+  - genome:           $testdir/ref.fas.gz
   - outfile:          $testdir/tephra_transposons.gff3
   - repeatdb:         $testdir/repdb.fas 
   - trnadb:           TephraDB
