@@ -58,19 +58,6 @@ sub write_element_parts {
     return;
 }
 
-#sub collate {
-#    my $self = shift;
-#    my ($file_in, $fh_out) = @_;
-#    my $lines = do { 
-#	local $/ = undef; 
-#	open my $fh_in, '<', $file_in or die "\n[ERROR]: Could not open file: $file_in\n";
-#	<$fh_in>;
-#    };
-#    print $fh_out $lines;
-
-#    return;
-#}
-
 #sub _adjust_identifiers {
 #    my $self = shift;
 #    my ($fasta) = @_;
