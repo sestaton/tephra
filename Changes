@@ -1,6 +1,18 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.12.3	11/05/2018	Vancouver, BC
+
+- Add support for compressed input to 'all' command.
+- Bug fix for 'age' command with LTR/TIR coordinates being redefined and thus
+  not being processed correctly.
+- Bug fix for target_site_duplication being assigned a parent of the TE instead
+  of repeat_region.
+- Bug fix for defining the path to search for index files for 'findltr' and
+  'findtir' commands.
+- Bug fix for 'findtirs' command reporting TIRs the same length of the full
+  element span (this is bug in 'gt tirvish' but it is handled now).
+
 0.12.2	09/24/2018	Vancouver, BC
 
 - Modify the algoritm for how chromosomes/contigs are processed with the 'maskref'
