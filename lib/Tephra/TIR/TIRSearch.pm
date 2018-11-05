@@ -100,19 +100,22 @@ sub _filter_tir_gff {
 
     my @rt = qw(rve rvt rvp gag chromo);
     
+    my @rt_domains;
     for my $rep_region (keys %$features) {
         for my $tir_feature (@{$features->{$rep_region}}) {
 	    if ($tir_feature->{type} eq 'protein_match') {
 		my $pdom_name = $tir_feature->{attributes}{name}[0];
 		if ($pdom_name =~ /rve|rvt|rvp|gag|chromo|rnase|athila|zf/i) {
 		    # should perhaps make filtering an option
-		    delete $features->{$rep_region};
+		    #delete $features->{$rep_region};
+		    push @rt_domains, $rep_region;
 		}
 	    }
 	}
     }
+    delete $features->{$_} for @rt_domains;
 
-    my ($seq_id, $source, $tir_start, $tir_end, $tir_feats, $strand);
+    my ($seq_id, $source, $tir_start, $tir_end, $tir_feats, $strand, $fas_id);
     my $skip_region = 0;
     for my $rep_region (nsort_by { m/repeat_region\d+\|\|(\d+)\|\|\d+/ and $1 } keys %$features) {
 	my ($rreg_id, $start, $end) = split /\|\|/, $rep_region;
@@ -123,6 +126,7 @@ sub _filter_tir_gff {
 		my $elem_id = $tir_feature->{attributes}{ID}[0];
 		($seq_id, $source, $tir_start, $tir_end, $strand) 
 		    = @{$tir_feature}{qw(seq_id source start end strand)};
+		$fas_id = join "_", $elem_id, $seq_id, $tir_start, $tir_end;
             }
 	    ## NB: This is to bypass a bug in TIRvish which outputs a TIR element with two TIRs 
 	    ## of identical length to the full element (10/29/2018 SES)
@@ -142,6 +146,8 @@ sub _filter_tir_gff {
 	    chomp $tir_feats;
 	    say $out join "\t", $seq_id, $source, 'repeat_region', $start, $end, '.', $strand, '.', "ID=$rreg_id";
 	    say $out $tir_feats;
+
+	    $self->write_element_parts($index, $seq_id, $tir_start, $tir_end, $faout, $fas_id);
 	}
 
 	undef $tir_feats;
