@@ -103,6 +103,7 @@ sub _classify_tir_superfamilies {
     my ($header, $features) = $classify_obj->collect_gff_features($opt->{ingff});
 
     my $all_ct = (keys %$features);
+    my $mite_obj = $classify_obj->find_mites($features, $header, $index, $log);
     my ($tcmoutfile, $tcmfas, $tc1_ct) = $classify_obj->find_tc1_mariner($features, $header, $index, $log);
     my ($hatoutfile, $hatfas, $hat_ct) = $classify_obj->find_hat($features, $header, $index, $log);
     my ($mutoutfile, $mutfas, $mut_ct) = $classify_obj->find_mutator($features, $header, $index, $log);
@@ -110,9 +111,9 @@ sub _classify_tir_superfamilies {
     my $unc_obj = $classify_obj->write_unclassified_tirs($features, $header, $index, $log);
 
     my @fastas = grep { defined && /\.fasta$/ } 
-        ($tcmfas, $hatfas, $mutfas, $cacfas, $unc_obj->{unc_fasta}, $unc_obj->{mite_fasta});
+        ($tcmfas, $hatfas, $mutfas, $cacfas, $unc_obj->{unc_fasta}, $mite_obj->{mite_fasta});
     my @gffs = grep { defined && /\.gff3$/ } 
-        ($tcmoutfile, $hatoutfile, $mutoutfile, $cacoutfile, $unc_obj->{unc_outfile}, $unc_obj->{mite_outfile});
+        ($tcmoutfile, $hatoutfile, $mutoutfile, $cacoutfile, $unc_obj->{unc_outfile}, $mite_obj->{mite_outfile});
 
     my %gffs;
     for my $file (@gffs) {
@@ -139,14 +140,14 @@ sub _classify_tir_superfamilies {
     if (@fastas && @gffs) {
 	unlink $_ for @fastas;
 	
-	$unc_obj->{mite_count} //= 0;
+	$mite_obj->{mite_count} //= 0;
 	$unc_obj->{unc_count} //= 0;
 	my $tot_str = sprintf("%-70s %-10s", "Results - Total number of TIR elements:", $all_ct);
 	my $tc1_str = sprintf("%-70s %-10s", "Results - Number of Tc1-Mariner elements:", $tc1_ct);
 	my $hat_str = sprintf("%-70s %-10s", "Results - Number of hAT elements:", $hat_ct);
 	my $mut_str = sprintf("%-70s %-10s", "Results - Number of Mutator elements:", $mut_ct);
 	my $cac_str = sprintf("%-70s %-10s", "Results - Number of CACTA elements:", $cac_ct);
-	my $mte_str = sprintf("%-70s %-10s", "Results - Number of MITE elements:", $unc_obj->{mite_count});
+	my $mte_str = sprintf("%-70s %-10s", "Results - Number of MITE elements:", $mite_obj->{mite_count});
 	my $unc_str = sprintf("%-70s %-10s", "Results - Number of unclassified TIR elements:", $unc_obj->{unc_count});
 
 	$log->info($tot_str);
@@ -157,7 +158,7 @@ sub _classify_tir_superfamilies {
 	$log->info($mte_str);
 	$log->info($unc_str);
 
-	return (\%gffs, $unc_obj->{mite_index}, $log);
+	return (\%gffs, $mite_obj->{mite_index}, $log);
     }
     else {
 	say STDERR "\n[WARNING]: No TIR elements were classified. Check input.\n";
