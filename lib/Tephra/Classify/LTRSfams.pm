@@ -12,6 +12,7 @@ use IPC::System::Simple qw(capture);
 use List::UtilsBy       qw(nsort_by);
 use Cwd                 qw(getcwd abs_path);
 use Path::Class         qw(file);
+use Sort::Naturally     qw(nsort);
 use Try::Tiny;
 #use Data::Dump::Color;
 use namespace::autoclean;
@@ -95,90 +96,92 @@ sub find_gypsy_copia {
     my @gyp_exp = qw(gag asp RVT_1 RNash_H rve Chromo);
     
     my $strand;
-    for my $rep_region (keys %$features) {
-	for my $ltr_feature (@{$features->{$rep_region}}) {
-	    $strand = $ltr_feature->{strand};
-	    if ($ltr_feature->{type} eq 'protein_match') {
-		my $pdom_name = $ltr_feature->{attributes}{name}[0];
-		push @all_pdoms, $pdom_name;
-	    }
-	}
-	if (@all_pdoms) {
-	    $pdom_org = join ",", @all_pdoms;
-	    @all_pdoms = reverse @all_pdoms if $strand eq '-';
-	    # gypsy -> gag,ap,int,rt,rh
-	    # copia -> gag,ap,rt,rh,int
-	    #
-	    # model names: gag|retrotransposon_gag
-	    # NAME  UBN2_2
-	    # DESC  gag-polypeptide of LTR copia-type
-	    # NAME  UBN2_3
-
-	    # DESC  gag-polypeptide of LTR copia-type
-	    # NAME  UBN2
-	    # DESC  gag-polypeptide of LTR copia-type
-	    # REF   The nucleotide sequence of Drosophila melanogaster copia-specific 2.1-kb mRNA.Nucleic Acids Res. 1989 Mar 11; 17(5):2134
-	    # NAME  Retrotrans_gag
-	    # DESC  Retrotransposon gag protein
-	    
-	    # NAME  gag-asp_proteas
-	    # DESC  gag-polyprotein putative aspartyl protease
-	    
-	    # NAME  gag_pre-integrs
-	    # DESC  GAG-pre-integrase domain
-	    # NAME  rve
-	    # DESC  Integrase core domain
-	    
-	    # NAME  RVT_1
-	    # DESC  Reverse transcriptase (RNA-dependent DNA polymerase)
-	    # NAME  RVT_2
-	    # DESC  Reverse transcriptase (RNA-dependent DNA polymerase)
-	    # NAME  RVT_3
-	    # DESC  Reverse transcriptase-like
-	    
-	    # NAME  RNase_H
-	    # DESC  RNase H
-	    
-	    # NAME  Chromo
-	    # DESC  Chromo (CHRromatin Organisation MOdifier) domain
-	    #say STDERR join q{ }, "strand: $strand", $pdom_org;
-	    my ($gyp_org, $cop_org);
-	    my ($gyp_dom_ct, $cop_dom_ct) = (0, 0);
-	    if (grep { /rvt_2|ubn2/i && ! /rvt_1|chromo/i } @all_pdoms) {
-		for my $d (@cop_exp) {
-		    for my $p (@all_pdoms) {
-			$cop_dom_ct++ if $p =~ /$d/i;
-		    }
+    for my $seq_id (keys %$features) {
+	for my $rep_region (keys %{$features->{$seq_id}}) {
+	    for my $ltr_feature (@{$features->{$seq_id}{$rep_region}}) {
+		$strand = $ltr_feature->{strand};
+		if ($ltr_feature->{type} eq 'protein_match') {
+		    my $pdom_name = $ltr_feature->{attributes}{name}[0];
+		    push @all_pdoms, $pdom_name;
 		}
 	    }
-	    
-	    if (grep { /rvt_1|chromo/i && ! /rvt_2|ubn2/i } @all_pdoms) {
-		for my $d (@gyp_exp) {
-		    for my $p (@all_pdoms) {
-			$gyp_dom_ct++ if $p =~ /$d/i;
+	    if (@all_pdoms) {
+		$pdom_org = join ",", @all_pdoms;
+		@all_pdoms = reverse @all_pdoms if $strand eq '-';
+		# gypsy -> gag,ap,int,rt,rh
+		# copia -> gag,ap,rt,rh,int
+		#
+		# model names: gag|retrotransposon_gag
+		# NAME  UBN2_2
+		# DESC  gag-polypeptide of LTR copia-type
+		# NAME  UBN2_3
+		
+		# DESC  gag-polypeptide of LTR copia-type
+		# NAME  UBN2
+		# DESC  gag-polypeptide of LTR copia-type
+		# REF   The nucleotide sequence of Drosophila melanogaster copia-specific 2.1-kb mRNA.Nucleic Acids Res. 1989 Mar 11; 17(5):2134
+		# NAME  Retrotrans_gag
+		# DESC  Retrotransposon gag protein
+		
+		# NAME  gag-asp_proteas
+		# DESC  gag-polyprotein putative aspartyl protease
+		
+		# NAME  gag_pre-integrs
+		# DESC  GAG-pre-integrase domain
+		# NAME  rve
+		# DESC  Integrase core domain
+		
+		# NAME  RVT_1
+		# DESC  Reverse transcriptase (RNA-dependent DNA polymerase)
+		# NAME  RVT_2
+		# DESC  Reverse transcriptase (RNA-dependent DNA polymerase)
+		# NAME  RVT_3
+		# DESC  Reverse transcriptase-like
+		
+		# NAME  RNase_H
+		# DESC  RNase H
+		
+		# NAME  Chromo
+		# DESC  Chromo (CHRromatin Organisation MOdifier) domain
+		#say STDERR join q{ }, "strand: $strand", $pdom_org;
+		my ($gyp_org, $cop_org);
+		my ($gyp_dom_ct, $cop_dom_ct) = (0, 0);
+		if (grep { /rvt_2|ubn2/i && ! /rvt_1|chromo/i } @all_pdoms) {
+		    for my $d (@cop_exp) {
+			for my $p (@all_pdoms) {
+			    $cop_dom_ct++ if $p =~ /$d/i;
+			}
 		    }
 		}
+		
+		if (grep { /rvt_1|chromo/i && ! /rvt_2|ubn2/i } @all_pdoms) {
+		    for my $d (@gyp_exp) {
+			for my $p (@all_pdoms) {
+			    $gyp_dom_ct++ if $p =~ /$d/i;
+			}
+		    }
+		}
+		
+		if ($gyp_dom_ct >= 1) {
+		    $gypsy{$seq_id}{$rep_region} = $features->{$seq_id}{$rep_region};
+		    delete $features->{$seq_id}{$rep_region};
+		}
+		elsif ($cop_dom_ct >= 1) {
+		    $copia{$seq_id}{$rep_region} = $features->{$seq_id}{$rep_region};
+		    delete $features->{$seq_id}{$rep_region};
+		}
+		
+		$gyp_dom_ct = 0;
+		$cop_dom_ct = 0;
+		$is_gypsy   = 0;
+		$is_copia   = 0;
+		
+		undef $pdom_org;
+		@all_pdoms = ();
 	    }
-	    
-	    if ($gyp_dom_ct >= 1) {
-		$gypsy{$rep_region} = $features->{$rep_region};
-		delete $features->{$rep_region};
-	    }
-	    elsif ($cop_dom_ct >= 1) {
-		$copia{$rep_region} = $features->{$rep_region};
-		delete $features->{$rep_region};
-	    }
-	    
-	    $gyp_dom_ct = 0;
-	    $cop_dom_ct = 0;
-	    $is_gypsy   = 0;
-	    $is_copia   = 0;
+	}    
+    }
 
-	    undef $pdom_org;
-	    @all_pdoms = ();
-	}
-    }    
-    
     return (\%gypsy, \%copia);
 }
 
@@ -196,17 +199,19 @@ sub find_unclassified {
 
     open my $ofas, '>>', $outfast or die "\n[ERROR]: Could not open file: $outfast\n";
 
-    for my $rep_region (keys %$features) {
-	for my $ltr_feature (@{$features->{$rep_region}}) {
-	    if ($ltr_feature->{type} =~ /(?:LTR|TRIM)_retrotransposon/) {
-		my ($seq_id, $start, $end) = @{$ltr_feature}{qw(seq_id start end)};
-		my $elem = $ltr_feature->{attributes}{ID}[0];
-		my $id = join "_", $elem, $seq_id, $start, $end;
-		$ltr_rregion_map{$id} = $rep_region;
-		
-		my ($seq, $length) = $self->get_full_seq($index, $seq_id, $start, $end);
-		$seq =~ s/.{60}\K/\n/g;
-		say $ofas join "\n", ">".$id, $seq;
+    for my $seq_id (keys %$features) {
+	for my $rep_region (keys %{$features->{$seq_id}}) {
+	    for my $ltr_feature (@{$features->{$seq_id}{$rep_region}}) {
+		if ($ltr_feature->{type} =~ /(?:LTR|TRIM)_retrotransposon/) {
+		    my ($seq_id, $start, $end) = @{$ltr_feature}{qw(seq_id start end)};
+		    my $elem = $ltr_feature->{attributes}{ID}[0];
+		    my $id = join "_", $elem, $seq_id, $start, $end;
+		    $ltr_rregion_map{$id} = join "||", $seq_id, $rep_region;
+		    
+		    my ($seq, $length) = $self->get_full_seq($index, $seq_id, $start, $end);
+		    $seq =~ s/.{60}\K/\n/g;
+		    say $ofas join "\n", ">".$id, $seq;
+		}
 	    }
 	}
     }
@@ -254,14 +259,20 @@ sub annotate_unclassified {
 
 	if ($f[2] >= $hit_pid && $f[3] >= $hit_length) {
 	    if (exists $family_map->{$f[1]}) {
+		my ($seq_id, $rregion) = split /\|\|/, $ltr_rregion_map->{$f[0]};
 		my $sf = $family_map->{$f[1]};
 		if ($sf =~ /^rlg|gypsy/i) {
-		    $gypsy->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
-		    delete $features->{ $ltr_rregion_map->{$f[0]} };
+		    #$gypsy->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
+		    #delete $features->{ $ltr_rregion_map->{$f[0]} };
+		    $gypsy->{ $seq_id }{ $rregion } = $features->{ $seq_id }{ $rregion };
+                    delete $features->{ $seq_id }{ $rregion };
+
 		}
 		elsif ($sf =~ /^rlc|copia/i) {
-		    $copia->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
-		    delete $features->{ $ltr_rregion_map->{$f[0]} };
+		    #$copia->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
+		    #delete $features->{ $ltr_rregion_map->{$f[0]} };
+		    $copia->{ $seq_id }{ $rregion } = $features->{ $seq_id  }{ $rregion };
+                    delete $features->{ $seq_id }{ $rregion };
 		}
 	    }
 	}
@@ -293,35 +304,37 @@ sub write_gypsy {
     say $out $header;
     
     my ($seq_id, $source, $start, $end, $strand);
-    for my $rep_region (nsort_by { m/repeat_region\d+\|\|(\d+)\|\|\d+/ and $1 } keys %$gypsy) {
-	my ($rreg, $s, $e) = split /\|\|/, $rep_region;
-	for my $ltr_feature (@{$gypsy->{$rep_region}}) {
-	    if ($ltr_feature->{type} eq 'protein_match') {
-		$has_pdoms = 1;
-		my $pdom_name = $ltr_feature->{attributes}{name}[0];
-		push @all_pdoms, $pdom_name;
+    for my $chr_id (nsort keys %$gypsy) {
+	for my $rep_region (nsort_by { m/repeat_region\d+\.?\d+?\|\|(\d+)\|\|\d+/ and $1 } keys %{$gypsy->{$chr_id}}) {
+	    my ($rreg, $s, $e) = split /\|\|/, $rep_region;
+	    for my $ltr_feature (@{$gypsy->{$chr_id}{$rep_region}}) {
+		if ($ltr_feature->{type} eq 'protein_match') {
+		    $has_pdoms = 1;
+		    my $pdom_name = $ltr_feature->{attributes}{name}[0];
+		    push @all_pdoms, $pdom_name;
+		}
+		if ($ltr_feature->{type} =~ /(?:LTR|TRIM|LARD)_retrotransposon/) {
+		    ($seq_id, $source, $start, $end, $strand) 
+			= @{$ltr_feature}{qw(seq_id source start end strand)};
+		    $strand //= '?';
+		    my $ltrlen = $end - $start + 1;
+		    push @lengths, $ltrlen;
+		}
+		my $gff3_str = gff3_format_feature($ltr_feature);
+		$gyp_feats .= $gff3_str;
 	    }
-	    if ($ltr_feature->{type} =~ /(?:LTR|TRIM)_retrotransposon/) {
-		($seq_id, $source, $start, $end, $strand) 
-		    = @{$ltr_feature}{qw(seq_id source start end strand)};
-		$strand //= '?';
-		my $ltrlen = $end - $start + 1;
-		push @lengths, $ltrlen;
-	    }
-	    my $gff3_str = gff3_format_feature($ltr_feature);
-	    $gyp_feats .= $gff3_str;
+	    chomp $gyp_feats;
+	    say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg";
+	    say $out $gyp_feats;
+	    
+	    $pdom_org = join ",", @all_pdoms;
+	    $pdom_index{$strand}{$pdom_org}++ if $pdom_org;
+	    $pdoms++ if $has_pdoms;
+	    undef $gyp_feats;
+	    undef $pdom_org;
+	    @all_pdoms = ();
+	    $has_pdoms = 0;
 	}
-	chomp $gyp_feats;
-	say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg";
-	say $out $gyp_feats;
-	
-	$pdom_org = join ",", @all_pdoms;
-	$pdom_index{$strand}{$pdom_org}++ if $pdom_org;
-	$pdoms++ if $has_pdoms;
-	undef $gyp_feats;
-	undef $pdom_org;
-	@all_pdoms = ();
-	$has_pdoms = 0;
     }
     close $out;
     
@@ -359,34 +372,36 @@ sub write_copia {
     say $out $header;
 
     my ($seq_id, $source, $start, $end, $strand);
-    for my $rep_region (nsort_by { m/repeat_region\d+\|\|(\d+)\|\|\d+/ and $1 } keys %$copia) {
-        my ($rreg, $s, $e) = split /\|\|/, $rep_region;
-        for my $ltr_feature (@{$copia->{$rep_region}}) {
-            if ($ltr_feature->{type} eq 'protein_match') {
-                $has_pdoms = 1;
-                my $pdom_name = $ltr_feature->{attributes}{name}[0];
-                push @all_pdoms, $pdom_name;
-            }
-            if ($ltr_feature->{type} =~ /(?:LTR|TRIM)_retrotransposon/) {
-		($seq_id, $source, $start, $end, $strand) 
-		    = @{$ltr_feature}{qw(seq_id source start end strand)};
-                my $ltrlen = $end - $start + 1;
-                push @lengths, $ltrlen;
-            }
-            my $gff3_str = gff3_format_feature($ltr_feature);
-            $cop_feats .= $gff3_str;
-        }
-        chomp $cop_feats;
-        say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg";
-        say $out $cop_feats;
-
-	$pdom_org = join ",", @all_pdoms;
-	$pdom_index{$strand}{$pdom_org}++ if $pdom_org;
-	$pdoms++ if $has_pdoms;
-	undef $cop_feats;
-	undef $pdom_org;
-	@all_pdoms = ();
-	$has_pdoms = 0;
+    for my $chr_id (nsort keys %$copia) {
+	for my $rep_region (nsort_by { m/repeat_region\d+\.?\d+?\|\|(\d+)\|\|\d+/ and $1 } keys %{$copia->{$chr_id}}) {
+	    my ($rreg, $s, $e) = split /\|\|/, $rep_region;
+	    for my $ltr_feature (@{$copia->{$chr_id}{$rep_region}}) {
+		if ($ltr_feature->{type} eq 'protein_match') {
+		    $has_pdoms = 1;
+		    my $pdom_name = $ltr_feature->{attributes}{name}[0];
+		    push @all_pdoms, $pdom_name;
+		}
+		if ($ltr_feature->{type} =~ /(?:LTR|TRIM)_retrotransposon/) {
+		    ($seq_id, $source, $start, $end, $strand) 
+			= @{$ltr_feature}{qw(seq_id source start end strand)};
+		    my $ltrlen = $end - $start + 1;
+		    push @lengths, $ltrlen;
+		}
+		my $gff3_str = gff3_format_feature($ltr_feature);
+		$cop_feats .= $gff3_str;
+	    }
+	    chomp $cop_feats;
+	    say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg";
+	    say $out $cop_feats;
+	    
+	    $pdom_org = join ",", @all_pdoms;
+	    $pdom_index{$strand}{$pdom_org}++ if $pdom_org;
+	    $pdoms++ if $has_pdoms;
+	    undef $cop_feats;
+	    undef $pdom_org;
+	    @all_pdoms = ();
+	    $has_pdoms = 0;
+	}
     }
     close $out;
 
@@ -421,64 +436,66 @@ sub write_unclassified {
     say $out $header;
 
     my ($seq_id, $source, $start, $end, $strand, $ltrlen, $unc_feats);
-    for my $rep_region (nsort_by { m/repeat_region\d+\|\|(\d+)\|\|\d+/ and $1 } keys %$features) {
-        my ($rreg, $s, $e) = split /\|\|/, $rep_region;
-        for my $ltr_feature (@{$features->{$rep_region}}) {
-            if ($ltr_feature->{type} eq 'protein_match') {
-                $has_pdoms = 1;
-                my $pdom_name = $ltr_feature->{attributes}{name}[0];
-                push @all_pdoms, $pdom_name;
-            }
-            if ($ltr_feature->{type} =~ /(?:LTR|TRIM)_retrotransposon/) {
-		($seq_id, $source, $start, $end, $strand) 
-		    = @{$ltr_feature}{qw(seq_id source start end strand)};
-		$strand //= '?';
-                $ltrlen = $end - $start + 1;
-                #push @lengths, $ltrlen;
-            }
-            my $gff3_str = gff3_format_feature($ltr_feature);
-            $unc_feats .= $gff3_str;
-        }
-        chomp $unc_feats;
-        say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg";
-        if ($has_pdoms) { 
-	    say $out $unc_feats;
-	    push @unc_lengths, $ltrlen;
-	}
-	else {
-	    my $unc_lard_feats = $self->_format_lard_features($unc_feats);
-	    if ($unc_lard_feats->{is_lard}) { 
-		say $out $unc_lard_feats->{unc_feats};
-		push @lard_lengths, $ltrlen;
-		$lard_index{ $unc_lard_feats->{old_id} } = $unc_lard_feats->{new_id};
+    for my $chr_id (nsort keys %$features) {
+	for my $rep_region (nsort_by { m/repeat_region\d+\.?\d+?\|\|(\d+)\|\|\d+/ and $1 } keys %{$features->{$chr_id}}) {
+	    my ($rreg, $s, $e) = split /\|\|/, $rep_region;
+	    for my $ltr_feature (@{$features->{$chr_id}{$rep_region}}) {
+		if ($ltr_feature->{type} eq 'protein_match') {
+		    $has_pdoms = 1;
+		    my $pdom_name = $ltr_feature->{attributes}{name}[0];
+		    push @all_pdoms, $pdom_name;
+		}
+		if ($ltr_feature->{type} =~ /(?:LTR|TRIM)_retrotransposon/) {
+		    ($seq_id, $source, $start, $end, $strand) 
+			= @{$ltr_feature}{qw(seq_id source start end strand)};
+		    $strand //= '?';
+		    $ltrlen = $end - $start + 1;
+		    #push @lengths, $ltrlen;
+		}
+		my $gff3_str = gff3_format_feature($ltr_feature);
+		$unc_feats .= $gff3_str;
+	    }
+	    chomp $unc_feats;
+	    say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg";
+	    if ($has_pdoms) { 
+		say $out $unc_feats;
+		push @unc_lengths, $ltrlen;
 	    }
 	    else {
-		say $out $unc_feats;
-                push @unc_lengths, $ltrlen;
+		my $unc_lard_feats = $self->_format_lard_features($unc_feats);
+		if ($unc_lard_feats->{is_lard}) { 
+		    say $out $unc_lard_feats->{unc_feats};
+		    push @lard_lengths, $ltrlen;
+		    $lard_index{ $unc_lard_feats->{old_id} } = $unc_lard_feats->{new_id};
+		}
+		else {
+		    say $out $unc_feats;
+		    push @unc_lengths, $ltrlen;
+		}
 	    }
+	    
+	    $pdom_org = join ",", @all_pdoms;
+	    $pdom_index{$strand}{$pdom_org}++ if $pdom_org;
+	    $pdoms++ if $has_pdoms;
+	    @all_pdoms = ();
+	    
+	    $has_pdoms = 0;
+	    undef $unc_feats;
+	    undef $pdom_org;
 	}
-
-	$pdom_org = join ",", @all_pdoms;
-	$pdom_index{$strand}{$pdom_org}++ if $pdom_org;
-	$pdoms++ if $has_pdoms;
-	@all_pdoms = ();
-
-	$has_pdoms = 0;
-	undef $unc_feats;
-	undef $pdom_org;
     }
     close $out;
-
+	
     $self->write_superfam_pdom_organization({ pdom_index => \%pdom_index, outfile => $domoutfile })
-        if %pdom_index;
+	if %pdom_index;
     unlink $domoutfile unless -s $domoutfile;
-
+    
     if (@unc_lengths || @lard_lengths) {
 	my $unc_count = 
 	    $self->log_basic_element_stats({ lengths => \@unc_lengths, type => 'unclassified LTR-RT', log => $log, pdom_ct => $pdoms });
 	my $lard_count =
-            $self->log_basic_element_stats({ lengths => \@lard_lengths, type => 'LARD', log => $log, pdom_ct => 0 });
-
+	    $self->log_basic_element_stats({ lengths => \@lard_lengths, type => 'LARD', log => $log, pdom_ct => 0 });
+	
 	return ($outfile, \%lard_index);
     }
     else { 
