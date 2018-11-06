@@ -63,7 +63,8 @@ sub calculate_family_similarity {
 	    }
 	    close $out;
 	    my $result = $self->_do_blast_search($fam, $famsize, $fas, $threads, $lengths{$fam});
-	    push @results, $result;
+	    push @results, $result 
+		if defined $result;
 	    unlink $fas;
 	}
     }
@@ -355,6 +356,7 @@ sub _do_blast_search {
 					  sort    => 'bitscore' });
 
     open my $in, '<', $blast_report or die "\n[ERROR]: Could not open file: $blast_report\n";
+    return undef unless -e $blast_report && -s $blast_report;
 
     my (%hits, @pid, @lengths, %uniq);
     while (my $line = <$in>) {
