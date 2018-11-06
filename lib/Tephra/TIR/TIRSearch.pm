@@ -3,12 +3,14 @@ package Tephra::TIR::TIRSearch;
 use 5.014;
 use Moose;
 use Bio::GFF3::LowLevel qw(gff3_format_feature);
+use List::MoreUtils     qw(uniq);
 use List::UtilsBy       qw(nsort_by);
 use Cwd                 qw(abs_path);
 use File::Copy          qw(move);
 use File::Path          qw(remove_tree);
 use File::Spec;
 use File::Basename;
+use Sort::Naturally;
 use Path::Class::File;
 use Try::Tiny;
 use Tephra::Config::Exe;
@@ -101,57 +103,67 @@ sub _filter_tir_gff {
     my @rt = qw(rve rvt rvp gag chromo);
     
     my @rt_domains;
-    for my $rep_region (keys %$features) {
-        for my $tir_feature (@{$features->{$rep_region}}) {
-	    if ($tir_feature->{type} eq 'protein_match') {
-		my $pdom_name = $tir_feature->{attributes}{name}[0];
-		if ($pdom_name =~ /rve|rvt|rvp|gag|chromo|rnase|athila|zf/i) {
-		    # should perhaps make filtering an option
-		    #delete $features->{$rep_region};
-		    push @rt_domains, $rep_region;
+    for my $seq_id (keys %$features) {
+	for my $rep_region (keys %{$features->{$seq_id}}) {
+	    for my $tir_feature (@{$features->{$seq_id}{$rep_region}}) {
+		if ($tir_feature->{type} eq 'protein_match') {
+		    my $pdom_name = $tir_feature->{attributes}{name}[0];
+		    #say STDERR "pdom: $pdom_name";
+		    if ($pdom_name =~ /rve|rvt|rvp|gag|chromo|rnase|athila|zf-cchc|ubn2/i) {
+			# should perhaps make filtering an option
+			#delete $features->{$seq_id}{$rep_region};
+			push @rt_domains, join "~~", $seq_id, $rep_region;
+		    }
 		}
 	    }
 	}
     }
-    delete $features->{$_} for @rt_domains;
-
+    
+    @rt_domains = uniq(@rt_domains);
+     for my $rep_region (@rt_domains) {
+	my ($chr, $rregion) = split /\~\~/, $rep_region;
+	delete $features->{$chr}{$rregion};
+    }
+ 
     my ($seq_id, $source, $tir_start, $tir_end, $tir_feats, $strand, $fas_id);
     my $skip_region = 0;
-    for my $rep_region (nsort_by { m/repeat_region\d+\|\|(\d+)\|\|\d+/ and $1 } keys %$features) {
-	my ($rreg_id, $start, $end) = split /\|\|/, $rep_region;
-	my $len = $end - $start + 1;
-
-	for my $tir_feature (@{$features->{$rep_region}}) {
-	    if ($tir_feature->{type} eq 'terminal_inverted_repeat_element') {
-		my $elem_id = $tir_feature->{attributes}{ID}[0];
-		($seq_id, $source, $tir_start, $tir_end, $strand) 
-		    = @{$tir_feature}{qw(seq_id source start end strand)};
-		$fas_id = join "_", $elem_id, $seq_id, $tir_start, $tir_end;
-            }
-	    ## NB: This is to bypass a bug in TIRvish which outputs a TIR element with two TIRs 
-	    ## of identical length to the full element (10/29/2018 SES)
-	    if ($tir_feature->{type} eq 'terminal_inverted_repeat') {
-		my ($rep_seq_id, $rep_source, $rep_tir_start, $rep_tir_end, $rep_strand)
-                    = @{$tir_feature}{qw(seq_id source start end strand)};
-		if ($tir_start == $rep_tir_start && $tir_end == $rep_tir_end) {
-		    $skip_region++;
+    for my $chr_id (nsort keys %$features) {
+	for my $rep_region (nsort_by { m/repeat_region\d+\.?\d+?\|\|(\d+)\|\|\d+/ and $1 } keys %{$features->{$chr_id}}) {
+	    my ($rreg_id, $start, $end) = split /\|\|/, $rep_region;
+	    my $len = $end - $start + 1;
+	    
+	    for my $tir_feature (@{$features->{$chr_id}{$rep_region}}) {
+		if ($tir_feature->{type} eq 'terminal_inverted_repeat_element') {
+		    my $elem_id = $tir_feature->{attributes}{ID}[0];
+		    ($seq_id, $source, $tir_start, $tir_end, $strand) 
+			= @{$tir_feature}{qw(seq_id source start end strand)};
+		    $fas_id = join "_", $elem_id, $seq_id, $tir_start, $tir_end;
 		}
+		## NB: This is to bypass a bug in TIRvish which outputs a TIR element with two TIRs 
+		## of identical length to the full element (10/29/2018 SES)
+		if ($tir_feature->{type} eq 'terminal_inverted_repeat') {
+		    my ($rep_seq_id, $rep_source, $rep_tir_start, $rep_tir_end, $rep_strand)
+			= @{$tir_feature}{qw(seq_id source start end strand)};
+		    if ($tir_start == $rep_tir_start && $tir_end == $rep_tir_end) {
+			$skip_region++;
+		    }
+		}
+		
+		my $gff3_str = gff3_format_feature($tir_feature);
+		$tir_feats .= $gff3_str;
 	    }
 
-	    my $gff3_str = gff3_format_feature($tir_feature);
-	    $tir_feats .= $gff3_str;
+	    unless ($skip_region == 2) {
+		chomp $tir_feats;
+		say $out join "\t", $seq_id, $source, 'repeat_region', $start, $end, '.', $strand, '.', "ID=$rreg_id";
+		say $out $tir_feats;
+		
+		$self->write_element_parts($index, $seq_id, $tir_start, $tir_end, $faout, $fas_id);
+	    }
+
+	    undef $tir_feats;
+	    $skip_region = 0;
 	}
-
-	unless ($skip_region == 2) {
-	    chomp $tir_feats;
-	    say $out join "\t", $seq_id, $source, 'repeat_region', $start, $end, '.', $strand, '.', "ID=$rreg_id";
-	    say $out $tir_feats;
-
-	    $self->write_element_parts($index, $seq_id, $tir_start, $tir_end, $faout, $fas_id);
-	}
-
-	undef $tir_feats;
-	$skip_region = 0;
     }
     close $out;
 
