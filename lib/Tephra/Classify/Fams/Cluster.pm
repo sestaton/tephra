@@ -88,8 +88,8 @@ sub extract_ltr_features {
 
         if ($feature->{type} =~ /(?:LTR|TRIM|LARD)_retrotransposon/) {
             my $elem_id = @{$feature->{attributes}{ID}}[0];
-            my ($start, $end) = @{$feature}{qw(start end)};
-            my $key = join "||", $elem_id, $start, $end;
+            my ($seq_id, $start, $end) = @{$feature}{qw(seq_id start end)};
+            my $key = join "||", $elem_id, $seq_id, $start, $end;
             $ltrs{$key}{'full'} = join "||", @{$feature}{qw(seq_id type start end)};
             $coord_map{$elem_id} = join "||", @{$feature}{qw(seq_id start end)};
 	}
@@ -97,10 +97,10 @@ sub extract_ltr_features {
             my $parent = @{$feature->{attributes}{Parent}}[0];
             my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
             if ($seq_id eq $feature->{seq_id}) {
-                my ($seq_id, $type, $start, $end, $strand) = 
+                my ($ltr_seq_id, $ltr_type, $ltr_start, $ltr_end, $ltr_strand) = 
                     @{$feature}{qw(seq_id type start end strand)};
-                $strand //= '?';
-                my $ltrkey = join "||", $seq_id, $type, $start, $end, $strand;
+                $ltr_strand //= '?';
+                my $ltrkey = join "||", $ltr_seq_id, $ltr_type, $ltr_start, $ltr_end, $ltr_strand;
                 push @{$ltrs{$pkey}{'ltrs'}}, $ltrkey unless exists $seen{$ltrkey};
                 $seen{$ltrkey} = 1;
             }
@@ -139,8 +139,8 @@ sub extract_ltr_features {
 
     my (%pdoms, %seen_pdoms, %lrange);
     my $ltrct = 0;
-    for my $ltr (sort keys %ltrs) {
-        my ($element, $rstart, $rend) = split /\|\|/, $ltr;
+    for my $ltr (nsort keys %ltrs) {
+        my ($element, $seq_id, $rstart, $rend) = split /\|\|/, $ltr;
         # full element
         my ($source, $prim_tag, $fstart, $fend) = split /\|\|/, $ltrs{$ltr}{'full'};
 	my $fullid = join "_", $element, $source, $fstart, $fend;
@@ -236,8 +236,8 @@ sub extract_tir_features {
 
         if ($feature->{type} =~ /terminal_inverted_repeat_element|MITE/) {
             my $elem_id = @{$feature->{attributes}{ID}}[0];
-            my ($start, $end) = @{$feature}{qw(start end)};
-            my $key = join "||", $elem_id, $start, $end;
+            my ($seq_id, $start, $end) = @{$feature}{qw(seq_id start end)};
+            my $key = join "||", $elem_id, $seq_id, $start, $end;
             $tirs{$key}{'full'} = join "||", @{$feature}{qw(seq_id type start end)};
             $coord_map{$elem_id} = join "||", @{$feature}{qw(seq_id start end)};
         }
@@ -245,10 +245,10 @@ sub extract_tir_features {
             my $parent = @{$feature->{attributes}{Parent}}[0];
             my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
             if ($seq_id eq $feature->{seq_id}) {
-                my ($seq_id, $type, $start, $end, $strand) = 
+                my ($tir_seq_id, $tir_type, $tir_start, $tir_end, $tir_strand) = 
                     @{$feature}{qw(seq_id type start end strand)};
-                $strand //= '?';
-                my $tirkey = join "||", $seq_id, $type, $start, $end, $strand;
+                $tir_strand //= '?';
+                my $tirkey = join "||", $tir_seq_id, $tir_type, $tir_start, $tir_end, $tir_strand;
                 push @{$tirs{$pkey}{'tirs'}}, $tirkey unless exists $seen{$tirkey};
                 $seen{$tirkey} = 1;
             }
@@ -269,8 +269,8 @@ sub extract_tir_features {
 
     my (%pdoms, %seen_pdoms, %lrange);
     my $tirct = 0;
-    for my $tir (sort keys %tirs) {
-        my ($element, $rstart, $rend) = split /\|\|/, $tir;
+    for my $tir (nsort keys %tirs) {
+        my ($element, $seq_id, $rstart, $rend) = split /\|\|/, $tir;
         # full element
         my ($source, $prim_tag, $fstart, $fend) = split /\|\|/, $tirs{$tir}{'full'};
 	my $fullid = join "_", $element, $source, $fstart, $fend;
