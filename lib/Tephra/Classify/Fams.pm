@@ -165,7 +165,7 @@ sub make_families {
 	    $self->run_family_classification($gff_obj->{$type}, $tetype, $domfh);
 
 	$reports{$type} = { family_fasta   => $fams, 
-			    annotated_ids  => $ids, 
+  			    annotated_ids  => $ids, 
 	                    family_stats   => $family_stats };
 
 	$pm->finish(0, \%reports);
@@ -593,45 +593,47 @@ sub annotate_gff {
 
     my $is_lard_mite = 0;
     my ($new_id, $gff_str, $seq_id, $strand, $source);
-    for my $rep_region (nsort_by { m/repeat_region\d+\|\|(\d+)\|\|\d+/ and $1 } keys %$features) {
-	my ($rreg_id, $s, $e) = split /\|\|/, $rep_region;
-        for my $feature (@{$features->{$rep_region}}) {
-	    if ($feature->{type} =~ /(?:LTR|TRIM|LARD)_retrotransposon|terminal_inverted_repeat_element|MITE/) {
-		$is_lard_mite = 1;
-		
-                my $id = $feature->{attributes}{ID}[0];
-		($seq_id, $strand, $source) = @{$feature}{qw(seq_id strand source)};
-
-		if (exists $index->{$id}) {
-		    $feature->{type} = $new_type;
-                    $new_id = $index->{$id};
+    for my $chr_id (nsort keys %$features) { 
+	for my $rep_region (nsort_by { m/repeat_region\d+\.?\d+?\|\|(\d+)\|\|\d+/ and $1 } keys %{$features->{$chr_id}}) {
+	    my ($rreg_id, $s, $e) = split /\|\|/, $rep_region;
+	    for my $feature (@{$features->{$chr_id}{$rep_region}}) {
+		if ($feature->{type} =~ /(?:LTR|TRIM|LARD)_retrotransposon|terminal_inverted_repeat_element|MITE/) {
+		    $is_lard_mite = 1;
+		    
+		    my $id = $feature->{attributes}{ID}[0];
+		    ($seq_id, $strand, $source) = @{$feature}{qw(seq_id strand source)};
+		    
+		    if (exists $index->{$id}) {
+			$feature->{type} = $new_type;
+			$new_id = $index->{$id};
+		    }
+		    else {
+			$new_id = $id;
+		    }
+		    
+		    my $key = join "_", $new_id, $seq_id;
+		    if (exists $annot_ids->{$key}) {
+			$feature->{attributes}{ID}[0] = $new_id;
+			$feature->{attributes}{family}[0] = $annot_ids->{$key};		    
+		    }
 		}
 		else {
-		    $new_id = $id;
+		    if ($is_lard_mite) {
+			# the TSD should not be relabelled since is a child of the repeat_region (part of the host genome)  
+			$feature->{attributes}{Parent}[0] = $new_id
+			    unless $feature->{type} eq 'target_site_duplication';
+		    }
 		}
-
-		my $key = join "_", $new_id, $seq_id;
-		if (exists $annot_ids->{$key}) {
-		    $feature->{attributes}{ID}[0] = $new_id;
-		    $feature->{attributes}{family}[0] = $annot_ids->{$key};		    
-		}
+		
+		my $gff_feat = gff3_format_feature($feature);
+		$gff_str .= $gff_feat;
 	    }
-	    else {
-		if ($is_lard_mite) {
-		    # the TSD should not be relabelled since is a child of the repeat_region (part of the host genome)  
-		    $feature->{attributes}{Parent}[0] = $new_id
-			unless $feature->{type} eq 'target_site_duplication';
-		}
-	    }
-
-	    my $gff_feat = gff3_format_feature($feature);
-	    $gff_str .= $gff_feat;
+	    chomp $gff_str;
+	    say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
+	    say $out $gff_str;
+	    $is_lard_mite = 0;
+	    undef $gff_str;
 	}
-	chomp $gff_str;
-	say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
-	say $out $gff_str;
-	$is_lard_mite = 0;
-	undef $gff_str;
     }
     close $out;
 
