@@ -49,20 +49,20 @@ sub collect_gff_features {
 
     open my $gffio, '<', $gff or die "\n[ERROR]: Could not open file: $gff\n";
 
-    my ($start, $end, $region, $key, %features);
+    my ($seq_id, $start, $end, $region, $key, %features);
     while (my $line = <$gffio>) {
         chomp $line;
         next if $line =~ /^#/;
         my $feature = gff3_parse_feature( $line );
         if ($feature->{type} eq 'repeat_region') {
             $region = @{$feature->{attributes}{ID}}[0];
-            ($start, $end) = @{$feature}{qw(start end)};
+            ($seq_id, $start, $end) = @{$feature}{qw(seq_id start end)};
 	    $key = join "||", $region, $start, $end;
 
         }
 	if ($feature->{type} ne 'repeat_region') {
             if ($feature->{start} >= $start && $feature->{end} <= $end) {
-		push @{$features{$key}}, $feature;
+		push @{$features{$seq_id}{$key}}, $feature;
             }
         }
     }
@@ -76,7 +76,7 @@ sub get_parent_coords {
     my ($parent, $coord_map) = @_;
 
     my ($seq_id, $start, $end) = split /\|\|/, $coord_map->{$parent};
-    my $pkey = join "||", $parent, $start, $end;
+    my $pkey = join "||", $parent, $seq_id, $start, $end;
 
     return ($seq_id, $pkey);
 }
@@ -96,29 +96,31 @@ sub extract_ltr_sequences {
     my $index = $self->index_ref($fasta);
 
     my ($family, %ltrs, %seen, %coord_map);
-    for my $rep_region (keys %$features) {
-        for my $ltr_feature (@{$features->{$rep_region}}) {
-            if ($ltr_feature->{type} =~ /(?:LTR|TRIM|LARD)_retrotransposon/) {
-                my $elem_id = @{$ltr_feature->{attributes}{ID}}[0];
-                $family  = @{$ltr_feature->{attributes}{family}}[0];
-                my ($start, $end) = @{$ltr_feature}{qw(start end)};
-                my $key = join "||", $family, $elem_id, $start, $end;
-                $ltrs{$key}{'full'} = join "||", @{$ltr_feature}{qw(seq_id type start end)};
-                $coord_map{$elem_id} = join "||", @{$ltr_feature}{qw(seq_id start end)};
-            }
-            if ($ltr_feature->{type} eq 'long_terminal_repeat') { # &&
-		#$ltr_feature-{start} == $start || $ltr_feature->{end} == $end) {
-                my $parent = @{$ltr_feature->{attributes}{Parent}}[0];
-                my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
-                if ($seq_id eq $ltr_feature->{seq_id}) {
-                    my ($ltr_type, $ltr_start, $ltr_end, $ltr_strand) = 
-                        @{$ltr_feature}{qw(type start end strand)};
-                    $ltr_strand //= '?';
-                    my $ltrkey = join "||", $seq_id, $ltr_type, $ltr_start, $ltr_end, $ltr_strand;
-                    my $parent_key = join "||", $family, $pkey;
-                    push @{$ltrs{$parent_key}{'ltrs'}}, $ltrkey unless exists $seen{$ltrkey};
-                    $seen{$ltrkey} = 1;
-                }
+    for my $seq_id (keys %$features) {
+	for my $rep_region (keys %{$features->{$seq_id}}) {
+	    for my $ltr_feature (@{$features->{$seq_id}{$rep_region}}) {
+		if ($ltr_feature->{type} =~ /(?:LTR|TRIM|LARD)_retrotransposon/) {
+		    my $elem_id = @{$ltr_feature->{attributes}{ID}}[0];
+		    $family  = @{$ltr_feature->{attributes}{family}}[0];
+		    my ($start, $end) = @{$ltr_feature}{qw(start end)};
+		    my $key = join "||", $family, $elem_id, $seq_id, $start, $end;
+		    $ltrs{$key}{'full'} = join "||", @{$ltr_feature}{qw(seq_id type start end)};
+		    $coord_map{$elem_id} = join "||", @{$ltr_feature}{qw(seq_id start end)};
+		}
+		if ($ltr_feature->{type} eq 'long_terminal_repeat') { # &&
+		    #$ltr_feature-{start} == $start || $ltr_feature->{end} == $end) {
+		    my $parent = @{$ltr_feature->{attributes}{Parent}}[0];
+		    my ($chr_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
+		    if ($chr_id eq $ltr_feature->{seq_id}) {
+			my ($ltr_type, $ltr_start, $ltr_end, $ltr_strand) = 
+			    @{$ltr_feature}{qw(type start end strand)};
+			$ltr_strand //= '?';
+			my $ltrkey = join "||", $chr_id, $ltr_type, $ltr_start, $ltr_end, $ltr_strand;
+			my $parent_key = join "||", $family, $pkey;
+			push @{$ltrs{$parent_key}{'ltrs'}}, $ltrkey unless exists $seen{$ltrkey};
+			$seen{$ltrkey} = 1;
+		    }
+		}
             }
         }
     }
@@ -128,7 +130,7 @@ sub extract_ltr_sequences {
     my $ltrct = 0;
     my $orientation;
     for my $ltr (nsort keys %ltrs) {
-        my ($family, $element, $rstart, $rend) = split /\|\|/, $ltr;
+        my ($family, $element, $chr, $rstart, $rend) = split /\|\|/, $ltr;
         my ($seq_id, $type, $start, $end) = split /\|\|/, $ltrs{$ltr}{'full'};
         my $ltr_file = join "_", $family, $element, $seq_id, $start, $end, 'ltrs.fasta';
         my $ltrs_out = File::Spec->catfile($dir, $ltr_file);
@@ -185,40 +187,42 @@ sub extract_tir_sequences {
 
     #dd $features;
     my ($family, %tirs, %seen, %coord_map);
-    for my $rep_region (keys %$features) {
-        for my $tir_feature (@{$features->{$rep_region}}) {
-            if ($tir_feature->{type} =~ /terminal_inverted_repeat_element|MITE/i) {
-                my $elem_id = @{$tir_feature->{attributes}{ID}}[0];
-                next unless defined $elem_id;
-                $family = @{$tir_feature->{attributes}{family}}[0];
-                my ($start, $end) = @{$tir_feature}{qw(start end)};
-                my $key = defined $family ? join "||", $family, $elem_id, $start, $end 
-                    : join "||", $elem_id, $start, $end;
-                $tirs{$key}{'full'} = join "||", @{$tir_feature}{qw(seq_id type start end)};
-                $coord_map{$elem_id} = join "||", @{$tir_feature}{qw(seq_id start end)};
-            }
-            if ($tir_feature->{type} eq 'terminal_inverted_repeat') {
-                my $parent = @{$tir_feature->{attributes}{Parent}}[0];
-                my ($seq_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
-                if ($seq_id eq $tir_feature->{seq_id}) {
-                    my ($tir_type, $tir_start, $tir_end, $tir_strand) = 
-                        @{$tir_feature}{qw(type start end strand)};
-                    $tir_strand //= '?';
-                    my $tirkey = join "||", $seq_id, $tir_type, $tir_start, $tir_end, $tir_strand;
-                    $pkey = defined $family ? join "||", $family, $pkey : $pkey;
-                    push @{$tirs{$pkey}{'tirs'}}, $tirkey unless exists $seen{$tirkey};
-                    $seen{$tirkey} = 1;
-                }
-            }
+    for my $seq_id (keys %$features) {
+	for my $rep_region (keys %{$features->{$seq_id}}) {
+	    for my $tir_feature (@{$features->{$seq_id}{$rep_region}}) {
+		if ($tir_feature->{type} =~ /terminal_inverted_repeat_element|MITE/i) {
+		    my $elem_id = @{$tir_feature->{attributes}{ID}}[0];
+		    next unless defined $elem_id;
+		    $family = @{$tir_feature->{attributes}{family}}[0];
+		    my ($start, $end) = @{$tir_feature}{qw(start end)};
+		    my $key = defined $family ? join "||", $family, $elem_id, $seq_id, $start, $end 
+			: join "||", 'DTX', $elem_id, $seq_id, $start, $end;
+		    $tirs{$key}{'full'} = join "||", @{$tir_feature}{qw(seq_id type start end)};
+		    $coord_map{$elem_id} = join "||", @{$tir_feature}{qw(seq_id start end)};
+		}
+		if ($tir_feature->{type} eq 'terminal_inverted_repeat') {
+		    my $parent = @{$tir_feature->{attributes}{Parent}}[0];
+		    my ($chr_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
+		    if ($chr_id eq $tir_feature->{seq_id}) {
+			my ($tir_type, $tir_start, $tir_end, $tir_strand) = 
+			    @{$tir_feature}{qw(type start end strand)};
+			$tir_strand //= '?';
+			my $tirkey = join "||", $chr_id, $tir_type, $tir_start, $tir_end, $tir_strand;
+			$pkey = defined $family ? join "||", $family, $pkey : join "||", 'DTX', $pkey;
+			push @{$tirs{$pkey}{'tirs'}}, $tirkey unless exists $seen{$tirkey};
+			$seen{$tirkey} = 1;
+		    }
+		}
+	    }
         }
     }
 
     my @files;
     my $tirct = 0;
     my $orientation;
-    for my $tir (sort keys %tirs) {
-        my ($family, $element, $rstart, $rend) = split /\|\|/, $tir;
-        my ($seq_id, $type, $start, $end) = split /\|\|/, $tirs{$tir}{'full'};
+    for my $tir (nsort keys %tirs) {
+        my ($family, $element, $seq_id, $rstart, $rend) = split /\|\|/, $tir;
+        my ($chr_id, $type, $start, $end) = split /\|\|/, $tirs{$tir}{'full'};
         my $tir_file = join "_", $family, $element, $seq_id, $start, $end, 'tirs.fasta';
         my $tirs_out = File::Spec->catfile($dir, $tir_file);
         die "\n[ERROR]: $tirs_out exists. This will cause problems downstream. Please remove the previous ".
