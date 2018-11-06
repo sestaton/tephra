@@ -107,9 +107,7 @@ sub find_mites {
 		my $gff3_str = gff3_format_feature($tir_feature);
 		$mite_feats .= $gff3_str;
 	    }
-	    
 	    chomp $mite_feats;
-	    #say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
 
 	    my $len = $end - $start + 1;
 	    if (!$has_pdoms && $len <= 600) {
@@ -128,7 +126,6 @@ sub find_mites {
 		say $mout join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
 		say $mout $unc_mite_feats->{unc_feats};
 		
-		#my $len = $end - $start + 1;
 		push @mite_lengths, $len;
 		$mite_index{ $unc_mite_feats->{old_id} } = $unc_mite_feats->{new_id};
 	    }
@@ -137,9 +134,6 @@ sub find_mites {
 	    undef $lines;
 
 	    delete $features->{$chr_id}{$rep_region};
-	    #$pdom_org = join ",", @all_pdoms;
-	    #$pdom_index{$strand}{$pdom_org}++ if $pdom_org;
-	    #$pdoms++ if $has_pdoms;
 	    $has_pdoms = 0;
 	}
     }
@@ -247,10 +241,6 @@ sub find_tc1_mariner {
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) {
-	#for my $tir (@tirs) { 
-	    #my ($chr, $rregion) = split /\|\|/, $tir;
-	    #delete $features->{$chr}{$rregion}; # for @tirs; 
-	#}
 	$self->_remove_tir_features($features, \@tirs);
 	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'Tc1-Mariner', log => $log, pdom_ct => $pdoms });
 
@@ -346,11 +336,6 @@ sub find_hat {
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) { 
-	#delete $features->{$_} for @tirs; 
-	#for my $tir (@tirs) {
-            #my ($chr, $rregion) = split /\|\|/, $tir;
-            #delete $features->{$chr}{$rregion};
-        #}
 	$self->_remove_tir_features($features, \@tirs);
 	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'hAT', log => $log, pdom_ct => $pdoms });
 
@@ -449,11 +434,6 @@ sub find_mutator {
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) { 
-	#delete $feature->{$_} for @tirs; 
-	#for my $tir (@tirs) {
-            #my ($chr, $rregion) = split /\|\|/, $tir;
-            #delete $features->{$chr}{$rregion};
-        #}
 	$self->_remove_tir_features($features, \@tirs);
 	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'Mutator', log => $log, pdom_ct => $pdoms });
 
@@ -560,11 +540,6 @@ sub find_cacta {
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) {
-	#delete $feature->{$_} for @tirs; 
-	#for my $tir (@tirs) {
-            #my ($chr, $rregion) = split /\|\|/, $tir;
-            #delete $features->{$chr}{$rregion};
-        #}
 	$self->_remove_tir_features($features, \@tirs);
 	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'CACTA', log => $log, pdom_ct => $pdoms });
 
@@ -671,12 +646,6 @@ sub write_combined_output {
     open my $out, '>', $fasout or die "\n[ERROR]: Could not open file: $fasout\n";
 
     for my $file (@{$outfiles->{fastas}}) {
-	#my $lines = do { 
-	    #local $/ = undef; 
-	    #open my $fh_in, '<', $file or die "\n[ERROR]: Could not open file: $file\n";
-	    #<$fh_in>;
-	#};
-	#print $out $lines;
 	$self->collate($file, $out);
     }
     close $out;
