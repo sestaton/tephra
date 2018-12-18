@@ -50,7 +50,7 @@ while (<$gin>) {
     chomp;
     next if /^#/;
     my @f = split /\t/;
-    $gffct++ if $f[2] eq 'terminal_inverted_repeat_element'
+    $gffct++ if $f[2] =~ /terminal_inverted_repeat_element|MITE/;
 }
 close $gin;
 
