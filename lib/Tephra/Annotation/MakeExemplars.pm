@@ -106,7 +106,7 @@ sub make_exemplars {
 		= @{$feature}{qw(seq_id source type start end strand)};
 	    $strand //= '?';
 
-	    $key = join "||", $elem_id, $start, $end;
+	    $key = join "||", $elem_id, $source_id, $start, $end;
 	    $full_feats = join "||", $source_id, $type, $start, $end, $strand;
 	    $coord_map{$elem_id} = join "||", $source_id, $start, $end;
 	 
@@ -132,11 +132,12 @@ sub make_exemplars {
 	}
     }
     close $gffio;
+    #dd \%ltrs and exit;
 
     my %pdoms;
     my $ltrct = 0;
     for my $ltr (sort keys %ltrs) {
-	my ($element, $rstart, $rend) = split /\|\|/, $ltr;
+	my ($element, $seq_id, $rstart, $rend) = split /\|\|/, $ltr;
 	my $orient;
 
 	# full element
