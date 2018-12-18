@@ -75,7 +75,9 @@ SKIP: {
 unlink $genome.'.fai' 
     if -e $genome.'.fai';
 
-system('gunzip', "$testdir/ref.fas.gz") == 0 or die $!;
+if (-e "$testdir/ref.fas.gz") { 
+    system('gunzip', "$testdir/ref.fas.gz") == 0 or die $!;
+}
 
 done_testing();
 
