@@ -83,14 +83,9 @@ has blast_hit_pid => (
 sub find_gypsy_copia {
     my $self = shift;
     my ($features) = @_;
-    my $is_gypsy = 0;
-    my $is_copia = 0;
-    my %gypsy;
-    my %copia;
 
-    my %pdom_index;
-    my $pdom_org;
-    my @all_pdoms;
+    my ($is_gypsy, $is_copia) = (0, 0);
+    my (%gypsy, %copia, %pdom_index, $pdom_org, @all_pdoms, @gyp_cop_doms);
 
     my @cop_exp = qw(gag asp rve UBN2 UBN2_2 UBN2_3 RVT_2 RNase_H);
     my @gyp_exp = qw(gag asp RVT_1 RNash_H rve Chromo);
@@ -119,7 +114,9 @@ sub find_gypsy_copia {
 		# DESC  gag-polypeptide of LTR copia-type
 		# NAME  UBN2
 		# DESC  gag-polypeptide of LTR copia-type
-		# REF   The nucleotide sequence of Drosophila melanogaster copia-specific 2.1-kb mRNA.Nucleic Acids Res. 1989 Mar 11; 17(5):2134
+		# REF   The nucleotide sequence of Drosophila melanogaster 
+		#       copia-specific 2.1-kb mRNA.Nucleic Acids Res. 1989 Mar 11; 17(5):2134
+
 		# NAME  Retrotrans_gag
 		# DESC  Retrotransposon gag protein
 		
@@ -164,11 +161,11 @@ sub find_gypsy_copia {
 		
 		if ($gyp_dom_ct >= 1) {
 		    $gypsy{$seq_id}{$rep_region} = $features->{$seq_id}{$rep_region};
-		    delete $features->{$seq_id}{$rep_region};
+		    push @gyp_cop_doms, $rep_region;
 		}
 		elsif ($cop_dom_ct >= 1) {
 		    $copia{$seq_id}{$rep_region} = $features->{$seq_id}{$rep_region};
-		    delete $features->{$seq_id}{$rep_region};
+		    push @gyp_cop_doms, $rep_region;
 		}
 		
 		$gyp_dom_ct = 0;
@@ -182,6 +179,13 @@ sub find_gypsy_copia {
 	}    
     }
 
+    for my $seq_id (keys %$features) {
+	for my $rregion (@gyp_cop_doms) {
+	    delete $features->{$seq_id}{$rregion};
+	}
+    }
+
+    #dd \%gypsy and exit;
     return (\%gypsy, \%copia);
 }
 
@@ -202,7 +206,7 @@ sub find_unclassified {
     for my $seq_id (keys %$features) {
 	for my $rep_region (keys %{$features->{$seq_id}}) {
 	    for my $ltr_feature (@{$features->{$seq_id}{$rep_region}}) {
-		if ($ltr_feature->{type} =~ /(?:LTR|TRIM)_retrotransposon/) {
+		if ($ltr_feature->{type} =~ /(?:LTR|TRIM|LARD)_retrotransposon/) {
 		    my ($seq_id, $start, $end) = @{$ltr_feature}{qw(seq_id start end)};
 		    my $elem = $ltr_feature->{attributes}{ID}[0];
 		    my $id = join "_", $elem, $seq_id, $start, $end;
@@ -250,7 +254,8 @@ sub annotate_unclassified {
 
     my $family_map = $self->_map_repeat_types();
     open my $in, '<', $blast_out or die "\n[ERROR]: Could not open file: $blast_out\n";
-    my (%gypsy_re, %copia_re, %seen);
+    my (%gypsy_re, %copia_re, %seen, @gyp_cop_regions);
+    #dd $ltr_rregion_map and exit;
 
     while (my $line = <$in>) {
 	chomp $line;
@@ -259,27 +264,30 @@ sub annotate_unclassified {
 
 	if ($f[2] >= $hit_pid && $f[3] >= $hit_length) {
 	    if (exists $family_map->{$f[1]}) {
-		my ($seq_id, $rregion) = split /\|\|/, $ltr_rregion_map->{$f[0]};
+		my ($seq_id, $rregion, $start, $end) = split /\|\|/, $ltr_rregion_map->{$f[0]};
+		my $key = join "||", $rregion , $start, $end;
 		my $sf = $family_map->{$f[1]};
 		if ($sf =~ /^rlg|gypsy/i) {
-		    #$gypsy->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
-		    #delete $features->{ $ltr_rregion_map->{$f[0]} };
-		    $gypsy->{ $seq_id }{ $rregion } = $features->{ $seq_id }{ $rregion };
-                    delete $features->{ $seq_id }{ $rregion };
-
+		    $gypsy->{ $seq_id }{ $key } = $features->{ $seq_id }{ $key };
+		    push @gyp_cop_regions, $key;
+		    $seen{$f[0]} = 1;
 		}
 		elsif ($sf =~ /^rlc|copia/i) {
-		    #$copia->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
-		    #delete $features->{ $ltr_rregion_map->{$f[0]} };
-		    $copia->{ $seq_id }{ $rregion } = $features->{ $seq_id  }{ $rregion };
-                    delete $features->{ $seq_id }{ $rregion };
+		    $copia->{ $seq_id }{ $key } = $features->{ $seq_id }{ $key };
+		    push @gyp_cop_regions, $key;
+		    $seen{$f[0]} = 1;
 		}
 	    }
 	}
-	$seen{$f[0]} = 1;
     }
     close $in;
     unlink $blast_out;
+
+    for my $seq_id (keys %$features) {
+	for my $rregion (@gyp_cop_regions) {
+	    delete $features->{ $seq_id }{ $rregion };
+	}
+    }
 
     return;
 }
@@ -289,13 +297,9 @@ sub write_gypsy {
     my ($gypsy, $header, $log) = @_;
     my $gff = $self->gff->absolute->resolve;
 
-    my @lengths;
-    my $gyp_feats;
-    my %pdom_index;
-    my $pdom_org;
-    my $has_pdoms = 0;
-    my $pdoms     = 0;
-    my @all_pdoms;
+    my (@lengths, @all_pdoms);
+    my ($gyp_feats, %pdom_index, $pdom_org);
+    my ($has_pdoms, $pdoms) = (0, 0);
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile    = File::Spec->catfile($path, $name.'_gypsy.gff3');
@@ -303,6 +307,9 @@ sub write_gypsy {
     open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
     say $out $header;
     
+    my $gyp_ct = (keys %$gypsy);
+    #dd $gypsy and exit;
+
     my ($seq_id, $source, $start, $end, $strand);
     for my $chr_id (nsort keys %$gypsy) {
 	for my $rep_region (nsort_by { m/repeat_region\d+\.?\d+?\|\|(\d+)\|\|\d+/ and $1 } keys %{$gypsy->{$chr_id}}) {
@@ -323,6 +330,7 @@ sub write_gypsy {
 		my $gff3_str = gff3_format_feature($ltr_feature);
 		$gyp_feats .= $gff3_str;
 	    }
+
 	    chomp $gyp_feats;
 	    say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg";
 	    say $out $gyp_feats;
@@ -357,13 +365,9 @@ sub write_copia {
     my ($copia, $header, $log) = @_;
     my $gff = $self->gff->absolute->resolve;
     
-    my @lengths;
-    my $cop_feats;
-    my $has_pdoms = 0;
-    my $pdoms     = 0;
-    my $pdom_org;
-    my @all_pdoms;
-    my %pdom_index;
+    my (@lengths, $cop_feats);
+    my ($pdom_org, @all_pdoms, %pdom_index);
+    my ($has_pdoms, $pdoms) = (0, 0);
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name.'_copia.gff3');
@@ -381,7 +385,7 @@ sub write_copia {
 		    my $pdom_name = $ltr_feature->{attributes}{name}[0];
 		    push @all_pdoms, $pdom_name;
 		}
-		if ($ltr_feature->{type} =~ /(?:LTR|TRIM)_retrotransposon/) {
+		if ($ltr_feature->{type} =~ /(?:LTR|TRIM|LARD)_retrotransposon/) {
 		    ($seq_id, $source, $start, $end, $strand) 
 			= @{$ltr_feature}{qw(seq_id source start end strand)};
 		    my $ltrlen = $end - $start + 1;
@@ -455,8 +459,10 @@ sub write_unclassified {
 		my $gff3_str = gff3_format_feature($ltr_feature);
 		$unc_feats .= $gff3_str;
 	    }
+
 	    chomp $unc_feats;
 	    say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg";
+
 	    if ($has_pdoms) { 
 		say $out $unc_feats;
 		push @unc_lengths, $ltrlen;
