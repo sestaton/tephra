@@ -35,13 +35,13 @@ sub log_basic_element_stats {
     my $mean  = defined $stat->mean ? sprintf("%.2f", $stat->mean) : 0;
     my $count = $stat->count;
 
-    my $tot_str = sprintf("%-70s %-10s", "Results - Total number of $type elements:", $count);
+    #my $tot_str = sprintf("%-70s %-10s", "Results - Total number of $type elements:", $count);
     my $min_str = sprintf("%-70s %-10s", "Results - Minimum length of $type elements:", $min);
     my $max_str = sprintf("%-70s %-10s", "Results - Maximum length of $type elements:", $max);
     my $ave_str = sprintf("%-70s %-10s", "Results - Mean length of $type elements:", $mean);
     my $pct_str = sprintf("%-70s %-10s", "Results - Number of $type elements with protein matches:", $pdoms);
 
-    $log->info($tot_str);
+    #$log->info($tot_str);
     $log->info($min_str);
     $log->info($max_str);
     $log->info($ave_str);
