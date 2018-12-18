@@ -11,6 +11,7 @@ use Bio::DB::HTS::Kseq;
 use Bio::DB::HTS::Faidx;
 use Bio::GFF3::LowLevel qw(gff3_format_feature);
 use List::Util          qw(min max);
+use List::MoreUtils     qw(uniq);
 use List::UtilsBy       qw(nsort_by);
 use Time::HiRes         qw(gettimeofday);
 use File::Path          qw(make_path);
@@ -19,6 +20,7 @@ use Parallel::ForkManager;
 use Carp 'croak';
 use Try::Tiny;
 use Tephra::Annotation::MakeExemplars;
+use Tephra::Annotation::Util;
 #use Data::Dump::Color;
 use namespace::autoclean;
 
@@ -116,6 +118,7 @@ sub make_families {
     say $domfh join "\t", "Family_name", "Element_ID", "Domain_organization";
 
     my $pm = Parallel::ForkManager->new(3);
+    #my $pm = Parallel::ForkManager->new(1);
     local $SIG{INT} = sub {
         $log->warn("Caught SIGINT; Waiting for child processes to finish.");
         $pm->wait_all_children;
@@ -141,8 +144,7 @@ sub make_families {
 				  my $tot_str = sprintf("%-70s %-10s", "Results - Number of $sfam families:", $famct);
 				  my $fam_str = sprintf("%-70s %-10s", "Results - Number of $sfam elements in families:", $famtot);
 				  my $sng_str = sprintf("%-70s %-10s", "Results - Number of $sfam singleton families/elements:", $singct);
-				  my $num_str = sprintf("%-70s %-10s", "Results - Number of $sfam elements (for debugging):", $elemct);
-
+				  my $num_str = sprintf("%-70s %-10s", "Results - Number of $sfam elements:", $singct+$famtot);
 				  $log->info($tot_str);
 				  $log->info($fam_str);
 				  $log->info($sng_str);
@@ -211,12 +213,15 @@ sub run_family_classification {
     my $dom_orgs = $self->parse_clusters($clusters);
     my ($dom_fam_map, $fas_obj, $unmerged_stats) = 
 	$self->make_fasta_from_dom_orgs($dom_orgs, $clusters, $tetype);
-    
+    #dd $fas_obj and exit;
+    #dd $unmerged_stats;
+
     my $blastout = $self->process_blast_args($fas_obj);
     my $matches  = $self->parse_blast($blastout);
 
     my ($fams, $ids, $merged_stats) = 
 	$self->write_families($pdom_famid_map, $dom_fam_map, $unmerged_stats, $matches, $clusters, $tetype, $domfh);
+    #dd $merged_stats;
 
     my $exm_obj = Tephra::Annotation::MakeExemplars->new(
         genome  => $genome,
@@ -272,32 +277,39 @@ sub make_fasta_from_dom_orgs {
     my $foutfile = File::Spec->catfile($cpath, $famfile);
     open my $out, '>>', $foutfile or die "\n[ERROR]: Could not open file: $foutfile\n";
 
-    my (%fam_map, @seen);
+    my (%fam_map, %seen);
     my ($idx, $famtot) = (0, 0);
+    #my $famtot = keys %$dom_orgs;
+    #my $famtot = 0;
+
     for my $str (reverse sort { @{$dom_orgs->{$a}} <=> @{$dom_orgs->{$b}} } keys %$dom_orgs) {  
-	my $famnum = $sfname."_family$idx";
-        for my $elem (@{$dom_orgs->{$str}}) {
-	    unless (exists $seqstore->{$elem}) {
-		say STDERR "\n[ERROR]: $elem not found in store of Tephra::Classify::Fams::make_fasta_from_dom_orgs. ".
-		    "This is a bug, please report it.";
-		next;
+	if (@{$dom_orgs->{$str}} > 1) { # families have n>1 element
+	    my $famnum = $sfname."_family$idx";
+	    for my $elem (@{$dom_orgs->{$str}}) {
+		next if exists $seen{$elem};
+		
+		unless (exists $seqstore->{$elem}) {
+		    say STDERR "\n[ERROR]: $elem not found in store of Tephra::Classify::Fams::make_fasta_from_dom_orgs. ".
+			"This is a bug, please report it.";
+		    next;
+		}
+		
+		$famtot++;
+		my $coordsh = $seqstore->{$elem};
+		my $coords  = (keys %$coordsh)[0];
+		$seqstore->{$elem}{$coords} =~ s/.{60}\K/\n/g;
+		say $out join "\n", ">$sfname"."_family$idx"."_$elem"."_$coords", $seqstore->{$elem}{$coords};
+		push @{$fam_map{$famnum}}, $elem;
+		$seen{$elem} = 1;
 	    }
-	    
-	    $famtot++;
-	    my $coordsh = $seqstore->{$elem};
-	    my $coords  = (keys %$coordsh)[0];
-	    $seqstore->{$elem}{$coords} =~ s/.{60}\K/\n/g;
-	    say $out join "\n", ">$sfname"."_family$idx"."_$elem"."_$coords", $seqstore->{$elem}{$coords};
-	    #delete $seqstore->{$elem};
-	    push @{$fam_map{$famnum}}, $elem;
-	    push @seen, $elem;
-        }
-        $idx++;
+	    $idx++;
+	}
     }
     close $out;
     my $famct = $idx;
+
     $idx = 0;
-    delete $seqstore->{$_} for @seen;
+    delete $seqstore->{$_} for keys %seen;
 
     my $reduc = (keys %$seqstore);
     my $singfile = $sfname.'_singletons.fasta';
@@ -316,6 +328,10 @@ sub make_fasta_from_dom_orgs {
     close $outx;
     my $singct = $idx;
     undef $seqstore;
+
+    #say STDERR "DEBUG: make_fasta_from_dom_orgs";
+    #say STDERR "DEBUG: sfname -> famtot famct singct";
+    #say STDERR "DEBUG: $sfname -> $famtot $famct $singct";
 
     return (\%fam_map,
 	    { family_fasta      => $foutfile, 
@@ -376,6 +392,7 @@ sub parse_blast {
     my $blast_hcov = $self->blast_hit_cov;
     my $blast_hlen = $self->blast_hit_len;
     my $perc_cov   = sprintf("%.2f", $blast_hcov/100);
+    my $util = Tephra::Annotation::Util->new;
 
     my (%matches, %seen);
     open my $in, '<', $blast_report or die "\n[ERROR]: Could not open file: $blast_report\n";
@@ -383,6 +400,11 @@ sub parse_blast {
 	chomp $line;
 	my ($queryid, $hitid, $pid, $hitlen, $mmatchct, $gapct, 
 	    $qhit_start, $qhit_end, $hhit_start, $hhit_end, $evalue, $score) = split /\t/, $line;
+
+	my $query_sfam = $util->map_superfamily_name($queryid);
+	my $hit_sfam   = $util->map_superfamily_name($hitid);
+	next unless $query_sfam eq $hit_sfam || ($query_sfam =~ /unknown/i && $hit_sfam !~ /unknown/i);
+
 	my ($qstart, $qend) = ($queryid =~ /(\d+)-?_?(\d+)$/);
 	my ($hstart, $hend) = ($hitid =~ /(\d+)-?_?(\d+)$/);
 	my $qlen = $qend - $qstart + 1;
@@ -391,10 +413,12 @@ sub parse_blast {
 	my ($coords) = ($queryid =~ /_(\d+_\d+)$/);
         $queryid =~ s/_$coords//;
 	my ($family) = ($hitid =~ /(\w{3}_(?:singleton_)?family\d+)_/);
+	my $elem = $hitid =~ s/^\w{3}_(?:singleton_)?family\d+_//r;
+
 	if ($hitlen >= $blast_hlen && $hitlen >= ($minlen * $perc_cov) && $pid >= $blast_hpid) {
-	    unless (exists $seen{$queryid}) {
+	    unless (exists $seen{$elem}) {
 		push @{$matches{$family}}, $queryid;
-		$seen{$queryid} = 1;
+		$seen{$elem} = 1;
 	    }
 	}
     }
@@ -407,7 +431,8 @@ sub parse_blast {
 sub write_families {
     my $self = shift;
     my ($pdom_famid_map, $dom_fam_map, $unmerged_stats, $matches, $clsfile, $tetype, $domfh) = @_;
-
+    
+    #dd $dom_fam_map and exit;
     #dd $pdom_famid_map and exit;
     my ($cname, $cpath, $csuffix) = fileparse($clsfile, qr/\.[^.]*/);
     my $dir = basename($cpath);
@@ -436,33 +461,35 @@ sub write_families {
     find( sub { push @compfiles, $File::Find::name if /complete.fasta$/ }, $cpath );
     my $ltrfas = shift @compfiles;
     my $seqstore = $self->_store_seq($ltrfas);
-    my $elemct = (keys %$seqstore);
 	
     my ($idx, $famtot, $tomerge) = (0, 0, 0);
 
     my $fam_id_map;
     if (defined $matches) {
-	my $tomerge = $self->_compare_merged_nonmerged($matches, $seqstore, $unmerged_stats);
-	$fam_id_map = $tomerge == 1 ? $matches : $dom_fam_map;
+	my $merged = $self->_compare_merged_nonmerged($matches, $dom_fam_map, $seqstore, $unmerged_stats);
+	$fam_id_map = defined $merged ? $merged : $dom_fam_map;
     }
-    #dd $fam_id_map; # and exit;
+    #dd $fam_id_map and exit;
 
-    my (%fastas, %annot_ids, @seen);
+    my (%fastas, %annot_ids, %seen);
     my $re = qr/helitron\d+|(?:non_)?(?:LTR|LARD|TRIM)_retrotransposon\d+|terminal_inverted_repeat_element\d+|MITE\d+/;
 
-    for my $str (reverse sort { @{$fam_id_map->{$a}} <=> @{$fam_id_map->{$b}} } keys %$fam_id_map) {
+    for my $str (reverse sort { uniq(@{$fam_id_map->{$a}}) <=> uniq(@{$fam_id_map->{$b}}) } keys %$fam_id_map) {
 	my $famfile = $sf."_family$idx".".fasta";
 	my $outfile = File::Spec->catfile( abs_path($cpath), $famfile );
 	open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
-	for my $elem (@{$fam_id_map->{$str}}) {
-	    my $query = $elem =~ s/\w{3}_singleton_family\d+_//r;
-	    unless (exists $seqstore->{$query}) {
-		say STDERR "\n[ERROR]: $query not found in store of  Tephra::Classify::Fams::write_families. ".
-		    "This is a bug, please report it.";
-		next;
-	    }
+
+	if (uniq(@{$fam_id_map->{$str}}) > 1) {
+	    for my $elem (uniq(@{$fam_id_map->{$str}})) {
+		my $query = $elem =~ s/\w{3}_singleton_family\d+_//r;
+		if (exists $seen{$query}) { say STDERR "\n[WARNING]: '$query' has been seen."; next; };
+
+		unless (exists $seqstore->{$query}) {
+		    say STDERR "\n[ERROR]: $query not found in store of Tephra::Classify::Fams::write_families. ".
+			"This is a bug, please report it.";
+		    next;
+		}
 	    
-	    if (@{$fam_id_map->{$str}} > 1) {
 		$famtot++;
 		my $coordsh = $seqstore->{$query};
 		my $coords  = (keys %$coordsh)[0];
@@ -470,7 +497,6 @@ sub write_families {
 		say $out join "\n", ">$sfname"."_family$idx"."_$query"."_$coords", $seqstore->{$query}{$coords};
 		$annot_ids{$query} = $sfname."_family$idx";
 		my ($element) = ($query =~ /($re)/);
-		push @seen, $query;
 		
 		if (exists $pdom_famid_map->{$element}) { 
 		    $self->write_fam_pdom_organization({ famid_map => $pdom_famid_map, 
@@ -479,10 +505,13 @@ sub write_families {
 							 elemid    => "$sfname"."_family$idx"."_$query"."_$coords", 
 							 famname   => $sfname."_family$idx"});
 		}
+
+		$seen{$query} = 1;
 	    }
+	    $idx++;
 	}
 	close $out;
-	$idx++;
+
 	if (-s $outfile) { 
 	    $fastas{$outfile} = 1;
 	}
@@ -492,13 +521,25 @@ sub write_families {
     }
     my $famct = $idx;
     $idx = 0;
-    delete $seqstore->{$_} for @seen;
+    #my $anno_ct = (keys %annot_ids);
+    #my $seenct = (keys %seen);
+    #my $seqstct = (keys %$seqstore);
+    #say STDERR "debug: seenct seqstct anno_ct";
+    #say STDERR "debug: $seenct $seqstct $anno_ct";
+    delete $seqstore->{$_} for keys %seen;
+    #$seqstct = (keys %$seqstore);
+    #say STDERR "debug after delete: $seenct $seqstct";
 	
     if (%$seqstore) {
 	my $famxfile = $sf.'_singleton_families.fasta';
 	my $xoutfile = File::Spec->catfile( abs_path($cpath), $famxfile );
 	open my $outx, '>', $xoutfile or die "\n[ERROR]: Could not open file: $xoutfile\n";
+
+	my %seenx;
 	for my $k (nsort keys %$seqstore) {
+	    #next (
+	    if (exists $seenx{$k}) { say "[warning]: seenx -> $k"; next; }
+
 	    my $coordsh = $seqstore->{$k};
 	    my $coords  = (keys %$coordsh)[0];
 	    $seqstore->{$k}{$coords} =~ s/.{60}\K/\n/g;
@@ -514,12 +555,20 @@ sub write_families {
 						     famname   => $sfname."_singleton_family$idx" });
 	    }
 	    $idx++;
+
+	    $seenx{$k} = 1;
 	}
 	close $outx;
 	$fastas{$xoutfile} = 1;
     }
     my $singct = $idx;
+    my $elemct = $famtot + $singct;
 
+    #say STDERR "DEBUG: write_families";
+    #say STDERR "DEBUG: sfname -> famtot famct singct";
+    #say STDERR "DEBUG: $sfname -> $famtot $famct $singct";
+    #dd \%fastas;
+    
     return (\%fastas, \%annot_ids,
 	    { superfamily       => $sf,
 	      total_elements    => $elemct,
@@ -538,7 +587,7 @@ sub combine_families {
     my ($outfiles, $annot_ids, $index) = @{$anno_obj}{qw(outfiles annotated_ids annotated_idx)};
     my ($name, $path, $suffix) = fileparse($outgff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name.'.fasta');
-    
+    my $anno_ct = (keys %$annot_ids);
     open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 
     my $re = qr/helitron\d+|(?:non_)?(?:LTR|LARD|TRIM)_retrotransposon\d+|terminal_inverted_repeat_element\d+|MITE\d+/;
@@ -556,7 +605,10 @@ sub combine_families {
 	    if (exists $annot_ids->{$key}) {
 		$id = join "_", $annot_ids->{$key}, $elem, $seq_id, $start, $end;
 	    }
-   
+	    else {
+		say STDERR "\n[WARNING]: '$key' is not found in annot_ids store.\n";
+	    }
+	    
 	    $seq =~ s/.{60}\K/\n/g;
 	    say $out join "\n", ">$id", $seq;
 	}
@@ -661,26 +713,25 @@ sub _check_domfile_has_data {
 
 sub _compare_merged_nonmerged {
     my $self = shift;
-    my ($matches, $seqstore, $unmerged_stats) = @_;
+    my ($matches, $dom_fam_map, $seqstore, $unmerged_stats) = @_;
 
     my $famtot = 0;
-    
+    my %seen;
     for my $str (keys %$matches) {
 	for my $elem (@{$matches->{$str}}) {
 	    my $query = $elem =~ s/\w{3}_singleton_family\d+_//r;
-	    if (exists $seqstore->{$query}) {
-		$famtot++;
+	    if (exists $seqstore->{$query} && exists $dom_fam_map->{$str}) {
+		push @{$dom_fam_map->{$str}}, $query
+		    unless exists $seen{$query};
+		$seen{$query} = 1;
 	    }
 	    else {
 		croak "\n[ERROR]: $query not found in store. Exiting.";
-	    }
-	    
+	    }	    
 	}
     }
 
-    my $tomerge = $unmerged_stats->{total_in_families} < $famtot ? 1 : 0;
-
-    return $tomerge;
+    return $dom_fam_map;
 }
 
 sub _store_seq {
