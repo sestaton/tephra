@@ -9,23 +9,32 @@ use Capture::Tiny       qw(capture);
 use File::Find;
 use File::Spec;
 
-use Test::More tests => 2;
+use Test::More tests => 4;
 
 $| = 1;
+
+my $devtests = 0;
+if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
+    $devtests = 1;
+}
 
 my $cmd     = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir = File::Spec->catdir('t', 'test_data');
 my $genome  = File::Spec->catfile($testdir, 'ref.fas');
 my $gff     = File::Spec->catfile($testdir, 'ref_tirs.gff3');
 my $fas     = File::Spec->catfile($testdir, 'ref_tirs.fasta');
-## these are subsets for testing
-#my $model   = File::Spec->catfile($testdir, 'te.hmm');
 
 {
     my @help_args = ($cmd, 'findtirs', '-h');
     my ($stdout, $stderr, $exit) = capture { system(@help_args) };
-        #say STDERR "stderr: $stderr";
+    #say STDERR "stderr: $stderr";
     ok($stderr, 'Can execute findtirs subcommand');
+}
+
+if ($devtests) {
+    $genome = File::Spec->catfile($testdir, 'TAIR10_chr1.fas');
+    $gff    = File::Spec->catfile($testdir, 'TAIR10_chr1_tirs.gff3');
+    $fas    = File::Spec->catfile($testdir, 'TAIR10_chr1_tirs.fasta');
 }
 
 my @find_cmd = "$cmd findtirs -g $genome -o $gff --clean";
@@ -34,12 +43,30 @@ my @ret = capture { system([0..5], @find_cmd) };
 
 my @files;
 find( sub { push @files, $File::Find::name if /tirs_?(?:filtered)?.gff3$/ }, $testdir);
-ok( @files == 1, 'Can find some tirs' ); # only 1 after rename
+ok( @files == 1, 'Can find some TIRs' ); # only 1 after rename
+
+my ($fasct, $gffct) = (0, 0);
+open my $fasin, '<', $fas;
+while (<$fasin>) { chomp; $fasct++ if /^>/; }
+close $fasin;
+
+open my $gffin, '<', $gff;
+while (<$gffin>) { chomp; next if /^#/; my @f = split /\t/; $gffct++ if $f[2] eq 'terminal_inverted_repeat_element'; }
+close $gffin;
+
+if ($devtests) {
+    ok( $fasct == 270,    'Found the correct number of TIRs in FASTA' );
+    ok( $gffct == $fasct, 'Found the correct number of TIRs in FASTA and GFF3' );
+}
+else {
+    ok( $fasct == 1,      'Found the correct number of TIRs in FASTA' );
+    ok( $gffct == $fasct, 'Found the correct number of TIRs in FASTA and GFF3' );
+}
 
 ## clean up
-#my @outfiles;
-#find( sub { push @outfiles, $File::Find::name if /fas/ }, $testdir);
-#unlink @outfiles;
+my @outfiles;
+find( sub { push @outfiles, $File::Find::name if /fas/ }, $testdir);
+unlink @outfiles;
 unlink $fas;
     
 done_testing();
