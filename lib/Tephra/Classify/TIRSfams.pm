@@ -73,7 +73,7 @@ sub find_mites {
     my $fasta = $self->genome->absolute->resolve;
 
     my $has_pdoms = 0;
-    my (%pdom_index, %mite_index, @all_pdoms, @mite_lengths, $mite_feats);
+    my (%pdom_index, %mite_index, @is_mite, @all_pdoms, @mite_lengths, $mite_feats);
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $moutfile = File::Spec->catfile($path, $name.'_mite.gff3');
@@ -128,19 +128,24 @@ sub find_mites {
 		
 		push @mite_lengths, $len;
 		$mite_index{ $unc_mite_feats->{old_id} } = $unc_mite_feats->{new_id};
+		push @is_mite, join "||", $seq_id, $rep_region
 	    }
 	    
 	    undef $mite_feats;
 	    undef $lines;
 
-	    delete $features->{$chr_id}{$rep_region};
 	    $has_pdoms = 0;
 	}
     }
     close $mout;
     close $mfaout;
     
-    if (@mite_lengths) { 
+    if (@mite_lengths) {
+	for my $seqid_rreg (@is_mite) {
+	    my ($chr_id, $rep_region) = split /\|\|/, $seqid_rreg;
+	    delete $features->{$chr_id}{$rep_region};
+	}
+
 	my $mite_count = 
 	    $self->log_basic_element_stats({ lengths => \@mite_lengths, type => 'MITE', log => $log, pdom_ct => 0 });
 
