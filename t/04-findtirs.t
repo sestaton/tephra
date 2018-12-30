@@ -64,9 +64,6 @@ else {
 }
 
 ## clean up
-my @outfiles;
-find( sub { push @outfiles, $File::Find::name if /fas/ }, $testdir);
-unlink @outfiles;
 unlink $fas;
     
 done_testing();
