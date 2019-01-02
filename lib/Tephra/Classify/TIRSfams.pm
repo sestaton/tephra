@@ -73,7 +73,7 @@ sub find_mites {
     my $fasta = $self->genome->absolute->resolve;
 
     my $has_pdoms = 0;
-    my (%pdom_index, %mite_index, @is_mite, @all_pdoms, @mite_lengths, $mite_feats);
+    my (%pdom_index, %mite_index, @mites, @all_pdoms, @mite_lengths, $mite_feats);
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $moutfile = File::Spec->catfile($path, $name.'_mite.gff3');
@@ -90,7 +90,6 @@ sub find_mites {
 	    for my $tir_feature (@{$features->{$chr_id}{$rep_region}}) {
 		if ($tir_feature->{type} eq 'protein_match') {
 		    $has_pdoms = 1;
-		    #push @all_pdoms, $tir_feature->{attributes}{name}[0];
 		}
 		
 		if ($tir_feature->{type} eq 'terminal_inverted_repeat_element') {
@@ -98,11 +97,10 @@ sub find_mites {
 		    ($seq_id, $source, $start, $end, $strand) = 
 			@{$tir_feature}{qw(seq_id source start end strand)};
 		    my ($seq, $length) = $self->get_full_seq($index, $seq_id, $start, $end);
-		    my $id = join "_", 'DTX', $elem_id, $seq_id, $start, $end;
-		    $tir_feature->{attributes}{superfamily} = 'DTX';
+		    my $id = join "_", 'DTI', $elem_id, $seq_id, $start, $end;
+		    $tir_feature->{attributes}{superfamily} = 'DTI';
 		    
 		    $lines .= join "\n", ">".$id, $seq;
-		    #$len = $end - $start + 1;
 		}
 		my $gff3_str = gff3_format_feature($tir_feature);
 		$mite_feats .= $gff3_str;
@@ -121,14 +119,15 @@ sub find_mites {
 		# and their relationship with established DNA transposons. 2002.
 		# --
 		# Review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2167627/
-		say $mfaout $lines;
-		my $unc_mite_feats = $self->_format_mite_features($mite_feats);
+		#say $mfaout $lines;
+		my $unc_mite_feats = $self->_format_mite_features($mite_feats, $lines);
 		say $mout join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
 		say $mout $unc_mite_feats->{unc_feats};
+		say $mfaout $unc_mite_feats->{new_fas};
 		
 		push @mite_lengths, $len;
 		$mite_index{ $unc_mite_feats->{old_id} } = $unc_mite_feats->{new_id};
-		push @is_mite, join "||", $seq_id, $rep_region
+		push @mites, join "||", $seq_id, $rep_region;
 	    }
 	    
 	    undef $mite_feats;
@@ -139,20 +138,18 @@ sub find_mites {
     }
     close $mout;
     close $mfaout;
+    #dd \@mites;
     
     if (@mite_lengths) {
-	for my $seqid_rreg (@is_mite) {
-	    my ($chr_id, $rep_region) = split /\|\|/, $seqid_rreg;
-	    delete $features->{$chr_id}{$rep_region};
-	}
+	$self->_remove_tir_features($features, \@mites);
 
 	my $mite_count = 
 	    $self->log_basic_element_stats({ lengths => \@mite_lengths, type => 'MITE', log => $log, pdom_ct => 0 });
 
-	return ({ mite_outfile => $moutfile,
-                  mite_fasta   => $mfas,
-		  mite_count   => $mite_count, 
-		  mite_index   => \%mite_index });
+	return ({ mite_outfile  => $moutfile,
+                  mite_fasta    => $mfas,
+		  mite_count    => $mite_count, 
+		  mite_index    => \%mite_index, });
     }
     else {
 	unlink $moutfile, $mfas;
@@ -167,14 +164,8 @@ sub find_tc1_mariner {
     my $fasta = $self->genome->absolute->resolve;
     my $gff   = $self->gff->absolute->resolve;
 
-    my @lengths;
-    my $mar_feats;
-    my $is_mariner = 0;
-    my $has_pdoms  = 0;
-    my $pdoms      = 0;
-    my %pdom_index;
-    my $pdom_org;
-    my @all_pdoms;
+    my ($is_mariner, $has_pdoms, $pdoms) = (0, 0, 0);
+    my (%pdom_index, $pdom_org, $mar_feats, @all_pdoms, @lengths);
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile    = File::Spec->catfile($path, $name.'_tc1-mariner.gff3');
@@ -246,10 +237,11 @@ sub find_tc1_mariner {
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) {
+	#my $tc1_features = $self->_remove_tir_features($features, \@tirs);
 	$self->_remove_tir_features($features, \@tirs);
 	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'Tc1-Mariner', log => $log, pdom_ct => $pdoms });
 
-	return ($outfile, $fas, $count);
+	return ($outfile, $fas, $count); #, $tc1_features);
     }
     else {
 	unlink $outfile, $fas;	
@@ -263,14 +255,8 @@ sub find_hat {
     my $gff   = $self->gff->absolute->resolve;
     my $fasta = $self->genome->absolute->resolve;
     
-    my @lengths;
-    my $hat_feats;
-    my $is_hat = 0;
-    my $has_pdoms = 0;
-    my $pdoms = 0;
-    my %pdom_index;
-    my $pdom_org;
-    my @all_pdoms;
+    my ($is_hat, $has_pdoms, $pdoms) = (0, 0, 0);
+    my (%pdom_index, @lengths, @all_pdoms, $hat_feats, $pdom_org);
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile    = File::Spec->catfile($path, $name.'_hAT.gff3');
@@ -341,6 +327,7 @@ sub find_hat {
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) { 
+	#my $hat_features = $self->_remove_tir_features($features, \@tirs);
 	$self->_remove_tir_features($features, \@tirs);
 	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'hAT', log => $log, pdom_ct => $pdoms });
 
@@ -358,14 +345,8 @@ sub find_mutator {
     my $gff   = $self->gff->absolute->resolve;
     my $fasta = $self->genome->absolute->resolve;
 
-    my @lengths;
-    my $mut_feats;
-    my $is_mutator = 0;
-    my $has_pdoms = 0;
-    my $pdoms = 0;
-    my %pdom_index;
-    my $pdom_org;
-    my @all_pdoms;
+    my ($is_mutator, $has_pdoms, $pdoms) = (0, 0, 0);
+    my (%pdom_index, @lengths, @all_pdoms, $pdom_org, $mut_feats);
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile    = File::Spec->catfile($path, $name.'_mutator.gff3');
@@ -439,10 +420,11 @@ sub find_mutator {
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) { 
+	#my $mut_features = $self->_remove_tir_features($features, \@tirs);
 	$self->_remove_tir_features($features, \@tirs);
 	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'Mutator', log => $log, pdom_ct => $pdoms });
 
-	return ($outfile, $fas, $count);
+	return ($outfile, $fas, $count); #, $mut_features);
     }
     else {
 	unlink $outfile, $fas;
@@ -456,14 +438,8 @@ sub find_cacta {
     my $fasta = $self->genome->absolute->resolve;
     my $gff   = $self->gff->absolute->resolve;
 
-    my @lengths;
-    my $cac_feats;
-    my $is_cacta = 0;
-    my $has_pdoms = 0;
-    my $pdoms = 0;
-    my %pdom_index;
-    my $pdom_org;
-    my @all_pdoms;
+    my ($is_cacta, $has_pdoms, $pdoms) = (0, 0, 0);
+    my (%pdom_index, @all_pdoms, @lengths, $cac_feats, $pdom_org);
     
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile    = File::Spec->catfile($path, $name.'_cacta.gff3');
@@ -545,10 +521,11 @@ sub find_cacta {
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) {
+	#my $cac_features = $self->_remove_tir_features($features, \@tirs);
 	$self->_remove_tir_features($features, \@tirs);
 	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'CACTA', log => $log, pdom_ct => $pdoms });
 
-	return ($outfile, $fas, $count);
+	return ($outfile, $fas, $count); #, $cac_features);
     }
     else {
 	unlink $outfile, $fas;
@@ -563,8 +540,7 @@ sub write_unclassified_tirs {
     my $fasta = $self->genome->absolute->resolve;
 
     my ($is_unclass, $has_pdoms, $pdoms) = (0, 0, 0);
-    my (%pdom_index, @all_pdoms, @unc_lengths);
-    my ($pdom_org, $unc_feats);
+    my (%pdom_index, @all_pdoms, @unc_lengths, $pdom_org, $unc_feats);
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile    = File::Spec->catfile($path, $name.'_unclassified.gff3');
@@ -612,7 +588,7 @@ sub write_unclassified_tirs {
 	    undef $unc_feats;
 	    undef $lines;
 
-	    delete $features->{$chr_id}{$rep_region};
+	    #delete $features->{$chr_id}{$rep_region};
 	    $pdom_org = join ",", @all_pdoms;
 	    $pdom_index{$strand}{$pdom_org}++ if $pdom_org;
 	    $pdoms++ if $has_pdoms;
@@ -666,7 +642,7 @@ sub write_combined_output {
 
 sub _format_mite_features {
     my $self = shift;
-    my ($unc_feats) = @_;
+    my ($unc_feats, $lines) = @_;
 
     my ($new_feats, $old_id, $new_id);
     my $is_mite = 0;
@@ -688,7 +664,19 @@ sub _format_mite_features {
     }
     chomp $new_feats;
 
-    return ({ unc_feats => $new_feats, is_mite => $is_mite, old_id => $old_id, new_id => $new_id });
+    my $new_lines;
+    for my $line (split /^/, $lines) {
+	if ($line =~ />/) { 
+	    $line =~ s/$old_id/$new_id/;
+	    $new_lines .= $line."\n";
+	}
+	else {
+	    $new_lines .= $line."\n";
+	}
+    }
+    chomp $new_lines;
+
+    return ({ unc_feats => $new_feats, is_mite => $is_mite, old_id => $old_id, new_id => $new_id, new_fas => $new_lines });
 }
 
 sub _remove_tir_features {
@@ -696,11 +684,13 @@ sub _remove_tir_features {
     my ($features, $tirs) = @_;
 
     for my $tir (@$tirs) {
-	my ($chr, $rregion) = split /\|\|/, $tir;
-	delete $features->{$chr}{$rregion};
+	my ($chr, $rregion, $start, $end) = split /\|\|/, $tir;
+	my $rkey = join "||", $rregion, $start, $end;
+	delete $features->{$chr}{$rkey};
     }
 
     return;
+    #return $features;
 }
 
 =head1 AUTHOR
