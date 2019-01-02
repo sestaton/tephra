@@ -101,7 +101,6 @@ sub _classify_tir_superfamilies {
 
     my $index = $classify_obj->index_ref($opt->{genome});
     my ($header, $features) = $classify_obj->collect_gff_features($opt->{ingff});
-    #dd $features and exit;
 
     my $mite_obj = $classify_obj->find_mites($features, $header, $index, $log);
     my ($tcmoutfile, $tcmfas, $tc1_ct) = $classify_obj->find_tc1_mariner($features, $header, $index, $log);
@@ -109,7 +108,7 @@ sub _classify_tir_superfamilies {
     my ($mutoutfile, $mutfas, $mut_ct) = $classify_obj->find_mutator($features, $header, $index, $log);
     my ($cacoutfile, $cacfas, $cac_ct) = $classify_obj->find_cacta($features, $header, $index, $log);
     my $unc_obj = $classify_obj->write_unclassified_tirs($features, $header, $index, $log);
-
+    
     my @fastas = grep { defined && /\.fasta$/ } 
         ($tcmfas, $hatfas, $mutfas, $cacfas, $unc_obj->{unc_fasta}, $mite_obj->{mite_fasta});
     my @gffs = grep { defined && /\.gff3$/ } 
@@ -164,6 +163,7 @@ sub _classify_tir_superfamilies {
     else {
 	say STDERR "\n[WARNING]: No TIR elements were classified. Check input.\n";
     }
+
     return;
 }
 
