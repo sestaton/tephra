@@ -119,7 +119,6 @@ sub find_mites {
 		# and their relationship with established DNA transposons. 2002.
 		# --
 		# Review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2167627/
-		#say $mfaout $lines;
 		my $unc_mite_feats = $self->_format_mite_features($mite_feats, $lines);
 		say $mout join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
 		say $mout $unc_mite_feats->{unc_feats};
@@ -128,8 +127,7 @@ sub find_mites {
 		push @mite_lengths, $len;
 		$mite_index{ $unc_mite_feats->{old_id} } = $unc_mite_feats->{new_id};
 		push @mites, join "||", $seq_id, $rep_region;
-	    }
-	    
+	    }	    
 	    undef $mite_feats;
 	    undef $lines;
 
@@ -209,7 +207,6 @@ sub find_tc1_mariner {
 			say $faout join "\n", ">".$id, $seq;
 			
 			$tir_feature->{attributes}{superfamily} = 'DTT';
-			#$len = $end - $start + 1;
 		    }
 		    my $gff3_str = gff3_format_feature($tir_feature);
 		    chomp $gff3_str;
@@ -237,11 +234,10 @@ sub find_tc1_mariner {
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) {
-	#my $tc1_features = $self->_remove_tir_features($features, \@tirs);
 	$self->_remove_tir_features($features, \@tirs);
 	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'Tc1-Mariner', log => $log, pdom_ct => $pdoms });
 
-	return ($outfile, $fas, $count); #, $tc1_features);
+	return ($outfile, $fas, $count); 
     }
     else {
 	unlink $outfile, $fas;	
@@ -298,7 +294,6 @@ sub find_hat {
 			say $faout join "\n", ">".$id, $seq;
 			
 			$tir_feature->{attributes}{superfamily} = 'DTA';
-			#$len = $end - $start + 1;
 		    }
 		    my $gff3_str = gff3_format_feature($tir_feature);
 		    chomp $gff3_str;
@@ -327,7 +322,6 @@ sub find_hat {
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) { 
-	#my $hat_features = $self->_remove_tir_features($features, \@tirs);
 	$self->_remove_tir_features($features, \@tirs);
 	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'hAT', log => $log, pdom_ct => $pdoms });
 
@@ -391,7 +385,6 @@ sub find_mutator {
 			say $faout join "\n", ">".$id, $seq;
 			
 			$tir_feature->{attributes}{superfamily} = 'DTM';
-			#$len = $end - $start + 1;
 		    }
 		    my $gff3_str = gff3_format_feature($tir_feature);
 		    chomp $gff3_str;
@@ -420,11 +413,10 @@ sub find_mutator {
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) { 
-	#my $mut_features = $self->_remove_tir_features($features, \@tirs);
 	$self->_remove_tir_features($features, \@tirs);
 	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'Mutator', log => $log, pdom_ct => $pdoms });
 
-	return ($outfile, $fas, $count); #, $mut_features);
+	return ($outfile, $fas, $count); 
     }
     else {
 	unlink $outfile, $fas;
@@ -492,7 +484,6 @@ sub find_cacta {
 			say $faout join "\n", ">".$id, $seq;
 			
 			$tir_feature->{attributes}{superfamily} = 'DTC';
-			#$len = $end - $start + 1;
 		    }
 		    my $gff3_str = gff3_format_feature($tir_feature);
 		    chomp $gff3_str;
@@ -521,11 +512,10 @@ sub find_cacta {
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) {
-	#my $cac_features = $self->_remove_tir_features($features, \@tirs);
 	$self->_remove_tir_features($features, \@tirs);
 	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'CACTA', log => $log, pdom_ct => $pdoms });
 
-	return ($outfile, $fas, $count); #, $cac_features);
+	return ($outfile, $fas, $count);
     }
     else {
 	unlink $outfile, $fas;
@@ -570,12 +560,10 @@ sub write_unclassified_tirs {
 		    $tir_feature->{attributes}{superfamily} = 'DTX';
 		    
 		    $lines .= join "\n", ">".$id, $seq;
-		    #$len = $end - $start + 1;
 		}
 		my $gff3_str = gff3_format_feature($tir_feature);
 		$unc_feats .= $gff3_str;
-	    }
-	    
+	    }	    
 	    chomp $unc_feats;
 	    say $out join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
 
@@ -588,7 +576,6 @@ sub write_unclassified_tirs {
 	    undef $unc_feats;
 	    undef $lines;
 
-	    #delete $features->{$chr_id}{$rep_region};
 	    $pdom_org = join ",", @all_pdoms;
 	    $pdom_index{$strand}{$pdom_org}++ if $pdom_org;
 	    $pdoms++ if $has_pdoms;
@@ -690,7 +677,6 @@ sub _remove_tir_features {
     }
 
     return;
-    #return $features;
 }
 
 =head1 AUTHOR
