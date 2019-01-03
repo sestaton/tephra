@@ -280,6 +280,19 @@ sub write_tir_parts {
     return;
 }
 
+sub remove_repeat_region_features {
+    my $self = shift;
+    my ($features, $regions) = @_;
+
+    for my $region (@$regions) {
+        my ($chr, $rregion, $start, $end) = split /\|\|/, $region;
+        my $rkey = join "||", $rregion, $start, $end;
+        delete $features->{$chr}{$rkey};
+    }
+
+    return;
+}
+
 =head1 AUTHOR
 
 S. Evan Staton, C<< <evan at evanstaton.com> >>
