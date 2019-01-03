@@ -161,11 +161,11 @@ sub find_gypsy_copia {
 		
 		if ($gyp_dom_ct >= 1) {
 		    $gypsy{$seq_id}{$rep_region} = $features->{$seq_id}{$rep_region};
-		    push @gyp_cop_doms, $rep_region;
+		    push @gyp_cop_doms, join "||", $seq_id, $rep_region;
 		}
 		elsif ($cop_dom_ct >= 1) {
 		    $copia{$seq_id}{$rep_region} = $features->{$seq_id}{$rep_region};
-		    push @gyp_cop_doms, $rep_region;
+		    push @gyp_cop_doms, join "||", $seq_id, $rep_region;
 		}
 		
 		$gyp_dom_ct = 0;
@@ -179,11 +179,7 @@ sub find_gypsy_copia {
 	}    
     }
 
-    for my $seq_id (keys %$features) {
-	for my $rregion (@gyp_cop_doms) {
-	    delete $features->{$seq_id}{$rregion};
-	}
-    }
+    $self->remove_repeat_region_features($features, \@gyp_cop_doms);
 
     #dd \%gypsy and exit;
     return (\%gypsy, \%copia);
@@ -269,12 +265,12 @@ sub annotate_unclassified {
 		my $sf = $family_map->{$f[1]};
 		if ($sf =~ /^rlg|gypsy/i) {
 		    $gypsy->{ $seq_id }{ $key } = $features->{ $seq_id }{ $key };
-		    push @gyp_cop_regions, $key;
+		    push @gyp_cop_regions, join "||", $seq_id, $key;
 		    $seen{$f[0]} = 1;
 		}
 		elsif ($sf =~ /^rlc|copia/i) {
 		    $copia->{ $seq_id }{ $key } = $features->{ $seq_id }{ $key };
-		    push @gyp_cop_regions, $key;
+		    push @gyp_cop_regions, join "||", $seq_id, $key;
 		    $seen{$f[0]} = 1;
 		}
 	    }
@@ -283,11 +279,7 @@ sub annotate_unclassified {
     close $in;
     unlink $blast_out;
 
-    for my $seq_id (keys %$features) {
-	for my $rregion (@gyp_cop_regions) {
-	    delete $features->{ $seq_id }{ $rregion };
-	}
-    }
+    $self->remove_repeat_region_features($features, \@gyp_cop_regions);
 
     return;
 }
