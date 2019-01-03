@@ -9,8 +9,8 @@ use Capture::Tiny       qw(capture);
 use File::Path          qw(remove_tree);
 use File::Find;
 use File::Spec;
-
-use Test::More tests => 4;
+#use Data::Dump::Color;
+use Test::More tests => 3;
 
 $| = 1;
 
@@ -33,9 +33,12 @@ SKIP: {
         #say STDERR "stderr: $stderr";
         ok($stderr, 'Can execute tirage subcommand');
     }
-
+    
+    $genome = File::Spec->catfile($testdir, 'TAIR10_chr1.fas');
+    $gff = File::Spec->catfile($testdir, 'TAIR10_chr1_tirs_classified.gff3');
     my $outfile = $gff;
     $outfile =~ s/\.gff3/_tirages.tsv/;
+ 
     my @age_cmd = ($cmd, 'age', '-g', $genome, '-f', $gff, '-o', $outfile, '--type', 'tir', '--all');
     say STDERR join q{ }, @age_cmd;
     my @ret = capture { system([0..5], @age_cmd) };
@@ -45,17 +48,21 @@ SKIP: {
     open my $in, '<', $outfile;
     my $h = <$in>;
     my $ct = 0;
-    ++$ct while <$in>;
+    while (<$in>) {
+	next if /^ID/;
+	$ct++;
+    }
     close $in;
-    ok( $ct == 1, 'Expected number of entries in TIR age report');
+    ok( $ct == 270, 'Expected number of entries in TIR age report');
 
-    my @resdirs;
-    find( sub { push @resdirs, $File::Find::name if -d and /tirages/ }, $testdir);
-    ok( @resdirs == 1, 'Generated the expected number of TIR age calculations');
-    
+    # should be removed by default
+    #my @resdirs;
+    #find( sub { push @resdirs, $File::Find::name if -d and /tirages/ }, $testdir);
+    #ok( @resdirs == 1, 'Generated the expected number of TIR age calculations');
+
     ## clean up
     my @outfiles;
-    find( sub { push @outfiles, $File::Find::name if /^ref_tirs/ }, $testdir);
+    find( sub { push @outfiles, $File::Find::name if /^ref_tirs|TAIR10_chr1_tirs/ }, $testdir);
     unlink @outfiles;
 
     remove_tree( $outdir, { safe => 1 } );
