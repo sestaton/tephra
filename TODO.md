@@ -56,6 +56,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] identify	fragmented elements with refined full-length elements
  - [x] report domain architecture, as for LTR elements
  - [x] add MITE annotation to GFF3
+ - [x] add MITE annotation to FASTA
 
 ## Command `tephra findltrs`
  - [x] Find all non-overlapping LTR-RTs under strict and relaxed conditions
@@ -201,6 +202,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] add 'solotir' command for discovering solo-TIRs
  - [x] add method to install MUSCLE along with other deps (added in v0.12.1)
  - [ ] check to see if we are calculating examplars for all TE types
+ - [ ] in DEV test mode, use A. thaliana for all tests
 
 ## Docker image
  - [ ] reduce EMBOSS install to only required programs
