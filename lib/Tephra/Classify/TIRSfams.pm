@@ -72,7 +72,7 @@ sub find_mites {
     my $gff   = $self->gff->absolute->resolve;
     my $fasta = $self->genome->absolute->resolve;
 
-    my $has_pdoms = 0;
+    my ($has_pdoms, $mite_num) = (0, 0);
     my (%pdom_index, %mite_index, @mites, @all_pdoms, @mite_lengths, $mite_feats);
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
@@ -97,8 +97,10 @@ sub find_mites {
 		    ($seq_id, $source, $start, $end, $strand) = 
 			@{$tir_feature}{qw(seq_id source start end strand)};
 		    my ($seq, $length) = $self->get_full_seq($index, $seq_id, $start, $end);
-		    my $id = join "_", 'DTI', $elem_id, $seq_id, $start, $end;
-		    $tir_feature->{attributes}{superfamily} = 'DTI';
+		    #my $id = join "_", 'DTI', $elem_id, $seq_id, $start, $end;
+		    #$tir_feature->{attributes}{superfamily} = 'DTI';
+		    my $id = join "_", 'DTX', $elem_id, $seq_id, $start, $end;
+		    $tir_feature->{attributes}{superfamily} = 'DTX';
 		    
 		    $lines .= join "\n", ">".$id, $seq;
 		}
@@ -119,7 +121,8 @@ sub find_mites {
 		# and their relationship with established DNA transposons. 2002.
 		# --
 		# Review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2167627/
-		my $unc_mite_feats = $self->_format_mite_features($mite_feats, $lines);
+		$mite_num++;
+		my $unc_mite_feats = $self->_format_mite_features($mite_feats, $lines, $mite_num);
 		say $mout join "\t", $seq_id, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg_id";
 		say $mout $unc_mite_feats->{unc_feats};
 		say $mfaout $unc_mite_feats->{new_fas};
@@ -139,7 +142,7 @@ sub find_mites {
     #dd \@mites;
     
     if (@mite_lengths) {
-	$self->_remove_tir_features($features, \@mites);
+	$self->remove_repeat_region_features($features, \@mites);
 
 	my $mite_count = 
 	    $self->log_basic_element_stats({ lengths => \@mite_lengths, type => 'MITE', log => $log, pdom_ct => 0 });
@@ -234,7 +237,7 @@ sub find_tc1_mariner {
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) {
-	$self->_remove_tir_features($features, \@tirs);
+	$self->remove_repeat_region_features($features, \@tirs);
 	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'Tc1-Mariner', log => $log, pdom_ct => $pdoms });
 
 	return ($outfile, $fas, $count); 
@@ -322,7 +325,7 @@ sub find_hat {
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) { 
-	$self->_remove_tir_features($features, \@tirs);
+	$self->remove_repeat_region_features($features, \@tirs);
 	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'hAT', log => $log, pdom_ct => $pdoms });
 
 	return ($outfile, $fas, $count);
@@ -413,7 +416,7 @@ sub find_mutator {
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) { 
-	$self->_remove_tir_features($features, \@tirs);
+	$self->remove_repeat_region_features($features, \@tirs);
 	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'Mutator', log => $log, pdom_ct => $pdoms });
 
 	return ($outfile, $fas, $count); 
@@ -512,7 +515,7 @@ sub find_cacta {
     unlink $domoutfile unless -s $domoutfile;
 
     if (@lengths) {
-	$self->_remove_tir_features($features, \@tirs);
+	$self->remove_repeat_region_features($features, \@tirs);
 	my $count = $self->log_basic_element_stats({ lengths => \@lengths, type => 'CACTA', log => $log, pdom_ct => $pdoms });
 
 	return ($outfile, $fas, $count);
@@ -629,19 +632,19 @@ sub write_combined_output {
 
 sub _format_mite_features {
     my $self = shift;
-    my ($unc_feats, $lines) = @_;
+    my ($unc_feats, $lines, $mite_num) = @_;
 
-    my ($new_feats, $old_id, $new_id);
+    my ($new_feats, $old_id);
     my $is_mite = 0;
     my $mite_type = 'MITE';
+    my $new_id = $mite_type.$mite_num;
 
     for my $feat (split /^/, $unc_feats) {
         chomp $feat;
         my @feats = split /\t/, $feat;
         if ($feats[8] =~ /(terminal_inverted_repeat_element\d+)/) {
-            ($old_id) = ($feats[8] =~ /(terminal_inverted_repeat_element\d+)/);
-            $feats[8] =~ s/terminal_inverted_repeat_element/$mite_type/g;
-            $new_id = $old_id =~ s/terminal_inverted_repeat_element/$mite_type/r;
+	    $old_id = $1;
+	    $feats[8] =~ s/$old_id/$new_id/;  
         }
         if ($feats[2] eq 'terminal_inverted_repeat_element') {
             $feats[2] = $mite_type;
@@ -664,19 +667,6 @@ sub _format_mite_features {
     chomp $new_lines;
 
     return ({ unc_feats => $new_feats, is_mite => $is_mite, old_id => $old_id, new_id => $new_id, new_fas => $new_lines });
-}
-
-sub _remove_tir_features {
-    my $self = shift;
-    my ($features, $tirs) = @_;
-
-    for my $tir (@$tirs) {
-	my ($chr, $rregion, $start, $end) = split /\|\|/, $tir;
-	my $rkey = join "||", $rregion, $start, $end;
-	delete $features->{$chr}{$rkey};
-    }
-
-    return;
 }
 
 =head1 AUTHOR
