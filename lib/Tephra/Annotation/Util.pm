@@ -153,6 +153,7 @@ sub map_superfamily_name {
         'DTB' => 'PiggyBac',
         'DTT' => 'Tc1/Mariner',
         'DTR' => 'Transib',
+	#'DTI' => 'Unknown_MITE',
         'DTX' => 'Unknown_TIR',
         'DXX' => 'Unknown_DNA_transposon',
         'DHH' => 'Helitron',
@@ -231,6 +232,7 @@ sub map_superfamily_name_to_code {
         'DTB' => 'PiggyBac',
         'DTT' => 'Tc1/Mariner',
         'DTR' => 'Transib',
+	#'DTI' => 'Unknown_MITE',
         'DTX' => 'Unknown_TIR',
         'DXX' => 'Unknown_DNA_transposon',
         'DHH' => 'Helitron',
@@ -305,6 +307,7 @@ sub build_repeat_map {
 	'DTB' => { class => 'Class II', order => 'TIR', repeat_name => 'PiggyBac' },
 	'DTT' => { class => 'Class II', order => 'TIR', repeat_name => 'Tc1/Mariner' },
 	'DTR' => { class => 'Class II', order => 'TIR', repeat_name => 'Transib' },
+	#'DTI' => { class => 'Class II', order => 'TIR', repeat_name => 'Unknown MITE' },
 	'DTX' => { class => 'Class II', order => 'TIR', repeat_name => 'Unknown TIR' },
 	'DXX' => { class => 'Class II', order => 'TIR', repeat_name => 'Unknown DNA transposon' },
 	# - Subclass 2
