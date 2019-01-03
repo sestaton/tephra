@@ -94,7 +94,7 @@ sub extract_ltr_sequences {
 
     my ($header, $features) = $self->collect_gff_features($gff);
     my $index = $self->index_ref($fasta);
-
+    
     my ($family, %ltrs, %seen, %coord_map);
     for my $seq_id (keys %$features) {
 	for my $rep_region (keys %{$features->{$seq_id}}) {
@@ -107,19 +107,17 @@ sub extract_ltr_sequences {
 		    $ltrs{$key}{'full'} = join "||", @{$ltr_feature}{qw(seq_id type start end)};
 		    $coord_map{$elem_id} = join "||", @{$ltr_feature}{qw(seq_id start end)};
 		}
-		if ($ltr_feature->{type} eq 'long_terminal_repeat') { # &&
-		    #$ltr_feature-{start} == $start || $ltr_feature->{end} == $end) {
+		elsif ($ltr_feature->{type} eq 'long_terminal_repeat') { # &&
+		    #$ltr_feature->{start} == $start || $ltr_feature->{end} == $end) {
 		    my $parent = @{$ltr_feature->{attributes}{Parent}}[0];
 		    my ($chr_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
-		    if ($chr_id eq $ltr_feature->{seq_id}) {
-			my ($ltr_type, $ltr_start, $ltr_end, $ltr_strand) = 
-			    @{$ltr_feature}{qw(type start end strand)};
-			$ltr_strand //= '?';
-			my $ltrkey = join "||", $chr_id, $ltr_type, $ltr_start, $ltr_end, $ltr_strand;
-			my $parent_key = join "||", $family, $pkey;
-			push @{$ltrs{$parent_key}{'ltrs'}}, $ltrkey unless exists $seen{$ltrkey};
-			$seen{$ltrkey} = 1;
-		    }
+		    my ($ltr_type, $ltr_start, $ltr_end, $ltr_strand) = 
+			@{$ltr_feature}{qw(type start end strand)};
+		    $ltr_strand //= '?';
+		    my $ltrkey = join "||", $chr_id, $ltr_type, $ltr_start, $ltr_end, $ltr_strand;
+		    my $parent_key = join "||", $family, $pkey;
+		    push @{$ltrs{$parent_key}{'ltrs'}}, $ltrkey unless exists $seen{$ltrkey};
+		    $seen{$ltrkey} = 1;
 		}
             }
         }
@@ -200,18 +198,16 @@ sub extract_tir_sequences {
 		    $tirs{$key}{'full'} = join "||", @{$tir_feature}{qw(seq_id type start end)};
 		    $coord_map{$elem_id} = join "||", @{$tir_feature}{qw(seq_id start end)};
 		}
-		if ($tir_feature->{type} eq 'terminal_inverted_repeat') {
+		elsif ($tir_feature->{type} eq 'terminal_inverted_repeat') {
 		    my $parent = @{$tir_feature->{attributes}{Parent}}[0];
 		    my ($chr_id, $pkey) = $self->get_parent_coords($parent, \%coord_map);
-		    if ($chr_id eq $tir_feature->{seq_id}) {
-			my ($tir_type, $tir_start, $tir_end, $tir_strand) = 
-			    @{$tir_feature}{qw(type start end strand)};
-			$tir_strand //= '?';
-			my $tirkey = join "||", $chr_id, $tir_type, $tir_start, $tir_end, $tir_strand;
-			$pkey = defined $family ? join "||", $family, $pkey : join "||", 'DTX', $pkey;
-			push @{$tirs{$pkey}{'tirs'}}, $tirkey unless exists $seen{$tirkey};
-			$seen{$tirkey} = 1;
-		    }
+		    my ($tir_type, $tir_start, $tir_end, $tir_strand) = 
+			@{$tir_feature}{qw(type start end strand)};
+		    $tir_strand //= '?';
+		    my $tirkey = join "||", $chr_id, $tir_type, $tir_start, $tir_end, $tir_strand;
+		    $pkey = defined $family ? join "||", $family, $pkey : join "||", 'DTX', $pkey;
+		    push @{$tirs{$pkey}{'tirs'}}, $tirkey unless exists $seen{$tirkey};
+		    $seen{$tirkey} = 1;
 		}
 	    }
         }
