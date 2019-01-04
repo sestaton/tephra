@@ -42,7 +42,7 @@ if ($devtests) {
     $outgff   = File::Spec->catfile($testdir, 'TAIR10_chr1_tirs_classified.gff3');
     $outfas   = File::Spec->catfile($testdir, 'TAIR10_chr1_tirs_classified.fasta');
     $log      = File::Spec->catfile($testdir, 'TAIR10_chr1_tephra_classifytirs.log');
-    $repeatdb = File::Spec->catfile($testdir, 'RepBase1801_arab.fasta');
+    $repeatdb = File::Spec->catfile($testdir, 'repdb_dev.fas');
 }
 
 my @find_cmd = ($cmd, 'classifytirs', '-g', $genome, '-d', $repeatdb, '-i', $ingff, '-o', $outgff, '-r', $outdir);
