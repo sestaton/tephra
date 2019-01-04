@@ -35,6 +35,7 @@ Bug fixes:
   per family being incorrectly reported.
 - Bug fix with MITE IDs not being updated in the FASTA even though the GFF3 includes
   these elements.
+- Bug fix for logging long run times (fixes #25 on github).
 
 0.12.2	09/24/2018	Vancouver, BC
 
