@@ -10,7 +10,7 @@ use File::Path          qw(remove_tree);
 use File::Find;
 use File::Spec;
 #use Data::Dump::Color;
-use Test::More tests => 3;
+use Test::More 'no_plan';
 
 $| = 1;
 
@@ -69,4 +69,3 @@ SKIP: {
 };
 
 unlink $gff if -e $gff;
-done_testing();
