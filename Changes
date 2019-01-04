@@ -1,7 +1,7 @@
 Revision history for Tephra
 
 Version	Date	Location
-0.12.3	11/05/2018	Vancouver, BC
+0.12.3	01/04/2019	Vancouver, BC
 
 New features:
 - Add support for compressed input to 'all' command (and add tests with compressed data).
@@ -17,6 +17,10 @@ New features:
   processed and classified.
 - Add new 'find_mites' method to *Classify::TIRSfams class and search for these elements
   prior to the family-level classification steps.
+- Store all repeat region features my chromosome source, and sort by chromosome then coordinate
+  when writing features. This logic is used for all classification and reporting steps and 
+  greatly simplifies the code for ensuring the report is correct. Previously, the features
+  were stored by region name/number only and sorted on that basis.
 
 Bug fixes:
 - Bug fix for 'age' command with LTR/TIR coordinates being redefined and thus
