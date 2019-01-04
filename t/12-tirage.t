@@ -36,8 +36,7 @@ SKIP: {
     
     $genome = File::Spec->catfile($testdir, 'TAIR10_chr1.fas');
     $gff = File::Spec->catfile($testdir, 'TAIR10_chr1_tirs_classified.gff3');
-    my $outfile = $gff;
-    $outfile =~ s/\.gff3/_tirages.tsv/;
+    my $outfile = $gff =~ s/\.gff3/_tirages.tsv/r;
  
     my @age_cmd = ($cmd, 'age', '-g', $genome, '-f', $gff, '-o', $outfile, '--type', 'tir', '--all');
     say STDERR join q{ }, @age_cmd;
