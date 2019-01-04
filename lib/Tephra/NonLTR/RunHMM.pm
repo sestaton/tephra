@@ -23,11 +23,11 @@ Tephra::NonLTR::RunHMM - Search for non-LTR coding domains (adapted from MGEScan
 
 =head1 VERSION
 
-Version 0.12.2
+Version 0.12.3
 
 =cut
 
-our $VERSION = '0.12.2';
+our $VERSION = '0.12.3';
 $VERSION = eval $VERSION;
 
 has fasta   => ( is => 'ro', isa => 'Path::Class::File', required => 1, coerce => 1 );

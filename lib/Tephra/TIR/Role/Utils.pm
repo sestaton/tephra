@@ -17,11 +17,11 @@ Tephra::TIR::Role::Utils - Common utility methods for working with TIR transposo
 
 =head1 VERSION
 
-Version 0.12.2
+Version 0.12.3
 
 =cut
 
-our $VERSION = '0.12.2';
+our $VERSION = '0.12.3';
 $VERSION = eval $VERSION;
 
 sub get_exemplar_tirs_for_age {

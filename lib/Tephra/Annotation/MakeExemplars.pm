@@ -24,11 +24,11 @@ Tephra::Annotation::MakeExemplars - Make exemplars from family-level classificat
 
 =head1 VERSION
 
-Version 0.12.2
+Version 0.12.3
 
 =cut
 
-our $VERSION = '0.12.2';
+our $VERSION = '0.12.3';
 $VERSION = eval $VERSION;
 
 has dir => (
