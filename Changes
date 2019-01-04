@@ -3,7 +3,22 @@ Revision history for Tephra
 Version	Date	Location
 0.12.3	11/05/2018	Vancouver, BC
 
-- Add support for compressed input to 'all' command.
+New features:
+- Add support for compressed input to 'all' command (and add tests with compressed data).
+- Add new suite of dev tests for the 'findtirs' and 'classifytirs' commands to
+  ensure the bugs reported below with respect the element/family numbers are
+  correct.
+- New methods for naming MITEs and LARDs so they are numbered sequentially instead
+  of taking the number of the original TIR or LTR element.
+- Add role for removing repeat regions from feature store that is used in LTR/TIR 
+  classification routines.
+- Add simplified method for computing superfamily element counts from all routines,
+  which involves only logging totals at the family stage after singletons are
+  processed and classified.
+- Add new 'find_mites' method to *Classify::TIRSfams class and search for these elements
+  prior to the family-level classification steps.
+
+Bug fixes:
 - Bug fix for 'age' command with LTR/TIR coordinates being redefined and thus
   not being processed correctly.
 - Bug fix for target_site_duplication being assigned a parent of the TE instead
@@ -12,6 +27,10 @@ Version	Date	Location
   'findtir' commands.
 - Bug fix for 'findtirs' command reporting TIRs the same length of the full
   element span (this is bug in 'gt tirvish' but it is handled now).
+- Bug fix for 'classifyltrs' and 'classifytirs' commands with the number of elements
+  per family being incorrectly reported.
+- Bug fix with MITE IDs not being updated in the FASTA even though the GFF3 includes
+  these elements.
 
 0.12.2	09/24/2018	Vancouver, BC
 
