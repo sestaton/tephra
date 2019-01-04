@@ -423,7 +423,7 @@ sub write_unclassified {
     my (%pdom_index, %lard_index);
     my (@all_pdoms, $pdom_org);
     my (@lard_lengths, @unc_lengths);
-    my ($has_pdoms, $pdoms, $is_lard) = (0, 0, 0);
+    my ($has_pdoms, $pdoms, $is_lard, $lard_ct) = (0, 0, 0, 1);
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile($path, $name.'_unclassified.gff3');
@@ -446,7 +446,6 @@ sub write_unclassified {
 			= @{$ltr_feature}{qw(seq_id source start end strand)};
 		    $strand //= '?';
 		    $ltrlen = $end - $start + 1;
-		    #push @lengths, $ltrlen;
 		}
 		my $gff3_str = gff3_format_feature($ltr_feature);
 		$unc_feats .= $gff3_str;
@@ -460,8 +459,9 @@ sub write_unclassified {
 		push @unc_lengths, $ltrlen;
 	    }
 	    else {
-		my $unc_lard_feats = $self->_format_lard_features($unc_feats);
-		if ($unc_lard_feats->{is_lard}) { 
+		my $unc_lard_feats = $self->_format_lard_features($unc_feats, $lard_ct);
+		if ($unc_lard_feats->{is_lard}) {
+		    $lard_ct++;
 		    say $out $unc_lard_feats->{unc_feats};
 		    push @lard_lengths, $ltrlen;
 		    $lard_index{ $unc_lard_feats->{old_id} } = $unc_lard_feats->{new_id};
@@ -503,26 +503,23 @@ sub write_unclassified {
 
 sub _format_lard_features {
     my $self = shift;
-    my ($unc_feats) = @_;
+    my ($unc_feats, $lard_ct) = @_;
 
-    my ($new_feats, $old_id, $new_id);
+    my ($new_feats, $old_id);
     my $is_lard = 0;
     my $lard_type = 'LARD_retrotransposon';
+    my $new_id = $lard_type.$lard_ct;
 
     for my $feat (split /^/, $unc_feats) {
         chomp $feat;
         my @feats = split /\t/, $feat;
-	if ($feats[8] =~ /(LTR_retrotransposon\d+)/) {
-            ($old_id) = ($feats[8] =~ /(LTR_retrotransposon\d+)/);
-            $feats[8] =~ s/LTR/LARD/g;
-            $new_id = $old_id =~ s/LTR/LARD/r;
-        }
-	#($old_id) = ($feats[8] =~ /(LTR_retrotransposon\d+)/);
-        #$feats[8] =~ s/LTR_retrotransposon/$lard_type/g;
-	#$new_id = $feats[8];
-        if ($feats[2] eq 'LTR_retrotransposon') {
+	if ($feats[2] eq 'LTR_retrotransposon') {
             $feats[2] = $lard_type;
             $is_lard = 1;
+        }
+	if ($feats[8] =~ /(LTR_retrotransposon\d+)/) {
+	    $old_id = $1;
+	    $feats[8] =~ s/$old_id/$new_id/g;
         }
         $new_feats .= join "\t", @feats, "\n";
     }
