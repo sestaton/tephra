@@ -11,7 +11,7 @@ Tephra is a command line application to annotate [transposable elements](http://
 
 With [Docker](https://www.docker.com/), you can create a container to run Tephra with the following command:
 
-    docker run -it --name tephra-con -v $(pwd)/db:/db sestaton/tephra
+    docker run -it --name tephra-con -v $(pwd)/db:/db:Z sestaton/tephra
 
 That will create a container called "tephra-con" and start an interactive shell. The above assumes you have a directory called `db` in the working directory that contains your database files and the Tephra configuration. To run the full analysis, change to the mounted directory with `cd db` in your container and run the following command:
 
@@ -159,7 +159,7 @@ Part of this project uses code from [MGEScan-nonLTR](http://darwin.informatics.i
 
 The license for Tephra is below:
 
-Copyright (C) 2015-2018 S. Evan Staton
+Copyright (C) 2015-2019 S. Evan Staton
 
 This program is distributed under the MIT (X11) License, which should be distributed with the package.
 If not, it can be found here: http://www.opensource.org/licenses/mit-license.php
