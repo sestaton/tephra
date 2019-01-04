@@ -116,8 +116,8 @@ sub extract_ltr_sequences {
 		    $ltr_strand //= '?';
 		    my $ltrkey = join "||", $chr_id, $ltr_type, $ltr_start, $ltr_end, $ltr_strand;
 		    my $parent_key = join "||", $family, $pkey;
-		    push @{$ltrs{$parent_key}{'ltrs'}}, $ltrkey unless exists $seen{$ltrkey};
-		    $seen{$ltrkey} = 1;
+		    push @{$ltrs{$parent_key}{'ltrs'}}, $ltrkey; # unless exists $seen{$ltrkey};
+		    #$seen{$ltrkey} = 1;
 		}
             }
         }
@@ -136,6 +136,11 @@ sub extract_ltr_sequences {
             "results and try again. Exiting.\n" if -e $ltrs_out;
         push @files, $ltrs_out;
         open my $ltrs_outfh, '>>', $ltrs_out or die "\n[ERROR]: Could not open file: $ltrs_out\n";
+
+	#unless (defined $ltrs{$ltr}{'ltrs'}) {
+	#    say STDERR "DEBUG: $ltr";
+	#    dd $ltrs{$ltr};
+	#}
 
 	if (@{$ltrs{$ltr}{'ltrs'}} != 2) {
             say STDERR "[ERROR]: $ltr contains ",scalar(@{$ltrs{$ltr}{'ltrs'}})," sequences";
@@ -206,8 +211,8 @@ sub extract_tir_sequences {
 		    $tir_strand //= '?';
 		    my $tirkey = join "||", $chr_id, $tir_type, $tir_start, $tir_end, $tir_strand;
 		    $pkey = defined $family ? join "||", $family, $pkey : join "||", 'DTX', $pkey;
-		    push @{$tirs{$pkey}{'tirs'}}, $tirkey unless exists $seen{$tirkey};
-		    $seen{$tirkey} = 1;
+		    push @{$tirs{$pkey}{'tirs'}}, $tirkey; # unless exists $seen{$tirkey};
+		    #$seen{$tirkey} = 1;
 		}
 	    }
         }
