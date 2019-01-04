@@ -29,10 +29,10 @@ Tephra is a command-line program only for now. The command `tephra` itself contr
 
     Tephra version 0.12.3
     
-    Copyright (C) 2015-2018 S. Evan Staton
+    Copyright (C) 2015-2019 S. Evan Staton
     LICENSE -- MIT
 
-    Citation: Staton, SE. 2018. https://github.com/sestaton/tephra
+    Citation: Staton, SE. 2019. https://github.com/sestaton/tephra
 
     Name:
          Tephra - A tool for discovering transposable elements and describing
