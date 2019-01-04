@@ -642,13 +642,13 @@ sub _format_mite_features {
     for my $feat (split /^/, $unc_feats) {
         chomp $feat;
         my @feats = split /\t/, $feat;
-        if ($feats[8] =~ /(terminal_inverted_repeat_element\d+)/) {
-	    $old_id = $1;
-	    $feats[8] =~ s/$old_id/$new_id/;  
-        }
-        if ($feats[2] eq 'terminal_inverted_repeat_element') {
+	if ($feats[2] eq 'terminal_inverted_repeat_element') {
             $feats[2] = $mite_type;
             $is_mite = 1;
+        }
+        if ($feats[8] =~ /(terminal_inverted_repeat_element\d+)/) {
+	    $old_id = $1;
+	    $feats[8] =~ s/$old_id/$new_id/g;  
         }
         $new_feats .= join "\t", @feats, "\n";
     }
@@ -657,7 +657,7 @@ sub _format_mite_features {
     my $new_lines;
     for my $line (split /^/, $lines) {
 	if ($line =~ />/) { 
-	    $line =~ s/$old_id/$new_id/;
+	    $line =~ s/$old_id/$new_id/g;
 	    $new_lines .= $line."\n";
 	}
 	else {
