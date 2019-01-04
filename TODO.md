@@ -185,7 +185,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] add subcommand to merge all GFFs (can be done with `gt gff3 sort`, though we want to be careful
        not to bake in too many subcommands for things that are easily done at the command line already,
        as this will make the package harder to use and maintain).
- - [ ] handle compressed input/output
+ - [x] handle compressed input/output (added for 'all' command in v0.12.3)
  - [X] add fasta-handling classes from Transposome, which are faster than BioPerl (Won't do: Added kseq.h methods from HTSlib)
  - [ ] add verbose option for quickly debugging the installation of dependencies
  - [x] add command to get TIR ages
