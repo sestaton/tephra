@@ -51,11 +51,11 @@ ok( -e $moddir,     'Configured pHMM dir for non-LTR search' );
 ok( -e $chrdir,     'Configured HMM dir for non-LTR search' );
 ok( -e $mgescan,    'Can build custom MGEScan for non-LTR search' );
 ok( -e $trans,      'Can build translate command for non-LTR search' );
-ok( -e $pamlbin,    'Can build paml for analyzing LTR demography' );
+ok( -e $pamlbin,    'Can build PAML for analyzing LTR demography' );
 ok( -e $transeq,    'Can build transeq for identify coding domains' );
 ok( -e $blastn,     'Can build blastn for sequence searches' );
 ok( -e $htslibdir,  'Can build HTSlib for indexing and parsing sequence files' );
-ok( -e $muscle,     'Can build muslce for multi-sequence alignments' );
+ok( -e $muscle,     'Can build muscle for multi-sequence alignments' );
 
 if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
     my $wd = getcwd();
