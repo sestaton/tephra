@@ -2,12 +2,12 @@
 
 The following commands will install the core dependencies for Debian-based systems (e.g., Ubuntu):
 
-    sudo apt-get install -y -qq build-essential zlib1g-dev unzip libncurses5 libncurses5-dev libdb-dev git cpanminus libexpat1 libexpat1-dev
+    sudo apt-get install -y -qq build-essential zlib1g-dev libgd-dev unzip libncurses5 libncurses5-dev libdb-dev git cpanminus libexpat1 libexpat1-dev
 
 For RHEL-based systems (e.g., CentOS/Fedora):
 
     sudo yum groupinstall -y "Development Tools"
-    sudo yum install -y perl-App-cpanminus ncurses ncurses-devel libdb-devel expat expat-devel zlib-devel java-1.7.0-openjdk
+    sudo yum install -y perl-App-cpanminus ncurses ncurses-devel gd-devel libdb-devel expat expat-devel zlib-devel java-1.7.0-openjdk
 
 **INSTALLATION OF PERL DEPENDENCIES**
 
