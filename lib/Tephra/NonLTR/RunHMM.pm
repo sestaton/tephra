@@ -12,6 +12,7 @@ use File::Spec;
 use File::Find;
 use Bio::SearchIO;
 use Try::Tiny;
+use Tephra::NonLTR::SeqUtils;
 use Tephra::Config::Exe;
 use namespace::autoclean;
 
@@ -34,7 +35,9 @@ has fasta   => ( is => 'ro', isa => 'Path::Class::File', required => 1, coerce =
 has outdir  => ( is => 'ro', isa => 'Path::Class::Dir',  required => 1, coerce => 1 );
 has phmmdir => ( is => 'ro', isa => 'Path::Class::Dir',  required => 1, coerce => 1 );
 has pdir    => ( is => 'ro', isa => 'Path::Class::Dir',  required => 1, coerce => 1 );
-has verbose => ( is => 'ro', isa => 'Bool', predicate  => 'has_debug', lazy => 1, default => 0 );
+
+has verbose => ( is => 'ro', isa => 'Bool', predicate  => 'has_verbose', lazy => 1, default => 0 );
+has strand  => ( is => 'ro', isa => 'Str',  required => 1, default  => 'plus' );
 
 sub run_mgescan {
     my $self = shift;
@@ -42,7 +45,9 @@ sub run_mgescan {
     my $out_dir  = $self->outdir;
     my $phmm_dir = $self->phmmdir->absolute->resolve;
     my $pdir     = $self->pdir->absolute->resolve;
+    my $strand   = $self->strand;
 
+    my $sequtils = Tephra::NonLTR::SeqUtils->new( verbose => $self->verbose );
     my ($dna_name, $dna_path, $dna_suffix) = fileparse($dna_file, qr/\.[^.]*/);
     my $outf_dir = File::Spec->catdir($out_dir, 'out1');
     my $pos_dir  = File::Spec->catdir($out_dir, 'pos');
@@ -58,7 +63,12 @@ sub run_mgescan {
     say STDERR "Getting signal..." if $self->verbose;
     say STDERR "    Protein sequence..." if $self->verbose;
     my $pep_file = File::Spec->catfile($out_dir, $dna_name.$dna_suffix.'.pep');
-    $self->translate_forward($dna_file, $pep_file);
+    #$self->translate_forward($dna_file, $pep_file);
+    my $result = $sequtils->translate($dna_file, $pep_file, $strand);
+    unless ($result) {
+	say STDERR "\n[ERROR]: 'transeq' failed. Please check input.\n";
+	return;
+    }
 
     say STDERR "    RT signal..." if $self->verbose;
     my $phmm_file = File::Spec->catfile($phmm_dir, 'ebi_ds36752_seq.hmm');
@@ -71,7 +81,7 @@ sub run_mgescan {
     $self->get_signal_domain($pep_file, $phmm_file, $domain_ape_pos_file);
     
     # generate corresponsing empty domains files if either of them does not exist 
-    if (-e $domain_rt_pos_file || -e $domain_ape_pos_file ){
+    if (-e $domain_rt_pos_file || -e $domain_ape_pos_file ) {
 	print $dna_name."\n" if $self->verbose;	
 	if (! -e $domain_rt_pos_file){
 	    open my $out, '>', $domain_rt_pos_file or die "\n[ERROR]: Could not open file: $domain_rt_pos_file\n";
@@ -98,9 +108,51 @@ sub run_mgescan {
 	say STDERR "CMD: $cmd" if $self->verbose;
 	system($cmd);
     }
+
+    # not implemented
+    #unless ($self->debug) {
     unlink $pep_file if -e $pep_file;
+    #}
 
     return;
+}
+
+sub translate {
+    my $self = shift;
+    my ($in, $out, $strand) = @_;
+    #my $pdir = $self->pdir->absolute->resolve;
+
+    my $name = basename($in);
+    #my $config = Tephra::Config::Exe->new->get_config_paths;                                                                               
+    #my ($translate) = @{$config}{qw(transcmd)};                                                                                            
+    #my $cmd = "$translate -d $in -h $name -p $out";                                                                                        
+
+    my $frame = $strand =~ /forward|plus/i ? 'F' 
+              : $strand =~ /reverse|minus/i ? 'R' 
+              : 0;
+
+    unless (defined $frame) {
+        say STDERR "\n[ERROR]: Could not determine frame for translation. Exiting.\n";
+        return $frame;
+    }
+
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($transeq) = @{$config}{qw(transeq)};
+    #my $cmd = "transeq -frame R -sequence t/test_data/Ha412HOChr01_genome/Ha412HOChr01.fasta -outseq t/test_data/Ha412HOChr01_nonLTRs/b/Ha412HOChr01_rev_trans_trim_clean.faa -auto -trim -clean -reverse"; 
+    my $cmd = join q{ }, $transeq, '-frame', $frame, '-sequence', $in, '-outseq', $out, '-trim', '-clean', '-auto';
+    say STDERR "CMD: $cmd" if $self->verbose;
+
+    try {
+        system([0..5], $cmd);
+        #system([0..5], $transeq, '-frame', $frame, '-sequence', $dna_file, '-outseq', $pep_file, '-trim', '-clean', '-auto');
+    }
+    catch {
+        say STDERR "\n[ERROR]: 'transeq' died. Here is the exception: $_\n";
+        exit(1);
+    };
+
+    # frame is defined and true, so we return that to say all went well
+    return $frame;
 }
 
 sub translate_forward {
@@ -109,13 +161,19 @@ sub translate_forward {
     my $pdir = $self->pdir->absolute->resolve;
 
     my $name = basename($in);
+    #my $config = Tephra::Config::Exe->new->get_config_paths;
+    #my ($translate) = @{$config}{qw(transcmd)};
+    #my $cmd = "$translate -d $in -h $name -p $out";
+
     my $config = Tephra::Config::Exe->new->get_config_paths;
-    my ($translate) = @{$config}{qw(transcmd)};
-    my $cmd = "$translate -d $in -h $name -p $out";
+    my ($transeq) = @{$config}{qw(transeq)};
+
+    my $cmd = "transeq -frame R -sequence t/test_data/Ha412HOChr01_genome/Ha412HOChr01.fasta -outseq t/test_data/Ha412HOChr01_nonLTRs/b/Ha412HOChr01_rev_trans_trim_clean.faa -auto -trim -clean -reverse";
     say STDERR "CMD: $cmd" if $self->verbose;
     
     try {
 	system($cmd);
+	#system([0..5], 'transeq', '-frame', 'F', '-sequence', $dna_file, '-outseq', $pe, '-auto');
     }
     catch {
 	say STDERR "\n[ERROR]: tephra-translate died. Here is the exception: $_\n";
