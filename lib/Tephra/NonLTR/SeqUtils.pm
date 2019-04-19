@@ -4,8 +4,11 @@ use 5.014;
 use Moose;
 use File::Find;
 use File::Basename;
-use File::Path qw(make_path);
-use Cwd        qw(abs_path);
+use File::Path          qw(make_path);
+use Cwd                 qw(abs_path);
+use IPC::System::Simple qw(system);
+use Tephra::Config::Exe;
+use namespace::autoclean;
 
 =head1 NAME
 
@@ -19,6 +22,8 @@ Version 0.12.3
 
 our $VERSION = '0.12.3';
 $VERSION = eval $VERSION;
+
+has verbose => ( is => 'ro', isa => 'Bool', predicate  => 'has_verbose', lazy => 1, default => 0 );
 
 sub invert_seq {
     my $self = shift;
@@ -53,6 +58,44 @@ sub invert_seq {
     }
 
     return \@revfasfiles;
+}
+
+sub translate {
+    my $self = shift;
+    my ($in, $out, $strand) = @_;
+    #my $pdir = $self->pdir->absolute->resolve;
+
+    my $name = basename($in);
+    #my $config = Tephra::Config::Exe->new->get_config_paths;                                                                               
+    #my ($translate) = @{$config}{qw(transcmd)};                                                                                            
+    #my $cmd = "$translate -d $in -h $name -p $out";                                                                                        
+
+    my $frame = $strand =~ /forward|plus/i ? 'F' 
+	      : $strand =~ /reverse|minus/i ? 'R' 
+	      : 0;
+
+    unless (defined $frame) {
+	say STDERR "\n[ERROR]: Could not determine frame for translation. Exiting.\n";
+	return $frame;
+    }
+
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($transeq) = @{$config}{qw(transeq)};
+    #my $cmd = "transeq -frame R -sequence t/test_data/Ha412HOChr01_genome/Ha412HOChr01.fasta -outseq t/test_data/Ha412HOChr01_nonLTRs/b/Ha412HOChr01_rev_trans_trim_clean.faa -auto -trim -clean -reverse"; 
+    my $cmd = join q{ }, $transeq, '-frame', $frame, '-sequence', $in, '-outseq', $out, '-trim', '-clean', '-auto';
+    say STDERR "CMD: $cmd" if $self->verbose;
+
+    try {
+        system($cmd);
+        #system([0..5], $transeq, '-frame', $frame, '-sequence', $dna_file, '-outseq', $pep_file, '-trim', '-clean', '-auto');
+    }
+    catch {
+        say STDERR "\n[ERROR]: 'transeq' died. Here is the exception: $_\n";
+        exit(1);
+    };
+
+    # frame is defined and true, so we return that to say all went well
+    return $frame;
 }
 
 =head1 AUTHOR
