@@ -21,7 +21,7 @@ For System Adminstrators wanting to install Tephra for all users, please see the
 
 Assuming you have a working Perl and App::cpanminus, the next two commands install BioPerl (this can be skipped if BioPerl is installed):
     
-    echo "n" | cpanm -n  Data::Stag DB_File Bio::Root::Version Bio::SearchIO::blastxml
+    echo "n" | cpanm -n  Data::Stag DB_File Bio::Root::Version Bio::SearchIO::blastxml Bio::SearchIO::hmmer
 
 Finally, download the [latest release](https://github.com/sestaton/tephra/releases/latest) and run the following commands from the root directory:
 
