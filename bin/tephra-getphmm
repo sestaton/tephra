@@ -8,9 +8,12 @@ use warnings;
 use Bio::SearchIO;
 use File::Spec;
 use File::Basename;
+use File::Temp          qw(tempfile);
 use List::Util          qw(min);
 use File::Copy          qw(copy);
-use IPC::System::Simple qw(system capture);
+use IPC::System::Simple qw(system);
+use Capture::Tiny       qw(capture);
+use Cwd                 qw(abs_path);
 use Try::Tiny;
 use Getopt::Long;
 use Tephra::Config::Exe;
@@ -20,6 +23,7 @@ my $usage = "USAGE: ".basename($0)." -s seq.fas --hmmfile file.hmm -o outdir";
 my $seq; 
 my $phmm_file;
 my $out_dir;
+my $verbose = 0; # This is strictly for debugging and must be set manually
 
 GetOptions(
     'seq=s'     => \$seq,
@@ -28,43 +32,61 @@ GetOptions(
 );
 
 if (!$seq || !$phmm_file || !$out_dir) {
-    print "\n[ERROR]: Missing arguments. Check command line. Exiting.\n\n";
-    print $usage, "\n";
+    say "\n[ERROR]: Missing arguments. Check command line. Exiting.\n";
+    say $usage;
     exit(1);
 }
 
-my $seq_file = File::Spec->catfile($out_dir, 'nucleotide_orfs.fas');       
-my $pep_file = File::Spec->catfile($out_dir, 'translated_orfs.faa');
-open my $out, '>', $seq_file or die "\n[ERROR]: Could not open file: $seq_file";
-say $out $seq;
-close $out;
+my ($seqfh, $seq_file) = tempfile( TEMPLATE => 'nucleotide_orfs_XXXX', DIR => abs_path($out_dir), SUFFIX => '.fas', UNLINK => 0 );
+my ($pepfh, $pep_file) = tempfile( TEMPLATE => 'translated_orfs_XXXX', DIR => abs_path($out_dir), SUFFIX => '.faa', UNLINK => 0 );
+
+say $seqfh $seq;
+close $seqfh;
 
 my $config = Tephra::Config::Exe->new->get_config_paths;
 my ($hmmbin, $transeq) = @{$config}{qw(hmmer2bin transeq)};
 my $hmmsearch = File::Spec->catfile($hmmbin, 'hmmsearch');
 
 try {
-    system($transeq, "-frame=f", $seq_file, "-outseq=$pep_file", "-auto", "-trim", "yes");
+    system($transeq, '-frame', 'F', $seq_file, '-outseq', $pep_file, '-trim', 'yes', '-auto');
 }
 catch {
-    print "\n[ERROR]: transeq failed. Here is the exception: $_\n";
+    say STDERR "\n[ERROR]: 'transeq' failed in tephra-getphmm. Here is the exception: $_\n";
     exit;
 };
 
-my @hmm_results = capture([0..5], $hmmsearch, $phmm_file, $pep_file);
-parse_hmmsearch(\@hmm_results, $pep_file);
+# This is to gracefully handle sequences that were not translated correctly,
+# which typically happens in sequences with long gaps. 
+my $has_seq = check_seqlength($pep_file);
+
+if ($has_seq) { 
+    my ($hmm_out, $hmm_err, $hmm_exit) = capture { system($hmmsearch, $phmm_file, $pep_file) };
+
+    if ($hmm_err || $hmm_exit) { # log errors if something went wrong
+	say STDERR "\n[ERROR]: 'hmmsearch' failed in tephra-getphmm. This is the exit code: ", join q{ }, $hmm_exit;
+	say STDERR "[ERROR]: 'hmmsearch' failed in tephra-getphmm. This is the command: ", join q{ }, $hmmsearch, $phmm_file, $pep_file;
+	say STDERR "[ERROR]: 'hmmsearch' failed in tephra-getphmm. This is the STDERR message: ", join q{ }, $hmm_err;
+	exit(1);
+    }
+
+    parse_hmmsearch($hmm_out, $pep_file);
+}
+elsif (!$has_seq && $verbose) {
+    say STDERR "\n[ERROR] 'transeq' failed in tephra-getphmm. This is the command: ", 
+        join q{ }, ($transeq, '-frame', 'F', $seq_file, '-outseq', $pep_file, '-trim', 'yes', '-auto');
+}
 
 exit;
 #
 # methods
 #
 sub parse_hmmsearch {
-    my ($hmm_results, $pep_file) = @_;
+    my ($hmm_out, $pep_file) = @_;
 
     my ($name, $path, $suffix) = fileparse($pep_file, qr/\.[^.]*/);
     my $hmmout = File::Spec->catfile($path, $name.'_hmmsearch.txt');
-    open my $o, '>', $hmmout or die "\n[ERROR]: Could not open file: $hmmout";;
-    print $o @$hmm_results;
+    open my $o, '>', $hmmout or die "\n[ERROR]: Could not open file: $hmmout\n";
+    print $o $hmm_out;
     close $o;
 
     my $hmmer_in = Bio::SearchIO->new(-file => $hmmout, -format => 'hmmer');
@@ -85,4 +107,27 @@ sub parse_hmmsearch {
     unlink $hmmout;
 
     return;
+}
+
+sub check_seqlength {
+    my ($seq_file) = @_;
+
+    open my $fh, '<', $seq_file or die "\n[ERROR]: Could not open file: $seq_file\n";
+
+    my $has_seq = 1;
+
+    {    
+	local $/ = "\n>";
+
+	while (my $entry = $fh->getline) { 
+	    chomp $entry;
+
+	    my ($id, $seq) = split /\n/, $entry, 2;
+	    defined $id && $id =~ s/>//g;
+	    defined $seq && $seq =~ s/>//g;
+	    $has_seq = 0 unless length($seq);
+	}
+    }
+
+    return $has_seq;
 }
