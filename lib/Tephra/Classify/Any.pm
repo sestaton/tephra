@@ -9,12 +9,13 @@ use File::Find;
 use File::Basename;
 use Bio::DB::HTS::Kseq;
 use Bio::DB::HTS::Faidx;
-use List::Util  qw(min max);
-use File::Path  qw(make_path);
-use Cwd         qw(abs_path);         
-#use Log::Any    qw($log);
+use List::Util      qw(min max);
+use List::MoreUtils qw(uniq);
+use File::Path      qw(make_path);
+use Cwd             qw(abs_path);         
 use Carp 'croak';
 use Tephra::Annotation::MakeExemplars;
+use Tephra::Annotation::Util;
 #use Data::Dump::Color;
 use namespace::autoclean;
 
@@ -163,47 +164,65 @@ sub write_families {
     my ($name, $path, $suffix) = fileparse($tefas, qr/\.[^.]*/);
     my $dir  = basename($path);
 
-    my $seqstore = $self->_store_seq($tefas);
+    my $seqstore = $self->_store_seq($tefas); #TODO: import this as a role
     #dd $seqstore;
     my $elemct = (keys %$seqstore);
 	
     my ($idx, $famtot, $tomerge) = (0, 0, 0);
     my (%fastas, %annot_ids, %sfmap);
+    my @seen;
 
+     my $util = Tephra::Annotation::Util->new;
+
+    #non_LTR_retrotransposon0  => ["non_LTR_retrotransposon51_2RHet_3818_6387"],  
     for my $str (reverse sort { @{$matches->{$a}} <=> @{$matches->{$b}} } keys %$matches) {
-	my $famfile = $sf."_family$idx".".fasta";
-	my $outfile = File::Spec->catfile( abs_path($path), $famfile );
-	open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
-	for my $elem (@{$matches->{$str}}) {
-	    if (exists $seqstore->{$elem}) {
-		$famtot++;
-		$seqstore->{$elem} =~ s/.{60}\K/\n/g;
-		$annot_ids{$elem} = "family$idx";
-		my ($id) = ($elem =~ /(helitron\d+|non_LTR_retrotransposon\d+)_/);
-		my ($start, $stop) = ($elem =~ /(\d+)_(\d+)$/);
-		my $chr = $elem;
-		$chr =~ s/${id}_//;
-		$chr =~ s/_$start.*//;
-		my $sfcode = $sf_elem_map->{$id};
-		say $out join "\n", ">$sfcode"."_family$idx"."_$id"."_$chr"."_$start"."_$stop", $seqstore->{$elem};
-		delete $seqstore->{$elem};
+	if (uniq(@{$matches->{$str}}) > 1) { # families have n>1 elements
+	    my ($famid) = ($str =~ /(helitron\d+|non_LTR_retrotransposon\d+)/);
+
+	    unless (defined $famid) {
+		say STDERR "\n[ERROR]: could not get element ID for '$str'\n";
+		$famid = $sf;
 	    }
-	    else {
-		croak "\n[ERROR]: $elem not found in store. Exiting.";
+
+	    # sf_elem_map: non_LTR_retrotransposon99  => "RIJ",
+	    my $sfcode = $sf_elem_map->{$famid};
+
+	    my $famfile = $sfcode."_family$idx".".fasta";
+	    my $outfile = File::Spec->catfile( abs_path($path), $famfile );
+	    open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
+
+	    for my $elem (uniq(@{$matches->{$str}})) {
+		if (exists $seqstore->{$elem}) {
+		    $famtot++;
+		    $seqstore->{$elem} =~ s/.{60}\K/\n/g;
+		    $annot_ids{$elem} = "family$idx";
+		    my ($id) = ($elem =~ /(helitron\d+|non_LTR_retrotransposon\d+)_/);
+		    my ($start, $stop) = ($elem =~ /(\d+)_(\d+)$/);
+		    my $chr = $elem;
+		    $chr =~ s/${id}_//;
+		    $chr =~ s/_$start.*//;
+		    say $out join "\n", ">$sfcode"."_family$idx"."_$id"."_$chr"."_$start"."_$stop", $seqstore->{$elem};
+		    push @seen, $elem;
+		}
+		else {
+		    croak "\n[ERROR]: $elem not found in store. Exiting.";
+		}
 	    }
+	    close $out;
+	    $fastas{$outfile} = 1;
+	    $idx++;
+
 	}
-	close $out;
-	$idx++;
-	$fastas{$outfile} = 1;
     }
     my $famct = $idx;
     $idx = 0;
+    delete $seqstore->{$_} for @seen;
 
-    #dd $sf_elem_map;
     if (%$seqstore) {
 	my $famxfile = $sf.'_singleton_families.fasta';
 	my $xoutfile = File::Spec->catfile( abs_path($path), $famxfile );
 	open my $outx, '>', $xoutfile or die "\n[ERROR]: Could not open file: $xoutfile\n";
+
 	for my $k (nsort keys %$seqstore) {
 	    $seqstore->{$k} =~ s/.{60}\K/\n/g;
 	    my $chr = $k;
@@ -218,6 +237,7 @@ sub write_families {
 	}
 	close $outx;
 	$fastas{$xoutfile} = 1;
+
     }
     my $singct = $idx;
     
@@ -232,7 +252,6 @@ sub combine_families {
     my ($self) = shift;
     my ($outfiles, $outfile) = @_;
     
-    #dd $sf_elem_map;
     open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 
     my $ct = 0;
