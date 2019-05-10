@@ -1,6 +1,14 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.12.4
+
+Bug fixes:
+- Fix method for how the number of non-LTR and Helitron families are calculated. Previously,
+  there may have erroneously been single-copy families and singletons that should have been
+  in families due to how the superfamilies where being indexed and combined.
+-
+
 0.12.3	01/04/2019	Vancouver, BC
 
 New features:
