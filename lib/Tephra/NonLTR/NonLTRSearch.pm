@@ -69,11 +69,13 @@ sub find_nonltrs {
     say STDERR "Running forward..." if $self->verbose;
     for my $file (sort @$fasfiles) {    
 	my $run_hmm = Tephra::NonLTR::RunHMM->new( 
-	    fasta   => $file, 
-	    outdir  => $plus_out_dir, 
-	    phmmdir => $phmm_dir, 
-	    pdir    => $program_dir,
-	    verbose => $self->verbose );
+	    fasta    => $file, 
+	    fastadir => $genome_dir,
+	    outdir   => $plus_out_dir, 
+	    phmmdir  => $phmm_dir, 
+	    pdir     => $program_dir,
+	    strand   => 'plus',
+	    verbose  => $self->verbose );
 	$run_hmm->run_mgescan;
     }
 
@@ -97,11 +99,13 @@ sub find_nonltrs {
     
     for my $file (sort @$revfasfiles) {
 	my $run_rev_hmm = Tephra::NonLTR::RunHMM->new( 
-	    fasta   => $file, 
-	    outdir  => $minus_out_dir, 
-	    phmmdir => $phmm_dir, 
-	    pdir    => $program_dir,
-	    verbose => $self->verbose );
+	    fasta    => $file, 
+	    fastadir => $minus_dna_dir,
+	    outdir   => $minus_out_dir, 
+	    phmmdir  => $phmm_dir, 
+	    pdir     => $program_dir,
+	    strand   => 'minus',
+	    verbose  => $self->verbose );
 	$run_rev_hmm->run_mgescan;
     }
 
@@ -119,6 +123,7 @@ sub find_nonltrs {
 	remove_tree( $main_data_dir, { safe => 1} );
 	remove_tree( $genome_dir, { safe => 1} );
 	remove_tree( $minus_dna_dir, { safe => 1} );
+
 	return (undef, undef);
     }
     else {
