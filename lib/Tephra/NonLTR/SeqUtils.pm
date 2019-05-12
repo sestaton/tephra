@@ -2,11 +2,16 @@ package Tephra::NonLTR::SeqUtils;
 
 use 5.014;
 use Moose;
+use File::Spec;
 use File::Find;
 use File::Basename;
+use File::Temp          qw(tempfile);
+use File::Copy          qw(copy move);
 use File::Path          qw(make_path);
 use Cwd                 qw(abs_path);
-use IPC::System::Simple qw(system);
+use IPC::System::Simple qw(EXIT_ANY system);
+use Log::Any            qw($log);
+use Bio::DB::HTS::Kseq;
 use Tephra::Config::Exe;
 use namespace::autoclean;
 
@@ -62,17 +67,13 @@ sub invert_seq {
 
 sub translate {
     my $self = shift;
-    my ($in, $out, $strand) = @_;
-    #my $pdir = $self->pdir->absolute->resolve;
+    my ($genome_dir, $in, $out, $strand) = @_;
 
-    my $name = basename($in);
-    #my $config = Tephra::Config::Exe->new->get_config_paths;                                                                               
-    #my ($translate) = @{$config}{qw(transcmd)};                                                                                            
-    #my $cmd = "$translate -d $in -h $name -p $out";                                                                                        
-
+    my $tmp_file = $in.'.tmp';
     my $frame = $strand =~ /forward|plus/i ? 'F' 
 	      : $strand =~ /reverse|minus/i ? 'R' 
 	      : 0;
+    $frame = 'F';
 
     unless (defined $frame) {
 	say STDERR "\n[ERROR]: Could not determine frame for translation. Exiting.\n";
@@ -81,18 +82,34 @@ sub translate {
 
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($transeq) = @{$config}{qw(transeq)};
-    #my $cmd = "transeq -frame R -sequence t/test_data/Ha412HOChr01_genome/Ha412HOChr01.fasta -outseq t/test_data/Ha412HOChr01_nonLTRs/b/Ha412HOChr01_rev_trans_trim_clean.faa -auto -trim -clean -reverse"; 
-    my $cmd = join q{ }, $transeq, '-frame', $frame, '-sequence', $in, '-outseq', $out, '-trim', '-clean', '-auto';
-    say STDERR "CMD: $cmd" if $self->verbose;
+    my @cmd = ($transeq, '-frame', $frame, '-sequence', $in, '-outseq', $tmp_file, '-trim', 'yes', '-auto');
+    say STDERR 'CMD: ', join q{ }, @cmd if $self->verbose;
 
-    try {
-        system($cmd);
-        #system([0..5], $transeq, '-frame', $frame, '-sequence', $dna_file, '-outseq', $pep_file, '-trim', '-clean', '-auto');
-    }
-    catch {
-        say STDERR "\n[ERROR]: 'transeq' died. Here is the exception: $_\n";
+    my $EXIT = system(EXIT_ANY, @cmd);
+
+    if ($EXIT) { # non-zero
+        $log->error("'transeq' failed with exit value: $EXIT. Here is the output: \n");
         exit(1);
-    };
+    }
+
+    my $kseq = Bio::DB::HTS::Kseq->new($tmp_file);
+    my $iter = $kseq->iterator;
+
+    say STDERR "=====> Writing translated output: $out" if $self->verbose;
+    open my $outfh, '>', $out or die "\n[ERROR]: Could not open file: $out\n";
+    my $filename = basename($in);
+    my $genfh;
+
+    while (my $seqio = $iter->next_seq) {
+	my $id = $seqio->name;
+	my $seq = $seqio->seq;
+	$seq =~ s/.{60}\K/\n/g;
+	my ($frame) = ($id =~ /(_\d+$)/);
+	my $newid = $filename.$frame;
+	say $outfh join "\n", ">".$newid, $seq;
+    }
+    close $outfh;
+    unlink $tmp_file;
 
     # frame is defined and true, so we return that to say all went well
     return $frame;
