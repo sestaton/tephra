@@ -31,17 +31,19 @@ Version 0.12.3
 our $VERSION = '0.12.3';
 $VERSION = eval $VERSION;
 
-has fasta   => ( is => 'ro', isa => 'Path::Class::File', required => 1, coerce => 1 );
-has outdir  => ( is => 'ro', isa => 'Path::Class::Dir',  required => 1, coerce => 1 );
-has phmmdir => ( is => 'ro', isa => 'Path::Class::Dir',  required => 1, coerce => 1 );
-has pdir    => ( is => 'ro', isa => 'Path::Class::Dir',  required => 1, coerce => 1 );
+has fasta    => ( is => 'ro', isa => 'Path::Class::File', required => 1, coerce => 1 );
+has fastadir => ( is => 'ro', isa => 'Path::Class::File', required => 1, coerce  => 1 );
+has outdir   => ( is => 'ro', isa => 'Path::Class::Dir',  required => 1, coerce => 1 );
+has phmmdir  => ( is => 'ro', isa => 'Path::Class::Dir',  required => 1, coerce => 1 );
+has pdir     => ( is => 'ro', isa => 'Path::Class::Dir',  required => 1, coerce => 1 );
 
-has verbose => ( is => 'ro', isa => 'Bool', predicate  => 'has_verbose', lazy => 1, default => 0 );
-has strand  => ( is => 'ro', isa => 'Str',  required => 1, default  => 'plus' );
+has verbose  => ( is => 'ro', isa => 'Bool', predicate  => 'has_verbose', lazy => 1, default => 0 );
+has strand   => ( is => 'ro', isa => 'Str',  required => 1, default  => 'plus' );
 
 sub run_mgescan {
     my $self = shift;
     my $dna_file = $self->fasta->absolute->resolve;
+    my $fas_dir  = $self->fastadir;
     my $out_dir  = $self->outdir;
     my $phmm_dir = $self->phmmdir->absolute->resolve;
     my $pdir     = $self->pdir->absolute->resolve;
@@ -63,8 +65,7 @@ sub run_mgescan {
     say STDERR "Getting signal..." if $self->verbose;
     say STDERR "    Protein sequence..." if $self->verbose;
     my $pep_file = File::Spec->catfile($out_dir, $dna_name.$dna_suffix.'.pep');
-    #$self->translate_forward($dna_file, $pep_file);
-    my $result = $sequtils->translate($dna_file, $pep_file, $strand);
+    my $result = $sequtils->translate($fas_dir, $dna_file, $pep_file, $strand);
     unless ($result) {
 	say STDERR "\n[ERROR]: 'transeq' failed. Please check input.\n";
 	return;
@@ -82,7 +83,7 @@ sub run_mgescan {
     
     # generate corresponsing empty domains files if either of them does not exist 
     if (-e $domain_rt_pos_file || -e $domain_ape_pos_file ) {
-	print $dna_name."\n" if $self->verbose;	
+	#print $dna_name."\n" if $self->verbose;	
 	if (! -e $domain_rt_pos_file){
 	    open my $out, '>', $domain_rt_pos_file or die "\n[ERROR]: Could not open file: $domain_rt_pos_file\n";
 	    print $out "";
@@ -107,114 +108,13 @@ sub run_mgescan {
 	my $cmd = "$mgescan -m $chrhmm -s $dna_file -r $domain_rt_pos_file -a $domain_ape_pos_file -o $out_file -p $ldir -d $outf_dir";
 	say STDERR "CMD: $cmd" if $self->verbose;
 	system($cmd);
+	#exit;
     }
 
     # not implemented
     #unless ($self->debug) {
     unlink $pep_file if -e $pep_file;
     #}
-
-    return;
-}
-
-sub translate {
-    my $self = shift;
-    my ($in, $out, $strand) = @_;
-    #my $pdir = $self->pdir->absolute->resolve;
-
-    my $name = basename($in);
-    #my $config = Tephra::Config::Exe->new->get_config_paths;                                                                               
-    #my ($translate) = @{$config}{qw(transcmd)};                                                                                            
-    #my $cmd = "$translate -d $in -h $name -p $out";                                                                                        
-
-    my $frame = $strand =~ /forward|plus/i ? 'F' 
-              : $strand =~ /reverse|minus/i ? 'R' 
-              : 0;
-
-    unless (defined $frame) {
-        say STDERR "\n[ERROR]: Could not determine frame for translation. Exiting.\n";
-        return $frame;
-    }
-
-    my $config = Tephra::Config::Exe->new->get_config_paths;
-    my ($transeq) = @{$config}{qw(transeq)};
-    #my $cmd = "transeq -frame R -sequence t/test_data/Ha412HOChr01_genome/Ha412HOChr01.fasta -outseq t/test_data/Ha412HOChr01_nonLTRs/b/Ha412HOChr01_rev_trans_trim_clean.faa -auto -trim -clean -reverse"; 
-    my $cmd = join q{ }, $transeq, '-frame', $frame, '-sequence', $in, '-outseq', $out, '-trim', '-clean', '-auto';
-    say STDERR "CMD: $cmd" if $self->verbose;
-
-    try {
-        system([0..5], $cmd);
-        #system([0..5], $transeq, '-frame', $frame, '-sequence', $dna_file, '-outseq', $pep_file, '-trim', '-clean', '-auto');
-    }
-    catch {
-        say STDERR "\n[ERROR]: 'transeq' died. Here is the exception: $_\n";
-        exit(1);
-    };
-
-    # frame is defined and true, so we return that to say all went well
-    return $frame;
-}
-
-sub translate_forward {
-    my $self = shift;
-    my ($in, $out) = @_;
-    my $pdir = $self->pdir->absolute->resolve;
-
-    my $name = basename($in);
-    #my $config = Tephra::Config::Exe->new->get_config_paths;
-    #my ($translate) = @{$config}{qw(transcmd)};
-    #my $cmd = "$translate -d $in -h $name -p $out";
-
-    my $config = Tephra::Config::Exe->new->get_config_paths;
-    my ($transeq) = @{$config}{qw(transeq)};
-
-    my $cmd = "transeq -frame R -sequence t/test_data/Ha412HOChr01_genome/Ha412HOChr01.fasta -outseq t/test_data/Ha412HOChr01_nonLTRs/b/Ha412HOChr01_rev_trans_trim_clean.faa -auto -trim -clean -reverse";
-    say STDERR "CMD: $cmd" if $self->verbose;
-    
-    try {
-	system($cmd);
-	#system([0..5], 'transeq', '-frame', 'F', '-sequence', $dna_file, '-outseq', $pe, '-auto');
-    }
-    catch {
-	say STDERR "\n[ERROR]: tephra-translate died. Here is the exception: $_\n";
-	exit(1);
-    };
-
-    # // Below is some work-in-progress to parallelize translation of all frames
-    # // at the same time. 
-    #my @parts;
-    #my ($name, $path, $suffix) = fileparse($out, qr/\.[^.]*/);
-    #my $seqin = Bio::SeqIO->new(-file => $in, -format => 'fasta');
-    
-    #my $pm = Parallel::ForkManager->new(3);
-    #my $seqobj = $seqin->next_seq;
-    #for my $frame (0..2) { ## forward 3 frames
-	#$pm->start($frame) and next;
-	#my $outpart    = $out."_frame$frame";
-	#my $seqoutpart = Bio::SeqIO->new(-file => ">$outpart", -format => 'fasta');
-	#my $prot_obj   = $seqobj->translate(-frame => $frame);
-        #my $frameid = $frame+1;              # this is a hack to get mgscan working
-	#my $id = basename($in)."_$frameid";  # //
-	#$prot_obj->id($id);
-	#$seqoutpart->write_seq($prot_obj);
-	#$pm->finish(0);
-    #}
-    #$pm->wait_all_children;
-    
-    #find( sub { push @parts, $File::Find::name if -f and /frame[012]$/ }, $path);
-    #open my $seqout, '>>', $out or die "\n[ERROR]: Could not open file: $out\n";
-    #for my $part (sort @parts) {
-	#say "writing $part ...";
-	#my $lines = do { 
-	    #local $/ = undef; 
-	    #open my $fh_in, '<', $part or die "\n[ERROR]: Could not open file: $part\n";
-	    #<$fh_in>;
-	#};
-	#chomp $lines;
-	#say $seqout $lines;
-	#unlink $part;
-    #}
-    #close $seqout;
 
     return;
 }
@@ -257,7 +157,7 @@ sub get_signal_domain {
                 $evalue = $evalue * $temp[5];
             }
 	    else {
-                if ($start >= 0 && $evalue < 0.00001) {
+                if ($start >= 0 && $evalue <= 0.00001) {
                     say $out join "\t", $start, $end, @pre[4..5];
                 }
                 ($start, $end, $evalue) = @temp[0,1,5];
@@ -265,7 +165,7 @@ sub get_signal_domain {
             @pre = @temp;
         }
 
-        if ($start >= 0 && $evalue < 0.00001) { 
+        if ($start >= 0 && $evalue <= 0.00001) { 
             say $out join "\t", $start, $end, @pre[4..5];
         }
         close $in;
@@ -322,9 +222,9 @@ sub _sort_matches {
     #217494303 217495593 -75.2 1.2e-08
     #
     # Output:
-    #217494303 2174955931492 -75.2 1.2e-08
-    #46927035 469284511492 -87.4 3.9e-08
-    #84073929 840751081492 -115.7 6.1e-07
+    #217494303 217495593 -75.2 1.2e-08
+    #46927035 46928451 -87.4 3.9e-08
+    #84073929 84075108 -115.7 6.1e-07
 
     open my $in, '<', $unsorted or die "\n[ERROR]: Could not open file: $unsorted\n";
     open my $out, '>', $sorted or die "\n[ERROR]: Could not open file: $sorted\n";
