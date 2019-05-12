@@ -12,6 +12,7 @@ use File::Spec;
 use File::Basename;
 use Carp 'croak';
 #use Data::Dump::Color;
+use Tephra::Config::Exe;
 use namespace::autoclean;
 
 with 'Tephra::NonLTR::Role::PathUtils';
@@ -40,8 +41,8 @@ sub validate_q_score {
     my $genome  = $self->fasta->absolute->resolve;
 
     my $hmmsearch = $self->find_hmmsearch;
-    my @all_clade = ('CR1', 'I', 'Jockey', 'L1', 'L2', 'R1', 'RandI', 'Rex', 'RTE', 'Tad1', 'R2','CRE');
     my @en_clade  = ('CR1', 'I', 'Jockey', 'L1', 'L2', 'R1', 'RandI', 'Rex', 'RTE', 'Tad1');
+    my @all_clade = (@en_clade, 'R2', 'CRE');
     my $tree_dir;
 
     my $infodir = File::Spec->catdir($dir, 'info');
@@ -52,6 +53,7 @@ sub validate_q_score {
     $self->get_full_frag($genome, $dir, \@all_clade);
     
     # get domain seq
+    ## // Parallelize en/rt
     $self->get_domain_for_full_frag($genome, 'en', \@en_clade,  $dir, $hmm_dir);
     $self->get_domain_for_full_frag($genome, 'rt', \@all_clade, $dir, $hmm_dir);
 
@@ -98,7 +100,7 @@ sub get_domain_for_full_frag {
 	my $pep_file = File::Spec->catfile($resdir, $clade.'.pep');
 	my $dna_file = File::Spec->catfile($resdir, $clade.'.dna');
        
-	if (-e $pep_file ) {
+	if (-e $pep_file) {
 	    my $phmm_file       = File::Spec->catfile($hmm_dir, $clade.'.'.$domain.'.hmm');
 	    my $result_pep_file = File::Spec->catfile($resdir, $clade.'.'.$domain.'.pe');
 	    my $result_dna_file = File::Spec->catfile($resdir, $clade.'.'.$domain.'.dna');
@@ -147,7 +149,9 @@ sub get_full_frag {
 	my $dna_file = File::Spec->catfile($clade_dir, $clade.'.dna');
 	my $pep_file = File::Spec->catfile($clade_dir, $clade.'.pep');   
 	if (-e $dna_file){
-	    system([0..5],"transeq", "-frame=f", "-sequence=$dna_file", "-outseq=$pep_file", "-auto");
+	    my $config = Tephra::Config::Exe->new->get_config_paths;
+	    my ($transeq) = @{$config}{qw(transeq)};
+	    system([0..5], $transeq, '-frame', 'F', '-sequence', $dna_file, '-outseq', $pep_file, '-trim', 'yes', '-auto');
 	}
     }
 
@@ -159,7 +163,6 @@ sub get_domain_pep_seq {
     my $self = shift;
     my ($pep_file, $phmm_file, $result_pep_file) = @_;
 
-    #say "debug: $result_pep_file";
     my $hmmsearch = $self->find_hmmsearch;
     my @hmm_results = capture([0..5], $hmmsearch, $phmm_file, $pep_file);
     my (%domain_start, %domain_end, %result_start, %result_end, %uniq_head);
@@ -182,6 +185,7 @@ sub get_domain_pep_seq {
 		#my @temp = split /\s+/, $1;
 		my $key      = substr($hitid, 0, length($hitid));
 		my $uniq_key = substr($hitid, 0, length($hitid)-2);
+		#say STDERR join q{ }, "key: $key", "uniq_key: $uniq_key";
 
 		if (not exists $uniq_head{$uniq_key}){
 		    $uniq_head{$uniq_key} = 1;
@@ -193,8 +197,7 @@ sub get_domain_pep_seq {
     }
 
     my $flag = 0;
-    my $head;
-    my $seq;
+    my ($head, $seq);
 
     open my $in, '<', $pep_file or die "\n[ERROR]: Could not open file: $pep_file";
     open my $out, '>', $result_pep_file or die "\n[ERROR]: Could not open file: $result_pep_file";
@@ -224,6 +227,7 @@ sub get_domain_pep_seq {
 	    }
 	}
     }
+
     if ($flag == 1) {
 	say $out '>'.$head.'_'.$result_start{$head}.'_'.$result_end{$head}; # get region in header
 	say $out substr($seq, $result_start{$head}, eval($result_end{$head}-$result_start{$head}+1));
@@ -261,7 +265,7 @@ sub get_domain_dna_seq {
                 my $hend     = $hsp->end('hit');
 		my $key      = substr($hitid, 0, length($hitid));
 		my $uniq_key = substr($hitid, 0, length($hitid)-2);
-	
+
 		if (not exists $result_start{$uniq_key}) {
 		    $uniq_head{$uniq_key} = 1;
 		    if ($flag == 1) {
@@ -310,6 +314,7 @@ sub get_domain_dna_seq {
 	    }
 	}
     }
+
     if ($flag == 1) {
 	say $out '>'.$head.'_'.$result_start{$head}.'_'.$result_end{$head};
 	say $out substr($seq, $result_start{$head}*3-3, eval(($result_end{$head}-$result_start{$head}+1)*3+3));
@@ -351,6 +356,7 @@ sub vote_hmmsearch {
 
 	my ($name, $path, $suffix) = fileparse($seq, qr/\.[^.]*/);
 	my $hmmout = File::Spec->catfile($path, $name.'_hmmsearch.txt');
+
 	open my $o, '>', $hmmout or die "\n[ERROR]: Could not open file: $hmmout";;
 	print $o @hmm_results;
 	close $o;
@@ -369,6 +375,7 @@ sub vote_hmmsearch {
 		    #Ha1.fa_79699679_3    1/1     668   899 ..     1   260 []   185.0  4.4e-55
 		    #my @temp = split /\s+/, $1;
 		    my $uniq_key = substr($hitid, 0, length($hitid));	    
+		    #say STDERR "vote_hmmsearch: $uniq_key";
 		    next unless (defined $uniq_key && defined $e_val && defined $clade && defined $save_evalue{$uniq_key});
 		    # instead of a regex (as in mgescan), we check if variables are defined
 
