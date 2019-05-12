@@ -64,8 +64,9 @@ if ($has_seq) {
 
     if ($hmm_err || $hmm_exit) { # log errors if something went wrong
 	say STDERR "\n[ERROR]: 'hmmsearch' failed in tephra-getphmm. This is the exit code: ", join q{ }, $hmm_exit;
-	say STDERR "[ERROR]: 'hmmsearch' failed in tephra-getphmm. This is the command: ", join q{ }, $hmmsearch, $phmm_file, $pep_file;
-	say STDERR "[ERROR]: 'hmmsearch' failed in tephra-getphmm. This is the STDERR message: ", join q{ }, $hmm_err;
+	say STDERR "\n[ERROR]: 'hmmsearch' failed in tephra-getphmm. This is the command: ", join q{ }, $hmmsearch, $phmm_file, $pep_file;
+	say STDERR "\n[ERROR]: 'hmmsearch' failed in tephra-getphmm. This is the STDERR message: ", join q{ }, $hmm_err;
+	unlink $seq_file, $pep_file;
 	exit(1);
     }
 
@@ -75,6 +76,7 @@ elsif (!$has_seq && $verbose) {
     say STDERR "\n[ERROR] 'transeq' failed in tephra-getphmm. This is the command: ", 
         join q{ }, ($transeq, '-frame', 'F', $seq_file, '-outseq', $pep_file, '-trim', 'yes', '-auto');
 }
+unlink $seq_file, $pep_file;
 
 exit;
 #
