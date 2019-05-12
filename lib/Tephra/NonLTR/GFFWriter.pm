@@ -45,13 +45,16 @@ sub write_gff {
     my @all_clade = ('CR1', 'I', 'Jockey', 'L1', 'L2', 'R1', 'RandI', 'Rex', 'RTE', 'Tad1', 'R2', 'CRE');
     my $seq_dir   = File::Spec->catdir( abs_path($outdir), 'info', 'full' );
     my @cladedirs = map { File::Spec->catdir( abs_path($seq_dir), $_) } @all_clade;
-    my @nonltrs;
+    my (@nonltrs, @en, @rt);
 
     for my $clade (@cladedirs) {
         my $name = basename($clade);
-	my $filename = $name.'.dna';
+	my $full_file = $name.'.dna';
+	my $en_file   = $name.'.en.dna';
+	my $rt_file   = $name.'.rt.dna';
+ 
         if (-d $clade) {
-	    find( sub { push @nonltrs, $File::Find::name if -f and /$filename/ }, $clade ); 	    
+	    find( sub { push @nonltrs, $File::Find::name if -f and /$full_file|$en_file|$rt_file/ }, $clade ); 	    
         }
     }
 
@@ -79,7 +82,8 @@ sub _fasta_to_gff {
 
     my $util = Tephra::Annotation::Util->new;
     my $index = $self->index_ref($genome);
-    my $clade_map = $self->_build_clade_map;
+    my $clade_map = $self->_build_clade_map; #TODO: add this to Tephra::Annotation::Util
+    my $so_term_map = $util->get_SO_terms;
 
     my ($gname, $gpath, $gsuffix) = fileparse($outgff, qr/\.[^.]*/);
     my $tmpfname = $gname.'_tephra_nonltr_fas_XXXX';
@@ -88,27 +92,38 @@ sub _fasta_to_gff {
     my ($outf, $ffilename) = tempfile( TEMPLATE => $tmpfname, DIR => $gpath, UNLINK => 0, SUFFIX => '.fasta' );
     my ($outg, $gfilename) = tempfile( TEMPLATE => $tmpgname, DIR => $gpath, UNLINK => 0, SUFFIX => '.gff3' );
 
-    my ($lens, $combined) = $self->_get_seq_region;
+    my ($lens, $combined) = $self->_get_seq_region; #TODO: add this to a role
 
     my %regions;
     for my $file (@$seqs) {
 	my ($name, $path, $suffix) = fileparse($file, qr/\.[^.]*/);
+	my ($dom) = $name =~ /\.(en|rt)$/ ? $1 : 'full';
+	$name =~ s/\.\w+$//;
 	open my $in, '<', $file or die "\n[ERROR]: Could not open file: $file\n";
+	
 	while (my $line = <$in>) {
 	    chomp $line;
-	    if ($line =~ /^>/) {
-		my ($id, $start, $end, $strand) = ($line =~ /^\>(.*\.?fa(?:s?t?a?))_(\d+)(?:-|_)(\d+)_(\+|\-)/);
-		if (defined $id) {		    
-		    $regions{$name}{$id}{$start} = join "||", $start, $end, $strand;
+	    if ($line =~ /^\>(?<id>.*\.?fa(?:s?t?a?))_(?<start>\d+)(?:-|_)(?<end>\d+)_(?<strand>\+|\-)_?(?<domstart>\d+)?(?:-|_)?(?<domend>\d+)?/) {
+		if (defined $+{id}) { 
+		    if (defined $+{domstart} && defined $+{domend}) {
+			my $reg_start = $+{start} + $+{domstart};
+			my $reg_end   = $+{start} + $+{domend};
+			push @{$regions{ $name }{ $+{id} }{ $+{start} }}, join "||", $dom, $reg_start, $reg_end, $+{strand};
+		    }
+		    elsif ($name !~ /en$|rt$/ && defined $+{id}) {
+			push @{$regions{ $name }{ $+{id} }{ $+{start} }}, join "||", 'full', $+{start}, $+{end}, $+{strand};
+		    }
 		}
 		else {
-		    say STDERR "\n[ERROR]: Could not parse sequence ID for header: '$line'. ".
+		    say STDERR "\n[ERROR]: Could not parse sequence ID for header: '$line'. in *GFFWriter::_fasta_to_gff ".
 			"This is a bug, please report it.\n";
 		}
 	    }
+
 	}
 	close $in;
     }
+    #dd \%regions and exit;
 
     my @ids = map { nsort keys %{$regions{$_}} } keys %regions;
     say $outg '##gff-version 3';
@@ -135,24 +150,50 @@ sub _fasta_to_gff {
 	for my $seqid (nsort keys %{$regions{$clade}}) {
 	    my ($name, $path, $suffix) = fileparse($seqid, qr/\.[^.]*/);
 	    for my $start (sort { $a <=> $b } keys %{$regions{$clade}{$seqid}}) {
-	        my ($start, $end, $strand) = split /\|\|/, $regions{$clade}{$seqid}{$start};
-		my $seqname = $seqid;
-		$seqname =~ s/\.fa.*//;
-		#my $elem = $code."_non_LTR_retrotransposon$ct";
-		my $elem = "non_LTR_retrotransposon$ct";
-                my $tmp = $elem.'.fasta';
-		
-		my ($seq, $length) = $self->get_full_seq($index, $seqname, $start, $end);
-		
-		my ($filtered_seq, $adj_start, $adj_end) = $self->_filterNpercent($seq, $start, $end);
-		if (defined $filtered_seq) {
-		    my $id = join "_", $elem, $seqname, $adj_start, $adj_end;
-		    say $outf join "\n", ">".$id, $filtered_seq;
-		    say $outg join "\t", $name, 'Tephra', 'non_LTR_retrotransposon', $adj_start, $adj_end, '.', $strand, '.',
-		        "ID=$elem;Ontology_term=SO:0000189";
+		$ct++;
+		for my $region (
+		    map  { $_->[0] }
+		    sort { $a->[1] <=> $b->[1] }
+		    map  { [ $_, /\w+\|\|(\d+)\|\|\d+\|\|(?:\+|\-)/ ] } 
+		    @{$regions{$clade}{$seqid}{$start}} ) {
+
+		    say STDERR "DEBUG sort: $region";
+		    my ($feature, $feature_start, $feature_end, $strand) = split /\|\|/, $region;
+		    my $type = $feature eq 'full' ? 'non_LTR_retrotransposon' : 'protein_match';
+		    my $so_term = $so_term_map->{$type};
+
+		    my $seqname = $seqid;
+		    $seqname =~ s/\.fa.*//;
+		    #my $elem = $code."_non_LTR_retrotransposon$ct";
+		    my $elem = "non_LTR_retrotransposon$ct";
+		    my $tmp = $elem.'.fasta';
+
+		    my $featureid = $feature eq 'full' ? $elem :
+                        $feature eq 'en' ? 'Exo_endo_phos_2' :
+                        $feature eq 'rt' ? 'RVT_1' : '';
+
+
+		    my ($filtered_seq, $adj_start, $adj_end);
+		    if ($feature eq 'full') { 
+			my ($seq, $length) = $self->get_full_seq($index, $seqname, $feature_start, $feature_end);
+			
+			($filtered_seq, $adj_start, $adj_end) = $self->_filterNpercent($seq, $feature_start, $feature_end);
+			if (defined $filtered_seq) {
+			    my $id = join "_", $elem, $seqname, $adj_start, $adj_end;
+			    say $outf join "\n", ">".$id, $filtered_seq;
+			}
+		    }
+
+		    unless (defined $adj_start && defined $adj_end) {
+			($adj_start, $adj_end) = ($feature_start, $feature_end);
+		    }
+		    
+		    my $attr = $feature eq 'full' ? "ID=$featureid;Ontology_term=$so_term" : 
+			"Parent=$elem;name=$featureid;Ontology_term=$so_term";
+		    
+		    say $outg join "\t", $name, 'Tephra', $type, $adj_start, $adj_end, '.', $strand, '.', $attr;
 		    my $sfcode = $util->map_superfamily_name_to_code($clade);
 		    $sf_elem_map{$elem} = $sfcode;
-		    $ct++;
 		}
 	    }
 	} 
