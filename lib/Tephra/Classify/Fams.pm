@@ -106,7 +106,6 @@ sub make_families {
     my $threads = $self->threads;    
     my $tetype  = $self->type;
     my $gff     = $self->gff;
-    #my $log     = $self->get_logger($logfile);
 
     my $t0 = gettimeofday();
     my $logfile = File::Spec->catfile($outdir, $tetype.'_families_thread_report.log');
@@ -118,7 +117,6 @@ sub make_families {
     say $domfh join "\t", "Family_name", "Element_ID", "Domain_organization";
 
     my $pm = Parallel::ForkManager->new(3);
-    #my $pm = Parallel::ForkManager->new(1);
     local $SIG{INT} = sub {
         $log->warn("Caught SIGINT; Waiting for child processes to finish.");
         $pm->wait_all_children;
@@ -270,7 +268,7 @@ sub make_fasta_from_dom_orgs {
     my @compfiles;
     find( sub { push @compfiles, $File::Find::name if /complete.fasta$/ }, $cpath );
     my $ltrfas = shift @compfiles;
-    my $seqstore = $self->_store_seq($ltrfas);
+    my $seqstore = $self->_store_seq($ltrfas); ##TODO: import as a role
     my $elemct = (keys %$seqstore);
 
     my $famfile = $sfname.'_families.fasta';
@@ -279,11 +277,9 @@ sub make_fasta_from_dom_orgs {
 
     my (%fam_map, %seen);
     my ($idx, $famtot) = (0, 0);
-    #my $famtot = keys %$dom_orgs;
-    #my $famtot = 0;
 
     for my $str (reverse sort { @{$dom_orgs->{$a}} <=> @{$dom_orgs->{$b}} } keys %$dom_orgs) {  
-	if (@{$dom_orgs->{$str}} > 1) { # families have n>1 element
+	if (@{$dom_orgs->{$str}} > 1) { # families have n>1 elements
 	    my $famnum = $sfname."_family$idx";
 	    for my $elem (@{$dom_orgs->{$str}}) {
 		next if exists $seen{$elem};
@@ -436,7 +432,6 @@ sub write_families {
     #dd $pdom_famid_map and exit;
     my ($cname, $cpath, $csuffix) = fileparse($clsfile, qr/\.[^.]*/);
     my $dir = basename($cpath);
-    #my ($sf) = ($dir =~ /_(\w+)$/);
     my ($sf) = ($dir =~ /_((?:\w+\d+\-)?\w+)$/);
     unless (defined $sf) {
         say STDERR "\n[ERROR]: Can not get superfamily name from $clsfile at $.";
@@ -503,7 +498,7 @@ sub write_families {
 							 outfh     => $domfh, 
 							 elemnum   => $query, 
 							 elemid    => "$sfname"."_family$idx"."_$query"."_$coords", 
-							 famname   => $sfname."_family$idx"});
+							 famname   => $sfname."_family$idx" });
 		}
 
 		$seen{$query} = 1;
@@ -521,14 +516,7 @@ sub write_families {
     }
     my $famct = $idx;
     $idx = 0;
-    #my $anno_ct = (keys %annot_ids);
-    #my $seenct = (keys %seen);
-    #my $seqstct = (keys %$seqstore);
-    #say STDERR "debug: seenct seqstct anno_ct";
-    #say STDERR "debug: $seenct $seqstct $anno_ct";
     delete $seqstore->{$_} for keys %seen;
-    #$seqstct = (keys %$seqstore);
-    #say STDERR "debug after delete: $seenct $seqstct";
 	
     if (%$seqstore) {
 	my $famxfile = $sf.'_singleton_families.fasta';
@@ -537,8 +525,7 @@ sub write_families {
 
 	my %seenx;
 	for my $k (nsort keys %$seqstore) {
-	    #next (
-	    if (exists $seenx{$k}) { say "[warning]: seenx -> $k"; next; }
+	    if (exists $seenx{$k}) { say STDERR "\n[WARNING]: '$k' has been seen."; next; };
 
 	    my $coordsh = $seqstore->{$k};
 	    my $coords  = (keys %$coordsh)[0];
@@ -564,11 +551,6 @@ sub write_families {
     my $singct = $idx;
     my $elemct = $famtot + $singct;
 
-    #say STDERR "DEBUG: write_families";
-    #say STDERR "DEBUG: sfname -> famtot famct singct";
-    #say STDERR "DEBUG: $sfname -> $famtot $famct $singct";
-    #dd \%fastas;
-    
     return (\%fastas, \%annot_ids,
 	    { superfamily       => $sf,
 	      total_elements    => $elemct,
@@ -714,7 +696,7 @@ sub _check_domfile_has_data {
 sub _compare_merged_nonmerged {
     my $self = shift;
     my ($matches, $dom_fam_map, $seqstore, $unmerged_stats) = @_;
-
+    
     my $famtot = 0;
     my %seen;
     for my $str (keys %$matches) {
