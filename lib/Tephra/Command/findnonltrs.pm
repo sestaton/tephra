@@ -91,7 +91,7 @@ sub _run_nonltr_search {
 	    gff      => $gff );
 	
 	my ($obj, $sf_elem_map) = $gff_obj->write_gff;
-
+	
 	return ($obj, $sf_elem_map);
     }
     else {
