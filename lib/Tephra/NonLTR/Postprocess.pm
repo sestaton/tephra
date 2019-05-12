@@ -10,6 +10,7 @@ use File::Basename;
 use File::Path qw(make_path);
 use Cwd        qw(abs_path);
 use namespace::autoclean;
+#use Data::Dump::Color;
 
 =head1 NAME
 
@@ -118,6 +119,7 @@ sub merge_thmm {
 
     my @resfiles;
     find( sub { push @resfiles, $File::Find::name if -f }, $outf_dir );
+    #dd \@resfiles;
 
     for my $file (sort @resfiles) {
 	my $filename = basename($file);
@@ -190,6 +192,7 @@ sub merge_thmm {
 		    my $seq_file = File::Spec->catfile($outr_dir, $te_name.'_full'); #$_[1].$te_name."_full";
 		    open my $out1, '>>', $seq_file or die "\n[ERROR]: Could not open file: $seq_file\n";
 		    my $header = '>'.$filename.'_'.$temp[0].'_'.$end;
+		    #my $header = '>'.$name.'_'.$temp[0].'_'.$end;
 
 		    my ($genome, $head) = $self->get_sequence_id($chr_file);
 
@@ -212,6 +215,7 @@ sub merge_thmm {
 		    $sequence =~ s/.{60}\K/\n/g;
 		    say $out1 join "\n", $header, $sequence;
 		    say $out join "\t",  $filename, $temp[0], $end, eval($end-$temp[0]), $te_name;
+		    #say $out join "\t",  $name, $temp[0], $end, eval($end-$temp[0]), $te_name;
 
 		    close $out1;
 		    unlink $seq_file unless -s $seq_file;
@@ -251,6 +255,7 @@ sub merge_thmm {
 		    my $seq_file = File::Spec->catfile($outr_dir, $te_name.'_frag'); #$_[1].$te_name."_frag";
 		    open my $out1, '>>', $seq_file or die "\n[ERROR]: Could not open file: $seq_file\n";
 		    my $header = '>'.$filename.'_'.$temp[0].'_'.$end; ;
+		    #my $header = '>'.$name.'_'.$temp[0].'_'.$end; 
 
 		    my ($genome, $head) = $self->get_sequence_id($chr_file);
 
@@ -258,6 +263,7 @@ sub merge_thmm {
 		    $sequence =~ s/.{60}\K/\n/g;
 		    say $out1 join "\n", $header, $sequence;
 		    say $frag join "\t",  $filename, $temp[0], $end, eval($end-$temp[0]), $te_name;
+		    #say $frag join "\t",  $name, $temp[0], $end, eval($end-$temp[0]), $te_name;
 
 		    close $out1;
 		    unlink $seq_file unless -s $seq_file;
