@@ -3,15 +3,17 @@ package Tephra::NonLTR::QValidation;
 use 5.014;
 use Moose;
 use MooseX::Types::Path::Class;
+use Parallel::ForkManager;
 use IPC::System::Simple qw(system capture);
 use File::Path          qw(make_path);
 use Cwd                 qw(abs_path);
+use Time::HiRes         qw(gettimeofday);
 use Bio::SearchIO;
 use File::Find;
 use File::Spec;
 use File::Basename;
 use Carp 'croak';
-#use Data::Dump::Color;
+use Data::Dump::Color;
 use Tephra::Config::Exe;
 use namespace::autoclean;
 
@@ -19,7 +21,7 @@ with 'Tephra::NonLTR::Role::PathUtils';
 
 =head1 NAME
 
-Tephra::NonLTR::QValidation - Valid non-LTR search (adapted from MGEScan-nonLTR)
+Tephra::NonLTR::QValidation - Valididate non-LTR search results against all models (adapted from MGEScan-nonLTR)
 
 =head1 VERSION
 
@@ -40,6 +42,7 @@ sub validate_q_score {
     my $hmm_dir = $self->phmmdir->absolute->resolve;
     my $genome  = $self->fasta->absolute->resolve;
 
+    my $t0 = gettimeofday();
     my $hmmsearch = $self->find_hmmsearch;
     my @en_clade  = ('CR1', 'I', 'Jockey', 'L1', 'L2', 'R1', 'RandI', 'Rex', 'RTE', 'Tad1');
     my @all_clade = (@en_clade, 'R2', 'CRE');
@@ -49,43 +52,112 @@ sub validate_q_score {
     my $fulldir = File::Spec->catdir($dir, 'info', 'full');
     make_path( $infodir, {verbose => 0, mode => 0771,} );
     make_path( $fulldir, {verbose => 0, mode => 0771,} );
+    my $logfile = File::Spec->catfile($fulldir, 'tephra_non-ltrs_qvalidation.log');
+    open my $log, '>>', $logfile or die "\n[ERROR]: Could not open file: $logfile\n";
 
     $self->get_full_frag($genome, $dir, \@all_clade);
     
-    # get domain seq
-    ## // Parallelize en/rt
-    $self->get_domain_for_full_frag($genome, 'en', \@en_clade,  $dir, $hmm_dir);
-    $self->get_domain_for_full_frag($genome, 'rt', \@all_clade, $dir, $hmm_dir);
-
     # get Q value after running pHMM for EN in full elements
     my $validation_dir = File::Spec->catdir($dir, 'info', 'validation');
     make_path( $validation_dir, {verbose => 0, mode => 0771,} );
     
-    my $domain          = 'en';
+    my @cladedirs = map { File::Spec->catdir($fulldir, $_) } @all_clade;
+
+    # get domain seq
+    ## // Parallelize en/rt
+    my $pm = Parallel::ForkManager->new(2);
+    local @{$SIG}{qw(INT TERM)} = sub {
+        $log->warn("Caught SIGINT or SIGTERM; Waiting for child processes to finish.");
+        $pm->wait_all_children;
+        exit 1;
+    };
+
+    $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
+			      my $domain = uc($data_ref->{domain});
+			      my $t1 = gettimeofday();
+                              my $elapsed = $t1 - $t0;
+                              my $time = sprintf("%.2f",$elapsed/60);
+                              say $log "QValidataion for $domain just finished with PID $pid and exit code: ".
+				  "$exit_code in $time minutes";
+                        } );
+
+    for my $domain (qw(en rt)) { 
+	$pm->start($domain) and next;
+	@{$SIG}{qw(INT TERM)} = sub { $pm->finish };
+	my $dom = $self->get_domain_coords({ domain     => $domain,
+					     dir        => $dir,
+					     hmm_dir    => $hmm_dir,
+					     en_clade   => \@en_clade,
+					     all_clade  => \@all_clade,
+					     clade_dirs => \@cladedirs,
+					     valid_dir  => $validation_dir,
+					     genome     => $genome });
+	$pm->finish(0, $dom);
+    }
+    $pm->wait_all_children;
+    close $log;
+
+    #$self->get_domain_for_full_frag($genome, 'en', \@en_clade,  $dir, $hmm_dir);
+    #$self->get_domain_for_full_frag($genome, 'rt', \@all_clade, $dir, $hmm_dir);
+
+    # get Q value after running pHMM for EN in full elements
+    #my $validation_dir = File::Spec->catdir($dir, 'info', 'validation');
+    #make_path( $validation_dir, {verbose => 0, mode => 0771,} );
+    
+    #my $domain          = 'en';
+    #my $validation_file = File::Spec->catfile($validation_dir, $domain);
+    #my $evalue_file     = File::Spec->catfile($validation_dir, $domain.'_evalue');
+
+    #my @cladedirs = map { File::Spec->catdir($fulldir, $_) } @all_clade;
+
+    #for my $clade (@cladedirs) {
+	#my $name = basename($clade);
+	#my $seq  = File::Spec->catfile($clade, $name.'.'.$domain.'.pep');
+	#if (-e $seq) {
+	#    $self->vote_hmmsearch($seq, $hmm_dir, $domain, $validation_file, $evalue_file, \@en_clade);
+	#}
+    #}
+    
+    # get Q value after running pHMM for RT in full elements
+    #$domain          = 'rt';
+    #$validation_file = File::Spec->catfile($validation_dir, $domain);
+    #$evalue_file     = File::Spec->catfile($validation_dir, $domain.'_evalue');
+
+    #for my $clade (@cladedirs) {
+	#my $name = basename($clade);
+	#my $seq  = File::Spec->catfile($clade, $name.'.'.$domain.'.pep');
+	#if (-e $seq) {
+	    #$self->vote_hmmsearch($seq, $hmm_dir, $domain, $validation_file, $evalue_file, \@all_clade);
+	#}
+    #}
+
+    return;
+}
+
+sub get_domain_coords {
+    my $self = shift;
+    my ($obj) = @_;
+
+    my $clade = $obj->{domain} eq 'en' ? $obj->{en_clade} : $obj->{all_clade};
+
+    $self->get_domain_for_full_frag($obj->{genome}, $obj->{domain}, $clade,  $obj->{dir}, $obj->{hmm_dir});
+    $self->get_QVal($obj->{domain}, $obj->{clade_dirs}, $obj->{valid_dir}, $obj->{hmm_dir}, $clade);
+
+    return { domain => $obj->{domain} };
+}
+
+sub get_QVal {
+    my $self = shift;
+    my ($domain, $cladedirs, $validation_dir, $hmm_dir, $dom_clade) = @_;
     my $validation_file = File::Spec->catfile($validation_dir, $domain);
     my $evalue_file     = File::Spec->catfile($validation_dir, $domain.'_evalue');
 
-    my @cladedirs = map { File::Spec->catdir($fulldir, $_) } @all_clade;
-
-    for my $clade (@cladedirs) {
-	my $name = basename($clade);
-	my $seq  = File::Spec->catfile($clade, $name.'.'.$domain.'.pep');
-	if (-e $seq) {
-	    $self->vote_hmmsearch($seq, $hmm_dir, $domain, $validation_file, $evalue_file, \@en_clade);
-	}
-    }
-    
-    # get Q value after running pHMM for RT in full elements
-    $domain          = 'rt';
-    $validation_file = File::Spec->catfile($validation_dir, $domain);
-    $evalue_file     = File::Spec->catfile($validation_dir, $domain.'_evalue');
-
-    for my $clade (@cladedirs) {
-	my $name = basename($clade);
-	my $seq  = File::Spec->catfile($clade, $name.'.'.$domain.'.pep');
-	if (-e $seq) {
-	    $self->vote_hmmsearch($seq, $hmm_dir, $domain, $validation_file, $evalue_file, \@all_clade);
-	}
+    for my $clade (@$cladedirs) {
+        my $name = basename($clade);
+        my $seq  = File::Spec->catfile($clade, $name.'.'.$domain.'.pep');
+        if (-e $seq) {
+            $self->vote_hmmsearch($seq, $hmm_dir, $domain, $validation_file, $evalue_file, $dom_clade);
+        }
     }
 
     return;
@@ -93,9 +165,9 @@ sub validate_q_score {
 
 sub get_domain_for_full_frag {
     my $self = shift;
-    my ($genome, $domain, $en_clade, $dir, $hmm_dir) = @_;
-
-    for my $clade (@$en_clade) {
+    my ($genome, $domain, $clade_dir, $dir, $hmm_dir) = @_;
+    #$self->get_domain_for_full_frag($obj->{genome}, $obj->{domain}, $clade,  $obj->{dir}, $obj->{hmm_dir});
+    for my $clade (@$clade_dir) {
 	my $resdir   = File::Spec->catdir($dir, 'info', 'full', $clade);
 	my $pep_file = File::Spec->catfile($resdir, $clade.'.pep');
 	my $dna_file = File::Spec->catfile($resdir, $clade.'.dna');
