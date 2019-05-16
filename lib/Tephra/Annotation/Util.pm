@@ -239,8 +239,21 @@ sub map_superfamily_name_to_code {
         'DHX' => 'Unknown_Helitron',
         'DMM' => 'Maverick',
         'DMX' => 'Unknown_Maverick',
-	'RST' => 'SINE2/tRNA' );
-    
+	'RST' => 'SINE2/tRNA',
+        'RIC' => 'CR1', # CR1 clade
+        'RII' => 'I',
+        'RIJ' => 'Jockey',
+        'RIL' => 'L1',
+        'RIL' => 'L2',
+        'RIR' => 'R1',
+        'RIX' => 'RandI',
+        'RIC' => 'Rex', # CR1 clade, http://link.springer.com/article/10.1186/1471-2148-13-152/fulltext.html?view=classic      
+        'RIT' => 'RTE',
+        'RIX' => 'Tad1',
+        'RIR' => 'R2',
+        'RIR' => 'CRE', # http://www.ncbi.nlm.nih.gov/pubmed/15939396
+    );
+
     my %name_table = reverse %sfcode_table;
 
     if (exists $name_table{$name}) {
