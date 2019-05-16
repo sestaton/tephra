@@ -82,7 +82,6 @@ sub _fasta_to_gff {
 
     my $util = Tephra::Annotation::Util->new;
     my $index = $self->index_ref($genome);
-    my $clade_map = $self->_build_clade_map; #TODO: add this to Tephra::Annotation::Util
     my $so_term_map = $util->get_SO_terms;
 
     my ($gname, $gpath, $gsuffix) = fileparse($outgff, qr/\.[^.]*/);
@@ -92,7 +91,7 @@ sub _fasta_to_gff {
     my ($outf, $ffilename) = tempfile( TEMPLATE => $tmpfname, DIR => $gpath, UNLINK => 0, SUFFIX => '.fasta' );
     my ($outg, $gfilename) = tempfile( TEMPLATE => $tmpgname, DIR => $gpath, UNLINK => 0, SUFFIX => '.gff3' );
 
-    my ($lens, $combined) = $self->_get_seq_region; #TODO: add this to a role
+    my ($lens, $combined) = $self->_get_seq_region; 
 
     my %regions;
     for my $file (@$seqs) {
@@ -146,7 +145,6 @@ sub _fasta_to_gff {
     my $ct = 0;
     my %sf_elem_map;
     for my $clade (keys %regions) {
-	my $code = $clade_map->{$clade} // $clade;
 	for my $seqid (nsort keys %{$regions{$clade}}) {
 	    my ($name, $path, $suffix) = fileparse($seqid, qr/\.[^.]*/);
 	    for my $start (sort { $a <=> $b } keys %{$regions{$clade}{$seqid}}) {
@@ -157,14 +155,12 @@ sub _fasta_to_gff {
 		    map  { [ $_, /\w+\|\|(\d+)\|\|\d+\|\|(?:\+|\-)/ ] } 
 		    @{$regions{$clade}{$seqid}{$start}} ) {
 
-		    say STDERR "DEBUG sort: $region";
 		    my ($feature, $feature_start, $feature_end, $strand) = split /\|\|/, $region;
 		    my $type = $feature eq 'full' ? 'non_LTR_retrotransposon' : 'protein_match';
 		    my $so_term = $so_term_map->{$type};
 
 		    my $seqname = $seqid;
 		    $seqname =~ s/\.fa.*//;
-		    #my $elem = $code."_non_LTR_retrotransposon$ct";
 		    my $elem = "non_LTR_retrotransposon$ct";
 		    my $tmp = $elem.'.fasta';
 
@@ -172,7 +168,7 @@ sub _fasta_to_gff {
                         $feature eq 'en' ? 'Exo_endo_phos_2' :
                         $feature eq 'rt' ? 'RVT_1' : '';
 
-
+		    #TODO: output RVT sequences also
 		    my ($filtered_seq, $adj_start, $adj_end);
 		    if ($feature eq 'full') { 
 			my ($seq, $length) = $self->get_full_seq($index, $seqname, $feature_start, $feature_end);
@@ -192,7 +188,7 @@ sub _fasta_to_gff {
 			"Parent=$elem;name=$featureid;Ontology_term=$so_term";
 		    
 		    say $outg join "\t", $name, 'Tephra', $type, $adj_start, $adj_end, '.', $strand, '.', $attr;
-		    my $sfcode = $util->map_superfamily_name_to_code($clade);
+		    my $sfcode = $util->map_superfamily_name_to_code($clade) // $clade;
 		    $sf_elem_map{$elem} = $sfcode;
 		}
 	    }
