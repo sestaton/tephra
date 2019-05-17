@@ -335,6 +335,16 @@ sub build_repeat_map {
     return \%repeat_map;
 }
 
+sub get_GO_terms {
+    my $self = shift;
+
+    say STDERR "\n[WARNING]: Getting GO terms is experimental and not implemented.\n";
+
+    my %table = ( );
+
+    return \%table;
+}
+
 sub get_SO_terms {
     my $self = shift;
 
