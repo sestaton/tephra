@@ -4,6 +4,7 @@ use 5.014;
 use Moose::Role;
 use File::Basename qw(fileparse);
 use File::Temp     qw(tempfile);
+use Scalar::Util   qw(looks_like_number);
 #use Bio::DB::HTS::Kseq;
 use Bio::DB::HTS::Faidx;
 use Carp 'croak';
@@ -38,7 +39,19 @@ sub index_ref {
 sub get_full_seq {
     my $self = shift;
     my ($index, $chromosome, $start, $end) = @_;
-    my $location = "$chromosome:$start-$end";
+    #my $location = "$chromosome:$start-$end";
+
+    my $location;
+    if (defined $start && defined $end && looks_like_number($start) && looks_like_number($end)) {
+	$location = "$chromosome:$start-$end";
+    }
+    elsif (defined $index && defined $chromosome) {
+	$location = "$chromosome";
+    }
+    else {
+	croak "\n[ERROR]: Index or Chromosome passed to Tephra::Role::Util::get_full_seq are undefined.\n";
+    }
+
     my ($seq, $length) = $index->get_sequence($location);
     croak "\n[ERROR]: Something went wrong fetching sequence for '$location'. Got zero length.\n"
 	unless $length;
