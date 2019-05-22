@@ -64,7 +64,6 @@ sub validate_q_score {
     my @cladedirs = map { File::Spec->catdir($fulldir, $_) } @all_clade;
 
     # get domain seq
-    ## // Parallelize en/rt
     my $pm = Parallel::ForkManager->new(2);
     local @{$SIG}{qw(INT TERM)} = sub {
         $log->warn("Caught SIGINT or SIGTERM; Waiting for child processes to finish.");
@@ -74,6 +73,7 @@ sub validate_q_score {
 
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			      my $domain = uc($data_ref->{domain});
+
 			      my $t1 = gettimeofday();
                               my $elapsed = $t1 - $t0;
                               my $time = sprintf("%.2f",$elapsed/60);
@@ -92,44 +92,15 @@ sub validate_q_score {
 					     clade_dirs => \@cladedirs,
 					     valid_dir  => $validation_dir,
 					     genome     => $genome });
+	unless (defined $dom->{domain}) {
+	    say STDERR "\n[MAYDAY]: domain => $domain, $dir, $hmm_dir, $validation_dir, $genome";
+
+	}
+
 	$pm->finish(0, $dom);
     }
     $pm->wait_all_children;
     close $log;
-
-    #$self->get_domain_for_full_frag($genome, 'en', \@en_clade,  $dir, $hmm_dir);
-    #$self->get_domain_for_full_frag($genome, 'rt', \@all_clade, $dir, $hmm_dir);
-
-    # get Q value after running pHMM for EN in full elements
-    #my $validation_dir = File::Spec->catdir($dir, 'info', 'validation');
-    #make_path( $validation_dir, {verbose => 0, mode => 0771,} );
-    
-    #my $domain          = 'en';
-    #my $validation_file = File::Spec->catfile($validation_dir, $domain);
-    #my $evalue_file     = File::Spec->catfile($validation_dir, $domain.'_evalue');
-
-    #my @cladedirs = map { File::Spec->catdir($fulldir, $_) } @all_clade;
-
-    #for my $clade (@cladedirs) {
-	#my $name = basename($clade);
-	#my $seq  = File::Spec->catfile($clade, $name.'.'.$domain.'.pep');
-	#if (-e $seq) {
-	#    $self->vote_hmmsearch($seq, $hmm_dir, $domain, $validation_file, $evalue_file, \@en_clade);
-	#}
-    #}
-    
-    # get Q value after running pHMM for RT in full elements
-    #$domain          = 'rt';
-    #$validation_file = File::Spec->catfile($validation_dir, $domain);
-    #$evalue_file     = File::Spec->catfile($validation_dir, $domain.'_evalue');
-
-    #for my $clade (@cladedirs) {
-	#my $name = basename($clade);
-	#my $seq  = File::Spec->catfile($clade, $name.'.'.$domain.'.pep');
-	#if (-e $seq) {
-	    #$self->vote_hmmsearch($seq, $hmm_dir, $domain, $validation_file, $evalue_file, \@all_clade);
-	#}
-    #}
 
     return;
 }
@@ -166,7 +137,7 @@ sub get_QVal {
 sub get_domain_for_full_frag {
     my $self = shift;
     my ($genome, $domain, $clade_dir, $dir, $hmm_dir) = @_;
-    #$self->get_domain_for_full_frag($obj->{genome}, $obj->{domain}, $clade,  $obj->{dir}, $obj->{hmm_dir});
+
     for my $clade (@$clade_dir) {
 	my $resdir   = File::Spec->catdir($dir, 'info', 'full', $clade);
 	my $pep_file = File::Spec->catfile($resdir, $clade.'.pep');
