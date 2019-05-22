@@ -9,6 +9,7 @@ use Pod::Usage    qw(pod2usage);
 use Capture::Tiny qw(capture_merged);
 use Cwd           qw(abs_path);
 use File::Copy    qw(move);
+use File::Path    qw(remove_tree);
 use File::Spec;
 use File::Basename;
 use Tephra -command;
@@ -151,6 +152,13 @@ sub _find_nonltr_families {
         move $obj->{fasta}, $fasta or die "\n[ERROR]: move failed: $!\n";
         move $obj->{gff}, $opt->{gff} or die "\n[ERROR]: move failed: $!\n";
     }
+
+    # clean up analysis directories after searching for families
+    for my $dir (@{$obj->{fasta_dirs}}) {
+	remove_tree( $dir, { safe => 1 } );
+    }
+
+    return;
 }
 
 sub help {
