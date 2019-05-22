@@ -66,11 +66,7 @@ sub write_gff {
     my $rdir  = File::Spec->catdir( abs_path($outdir), 'b' );
     my $rgdir = $fastadir.'_b';
 
-    for my $dir ($fdir, $rdir, $rgdir, $fastadir) {
-	remove_tree( $dir, { safe => 1 } );
-    }
-
-    return ({ fasta => $fas, gff => $gff }, $sf_elem_map);
+    return ({ fasta => $fas, gff => $gff, fasta_dirs => [$fdir, $rdir, $rgdir]}, $sf_elem_map);
 }
 
 sub _fasta_to_gff {
@@ -141,7 +137,6 @@ sub _fasta_to_gff {
 	}
     }
 
-    ##TODO: How to get the strand correct? Added in v0.03.0.
     my $ct = 0;
     my %sf_elem_map;
     for my $clade (keys %regions) {
