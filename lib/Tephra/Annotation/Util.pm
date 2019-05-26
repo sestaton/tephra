@@ -329,12 +329,26 @@ sub build_repeat_map {
 
 sub get_GO_terms {
     my $self = shift;
+    my ($term) = @_;
 
-    say STDERR "\n[WARNING]: Getting GO terms is experimental and not implemented.\n";
+    my %table = ( 
+	'RVT_1' => 'GO:0003964'
+    );
 
-    my %table = ( );
+    my $has_terms = 0;
+    if (exists $table{$term}) {
+	$has_terms = 1;
 
-    return \%table;
+	return $table{$term};
+    }
+    else {
+	say STDERR "\n[WARNING]: No GO terms are defined for '$term' so they will not be added to the ".
+	    "GFF3 output.\n";
+
+	return 0;
+    }
+
+    return;
 }
 
 sub get_SO_terms {
