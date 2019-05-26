@@ -6,6 +6,7 @@ use List::Util qw(sum);
 use Sort::Naturally;
 use Bio::DB::HTS::Kseq;
 use namespace::autoclean;
+#use Data::Dump::Color;
 
 with 'Tephra::Role::Run::Blast';
 
@@ -117,16 +118,18 @@ sub map_superfamily_name {
         'RYN' => 'Ngaro',
         'RYX' => 'Unknown_DIRS',
         'RYV' => 'VIPER',
-	'RII' => 'I',
+	'RIC' => 'CR1', # CR1 clade
+        'RII' => 'I',
         'RIJ' => 'Jockey',
         'RIL' => 'L1',
-        'RIR' => 'R2',
+        'RIM' => 'L2',
+        'RIS' => 'R1',
+        'RIA' => 'RandI',
+        'RIC' => 'Rex', # CR1 clade, http://link.springer.com/article/10.1186/1471-2148-13-152/fulltext.html?view=classic
         'RIT' => 'RTE',
-	'RIC' => 'CR1',
-	'RIS' => 'R1',
-	'RIA' => 'RandI',
-	'RIE' => 'Rex',
-	'RID' => 'Tad1',
+        'RID' => 'Tad1',
+        'RIR' => 'R2',
+        'RIE' => 'CRE', # http://www.ncbi.nlm.nih.gov/pubmed/15939396
         'RIX' => 'Unknown_LINE',
         'RLB' => 'Bel/Pao',
         'RLG' => 'Gypsy',
@@ -166,8 +169,7 @@ sub map_superfamily_name {
 	return $sfcode_table{$sfamily_code};
     }
     else {
-	say STDERR "\n[WARNING]: No 3-letter code could be found for: $sfamily_code\n"
-	    if $self->debug;
+	say STDERR "\n[WARNING]: No 3-letter code could be found for: $sfamily_code\n";
 	return 0;
     }
 }
@@ -196,16 +198,6 @@ sub map_superfamily_name_to_code {
         'RYN' => 'Ngaro',
         'RYX' => 'Unknown_DIRS',
         'RYV' => 'VIPER',
-        'RII' => 'I',
-        'RIJ' => 'Jockey',
-        'RIL' => 'L1',
-        'RIR' => 'R2',
-        'RIT' => 'RTE',
-	'RIC' => 'CR1',
-	'RIS' => 'R1',
-	'RIA' => 'RandI',
-	'RIE' => 'Rex',
-	'RID' => 'Tad1',
         'RIX' => 'Unknown_LINE',
         'RLB' => 'Bel/Pao',
         'RLG' => 'Gypsy',
@@ -244,14 +236,15 @@ sub map_superfamily_name_to_code {
         'RII' => 'I',
         'RIJ' => 'Jockey',
         'RIL' => 'L1',
-        'RIL' => 'L2',
-        'RIR' => 'R1',
-        'RIX' => 'RandI',
+        'RIM' => 'L2',
+        'RIS' => 'R1',
+        'RIA' => 'RandI',
         'RIC' => 'Rex', # CR1 clade, http://link.springer.com/article/10.1186/1471-2148-13-152/fulltext.html?view=classic      
         'RIT' => 'RTE',
-        'RIX' => 'Tad1',
+        'RID' => 'Tad1',
         'RIR' => 'R2',
-        'RIR' => 'CRE', # http://www.ncbi.nlm.nih.gov/pubmed/15939396
+        'RIE' => 'CRE', # http://www.ncbi.nlm.nih.gov/pubmed/15939396
+        'RIX' => 'Unknown_LINE',
     );
 
     my %name_table = reverse %sfcode_table;
@@ -260,8 +253,7 @@ sub map_superfamily_name_to_code {
 	return $name_table{$name};
     }
     else {
-	say STDERR "\n[WARNING]: No 3-letter code could be found for: $name\n"
-	    if $self->debug;
+	say STDERR "\n[WARNING]: No 3-letter code could be found for: $name\n";
 	return 0;
     }
 }
