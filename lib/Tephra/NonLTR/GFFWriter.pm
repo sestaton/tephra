@@ -66,7 +66,7 @@ sub write_gff {
     my $rdir  = File::Spec->catdir( abs_path($outdir), 'b' );
     my $rgdir = $fastadir.'_b';
 
-    return ({ fasta => $fas, gff => $gff, fasta_dirs => [$fdir, $rdir, $rgdir]}, $sf_elem_map);
+    return ({ fasta => $fas, gff => $gff, fasta_dirs => [$fastadir, $fdir, $rdir, $rgdir]}, $sf_elem_map);
 }
 
 sub _fasta_to_gff {
@@ -78,7 +78,7 @@ sub _fasta_to_gff {
 
     my $util = Tephra::Annotation::Util->new;
     my $index = $self->index_ref($genome);
-    my $so_term_map = $util->get_SO_terms;
+    my $so_term_map = $util->get_SO_terms; ##TODO: get GO terms
 
     my ($gname, $gpath, $gsuffix) = fileparse($outgff, qr/\.[^.]*/);
     my $tmpfname = $gname.'_tephra_nonltr_fas_XXXX';
@@ -192,6 +192,7 @@ sub _fasta_to_gff {
     close $outf;
     close $outg;
     unlink $combined;
+    #dd \%sf_elem_map;
 
     return ($ffilename, $gfilename,\%sf_elem_map);
 }
