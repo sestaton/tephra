@@ -1,7 +1,7 @@
 Revision history for Tephra
 
 Version	Date	Location
-0.12.4
+0.12.4	05/27/2019	Vancouver, BC
 
 New features:
  - Add protein domain coordinates for non-LTR elements to GFF output.
@@ -11,7 +11,8 @@ Bug fixes:
 - Fix method for how the number of non-LTR and Helitron families are calculated. Previously,
   there may have erroneously been single-copy families and singletons that should have been
   in families due to how the superfamilies where being indexed and combined.
-- 
+- In the *Annotation::Util class, there was a bug in getting codes for non-LTR superfamilies
+  with some codes being redefined.
 
 0.12.3	01/04/2019	Vancouver, BC
 
