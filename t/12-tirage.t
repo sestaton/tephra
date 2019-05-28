@@ -37,7 +37,9 @@ SKIP: {
     $genome = File::Spec->catfile($testdir, 'TAIR10_chr1.fas');
     $gff = File::Spec->catfile($testdir, 'TAIR10_chr1_tirs_classified.gff3');
     my $outfile = $gff =~ s/\.gff3/_tirages.tsv/r;
- 
+    
+    ok( -s $genome, 'Genome exists');
+    ok( -s $gff, 'GFF3 file of classified TIRs exists');
     my @age_cmd = ($cmd, 'age', '-g', $genome, '-f', $gff, '-o', $outfile, '--type', 'tir', '--all');
     say STDERR join q{ }, @age_cmd;
     my @ret = capture { system([0..5], @age_cmd) };
@@ -52,7 +54,7 @@ SKIP: {
 	$ct++;
     }
     close $in;
-    ok( $ct == 270, 'Expected number of entries in TIR age report');
+    ok( $ct == 270, 'Expected number of entries in TIR age report' );
 
     # should be removed by default
     #my @resdirs;
@@ -65,6 +67,8 @@ SKIP: {
     unlink @outfiles;
 
     remove_tree( $outdir, { safe => 1 } );
+    unlink $genome if $devtests;
+    unlink $genome.'.fai' if $devtests;
 };
 
 unlink $gff if -e $gff;
