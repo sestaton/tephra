@@ -19,11 +19,11 @@ Tephra::LTR::Role::Utils - Common utility methods for working with LTR retrotran
 
 =head1 VERSION
 
-Version 0.12.3
+Version 0.12.4
 
 =cut
 
-our $VERSION = '0.12.3';
+our $VERSION = '0.12.4';
 $VERSION = eval $VERSION;
 
 sub get_exemplar_ltrs_for_age {

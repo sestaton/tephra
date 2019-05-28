@@ -19,11 +19,11 @@ Tephra::Genome::Unmask - Unmask a masked sequence using a reference genome
 
 =head1 VERSION
 
-Version 0.12.3
+Version 0.12.4
 
 =cut
 
-our $VERSION = '0.12.3';
+our $VERSION = '0.12.4';
 $VERSION = eval $VERSION;
 
 has genome => (
