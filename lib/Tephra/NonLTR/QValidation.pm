@@ -13,7 +13,7 @@ use File::Find;
 use File::Spec;
 use File::Basename;
 use Carp 'croak';
-use Data::Dump::Color;
+#use Data::Dump::Color;
 use Tephra::Config::Exe;
 use namespace::autoclean;
 
