@@ -234,7 +234,7 @@ sub fetch_hscan {
     my $wd   = $self->workingdir->absolute->resolve;
     
     my $host = 'https://sourceforge.net';
-    my $dir  = 'projects/helitronscanner/files/HelitronScanner_V1.0.zip/download';
+    my $dir  = 'projects/helitronscanner/files/HelitronScanner_V1.0.zip';
     my $ldir = File::Spec->catdir($root, 'helitronscanner');
     make_path( $ldir, {verbose => 0, mode => 0771,} );
     my $file = 'HelitronScanner_V1.0.zip';
@@ -242,7 +242,7 @@ sub fetch_hscan {
     #$self->fetch_file($path, $host."/".$dir);
     my $remote = join "/", $host, $dir;
     chdir $ldir or die $!;
-    system("wget -q --no-check-certificate $remote") == 0 or die $!;
+    system("wget -q $remote") == 0 or die $!;
     system("unzip $file 2>&1 > /dev/null") == 0 or die $!;
     
     my $cwd   = getcwd();
