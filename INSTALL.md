@@ -17,7 +17,7 @@ For regular users, I recommend using [Perlbrew](https://perlbrew.pl/) or [Plenv]
 
 For System Adminstrators wanting to install Tephra for all users, please see the note below.
 
---
+---
 
 Assuming you have a working Perl and App::cpanminus, the next two commands install BioPerl (this can be skipped if BioPerl is installed):
     
