@@ -383,6 +383,10 @@ sub _run_all_commands {
 	unlink $global_opts->{repeatdb};
 	$log->info("Clean up - Removing temporary file - $global_opts->{repeatdb}");
     }
+    if ($global_opts->{genefile_is_compressed}) {
+        unlink $global_opts->{genefile};
+        $log->info("Clean up - Removing temporary file - $global_opts->{genefile}");
+    }
 
     # Log summary of results
     $tephra_obj->log_interval( $tzero, $log );
