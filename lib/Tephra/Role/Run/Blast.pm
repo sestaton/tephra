@@ -24,6 +24,41 @@ Version 0.12.4
 our $VERSION = '0.12.4';
 $VERSION = eval $VERSION;
 
+has infile => (
+    is       => 'rw',
+    isa      => 'Path::Class::File',
+    reader   =>'get_infile',
+    writer   =>'set_infile',
+    required => 0,
+    coerce   => 1,
+);
+
+has outfile => (
+    is       => 'rw',
+    isa      => 'Path::Class::File',
+    reader   => 'get_outfile',
+    writer   => 'set_outfile',
+    required => 0,
+    coerce   => 1,
+);
+
+has repeatdb => (
+    is       => 'rw',
+    isa      => 'Path::Class::File',
+    reader   => 'get_repeatdb',
+    writer   => 'set_repeatdb',
+    required => 0,
+    coerce   => 1,
+);
+
+has threads => (
+    is        => 'ro',
+    isa       => 'Int',
+    predicate => 'has_threads',
+    lazy      => 1,
+    default   => 1,
+);
+
 has blast_hit_pid => (
     is      => 'ro',
     isa     => 'Int',
@@ -41,6 +76,29 @@ has blast_hit_len => (
     isa     => 'Int',
     default => 80,
 );
+
+sub process_blast_args {
+    my $self = shift;
+    my $fasta   = $self->get_infile;
+    my $rdb     = $self->get_repeatdb;
+    my $out     = $self->get_outfile;
+    my $threads = $self->get_threads;
+
+    my ($dbname, $dbpath, $dbsuffix) = fileparse($rdb, qr/\.[^.]*/);
+    my ($faname, $fapath, $fasuffix) = fileparse($fasta, qr/\.[^.]*/);
+    my $outfile = File::Spec->catfile($fapath, $faname.'_'.$dbname.'.bln');
+
+    my $blastdb = $self->make_blastdb($rdb);
+    my $blast_report = $self->run_blast({ query   => $fasta, 
+					  db      => $blastdb, 
+					  threads => $threads, 
+					  outfile => $outfile,
+					  sort    => 'bitscore' });
+    my @dbfiles = glob "$blastdb*";
+    unlink @dbfiles;
+
+    return $blast_report;
+}
 
 sub make_blastdb {
     my $self = shift;
@@ -86,10 +144,10 @@ sub run_blast {
     my $cmd = "$blastn -query $query -db $db -evalue $evalue -outfmt 6 -num_threads $threads";
     if (defined $sort) {
 	if ($sort eq 'bitscore') {
-	    $cmd .= " | sort -nrk12,12 >$outfile";
+	    $cmd .= " | /usr/bin/sort -nrk12,12 >$outfile";
 	}
 	elsif ($sort eq 'coordinate') {
-	    $cmd .= " | sort -nk9,9 >$outfile";
+	    $cmd .= " | /usr/bin/sort -nk9,9 >$outfile";
 	}
     }
     else {
