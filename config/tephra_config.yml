@@ -5,6 +5,7 @@ all:
   - genome:           TAIR10_chr1-5.fas
   - outfile:          TAIR10_chr1-5_tephra_transposons.gff3
   - repeatdb:         repbase1801_athaliana.fasta 
+  - genefile:         TAIR10_genes.fas
   - trnadb:           TephraDB
   - hmmdb:            TephraDB
   - threads:          24
