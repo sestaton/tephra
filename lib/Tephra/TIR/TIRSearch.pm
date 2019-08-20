@@ -14,6 +14,7 @@ use Sort::Naturally;
 use Path::Class::File;
 use Try::Tiny;
 use Tephra::Config::Exe;
+use Tephra::Annotation::FilterTandems;
 use Carp 'croak';
 #use Data::Dump::Color;
 use namespace::autoclean;
@@ -34,6 +35,14 @@ has logfile => (
       is        => 'ro',
       isa       => 'Str',
       predicate => 'has_logfile',
+);
+
+has threads => (
+    is        => 'ro',
+    isa       => 'Int',
+    predicate => 'has_threads',
+    lazy      => 1,
+    default   => 1,
 );
 
 =head1 NAME
@@ -57,6 +66,7 @@ sub tir_search {
     my $hmmdb   = $self->hmmdb;
     my $outfile = $self->outfile;
     my $logfile = $self->logfile;
+    my $threads = $self->threads;
     my (%suf_args, %tirv_cmd);
 
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
@@ -77,11 +87,22 @@ sub tir_search {
     my $tirv_succ = $self->run_tirvish(\%tirv_cmd, $gff, $log);
     #remove_tree($model_dir, { safe => 1 });
 
-    my $filtered = $self->_filter_tir_gff($gff, $fas);
-
+    my ($filtered_gff, $filtered_fas) = $self->_filter_tir_gff($gff, $fas);
     $self->clean_indexes($path) if $self->clean;
     
-    return $filtered;
+    my $ftandem_obj = Tephra::Annotation::FilterTandems->new(
+            genome   => $genome,
+            genefile => ,
+            gff      => $filtered_gff,
+            threads  => $threads,
+            type     => 'TIR',
+            blast_hit_cov => 50,
+            blast_hit_pid => 70,
+            blast_hit_len => 10,
+    );
+
+    
+    return $filtered_gff;
 }
 
 sub _filter_tir_gff {
@@ -169,7 +190,7 @@ sub _filter_tir_gff {
 
     move $outfile, $gff or die "\n[ERROR]: move failed: $!\n";
 
-    return ($outfile, $fas);
+    return ($gff, $fas);
 }
 
 =head1 AUTHOR
