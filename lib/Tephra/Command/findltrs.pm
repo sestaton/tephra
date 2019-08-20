@@ -57,12 +57,12 @@ sub validate_args {
 sub execute {
     my ($self, $opt, $args) = @_;
 
-    my ($global_opts, $search_config, $relaxed_gff, $strict_gff) = _run_ltr_search($opt);
-    my $some = _refine_ltr_predictions($global_opts, $search_config, $relaxed_gff, $strict_gff, $opt);
+    my ($global_opts, $search_config, $relaxed_gff, $strict_gff, $gene_filtered_stats) = _run_ltr_search($opt);
+    my $some = _refine_ltr_predictions($global_opts, $search_config, $relaxed_gff, $strict_gff, $gene_filtered_stats, $opt);
 }
 
 sub _refine_ltr_predictions {
-    my ($global_opts, $search_config, $relaxed_gff, $strict_gff, $opt) = @_;
+    my ($global_opts, $search_config, $relaxed_gff, $strict_gff, $gene_filtered_stats, $opt) = @_;
 
     my %refine_opts = (
 	genome => $global_opts->{genome}, 
@@ -71,8 +71,9 @@ sub _refine_ltr_predictions {
     $refine_opts{remove_dup_domains} = $search_config->{findltrs}{dedup} =~ /yes/i ? 1 : 0;
     $refine_opts{remove_tnp_domains} = $search_config->{findltrs}{tnpfilter} =~ /yes/i ? 1 : 0;
     $refine_opts{domains_required}   = $search_config->{findltrs}{domains_required} =~ /yes/i ? 1 : 0;
-    $refine_opts{outfile} = $opt->{outfile} if $opt->{outfile};
-    $refine_opts{logfile} = $opt->{logfile} if $opt->{logfile};
+    $refine_opts{genefile} = $opt->{genefile} if $opt->{genefile};
+    $refine_opts{outfile}  = $opt->{outfile} if $opt->{outfile};
+    $refine_opts{logfile}  = $opt->{logfile} if $opt->{logfile};
     
     my $refine_obj = Tephra::LTR::LTRRefine->new(%refine_opts);
 
@@ -87,7 +88,8 @@ sub _refine_ltr_predictions {
 	
 	my $combined_features = $refine_obj->reduce_features({ relaxed_features => $relaxed_features, 
 							       strict_features  => $strict_features,
-							       best_elements    => $best_elements });
+							       best_elements    => $best_elements,
+							       gene_filtered_stats => $gene_filtered_stats });
 
 	$refine_obj->sort_features({ gff               => $relaxed_gff, 
 				     combined_features => $combined_features });
@@ -154,13 +156,28 @@ sub _run_ltr_search {
 	$ltr_search_obj->create_index(\@suff_args, $opt->{index}, $log);
     }
 
-    my $strict_gff =
+    my ($strict_gff, $strict_filtered_stats) =
 	$ltr_search_obj->ltr_search({ config => $search_config, index => $opt->{index}, mode => 'strict'  });
-    my $relaxed_gff =
+    my ($relaxed_gff, $relaxed_filtered_stats) =
 	$ltr_search_obj->ltr_search({ config => $search_config, index => $opt->{index}, mode => 'relaxed' });
     unlink $global_opts->{hmmdb} if $using_tephra_db; # this is just a temp file to keep ltrdigest from crashing
 
-    return ($global_opts, $search_config, $relaxed_gff, $strict_gff);
+    ## Combine the status on gene filtering so we can log the results
+    #dd $strict_filtered_stats;
+    #dd $relaxed_filtered_stats;
+    for my $key (keys %$strict_filtered_stats){
+	if (exists $relaxed_filtered_stats->{$key}){
+	    $relaxed_filtered_stats->{$key} = $strict_filtered_stats->{$key} + $relaxed_filtered_stats->{$key};
+	}
+	else {
+	    $relaxed_filtered_stats->{$key} = $strict_filtered_stats->{$key};
+	}
+    }
+    #dd $relaxed_filtered_stats;
+    #dd $relaxed_gff;
+    #dd $strict_gff and exit;
+
+    return ($global_opts, $search_config, $relaxed_gff, $strict_gff, $relaxed_filtered_stats);
 }
 
 sub help {
