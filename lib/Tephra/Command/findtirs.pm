@@ -24,6 +24,7 @@ sub opt_spec {
 	[ "index|i=s",   "The suffixerator index to use for the TIR search "              ],
 	[ "threads|t=i", "The number of threads to use for the TIR search (Default: 1) "  ],
 	[ "logfile|l=s", "The file to use for logging results in addition to the screen " ],
+	[ "genefile|r=s","The reference gene set to use for filtering LTR-RTs "           ],
 	[ "clean|c=i",   "Clean up the index files (Default: yes) "                       ],
 	[ "debug",       "Show external command for debugging (Default: no) "             ],
 	[ "help|h",      "Display the usage menu and exit. "                              ],
@@ -81,23 +82,25 @@ sub _run_tir_search {
         find( sub { push @indexfiles, $File::Find::name if -f and /$matchstr/ }, abs_path($path) );
     }
 
-    my $hmmdb   = $using_tephra_db ? $tmp_hmmdb : $opt->{hmmdb};
-    my $genome  = $opt->{genome};
-    my $index   = $opt->{index};
-    my $outfile = $opt->{outfile};
-    my $clean   = $opt->{clean} // 1;
-    my $debug   = $opt->{debug} // 0;
-    my $threads = $opt->{threads} // 1;
-    my $logfile = $opt->{logfile} // File::Spec->catfile($dir, 'tephra_findtirs.log');
+    my $hmmdb    = $using_tephra_db ? $tmp_hmmdb : $opt->{hmmdb};
+    my $genome   = $opt->{genome};
+    my $genefile = $opt->{genefile};
+    my $index    = $opt->{index};
+    my $outfile  = $opt->{outfile};
+    my $clean    = $opt->{clean} // 1;
+    my $debug    = $opt->{debug} // 0;
+    my $threads  = $opt->{threads} // 1;
+    my $logfile  = $opt->{logfile} // File::Spec->catfile($dir, 'tephra_findtirs.log');
 
     my $tir_search = Tephra::TIR::TIRSearch->new( 
-	genome  => $genome, 
-	outfile => $outfile,
-	hmmdb   => $hmmdb,
-	clean   => $clean,
-	debug   => $debug,
-	threads => $threads,
-	logfile => $logfile,
+	genome   => $genome, 
+	genefile => $genefile,
+	outfile  => $outfile,
+	hmmdb    => $hmmdb,
+	clean    => $clean,
+	debug    => $debug,
+	threads  => $threads,
+	logfile  => $logfile,
     );
 
     unless (defined $index && @indexfiles == 7) {
