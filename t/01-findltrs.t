@@ -11,7 +11,7 @@ use File::Find;
 use File::Spec;
 #use Data::Dump::Color;
 
-use Test::More tests => 16;
+use Test::More tests => 19;
 
 $| = 1;
 
@@ -37,13 +37,25 @@ ok( -e $config, 'Can create config file for testing' );
 }
 
 my @find_args = ($cmd, 'findltrs', '-c', $config); # == 0 or die $!;
-#say STDERR join q{ }, @find_args;
+say STDERR join q{ }, @find_args;
 
 my ($stdout, $stderr, $exit) = capture { system(@find_args) }; 
 ok( -e $outgff, 'Can find some LTRs' );
 
 for my $line (split /^/, $stderr) {
-    if ($line =~ /length_filtered/) {
+    if ($line =~ /combined elements discovered \(prior to filtering steps\)/) {
+        my ($tot) = $line =~ /(\d+)$/;
+        ok( $tot == 7, 'Correct number of elements discovered prior to filtering' );
+    }
+    elsif ($line =~ /removed by matches to gene set/) {
+        my ($rm_filt) = $line =~ /(\d+)$/;
+        ok( $rm_filt == 0, 'Correct number of elements filtered by matches to gene set' );
+    }
+    elsif ($line =~ /input to additional filtering steps/) {
+        my ($in_filt) = $line =~ /(\d+)$/;
+        ok( $in_filt == 7, 'Correct number of elements input to additional filtering steps' );
+    }
+    elsif ($line =~ /length_filtered/) {
 	my ($l_filt) = $line =~ /(\d+)$/;
 	#say STDERR "l_filt: $l_filt";
 	ok( $l_filt == 0, 'Correct number of elements filtered by length' );
@@ -61,12 +73,12 @@ for my $line (split /^/, $stderr) {
     elsif ($line =~ /\'relaxed\' constraints/) {
 	my ($r_ct) = $line =~ /(\d+)$/;
 	#say STDERR "r_ct: $r_ct";
-	ok( $r_ct == 4, 'Correct number of combined elements found by relaxed constraints' );
+	ok( $r_ct == 5, 'Correct number of combined elements found by relaxed constraints' );
     }
     elsif ($line =~ /\'strict\' constraints/) {
 	my ($s_ct) = $line =~ /(\d+)$/;
 	#say STDERR "s_ct: $s_ct";
-	ok( $s_ct == 1, 'Correct number of total elements found by strict constraints' );
+	ok( $s_ct == 2, 'Correct number of total elements found by strict constraints' );
     }
     elsif ($line =~ /\'best\'/) {
 	my ($b_ct) = $line =~ /(\d+)$/;
