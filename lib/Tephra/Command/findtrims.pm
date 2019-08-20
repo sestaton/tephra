@@ -25,6 +25,7 @@ sub opt_spec {
 	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains "                 ],
 	[ "outfile|o=s", "The final combined and filtered GFF3 file of TRIMs "                        ],
 	[ "logfile|l=s", "The file to use for logging results in addition to the screen "             ],
+	[ "genefile|r=s","The reference gene set to use for filtering LTR-RTs "                       ],
 	[ "threads|t=i", "The number of threads to use for the TRIM search"                           ],
 	[ "clean|c=i",   "Clean up the index files (Default: Yes) "                                   ],
 	[ "debug",       "Show external command for debugging (Default: No) "                         ],
@@ -149,7 +150,7 @@ sub _run_trim_search {
 sub _write_unrefined_trims {
     my ($opt, $relaxed_gff) = @_;
 
-    my %refine_opts = ( genome => $opt->{genome}, outfile => $opt->{outfile}, is_trim => 1 );
+    my %refine_opts = ( genome => $opt->{genome}, outfile => $opt->{outfile}, genefile => $opt->{genefile}, is_trim => 1 );
     $refine_opts{logfile} = $opt->{logfile} if $opt->{logfile};
     my $refine_obj = Tephra::LTR::LTRRefine->new(%refine_opts);
 
