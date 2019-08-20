@@ -124,6 +124,7 @@ sub write_config {
   - genome:           $testdir/ref.fas
   - outfile:          $testdir/tephra_transposons.gff3
   - repeatdb:         $testdir/repdb.fas 
+  - genefile:         $testdir/devtest_gene_seqs.fas
   - trnadb:           TephraDB
   - hmmdb:            TephraDB
   - threads:          2
