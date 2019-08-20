@@ -27,35 +27,6 @@ Version 0.12.4
 our $VERSION = '0.12.4';
 $VERSION = eval $VERSION;
 
-has infile => (
-    is       => 'ro',
-    isa      => 'Path::Class::File',
-    required => 1,
-    coerce   => 1,
-);
-
-has outfile => (
-    is       => 'ro',
-    isa      => 'Path::Class::File',
-    required => 1,
-    coerce   => 1,
-);
-
-has repeatdb => (
-    is       => 'ro',
-    isa      => 'Path::Class::File',
-    required => 1,
-    coerce   => 1,
-);
-
-has threads => (
-    is        => 'ro',
-    isa       => 'Int',
-    predicate => 'has_threads',
-    lazy      => 1,
-    default   => 1,
-);
-
 #
 # methods
 #
@@ -66,29 +37,6 @@ sub transfer_annotations {
     my ($combined, $id_map) = $self->parse_blast($blast_report);
     $self->write_annotations($combined, $id_map);
     unlink $blast_report;
-}
-
-sub process_blast_args {
-    my $self = shift;
-    my $fasta   = $self->infile;
-    my $rdb     = $self->repeatdb;
-    my $out     = $self->outfile;
-    my $threads = $self->threads;
-
-    my ($dbname, $dbpath, $dbsuffix) = fileparse($rdb, qr/\.[^.]*/);
-    my ($faname, $fapath, $fasuffix) = fileparse($fasta, qr/\.[^.]*/);
-    my $outfile = File::Spec->catfile($fapath, $faname.'_'.$dbname.'.bln');
-
-    my $blastdb = $self->make_blastdb($rdb);
-    my $blast_report = $self->run_blast({ query   => $fasta, 
-					  db      => $blastdb, 
-					  threads => $threads, 
-					  outfile => $outfile,
-					  sort    => 'bitscore' });
-    my @dbfiles = glob "$blastdb*";
-    unlink @dbfiles;
-
-    return $blast_report;
 }
 
 sub parse_blast {
