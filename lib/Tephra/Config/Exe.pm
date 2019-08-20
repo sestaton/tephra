@@ -58,17 +58,17 @@ sub get_config_paths {
     my $musbin  = File::Spec->catdir($root,    'muscle', 'muscle');
 
     # this is to avoid building each time
-    my @path = split /:|;/, $ENV{PATH};    
-    for my $p (@path) {
-	my $texe = File::Spec->catfile($p, 'transeq');
-	my $bexe = File::Spec->catfile($p, 'blastn');
-	if (-e $texe && -x $texe) {
-	    $transeq = $texe;
-	}
-	if (-e $bexe && -x $bexe) {
-	    $blastph = $p;
-	}
-    }
+    #my @path = split /:|;/, $ENV{PATH};    
+    #for my $p (@path) {
+	#my $texe = File::Spec->catfile($p, 'transeq');
+	#my $bexe = File::Spec->catfile($p, 'blastn');
+	#if (-e $texe && -x $texe) {
+	#    $transeq = $texe;
+	#}
+	#if (-e $bexe && -x $bexe) {
+	#    $blastph = $p;
+	#}
+    #}
 
     return ({
         gt         => $gt,
