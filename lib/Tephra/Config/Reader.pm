@@ -84,6 +84,8 @@ sub parse_configuration {
     $index++;
     $config{all}{repeatdb}  = $yaml->[0]{all}[$index]{repeatdb};
     $index++;
+    $config{all}{genefile}  = $yaml->[0]{all}[$index]{genefile};
+    $index++;
     $config{all}{trnadb}    = $yaml->[0]{all}[$index]{trnadb};
     $index++;
     $config{all}{hmmdb}     = $yaml->[0]{all}[$index]{hmmdb};
@@ -202,7 +204,7 @@ sub parse_configuration {
     # tirage
     $index = 0;
     $config{tirage}{all} = $yaml->[0]{tirage}[$index]{all};
-
+    
     #dd \%config and exit;
     my $valid_config = $self->_validate_params(\%config);
 
@@ -254,11 +256,12 @@ sub get_all_opts {
     my $self = shift;
     my ($config) = @_;
 
-    my ($logfile, $genome, $repeatdb, $hmmdb, $trnadb, $outfile, $clean, $debug, 
-	$threads, $subs_rate, $genome_compressed, $repeatdb_compressed);
+    my ($logfile, $genome, $repeatdb, $genefile, $hmmdb, $trnadb, $outfile, $clean, $debug, 
+	$threads, $subs_rate, $genome_compressed, $repeatdb_compressed, $genefile_compressed);
 
     if (defined $config->{all}{genome} && -e $config->{all}{genome}) {
-        ($genome, $genome_compressed) = $self->check_if_compressed({ infile => $config->{all}{genome}, is_genome => 1, is_repeatdb => 0 });
+        ($genome, $genome_compressed) = 
+	    $self->check_if_compressed({ infile => $config->{all}{genome}, is_genome => 1, is_repeatdb => 0, is_genefile => 0 });
     }
     else {
         say STDERR "\n[ERROR]: genome file was not defined in configuration or does not exist. Check input. Exiting.\n";
@@ -266,13 +269,22 @@ sub get_all_opts {
     }
 
     if (defined $config->{all}{repeatdb} && -e $config->{all}{repeatdb}) {
-        ($repeatdb, $repeatdb_compressed) = $self->check_if_compressed({ infile => $config->{all}{repeatdb}, is_genome => 0, is_repeatdb => 1 });
+        ($repeatdb, $repeatdb_compressed) = 
+	    $self->check_if_compressed({ infile => $config->{all}{repeatdb}, is_genome => 0, is_repeatdb => 1, is_genefile => 0 });
     }   
     else {
         say STDERR "\n[ERROR]: repeatdb file was not defined in configuration or does not exist. Check input. Exiting.\n";
         exit(1);
     }
 
+    if (defined $config->{all}{genefile} && -e $config->{all}{genefile}) {
+        ($genefile, $genefile_compressed) = 
+	    $self->check_if_compressed({ infile => $config->{all}{genefile}, is_genome => 0, is_repeatdb => 0, is_genefile => 1 });
+    }
+    else {
+        say STDERR "\n[ERROR]: repeatdb file was not defined in configuration or does not exist. Check input. Exiting.\n";
+        exit(1);
+    }
     my ($name, $path, $suffix); # genome file specs
     if (defined $config->{all}{outfile}) {
         $outfile = $config->{all}{outfile};
@@ -308,14 +320,15 @@ sub get_all_opts {
              threads   => $threads, 
              subs_rate => $subs_rate, 
              genome_is_compressed   => $genome_compressed,
-             repeatdb_is_compressed => $repeatdb_compressed };
+             repeatdb_is_compressed => $repeatdb_compressed,
+             genefile_is_compressed => $genefile_compressed };
 }
 
 sub check_if_compressed {
     my $self = shift;
     my ($struc) = @_;
-    my ($infile, $is_genome, $is_repeatdb) =
-	@{$struc}{qw(infile is_genome is_repeatdb)};
+    my ($infile, $is_genome, $is_repeatdb, $is_genefile) =
+	@{$struc}{qw(infile is_genome is_repeatdb is_genefile)};
 
     my $is_compressed = 0;
     if ($infile =~ /\.gz\z|\.bz2\z/) {
@@ -326,6 +339,7 @@ sub check_if_compressed {
 	$name =~ s/\.fa.*$//;
 	$tmpfname = $name.'_tephra_tmp_genome_XXXX' if $is_genome;
 	$tmpfname = $name.'_tephra_tmp_repeatdb_XXXX' if $is_repeatdb;
+	$tmpfname = $name.'_tephra_tmp_genes_XXXX' if $is_genefile;
 
 	my ($outf, $ffilename) = tempfile( TEMPLATE => $tmpfname, DIR => $path, UNLINK => 0, SUFFIX => '.fasta' );
 	while (my $line = <$fh>) {
