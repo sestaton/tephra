@@ -11,8 +11,9 @@ use Cwd                 qw(abs_path);
 use Log::Any            qw($log);
 use Try::Tiny;
 use YAML::Tiny;
+use Tephra::Annotation::FilterTandems;
 use namespace::autoclean;
-#use Data::Dump;
+use Data::Dump::Color;
 
 with 'Tephra::Role::Logger',
      'Tephra::Role::Run::GT';
@@ -48,10 +49,12 @@ sub ltr_search {
     my ($search_obj) = @_;
     my ($config, $index, $mode) = @{$search_obj}{qw(config index mode)};
     
-    my $genome  = $self->genome->absolute->resolve;
-    my $hmmdb   = $self->hmmdb->absolute->resolve;
-    my $trnadb  = $self->trnadb->absolute->resolve;
-    my $logfile = $self->logfile;
+    my $genome   = $self->genome->absolute->resolve;
+    my $hmmdb    = $self->hmmdb->absolute->resolve;
+    my $trnadb   = $self->trnadb->absolute->resolve;
+    my $logfile  = $self->logfile;
+    my $threads  = $self->threads;
+    my $genefile = $config->{all}{genefile};
 
     ## LTRharvest constraints
     my ($overlaps, $mintsd, $maxtsd, $minlenltr, $maxlenltr, $mindistltr, $maxdistltr, $pdomcutoff, $pdomevalue) = 
@@ -103,7 +106,22 @@ sub ltr_search {
     my $ltrh_succ = $self->run_ltrharvest(\%ltrh_cmd, $ltrh_gff, $log);
 
     if ($ltrh_succ && -s $ltrh_gff) {
-	my $gffh_sort = $self->sort_gff($ltrh_gff, $log);
+	my $ftandem_obj = Tephra::Annotation::FilterTandems->new( 
+	    genome   => $genome, 
+	    genefile => $genefile,
+	    gff      => $ltrh_gff, 
+	    threads  => $threads,
+	    type     => 'LTR',
+	    blast_hit_cov => 50,
+	    blast_hit_pid => 70,
+	    blast_hit_len => 50,
+        );
+
+	my ($filtered_gff, $filtered_stats) = $ftandem_obj->filter_tandem_genes;
+	#dd \$filtered_stats;
+	#dd $filtered_gff and exit;
+	my $gffh_sort = $self->sort_gff($filtered_gff, $log);
+	#dd $gffh_sort and exit;
 
 	my @ltrd_opts = qw(-trnas -hmms -seqfile -matchdescstart -seqnamelen -o 
                            -pdomevalcutoff -pdomcutoff -pptradius -pptlen -pptaprob 
@@ -119,8 +137,9 @@ sub ltr_search {
 	    if $self->clean && $mode eq 'relaxed';
 	unlink $ltrh_gff;
 	unlink $gffh_sort;
-	
-	return $ltrd_gff;
+
+	#dd $ltrd_gff and exit;
+	return ($ltrd_gff, $filtered_stats);
     }
     else {
 	$self->clean_indexes($path) 
