@@ -100,6 +100,8 @@ sub collect_features {
     my ($gff_thresh_ref) = @_;
     my ($gff, $pid_thresh) = @{$gff_thresh_ref}{qw(gff pid_threshold)};
 
+
+
     my (%features, %intervals, %coord_map);
     my ($source, $seq_id, $start, $end, $length, $region);
 
@@ -225,7 +227,8 @@ sub filter_compound_elements {
     }
 
     my %stats = ( compound_gyp_cop_filtered => $gyp_cop_filtered, 
-		  length_filtered           => $len_filtered );
+		  length_filtered           => $len_filtered,
+		  total_num                 => $allct );
 
     if ($self->remove_dup_domains) {
 	$stats{dup_pdoms_filtered} = $dup_pdoms_filtered;
@@ -485,9 +488,19 @@ sub reduce_features {
     my $part_feats = $strict_features->{collected_features};
     my $all_stats  = $relaxed_features->{stats};
     my $part_stats = $strict_features->{stats};
-    
+    my $rel_tot    = $all_stats->{total_num};
+    my $str_tot    = $part_stats->{total_num};
+
+    # Get stats from gene-filtering step and log output
+    my $gene_filtered_stats = $feature_ref->{gene_filtered_stats};
+    my $tect = $gene_filtered_stats->{total};
+    my $rmct = $gene_filtered_stats->{removed};
+    my $filtered = $gene_filtered_stats->{filtered};
+    $log->info("Results - Number of combined elements discovered (prior to filtering steps):         $tect");
+    $log->info("Results - Number of combined elements removed by matches to gene set:                $rmct");
+    $log->info("Results - Number of combined elements input to additional filtering steps:           $filtered");
+
     my ($all, $best, $part, $comb) = (0, 0, 0, 0);
-    
     my (%best_features, %all_features, %best_stats);
 
     for my $stat (keys %$all_stats) {
@@ -552,13 +565,14 @@ sub reduce_features {
     $best_stats{n_perc_filtered} = $n_perc_filtered;
 
     for my $s (keys %best_stats) {
+	next if $s eq 'total_num';
 	my $l = 40 - length($s);
 	my $pad = ' ' x $l;
 	$log->info("Results - Number of elements filtered by '$s':$pad",$best_stats{$s});
     }
 
-    $log->info("Results - Number of elements found with 'relaxed' constraints:                       $all");
-    $log->info("Results - Number of elements found with 'strict' constraints:                        $part");
+    $log->info("Results - Number of elements found with 'relaxed' constraints:                       $rel_tot");
+    $log->info("Results - Number of elements found with 'strict' constraints:                        $str_tot");
     $log->info("Results - Number of 'best' elements that were overlapping in these two data sets:    $best");
     $log->info("Results - Number of 'combined' non-overlapping elements:                             $comb");
 
@@ -568,12 +582,10 @@ sub reduce_features {
 sub sort_features {
     my $self = shift;
     my ($feature_ref) = @_;
-
-    my ($gff, $combined_features) = @{$feature_ref}{qw(gff combined_features)};
     my $fasta = $self->genome->absolute->resolve;
     my $index = $self->index_ref($fasta);
-    #my $logfile = $self->logfile;
-    #my $log     = $self->get_logger($logfile);
+
+    my ($gff, $combined_features) = @{$feature_ref}{qw(gff combined_features)};
 
     my ($outfile, $outfasta);
     if ($self->has_outfile) {
@@ -719,7 +731,7 @@ sub sort_features {
     }
     close $ofas;
 
-    #say STDERR "\nTotal elements written: $elem_tot";
+    return;
 }
 
 sub _get_ltr_range {
@@ -732,6 +744,8 @@ sub _get_ltr_range {
     $seq =~ s/^\s+|\s+$//g;
     $seq =~ s/.{60}\K/\n/g;
     say $ofh join "\n", ">".$id, $seq;
+
+    return;
 }
 
 sub _filterNpercent {
