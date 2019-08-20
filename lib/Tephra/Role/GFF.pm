@@ -103,7 +103,8 @@ sub extract_ltr_sequences {
 		    my $elem_id = @{$ltr_feature->{attributes}{ID}}[0];
 		    $family  = @{$ltr_feature->{attributes}{family}}[0];
 		    my ($start, $end) = @{$ltr_feature}{qw(start end)};
-		    my $key = join "||", $family, $elem_id, $seq_id, $start, $end;
+		    my $key = defined $family ? join "||", $family, $elem_id, $seq_id, $start, $end 
+			: join "||", 'RLX', $elem_id, $seq_id, $start, $end;
 		    $ltrs{$key}{'full'} = join "||", @{$ltr_feature}{qw(seq_id type start end)};
 		    $coord_map{$elem_id} = join "||", @{$ltr_feature}{qw(seq_id start end)};
 		}
@@ -115,7 +116,7 @@ sub extract_ltr_sequences {
 			@{$ltr_feature}{qw(type start end strand)};
 		    $ltr_strand //= '?';
 		    my $ltrkey = join "||", $chr_id, $ltr_type, $ltr_start, $ltr_end, $ltr_strand;
-		    my $parent_key = join "||", $family, $pkey;
+		    my $parent_key = defined $family ? join "||", $family, $pkey : join "||", 'RLX', $pkey;
 		    push @{$ltrs{$parent_key}{'ltrs'}}, $ltrkey; # unless exists $seen{$ltrkey};
 		    #$seen{$ltrkey} = 1;
 		}
