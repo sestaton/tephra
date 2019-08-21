@@ -282,9 +282,10 @@ sub get_all_opts {
 	    $self->check_if_compressed({ infile => $config->{all}{genefile}, is_genome => 0, is_repeatdb => 0, is_genefile => 1 });
     }
     else {
-        say STDERR "\n[ERROR]: repeatdb file was not defined in configuration or does not exist. Check input. Exiting.\n";
+        say STDERR "\n[ERROR]: gene file was not defined in configuration or does not exist. Check input. Exiting.\n";
         exit(1);
     }
+
     my ($name, $path, $suffix); # genome file specs
     if (defined $config->{all}{outfile}) {
         $outfile = $config->{all}{outfile};
@@ -311,7 +312,8 @@ sub get_all_opts {
 
     return { logfile   => $logfile,
              genome    => $genome, 
-             repeatdb  => $repeatdb, 
+             repeatdb  => $repeatdb,
+	     genefile  => $genefile,
              hmmdb     => $hmmdb, 
              trnadb    => $trnadb, 
              outfile   => $outfile, 
