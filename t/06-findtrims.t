@@ -9,7 +9,7 @@ use Capture::Tiny       qw(capture);
 use File::Find;
 use File::Spec;
 
-use Test::More tests => 14;
+use Test::More tests => 17;
 
 $| = 1;
 
@@ -18,16 +18,17 @@ if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
     $devtests = 1;
 }
 
-my $cmd     = File::Spec->catfile('blib', 'bin', 'tephra');
-my $testdir = File::Spec->catdir('t', 'test_data');
-my $genome  = File::Spec->catfile($testdir, 'TAIR10_chr1.fas');
-my $outfile = File::Spec->catfile($testdir, 'TAIR10_chr1_combined_trims.gff3');
-my $outfas  = File::Spec->catfile($testdir, 'TAIR10_chr1_combined_trims.fasta');
-my $log     = File::Spec->catfile($testdir, 'TAIR10_chr1_tephra_findtrims.log');
+my $cmd      = File::Spec->catfile('blib', 'bin', 'tephra');
+my $testdir  = File::Spec->catdir('t', 'test_data');
+my $genome   = File::Spec->catfile($testdir, 'TAIR10_chr1.fas');
+my $outfile  = File::Spec->catfile($testdir, 'TAIR10_chr1_combined_trims.gff3');
+my $outfas   = File::Spec->catfile($testdir, 'TAIR10_chr1_combined_trims.fasta');
+my $log      = File::Spec->catfile($testdir, 'TAIR10_chr1_tephra_findtrims.log');
+my $genefile = File::Spec->catfile($testdir, 'devtest_gene_seqs.fas');
 ## these are subsets for testing
 #my $model   = File::Spec->catfile($testdir, 'te.hmm');
 #my $trnas   = File::Spec->catfile($testdir, 'trnas.fas');
-my $exp_ct = 227; # expected number of TRIM elements on Chr 1
+my $exp_ct = 228; # expected number of TRIM elements on Chr 1
 
 {
     my @help_args = ($cmd, 'findtrims', '-h');
@@ -37,33 +38,45 @@ my $exp_ct = 227; # expected number of TRIM elements on Chr 1
 }
 
 SKIP: {
-    skip 'skip development tests', 13 unless $devtests;
+    skip 'skip development tests', 16 unless $devtests;
 
-    my @find_cmd = ($cmd, 'findtrims', '-g', $genome, '-o', $outfile, '--clean');
+    my @find_cmd = ($cmd, 'findtrims', '-g', $genome, '-o', $outfile, '-r', $genefile, '--clean');
     say STDERR join q{ }, @find_cmd;
-    #system([0..5], $find_cmd);
+    #system([0..5], @find_cmd);
     my ($stdout, $stderr, @ret) = capture { system([0..5], @find_cmd) };
     
     for my $line (split /^/, $stderr) {
-	if ($line =~ /length_filtered/) {
+	if ($line =~ /combined elements discovered \(prior to filtering steps\)/) {
+	    my ($tot) = $line =~ /(\d+)$/;
+	    ok( $tot == $exp_ct, 'Correct number of elements discovered prior to filtering' );
+	}
+	elsif ($line =~ /removed by matches to gene set/) {
+	    my ($rm_filt) = $line =~ /(\d+)$/;
+	    ok( $rm_filt == 0, 'Correct number of elements filtered by matches to gene set' );
+	}
+	elsif ($line =~ /input to additional filtering steps/) {
+	    my ($in_filt) = $line =~ /(\d+)$/;
+	    ok( $in_filt == $exp_ct, 'Correct number of elements input to additional filtering steps' );
+	}
+	elsif ($line =~ /length_filtered/) {
 	    my ($l_filt) = $line =~ /(\d+)$/;
 	    say STDERR "l_filt: $l_filt exp: 0";
 	    ok( $l_filt == 0, 'Correct number of elements filtered by length' );
 	}
-	if ($line =~ /compound_gyp_cop_filtered/) {
+	elsif ($line =~ /compound_gyp_cop_filtered/) {
 	    my ($gc_filt) = $line =~ /(\d+)$/;
 	    say STDERR "gc_filt: $gc_filt";
 	    ok( $gc_filt == 0, 'Correct number of elements filtered compound gypsy/copia' );
 	}
-	if ($line =~ /n_perc_filtered/) {
+	elsif ($line =~ /n_perc_filtered/) {
 	    my ($n_filt) = $line =~ /(\d+)$/;
 	    say STDERR "n_filt: $n_filt exp: 0";
 	    ok( $n_filt == 0, 'Correct number of elements filtered by N-percentage' );
 	}
 	elsif ($line =~ /\'relaxed\' constraints/) {
 	    my ($r_ct) = $line =~ /(\d+)$/;
-	    say STDERR "r_ct: $r_ct exp: 226";
-	    ok( $r_ct == $exp_ct-1, 'Correct number of combined elements found by relaxed constraints' );
+	    say STDERR "r_ct: $r_ct exp: 90";
+	    ok( $r_ct == 90, 'Correct number of combined elements found by relaxed constraints' );
 	}
 	elsif ($line =~ /\'strict\' constraints/) {
 	    my ($s_ct) = $line =~ /(\d+)$/;
@@ -72,18 +85,18 @@ SKIP: {
 	}
 	elsif ($line =~ /\'best\'/) {
 	    my ($b_ct) = $line =~ /(\d+)$/;
-	    say STDERR "b_ct: $b_ct exp: 1";
-	    ok( $b_ct == 1, 'Correct number of best elements found' );
+	    say STDERR "b_ct: $b_ct exp: 0";
+	    ok( $b_ct == 0, 'Correct number of best elements found' );
 	}
 	elsif ($line =~ /\'combined\'/) {
 	    my ($c_ct) = $line =~ /(\d+)$/;
-	    say STDERR "c_ct: $c_ct exp: 227";
-	    ok( $c_ct == $exp_ct, 'Correct number of combined elements found' );
+	    say STDERR "c_ct: $c_ct exp: 90";
+	    ok( $c_ct == 90, 'Correct number of combined elements found' );
 	}
 	elsif ($line =~ /Total elements written/) {
 	    my ($t_ct) = $line =~ /(\d+)$/;
-	    say STDERR "t_ct: $t_ct exp: 227";
-	    ok( $t_ct == $exp_ct, 'Correct number of total elements found' );
+	    say STDERR "t_ct: $t_ct exp: 90";
+	    ok( $t_ct == 90, 'Correct number of total elements found' );
 	}
     }
 
@@ -92,7 +105,7 @@ SKIP: {
     while (<$in>) { $ct++ if /^>/; }
     close $in;
     
-    ok( $ct == $exp_ct,  'Correct number of TRIMs in output FASTA file' );
+    ok( $ct == 90,  'Correct number of TRIMs in output FASTA file' );
     ok( -e $outfile, 'Created TRIMs in output GFF3 file'            );
     
     open my $gin, '<', $outfile;
@@ -105,7 +118,7 @@ SKIP: {
     }
     close $gin;
     
-    ok( $gct == $exp_ct,  'Correct number of TRIMs in output GFF3 file' );
+    ok( $gct == 90,  'Correct number of TRIMs in output GFF3 file' );
     ok( $ct == $gct, 'Expected number of records in GFF3 and FASTA files' );
     ok( -e $log, 'Expected log file of TRIM results produced' );
     
