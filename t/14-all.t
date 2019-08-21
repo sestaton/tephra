@@ -20,14 +20,14 @@ if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
     $devtests = 1;
 }
 
-my $cmd       = File::Spec->catfile('blib', 'bin', 'tephra');
-my $testdir   = File::Spec->catdir('t', 'test_data');
-my $genome    = File::Spec->catfile($testdir, 'ref.fas');
-my $thrlog    = File::Spec->catfile($testdir, 'tephra_fragment_searches.log');
-my $log       = File::Spec->catfile($testdir, 'tephra_full.log');
-my $gff       = File::Spec->catfile($testdir, 'tephra_transposons.gff3');
-my $fas       = File::Spec->catfile($testdir, 'tephra_transposons.fasta');
-my $finaldb   = File::Spec->catfile($testdir, 'tephra_transposons_complete.fasta');
+my $cmd      = File::Spec->catfile('blib', 'bin', 'tephra');
+my $testdir  = File::Spec->catdir('t', 'test_data');
+my $genome   = File::Spec->catfile($testdir, 'ref.fas');
+my $thrlog   = File::Spec->catfile($testdir, 'tephra_fragment_searches.log');
+my $log      = File::Spec->catfile($testdir, 'tephra_full.log');
+my $gff      = File::Spec->catfile($testdir, 'tephra_transposons.gff3');
+my $fas      = File::Spec->catfile($testdir, 'tephra_transposons.fasta');
+my $finaldb  = File::Spec->catfile($testdir, 'tephra_transposons_complete.fasta');
 #my $ctestfile = File::Spec->catfile($testdir, 'tephra_copia_exemplar_repeats.fasta');
 #my $gtestfile = File::Spec->catfile($testdir, 'tephra_gypsy_exemplar_repeats.fasta');
 #my $ltrcdir   = File::Spec->catdir($testdir,  'ref_tephra_ltrs_trims_classified_results');
@@ -95,6 +95,7 @@ sub write_config {
   - genome:           $testdir/ref.fas.gz
   - outfile:          $testdir/tephra_transposons.gff3
   - repeatdb:         $testdir/repdb.fas 
+  - genefile:         $testdir/devtest_gene_seqs.fas
   - trnadb:           TephraDB
   - hmmdb:            TephraDB
   - threads:          2
