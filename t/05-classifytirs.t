@@ -46,7 +46,7 @@ if ($devtests) {
 }
 
 my @find_cmd = ($cmd, 'classifytirs', '-g', $genome, '-d', $repeatdb, '-i', $ingff, '-o', $outgff, '-r', $outdir);
-#say STDERR join q{ }, @find_cmd;
+say STDERR join q{ }, @find_cmd;
 my @ret = capture { system([0..5], @find_cmd) };
 
 ok( -e $outgff, 'Correctly classified TIRs' );
@@ -68,9 +68,9 @@ while (<$gin>) {
 close $gin;
 
 if ($devtests) {
-    #say STDERR join q{ }, $seqct, $gffct;
-    ok( $seqct == 270, 'Correct number of TIRs classified' );
-    ok( $gffct == 270, 'Correct number of TIRs classified' );
+    say STDERR join q{ }, $seqct, $gffct;
+    ok( $seqct == 181, 'Correct number of TIRs classified' );
+    ok( $gffct == 181, 'Correct number of TIRs classified' );
     ok( -e $log, 'Correctly logged TIR classification results' );
 }
 else { 
