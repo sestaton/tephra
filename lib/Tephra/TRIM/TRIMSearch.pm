@@ -11,6 +11,7 @@ use Cwd                 qw(getcwd abs_path);
 use IPC::System::Simple qw(system EXIT_ANY);
 use Log::Any            qw($log);
 use Try::Tiny;
+use Tephra::Annotation::FilterTandems;
 use namespace::autoclean;
 
 with 'Tephra::Role::Logger',
@@ -30,10 +31,25 @@ Version 0.12.4
 our $VERSION = '0.12.4';
 $VERSION = eval $VERSION;
 
+has genefile => (
+    is       => 'ro',
+    isa      => 'Path::Class::File',
+    required => 1,
+    coerce   => 1,
+);
+
 has logfile => (
       is        => 'ro',
       isa       => 'Str',
       predicate => 'has_logfile',
+);
+
+has threads => (
+    is        => 'ro',
+    isa       => 'Int',
+    predicate => 'has_threads',
+    lazy      => 1,
+    default   => 1,
 );
 
 sub trim_search {
@@ -41,10 +57,12 @@ sub trim_search {
     my ($search_obj) = @_;
 
     my ($index, $mode) = @{$search_obj}{qw(index mode)};
-    my $genome  = $self->genome->absolute->resolve;
-    my $hmmdb   = $self->hmmdb;
-    my $trnadb  = $self->trnadb;
-    my $logfile = $self->logfile;
+    my $genome   = $self->genome->absolute->resolve;
+    my $genefile = $self->genefile->absolute->resolve;
+    my $hmmdb    = $self->hmmdb;
+    my $trnadb   = $self->trnadb;
+    my $logfile  = $self->logfile;
+    my $threads  = $self->threads;
 
     my (%ltrh_cmd, %ltrd_cmd, @ltrh_opts, @ltrh_args, $ltrh_gff, $ltrg_gff);
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
@@ -77,9 +95,22 @@ sub trim_search {
     @ltrh_cmd{@ltrh_opts} = @ltrh_args;
     my $log = $self->get_tephra_logger($logfile);
     my $ltrh_succ = $self->run_ltrharvest(\%ltrh_cmd, $ltrh_gff, $log);
-    my $gffh_sort = $self->sort_gff($ltrh_gff, $log) if -s $ltrh_gff;
+    
+    if ($ltrh_succ && -s $ltrh_gff) {
+	my $ftandem_obj = Tephra::Annotation::FilterTandems->new( 
+            genome   => $genome, 
+            genefile => $genefile,
+            gff      => $ltrh_gff, 
+            threads  => $threads,
+            type     => 'LTR',
+            blast_hit_cov => 50,
+            blast_hit_pid => 70,
+            blast_hit_len => 50,
+	);
 
-    if ($ltrh_succ && defined $gffh_sort && -s $gffh_sort) {
+	my ($filtered_gff, $filtered_stats) = $ftandem_obj->filter_tandem_genes;
+	my $gffh_sort = $self->sort_gff($filtered_gff, $log);
+
 	my @ltrd_opts = qw(-trnas -hmms -seqfile -seqnamelen -matchdescstart -o);
 	my @ltrd_args = ($trnadb,$hmmdb,$genome,"50","yes",$ltrg_gff);
 
@@ -91,7 +122,7 @@ sub trim_search {
 	unlink $ltrh_gff;
 	unlink $gffh_sort;
     
-	return $ltrg_gff;
+	return ($ltrg_gff, $filtered_stats);
     }
     else {
 	$self->clean_indexes($path) 
