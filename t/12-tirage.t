@@ -54,7 +54,7 @@ SKIP: {
 	$ct++;
     }
     close $in;
-    ok( $ct == 270, 'Expected number of entries in TIR age report' );
+    ok( $ct == 181, 'Expected number of entries in TIR age report' );
 
     # should be removed by default
     #my @resdirs;
