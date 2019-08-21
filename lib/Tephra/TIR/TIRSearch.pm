@@ -31,6 +31,13 @@ has outfile => (
       required  => 0,
 );
 
+has genefile => (
+    is       => 'ro',
+    isa      => 'Path::Class::File',
+    required => 1,
+    coerce   => 1,
+);
+
 has logfile => (
       is        => 'ro',
       isa       => 'Str',
@@ -62,11 +69,12 @@ sub tir_search {
     my $self = shift;
     my ($index) = @_;
     
-    my $genome  = $self->genome->absolute->resolve;
-    my $hmmdb   = $self->hmmdb;
-    my $outfile = $self->outfile;
-    my $logfile = $self->logfile;
-    my $threads = $self->threads;
+    my $genome   = $self->genome->absolute->resolve;
+    my $genefile = $self->genefile->absolute->resolve;
+    my $hmmdb    = $self->hmmdb;
+    my $outfile  = $self->outfile;
+    my $logfile  = $self->logfile;
+    my $threads  = $self->threads;
     my (%suf_args, %tirv_cmd);
 
     my ($name, $path, $suffix) = fileparse($genome, qr/\.[^.]*/);
@@ -86,14 +94,12 @@ sub tir_search {
     my $log = $self->get_tephra_logger($logfile);
     my $tirv_succ = $self->run_tirvish(\%tirv_cmd, $gff, $log);
     #remove_tree($model_dir, { safe => 1 });
-
-    my ($filtered_gff, $filtered_fas) = $self->_filter_tir_gff($gff, $fas);
     $self->clean_indexes($path) if $self->clean;
-    
+
     my $ftandem_obj = Tephra::Annotation::FilterTandems->new(
             genome   => $genome,
-            genefile => ,
-            gff      => $filtered_gff,
+            genefile => $genefile,
+            gff      => $gff,
             threads  => $threads,
             type     => 'TIR',
             blast_hit_cov => 50,
@@ -101,6 +107,8 @@ sub tir_search {
             blast_hit_len => 10,
     );
 
+    my ($filtered_gff, $filtered_stats) = $ftandem_obj->filter_tandem_genes;
+    my ($rt_filtered_gff, $rt_filtered_fas) = $self->_filter_tir_gff($filtered_gff, $fas);
     
     return $filtered_gff;
 }
