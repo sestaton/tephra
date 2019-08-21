@@ -50,7 +50,7 @@ sub find_ltrs {
     my $st = strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findltrs' started at: $st.");
 
-    my $findltrs_opts = ['-g', $global_opts->{genome}, '-o', $ltr_gff, 
+    my $findltrs_opts = ['-g', $global_opts->{genome}, '-o', $ltr_gff,
                          '-c', $opt->{config}, '--logfile', $global_opts->{logfile}];
     push @$findltrs_opts, '--debug'
         if $global_opts->{debug};
@@ -79,7 +79,8 @@ sub find_trims {
     my $st = strftime('%d-%m-%Y %H:%M:%S', localtime);
     $log->info("Command - 'tephra findtrims' started at: $st.");
     
-    my $findtrims_opts = ['-g', $trim_ref, '-o', $trims_gff, '--logfile', $global_opts->{logfile}, '--clean'];
+    my $findtrims_opts = ['-g', $trim_ref, '-r', $global_opts->{genefile}, 
+			  '-o', $trims_gff, '--logfile', $global_opts->{logfile}, '--clean'];
     $self->run_tephra_cmd('findtrims', $findtrims_opts, $global_opts->{debug});
     
     my $t1 = gettimeofday();
@@ -322,7 +323,7 @@ sub find_tirs {
     my $tir_gff = File::Spec->catfile( abs_path($path), $name.'_tephra_tirs.gff3' );
     my $tir_fas = File::Spec->catfile( abs_path($path), $name.'_tephra_tirs.fasta' );
 
-    my $findtirs_opts = ['-g', $tir_ref, '-o', $tir_gff];
+    my $findtirs_opts = ['-g', $tir_ref, '-o', $tir_gff, '-r', $global_opts->{genefile}];
     push @$findtirs_opts, '--debug'
         if $global_opts->{debug};
     $self->capture_tephra_cmd('findtirs', $findtirs_opts, $global_opts->{debug});
