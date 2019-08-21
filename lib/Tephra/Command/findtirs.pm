@@ -18,17 +18,17 @@ use Tephra::TIR::TIRSearch;
 
 sub opt_spec {
     return (    
-	[ "genome|g=s",  "The genome sequences in FASTA format to search for TIRs "       ],
-	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains "     ],
-	[ "outfile|o=s", "The final combined and filtered GFF3 file of TIRs "             ],
-	[ "index|i=s",   "The suffixerator index to use for the TIR search "              ],
-	[ "threads|t=i", "The number of threads to use for the TIR search (Default: 1) "  ],
-	[ "logfile|l=s", "The file to use for logging results in addition to the screen " ],
-	[ "genefile|r=s","The reference gene set to use for filtering LTR-RTs "           ],
-	[ "clean|c=i",   "Clean up the index files (Default: yes) "                       ],
-	[ "debug",       "Show external command for debugging (Default: no) "             ],
-	[ "help|h",      "Display the usage menu and exit. "                              ],
-        [ "man|m",       "Display the full manual. "                                      ],
+	[ "genome|g=s",   "The genome sequences in FASTA format to search for TIRs "       ],
+	[ "hmmdb|d=s",    "The HMM db in HMMERv3 format to search for coding domains "     ],
+	[ "outfile|o=s",  "The final combined and filtered GFF3 file of TIRs "             ],
+	[ "index|i=s",    "The suffixerator index to use for the TIR search "              ],
+	[ "threads|t=i",  "The number of threads to use for the TIR search (Default: 1) "  ],
+	[ "logfile|l=s",  "The file to use for logging results in addition to the screen " ],
+	[ "genefile|r=s", "The reference gene set to use for filtering TIRs "              ],
+	[ "clean|c=i",    "Clean up the index files (Default: yes) "                       ],
+	[ "debug",        "Show external command for debugging (Default: no) "             ],
+	[ "help|h",       "Display the usage menu and exit. "                              ],
+        [ "man|m",        "Display the full manual. "                                      ],
     );
 }
 
@@ -132,6 +132,7 @@ USAGE: tephra findtirs [-h] [-m]
 
 Required:
     -g|genome     :   The genome sequences in FASTA format to search for TIR TEs. 
+    -r|genefile   :   The reference gene set to use for filtering TIRs.
 
 Options:
     -o|outfile    :   The final combined GFF3 file of TIRs.
@@ -156,7 +157,7 @@ __END__
 
 =head1 SYNOPSIS    
 
- tephra findtirs -g ref.fas -d te_models.hmm
+ tephra findtirs -g ref.fas -d te_models.hmm -r genes.fas
 
 =head1 DESCRIPTION
 
@@ -173,6 +174,10 @@ S. Evan Staton, C<< <evan at evanstaton.com> >>
 =item -g, --genome
 
  The genome sequences in FASTA format to search for TIR TEs.
+
+=item -r, --genefile
+
+ The reference gene set to use for filtering TRIMs.
 
 =back
 
