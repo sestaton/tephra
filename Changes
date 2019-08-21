@@ -1,6 +1,20 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.12.5	08/21/2019	Vancouver, BC
+
+New features:
+ - Add method for filtering LTR/TIR/TRIM elements against a user-provided gene set to
+   remove spurious predictions that are likely tandemly repeated genes. 
+
+Bug fixes:
+ - Configure all external programs during installation instead of relying on those in PATH.
+   This fixes the issue of not being able to find programs when running in a container.
+   Fixes #41 on github.
+ - Correct the number of elements discovered under different relaxed and strict conditions.
+   What was being reported was the filtered numbers (correct for the total, but not the correct
+   number initially identified).
+
 0.12.4	05/27/2019	Vancouver, BC
 
 New features:
