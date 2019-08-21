@@ -20,17 +20,17 @@ use Tephra::LTR::LTRRefine;
 
 sub opt_spec {
     return (    
-	[ "genome|g=s",  "The genome sequences in FASTA format to search for TRIMs "                  ],
-	[ "trnadb|r=s",  "The file of tRNA sequences in FASTA format to search for PBS "              ], 
-	[ "hmmdb|d=s",   "The HMM db in HMMERv3 format to search for coding domains "                 ],
-	[ "outfile|o=s", "The final combined and filtered GFF3 file of TRIMs "                        ],
-	[ "logfile|l=s", "The file to use for logging results in addition to the screen "             ],
-	[ "genefile|r=s","The reference gene set to use for filtering LTR-RTs "                       ],
-	[ "threads|t=i", "The number of threads to use for the TRIM search"                           ],
-	[ "clean|c=i",   "Clean up the index files (Default: Yes) "                                   ],
-	[ "debug",       "Show external command for debugging (Default: No) "                         ],
-	[ "help|h",      "Display the usage menu and exit. "                                          ],
-        [ "man|m",       "Display the full manual. "                                                  ],
+	[ "genome|g=s",   "The genome sequences in FASTA format to search for TRIMs "                  ],
+	[ "trnadb|n=s",   "The file of tRNA sequences in FASTA format to search for PBS "              ], 
+	[ "hmmdb|d=s",    "The HMM db in HMMERv3 format to search for coding domains "                 ],
+	[ "outfile|o=s",  "The final combined and filtered GFF3 file of TRIMs "                        ],
+	[ "logfile|l=s",  "The file to use for logging results in addition to the screen "             ],
+	[ "genefile|r=s", "The reference gene set to use for filtering LTR-RTs "                       ],
+	[ "threads|t=i",  "The number of threads to use for the TRIM search"                           ],
+	[ "clean|c=i",    "Clean up the index files (Default: Yes) "                                   ],
+	[ "debug",        "Show external command for debugging (Default: No) "                         ],
+	[ "help|h",       "Display the usage menu and exit. "                                          ],
+        [ "man|m",        "Display the full manual. "                                                  ],
     );
 }
 
@@ -45,7 +45,7 @@ sub validate_args {
     elsif ($opt->{help}) {
         $self->help and exit(0);
     }
-    elsif (!$opt->{genome} || !$opt->{outfile}) {
+    elsif (!$opt->{genome} || !$opt->{outfile} || !$opt->{genefile}) {
 	say STDERR "\n[ERROR]: Required arguments not given.\n";
 	$self->help and exit(0);
     }
@@ -53,14 +53,18 @@ sub validate_args {
         say STDERR "\n[ERROR]: The genome file does not exist. Check arguments.\n";
         $self->help and exit(0);
     }
+    elsif (! -e $opt->{genefile}) {
+        say STDERR "\n[ERROR]: The gene file does not exist. Check arguments.\n";
+        $self->help and exit(0);
+    }
 } 
 
 sub execute {
     my ($self, $opt, $args) = @_;
 
-    my ($relaxed_gff, $strict_gff) = _run_trim_search($opt);
+    my ($relaxed_gff, $strict_gff, $gene_filtered_stats) = _run_trim_search($opt);
     if ($relaxed_gff && $strict_gff) {
-	my $some = _refine_trim_predictions($relaxed_gff, $strict_gff, $opt->{genome}, $opt->{outfile}, $opt->{logfile});
+	my $some = _refine_trim_predictions($relaxed_gff, $strict_gff, $opt->{genome}, $opt->{outfile}, $opt->{logfile}, $gene_filtered_stats);
     }
     elsif ($relaxed_gff && !$strict_gff) {
 	_write_unrefined_trims($opt, $relaxed_gff);
@@ -72,7 +76,7 @@ sub execute {
 }
 
 sub _refine_trim_predictions {
-    my ($relaxed_gff, $strict_gff, $genome, $outfile, $logfile) = @_;
+    my ($relaxed_gff, $strict_gff, $genome, $outfile, $logfile, $gene_filtered_stats) = @_;
 
     my %refine_opts = ( genome => $genome, outfile => $outfile, is_trim => 1 );
     $refine_opts{logfile} = $logfile if $logfile;
@@ -86,7 +90,8 @@ sub _refine_trim_predictions {
     
     my $combined_features = $refine_obj->reduce_features({ relaxed_features => $relaxed_features, 
 							   strict_features  => $strict_features,
-							   best_elements    => $best_elements });
+							   best_elements    => $best_elements,
+							   gene_filtered_stats => $gene_filtered_stats });
 
     $refine_obj->sort_features({ gff               => $relaxed_gff, 
 				 combined_features => $combined_features });
@@ -112,22 +117,24 @@ sub _run_trim_search {
 	#$hmmdb = $tmp_hmmdb;
     }
 
-    my $genome  = $opt->{genome};
-    my $hmmdb   = $using_tephra_db ? $tmp_hmmdb : $opt->{hmmdb};
-    my $trnadb  = $opt->{trnadb} // $tephra_trnadb;
-    my $clean   = $opt->{clean} // 1;
-    my $debug   = $opt->{debug} // 0;
-    my $threads = $opt->{threads} // 1;
-    my $logfile = $opt->{logfile} // File::Spec->catfile($path, 'tephra_findtrims.log');
+    my $genome   = $opt->{genome};
+    my $genefile = $opt->{genefile};
+    my $hmmdb    = $using_tephra_db ? $tmp_hmmdb : $opt->{hmmdb};
+    my $trnadb   = $opt->{trnadb} // $tephra_trnadb;
+    my $clean    = $opt->{clean} // 1;
+    my $debug    = $opt->{debug} // 0;
+    my $threads  = $opt->{threads} // 1;
+    my $logfile  = $opt->{logfile} // File::Spec->catfile($path, 'tephra_findtrims.log');
     
     my $trim_search = Tephra::TRIM::TRIMSearch->new( 
-	genome  => $genome, 
-	hmmdb   => $hmmdb,
-	trnadb  => $trnadb, 
-	clean   => $clean,
-	debug   => $debug,
-	threads => $threads,
-	logfile => $logfile,
+	genome   => $genome, 
+	genefile => $genefile,
+	hmmdb    => $hmmdb,
+	trnadb   => $trnadb, 
+	clean    => $clean,
+	debug    => $debug,
+	threads  => $threads,
+	logfile  => $logfile,
     );
 
     my $index = File::Spec->catfile( abs_path($path), $name.$suffix.'.index');
@@ -136,15 +143,27 @@ sub _run_trim_search {
     my $log = $trim_search->get_tephra_logger($logfile);
     $trim_search->create_index(\@suff_args, $index, $log);
     
-    my $strict_gff
-	= $trim_search->trim_search({ index => $index, mode => 'strict'  });
-     my $relaxed_gff
-	 = $trim_search->trim_search({ index => $index, mode => 'relaxed' });
+    my ($strict_gff, $strict_filtered_stats) =
+	$trim_search->trim_search({ index => $index, mode => 'strict'  });
+    my ($relaxed_gff, $relaxed_filtered_stats) =
+	 $trim_search->trim_search({ index => $index, mode => 'relaxed' });
+
+    ## Combine the status on gene filtering so we can log the results
+    #dd $strict_filtered_stats;
+    #dd $relaxed_filtered_stats;
+    for my $key (keys %$strict_filtered_stats){
+        if (exists $relaxed_filtered_stats->{$key}){
+            $relaxed_filtered_stats->{$key} = $strict_filtered_stats->{$key} + $relaxed_filtered_stats->{$key};
+        }
+        else {
+            $relaxed_filtered_stats->{$key} = $strict_filtered_stats->{$key};
+        }
+    }
 
     unlink $tmp_hmmdb if $using_tephra_db;
     unlink $logfile unless -s $logfile;
 
-    return ($relaxed_gff, $strict_gff);
+    return ($relaxed_gff, $strict_gff, $relaxed_filtered_stats);
 }
 
 sub _write_unrefined_trims {
@@ -171,12 +190,13 @@ USAGE: tephra findtrims [-h] [-m]
     -h --help     :   Print the command usage.
 
 Required:
-    -g|genome     :   The genome sequences in FASTA format to search for LTR-RTs. 
+    -g|genome     :   The genome sequences in FASTA format to search for TRIMs. 
     -o|outfile    :   The final combined and filtered GFF3 file of TRIMs. 
+    -r|genefile   :   The reference gene set to use for filtering TRIMs.
 
 Options:
     --logfile     :   The file to use for logging results in addition to the screen.
-    -r|trnadb     :   The file of tRNA sequences in FASTA format to search for PBS. 
+    -n|trnadb     :   The file of tRNA sequences in FASTA format to search for PBS. 
     -d|hmmdb      :   The HMM db in HMMERv3 format to search for coding domains.
     -t|threads    :   The number of threads to use for the TRIM search (Default: 1).
     -c|clean      :   Clean up the index files (Default: No).
@@ -196,7 +216,7 @@ __END__
 
 =head1 SYNOPSIS    
 
- tephra findtrims -g ref.fas -t trnadb.fas -p te_models.hmm
+ tephra findtrims -g ref.fas -n trnadb.fas -t 12 -p te_models.hmm -r genes.fas -o trims.gff3
 
 =head1 DESCRIPTION
 
@@ -220,6 +240,10 @@ S. Evan Staton, C<< <evan at evanstaton.com> >>
 
  The final combined and filtered GFF3 file of TRIMs.
 
+=item -r, --genefile
+
+ The reference gene set to use for filtering TRIMs.
+
 =back
 
 =head1 OPTIONS
@@ -235,7 +259,7 @@ S. Evan Staton, C<< <evan at evanstaton.com> >>
  The number of threads to use for the TRIM search. Specificaly,
  the number or processors to use by the 'gt' program (Default: 1).
 
-=item -r, --trnadb
+=item -n, --trnadb
 
  The file of tRNA sequences in FASTA format to search for PBS.
 
