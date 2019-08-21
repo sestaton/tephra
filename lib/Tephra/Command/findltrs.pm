@@ -163,8 +163,6 @@ sub _run_ltr_search {
     unlink $global_opts->{hmmdb} if $using_tephra_db; # this is just a temp file to keep ltrdigest from crashing
 
     ## Combine the status on gene filtering so we can log the results
-    #dd $strict_filtered_stats;
-    #dd $relaxed_filtered_stats;
     for my $key (keys %$strict_filtered_stats){
 	if (exists $relaxed_filtered_stats->{$key}){
 	    $relaxed_filtered_stats->{$key} = $strict_filtered_stats->{$key} + $relaxed_filtered_stats->{$key};
@@ -173,9 +171,6 @@ sub _run_ltr_search {
 	    $relaxed_filtered_stats->{$key} = $strict_filtered_stats->{$key};
 	}
     }
-    #dd $relaxed_filtered_stats;
-    #dd $relaxed_gff;
-    #dd $strict_gff and exit;
 
     return ($global_opts, $search_config, $relaxed_gff, $strict_gff, $relaxed_filtered_stats);
 }
