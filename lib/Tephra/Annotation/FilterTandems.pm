@@ -146,6 +146,7 @@ sub filter_hits_by_percent_overlap {
     
     my $blast_report = $self->_process_repeat_blast_args($repeat_file, $genefile);
     unless (-s $blast_report) {
+	unlink $repeat_file;
 	unlink $blast_report;
 
 	my $filtered_tes = $self->_remove_id_store($repeat_lengths, \%removed);
@@ -181,8 +182,10 @@ sub filter_hits_by_percent_overlap {
     $filtered_stats{total}    = $elem_num;
     $filtered_stats{removed}  = $rmct;
     $filtered_stats{filtered} = ($elem_num-$rmct);
-
-    my $filtered_tes = $self->_remove_id_store->($repeat_lengths, \%removed);
+    
+    my $filtered_tes = $self->_remove_id_store($repeat_lengths, \%removed);
+    unlink $blast_report;
+    unlink $repeat_file;
 
     return ($filtered_tes, \%filtered_stats);
 }
