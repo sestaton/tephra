@@ -17,11 +17,11 @@ Tephra::Config::Reader - Attributes and routines for parsing Tephra configuratio
 
 =head1 VERSION
 
-Version 0.12.4
+Version 0.12.5
 
 =cut
 
-our $VERSION = '0.12.4';
+our $VERSION = '0.12.5';
 $VERSION = eval $VERSION;
 
 =head1 SYNOPSIS

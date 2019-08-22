@@ -20,11 +20,11 @@ Tephra::Role::Run::GT - Helper role for running genometools
 
 =head1 VERSION
 
-Version 0.12.4
+Version 0.12.5
 
 =cut
 
-our $VERSION = '0.12.4';
+our $VERSION = '0.12.5';
 $VERSION = eval $VERSION;
 
 has gt_exec => (
