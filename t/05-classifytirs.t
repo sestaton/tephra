@@ -46,7 +46,7 @@ if ($devtests) {
 }
 
 my @find_cmd = ($cmd, 'classifytirs', '-g', $genome, '-d', $repeatdb, '-i', $ingff, '-o', $outgff, '-r', $outdir);
-say STDERR join q{ }, @find_cmd;
+#say STDERR join q{ }, @find_cmd;
 my @ret = capture { system([0..5], @find_cmd) };
 
 ok( -e $outgff, 'Correctly classified TIRs' );
