@@ -36,7 +36,7 @@ Tephra is a command-line program only for now. The command `tephra` itself contr
 
     $ tephra 
 
-    Tephra version 0.12.4
+    Tephra version 0.12.5
     
     Copyright (C) 2015-2019 S. Evan Staton
     LICENSE -- MIT
