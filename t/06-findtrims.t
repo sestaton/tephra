@@ -24,7 +24,7 @@ my $genome   = File::Spec->catfile($testdir, 'TAIR10_chr1.fas');
 my $outfile  = File::Spec->catfile($testdir, 'TAIR10_chr1_combined_trims.gff3');
 my $outfas   = File::Spec->catfile($testdir, 'TAIR10_chr1_combined_trims.fasta');
 my $log      = File::Spec->catfile($testdir, 'TAIR10_chr1_tephra_findtrims.log');
-my $genefile = File::Spec->catfile($testdir, 'devtest_gene_seqs.fas');
+my $genefile = File::Spec->catfile($testdir, 'devtest_gene_seqs.fas.gz');
 ## these are subsets for testing
 #my $model   = File::Spec->catfile($testdir, 'te.hmm');
 #my $trnas   = File::Spec->catfile($testdir, 'trnas.fas');
@@ -76,7 +76,7 @@ SKIP: {
 	elsif ($line =~ /\'relaxed\' constraints/) {
 	    my ($r_ct) = $line =~ /(\d+)$/;
 	    say STDERR "r_ct: $r_ct exp: 90";
-	    ok( $r_ct == 90, 'Correct number of combined elements found by relaxed constraints' );
+	    ok( $r_ct == 151, 'Correct number of combined elements found by relaxed constraints' );
 	}
 	elsif ($line =~ /\'strict\' constraints/) {
 	    my ($s_ct) = $line =~ /(\d+)$/;
@@ -90,13 +90,13 @@ SKIP: {
 	}
 	elsif ($line =~ /\'combined\'/) {
 	    my ($c_ct) = $line =~ /(\d+)$/;
-	    say STDERR "c_ct: $c_ct exp: 90";
-	    ok( $c_ct == 90, 'Correct number of combined elements found' );
+	    say STDERR "c_ct: $c_ct exp: 151";
+	    ok( $c_ct == 151, 'Correct number of combined elements found' );
 	}
 	elsif ($line =~ /Total elements written/) {
 	    my ($t_ct) = $line =~ /(\d+)$/;
-	    say STDERR "t_ct: $t_ct exp: 90";
-	    ok( $t_ct == 90, 'Correct number of total elements found' );
+	    say STDERR "t_ct: $t_ct exp: 151";
+	    ok( $t_ct == 151, 'Correct number of total elements found' );
 	}
     }
 
