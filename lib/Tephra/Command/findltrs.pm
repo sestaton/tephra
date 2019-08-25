@@ -71,7 +71,7 @@ sub _refine_ltr_predictions {
     $refine_opts{remove_dup_domains} = $search_config->{findltrs}{dedup} =~ /yes/i ? 1 : 0;
     $refine_opts{remove_tnp_domains} = $search_config->{findltrs}{tnpfilter} =~ /yes/i ? 1 : 0;
     $refine_opts{domains_required}   = $search_config->{findltrs}{domains_required} =~ /yes/i ? 1 : 0;
-    $refine_opts{genefile} = $opt->{genefile} if $opt->{genefile};
+    #$refine_opts{genefile} = $opt->{genefile} if $opt->{genefile};
     $refine_opts{outfile}  = $opt->{outfile} if $opt->{outfile};
     $refine_opts{logfile}  = $opt->{logfile} if $opt->{logfile};
     
@@ -129,6 +129,8 @@ sub _run_ltr_search {
     my $search_config = $config_obj->get_configuration;
     my $global_opts   = $config_obj->get_all_opts($search_config);
     #dd $global_opts;
+    #say STDERR '---------------';
+    #dd $search_config and exit;
 
     my ($name, $path, $suffix) = fileparse($global_opts->{genome}, qr/\.[^.]*/);
 
