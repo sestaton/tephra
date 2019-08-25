@@ -88,14 +88,14 @@ sub write_config {
     my ($testdir) = @_;
     my $config = File::Spec->catfile($testdir, 'tephra_all_config.yml');
 
-    system('gzip', "$testdir/ref.fas") == 0 or die $!;
+    #system('gzip', "$testdir/ref.fas") == 0 or die $!;
 
     my $conf = "all:
   - logfile:          $testdir/tephra_full.log
-  - genome:           $testdir/ref.fas.gz
+  - genome:           $testdir/ref.fas
   - outfile:          $testdir/tephra_transposons.gff3
-  - repeatdb:         $testdir/repdb.fas 
-  - genefile:         $testdir/devtest_gene_seqs.fas
+  - repeatdb:         $testdir/repdb.fas.gz
+  - genefile:         $testdir/devtest_gene_seqs.fas.gz
   - trnadb:           TephraDB
   - hmmdb:            TephraDB
   - threads:          2
