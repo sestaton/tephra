@@ -78,13 +78,19 @@ sub _build_fh {
     my $file = $self->file->absolute;
     my $fh = IO::File->new();
 
+    # make sure zcat/bzcat can be found under different shells
+    my @path = split /:|;/, $ENV{PATH};
+    unless (@path) {
+        $ENV{PATH} = "/usr/bin:/bin";
+    }
+
     if ($file =~ /\.gz$/) {
-        open $fh, '-|', "zcat <$file" or die "\nERROR: Could not open file: $file\n";
+        open $fh, '-|', 'zcat', $file or die "\nERROR: Could not open file: $file\n";
 	#$fh = new IO::Uncompress::Gunzip $file->stringify;
 	    #or die "IO::Uncompress::Gunzip failed: $GunzipError\n";
     }
     elsif ($file =~ /\.bz2$/) {
-        open $fh, '-|', "bzcat <$file" or die "\nERROR: Could not open file: $file\n";
+        open $fh, '-|', 'bzcat', $file or die "\nERROR: Could not open file: $file\n";
     }
     elsif ($file =~ /^-$|STDIN/) {
         open $fh, '< -' or die "\nERROR: Could not open STDIN\n";
@@ -119,12 +125,18 @@ sub get_fh {
     my $self = shift;
     my ($file) = @_;
 
+    # make sure sort can be found under different shells
+    my @path = split /:|;/, $ENV{PATH};
+    unless (@path) {
+        $ENV{PATH} = "/usr/bin:/bin";
+    }
+
     my $fh;
     if ($file =~ /\.gz$/) {
-	open $fh, '-|', "zcat <$file" or die "\nERROR: Could not open file: $file\n";
+	open $fh, '-|', 'zcat', $file or die "\nERROR: Could not open file: $file: $!\n";
     }
     elsif ($file =~ /\.bz2$/) {
-	open $fh, '-|', "bzcat <$file" or die "\nERROR: Could not open file: $file\n";
+	open $fh, '-|', "bzcat <$file" or die "\nERROR: Could not open file: $file: $!\n";
     }
     elsif ($file =~ /^-$|STDIN/) {
 	open $fh, '< -' or die "\nERROR: Could not open STDIN\n";

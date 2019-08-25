@@ -137,6 +137,12 @@ sub run_blast {
     #my ($qname, $qpath, $qsuffix) = fileparse($query, qr/\.[^.]*/);
     #my $blast_report = File::Spec->catfile( abs_path($qpath), $qname."_$dbname".'.bln' );
 
+    # make sure sort can be found under different shells
+    my @path = split /:|;/, $ENV{PATH};
+    unless (@path) { 
+	$ENV{PATH} = "/usr/bin:/bin";
+    }
+
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($blastbin) = @{$config}{qw(blastpath)};
     my $blastn = File::Spec->catfile($blastbin, 'blastn');
@@ -144,10 +150,10 @@ sub run_blast {
     my $cmd = "$blastn -query $query -db $db -evalue $evalue -outfmt 6 -num_threads $threads";
     if (defined $sort) {
 	if ($sort eq 'bitscore') {
-	    $cmd .= " | /usr/bin/sort -nrk12,12 >$outfile";
+	    $cmd .= " | sort -nrk12,12 >$outfile";
 	}
 	elsif ($sort eq 'coordinate') {
-	    $cmd .= " | /usr/bin/sort -nk9,9 >$outfile";
+	    $cmd .= " | sort -nk9,9 >$outfile";
 	}
     }
     else {
