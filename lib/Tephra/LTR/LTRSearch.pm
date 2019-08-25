@@ -13,7 +13,7 @@ use Try::Tiny;
 use YAML::Tiny;
 use Tephra::Annotation::FilterTandems;
 use namespace::autoclean;
-use Data::Dump::Color;
+#use Data::Dump::Color;
 
 with 'Tephra::Role::Logger',
      'Tephra::Role::Run::GT';
@@ -118,6 +118,7 @@ sub ltr_search {
         );
 
 	my ($filtered_gff, $filtered_stats) = $ftandem_obj->filter_tandem_genes;
+	
 	#dd \$filtered_stats;
 	#dd $filtered_gff and exit;
 	my $gffh_sort = $self->sort_gff($filtered_gff, $log);
