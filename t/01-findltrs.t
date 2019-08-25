@@ -135,8 +135,8 @@ sub write_config {
   - logfile:          $log
   - genome:           $testdir/ref.fas
   - outfile:          $testdir/tephra_transposons.gff3
-  - repeatdb:         $testdir/repdb.fas 
-  - genefile:         $testdir/devtest_gene_seqs.fas
+  - repeatdb:         $testdir/repdb.fas.gz 
+  - genefile:         $testdir/devtest_gene_seqs.fas.gz
   - trnadb:           TephraDB
   - hmmdb:            TephraDB
   - threads:          2
