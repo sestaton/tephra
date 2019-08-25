@@ -27,7 +27,7 @@ my $outgff   = File::Spec->catfile($testdir, 'ref_tirs_classified.gff3');
 my $outfas   = File::Spec->catfile($testdir, 'ref_tirs_classified.fasta');
 my $log      = File::Spec->catfile($testdir, 'ref_tephra_classifytirs.log');
 my $outdir   = File::Spec->catfile($testdir, 'tir_family_domains');
-my $repeatdb = File::Spec->catfile($testdir, 'repdb.fas');
+my $repeatdb = File::Spec->catfile($testdir, 'repdb.fas.gz');
 
 {
     my @help_args = ($cmd, 'classifytirs', '-h');
@@ -42,7 +42,7 @@ if ($devtests) {
     $outgff   = File::Spec->catfile($testdir, 'TAIR10_chr1_tirs_classified.gff3');
     $outfas   = File::Spec->catfile($testdir, 'TAIR10_chr1_tirs_classified.fasta');
     $log      = File::Spec->catfile($testdir, 'TAIR10_chr1_tephra_classifytirs.log');
-    $repeatdb = File::Spec->catfile($testdir, 'repdb_dev.fas');
+    $repeatdb = File::Spec->catfile($testdir, 'repdb_dev.fas.gz');
 }
 
 my @find_cmd = ($cmd, 'classifytirs', '-g', $genome, '-d', $repeatdb, '-i', $ingff, '-o', $outgff, '-r', $outdir);
