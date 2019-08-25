@@ -80,8 +80,6 @@ sub filter_tandem_genes {
 
     my $repeat_file = $self->extract_flanking_repeats($gff, $genome, $type);
     my ($filtered_tes, $filtered_stats) = $self->filter_hits_by_percent_overlap($repeat_file, $genefile);
-    #dd $filtered_tes;
-    #dd $filtered_stats and exit;
     my $filtered_gff = $self->gff_filter_te_list($gff, $filtered_tes);
 
     return ($filtered_gff, $filtered_stats);
@@ -102,7 +100,7 @@ sub extract_flanking_repeats {
 	$outfile = File::Spec->catfile($path, $name.'_ltrs.fasta');
 	open my $outfh, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 	
-	($repeat_files, $repeat_dir) = $self->extract_ltr_sequences; #($index, $gff, $header, $features, $outfh);
+	($repeat_files, $repeat_dir) = $self->extract_ltr_sequences;
 	for my $file (@$repeat_files) { 
 	    $self->collate($file, $outfh);
 	}
@@ -116,7 +114,7 @@ sub extract_flanking_repeats {
 	$outfile = File::Spec->catfile($path, $name.'_tirs.fasta');
 	open my $outfh, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 
-	($repeat_files, $repeat_dir) = $self->extract_tir_sequences; #($index, $gff, $header, $features, $outfh);
+	($repeat_files, $repeat_dir) = $self->extract_tir_sequences;
 	for my $file (@$repeat_files) {
             $self->collate($file, $outfh);
         }
@@ -139,15 +137,14 @@ sub filter_hits_by_percent_overlap {
     my $tect = keys %$repeat_lengths;
     my $rmct = keys %removed;
 
-    #dd $repeat_lengths;
-    
     my $frac = 0.50; # fraction coverage
     my $pid  = 70;   # percent identity threshold
     
-    my $blast_report = $self->_process_repeat_blast_args($repeat_file, $genefile);
+    my ($rdb, $blast_report, $rdb_is_compressed) = $self->_process_repeat_blast_args($repeat_file, $genefile);
     unless (-s $blast_report) {
-	unlink $repeat_file;
+	unlink $rdb if $rdb_is_compressed;
 	unlink $blast_report;
+	unlink $repeat_file;
 
 	my $filtered_tes = $self->_remove_id_store($repeat_lengths, \%removed);
 
@@ -159,8 +156,6 @@ sub filter_hits_by_percent_overlap {
 	return ($filtered_tes, \%filtered_stats);
     }
 
-    #dd $blast_report and exit;
-
     open my $bin, '<', $blast_report or die "\n[ERROR]: Could not open file: $blast_report\n";
     while (my $line = <$bin>) {
 	chomp $line;
@@ -169,7 +164,6 @@ sub filter_hits_by_percent_overlap {
 	    if ($f[3]/$repeat_lengths->{$f[0]} >= $frac) {
 		$removed{$f[0]} = sprintf("%.2f",$f[3]/$repeat_lengths->{$f[0]})
 		    unless exists $removed{$f[0]};
-		#say join q{ }, $f[0], $genes{$f[0]}, $f[3], sprintf("%.2f",$f[3]/$genes{$f[0]});
 	    }
 	}
 	else {
@@ -184,6 +178,7 @@ sub filter_hits_by_percent_overlap {
     $filtered_stats{filtered} = ($elem_num-$rmct);
     
     my $filtered_tes = $self->_remove_id_store($repeat_lengths, \%removed);
+    unlink $rdb if $rdb_is_compressed;
     unlink $blast_report;
     unlink $repeat_file;
 
@@ -195,12 +190,10 @@ sub gff_filter_te_list {
     my ($gff, $filtered_tes) = @_;
 
     #dd $filtered_tes;
-    ##NB: Need to open the output filehandle here for writing
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $tmpiname  = 'tephra_transposons_filtered_tandem_genes_XXXX';
+    my $tmpiname = 'tephra_transposons_filtered_tandem_genes_XXXX';
     my ($tmp_fh, $tmp_gff) = tempfile( TEMPLATE => $tmpiname, DIR => $path, SUFFIX => '.gff3', UNLINK => 0 );
-    my ($header, $features) = $self->collect_gff_features($gff); #, $filtered_tes); #\%telist);
-    #dd $features and exit;
+    my ($header, $features) = $self->collect_gff_features($gff); 
     say $tmp_fh $header;
 
     my %seen;
@@ -212,8 +205,6 @@ sub gff_filter_te_list {
 		next unless defined $teid;
 
 		if ($teid =~ /(?:LTR|TRIM|LARD)_retrotransposon\d+|terminal_inverted_repeat_element\d+|MITE\d+/) {
-		    #my $elementid = $1;
-		    #say STDERR "ELEMENT ID: $teid";
 		    next if exists $seen{$teid};
 		    my ($source, $strand) = @{$feature}{qw(source strand)};
 		    my $parent_feat = join "||", $chr_id, $source, $rep_region, $strand;
@@ -254,9 +245,36 @@ sub _process_repeat_blast_args {
     my ($fasta, $rdb) = @_;
     my $threads = $self->threads;
 
-    my ($dbname, $dbpath, $dbsuffix) = fileparse($rdb, qr/\.[^.]*/);
-    my ($faname, $fapath, $fasuffix) = fileparse($fasta, qr/\.[^.]*/);
-    my $outfile = File::Spec->catfile($fapath, $faname.'_'.$dbname.'.bln');
+    my $outfile;
+    my $rdb_is_compressed = 0;
+    if ($rdb =~/\.gz$|\.bz2$/) {
+	my $fh = $self->get_fh($rdb);
+
+	$fasta =~ s/\.gz$|\.bz2$//;
+        $rdb =~ s/\.gz$|\.bz2$//;
+	my ($dbname, $dbpath, $dbsuffix) = fileparse($rdb, qr/\.[^.]*/);
+	my ($faname, $fapath, $fasuffix) = fileparse($fasta, qr/\.[^.]*/);
+	$outfile = File::Spec->catfile($fapath, $faname.'_'.$dbname.'.bln');
+	
+	my $tmpiname = $dbname.'_XXXX';
+	my ($tmp_fh, $tmp_rdb) = tempfile( TEMPLATE => $tmpiname, DIR => $dbpath, SUFFIX => '', UNLINK => 0 );
+	
+	while (my $line = <$fh>) {
+	    chomp $line;
+	    say $tmp_fh $line;
+	}
+	close $fh;
+	close $tmp_fh;
+
+	$rdb = $tmp_rdb;
+	$rdb_is_compressed = 1;
+    }
+    else {
+	my ($dbname, $dbpath, $dbsuffix) = fileparse($rdb, qr/\.[^.]*/);
+	my ($faname, $fapath, $fasuffix) = fileparse($fasta, qr/\.[^.]*/);
+
+	$outfile = File::Spec->catfile($fapath, $faname.'_'.$dbname.'.bln');
+    }
 
     my $blastdb = $self->make_blastdb($rdb);
     my $blast_report = $self->run_blast({ query   => $fasta, 
@@ -267,7 +285,7 @@ sub _process_repeat_blast_args {
     my @dbfiles = glob "$blastdb*";
     unlink @dbfiles;
 
-    return $blast_report;
+    return ($rdb, $blast_report, $rdb_is_compressed);
 }
 
 sub _store_repeat_lengths {
