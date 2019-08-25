@@ -299,7 +299,7 @@ sub get_all_opts {
     my $execonfig = Tephra::Config::Exe->new->get_config_paths;
     my ($tephra_hmmdb, $tephra_trnadb) = @{$execonfig}{qw(hmmdb trnadb)};
     
-    $hmmdb  = defined $config->{all}{hmmdb}  && $config->{all}{hmmdb} =~ /tephradb/i ? 
+    $hmmdb = defined $config->{all}{hmmdb}  && $config->{all}{hmmdb} =~ /tephradb/i ? 
         $tephra_hmmdb : $config->{all}{hmmdb};
     $trnadb = defined $config->{all}{trnadb} && $config->{all}{trnadb} =~ /tephradb/i ? 
         $tephra_trnadb : $config->{all}{trnadb};
