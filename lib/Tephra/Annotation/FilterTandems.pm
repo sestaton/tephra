@@ -139,7 +139,7 @@ sub filter_hits_by_percent_overlap {
 
     my $frac = 0.50; # fraction coverage
     my $pid  = 70;   # percent identity threshold
-    
+
     my ($rdb, $blast_report, $rdb_is_compressed) = $self->_process_repeat_blast_args($repeat_file, $genefile);
     unless (-s $blast_report) {
 	unlink $rdb if $rdb_is_compressed;
