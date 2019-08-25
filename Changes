@@ -6,6 +6,8 @@ Version	Date	Location
 New features:
  - Add method for filtering LTR/TIR/TRIM elements against a user-provided gene set to
    remove spurious predictions that are likely tandemly repeated genes. 
+ - Handle compressed input for 'findltrs', 'findtirs', 'findtrims', and 'findfragments'
+   commands.
 
 Bug fixes:
  - Configure all external programs during installation instead of relying on those in PATH.
