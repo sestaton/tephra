@@ -4,6 +4,7 @@ use 5.014;
 use Moose;
 use File::Spec;
 use File::Basename;
+use File::Temp          qw(tempfile);
 use Cwd                 qw(abs_path);
 use IPC::System::Simple qw(capture system);
 use Time::HiRes         qw(gettimeofday);
@@ -14,7 +15,8 @@ use Tephra::Config::Exe;
 use namespace::autoclean;
 #use Data::Dump::Color;
 
-with 'Tephra::Role::Util',
+with 'Tephra::Role::File',
+     'Tephra::Role::Util',
      'Tephra::Role::Run::Any',
      'Tephra::Role::Run::Blast';
 
@@ -93,11 +95,16 @@ sub find_transposon_fragments {
     my $index = $self->index_ref($genome);
 
     my ($seqlen, $genome_parts) = $self->split_genome($genome);
+    my ($rdb, $rdb_is_compressed) = $self->_make_temp_repeatdb;
 
     for my $part (@$genome_parts) { 
+	#say STDERR join q{ }, "\npart -> $part ; repeatdb -> $rdb";
 	my $blastdb = $self->make_blastdb($part);
-	my $blast_report = $self->search_genome($blastdb, $threads);
-	my $blast_files  = $self->split_refs($blast_report);
+	#say STDERR "\nBLASTDB $blastdb";
+	my $blast_report = $self->search_genome($rdb, $blastdb, $threads);
+	#say STDERR "\nBLASTREP $blast_report";
+
+	my $blast_files = $self->split_refs($blast_report);
 	
 	my $pm = Parallel::ForkManager->new($threads);
 	local $SIG{INT} = sub {
@@ -162,6 +169,7 @@ sub find_transposon_fragments {
     $self->capture_cmd($gt, 'clean');
     unlink $genome.'.fai';
     unlink $_ for @$genome_parts;
+    unlink $rdb if $rdb_is_compressed;
 
     my $t2 = gettimeofday();
     my $total_elapsed = $t2 - $t0;
@@ -261,7 +269,7 @@ sub split_genome {
 
     my ($out, @split_files, %len);
     
-    my $fname = $iname."_".$fcount.$isuffix;
+    my $fname = File::Spec->catfile($ipath, $iname."_".$fcount.$isuffix);
     open $out, '>', $fname or die "\n[ERROR]: Could not open file: $fname\n";
     
     push @split_files, $fname;
@@ -276,7 +284,8 @@ sub split_genome {
 
 	if ($count % $numreads == 0 && $count > 0) {
 	    $fcount++;
-	    $fname = $iname."_".$fcount.$isuffix;
+	    #$fname = $iname."_".$fcount.$isuffix;
+	    $fname = File::Spec->catfile($ipath, $iname."_".$fcount.$isuffix);
 	    open $out, '>', $fname or die "\n[ERROR]: Could not open file: $fname\n";
 	    
 	    push @split_files, $fname;
@@ -293,15 +302,15 @@ sub split_genome {
 
 sub search_genome {
     my $self = shift;
-    my ($blastdb, $thr) = @_;
+    my ($rdb, $blastdb, $thr) = @_;
     my $genome   = $self->genome->absolute->resolve;
-    my $repeatdb = $self->repeatdb->absolute->resolve;
+    #my $repeatdb = $self->repeatdb->absolute->resolve;
 
-    my ($dbname, $dbpath, $dbsuffix) = fileparse($repeatdb, qr/\.[^.]*/);
+    my ($dbname, $dbpath, $dbsuffix) = fileparse($rdb, qr/\.[^.]*/);
     my ($qname, $qpath, $qsuffix)    = fileparse($genome, qr/\.[^.]*/);
     my $outfile = File::Spec->catfile( abs_path($qpath), $qname."_$dbname".'.bln' );
 
-    my $blast_report = $self->run_blast({ query => $repeatdb, db => $blastdb, outfile => $outfile, 
+    my $blast_report = $self->run_blast({ query => $rdb, db => $blastdb, outfile => $outfile, 
 					  threads => $thr, evalue => 1e-10, sort => 'coordinate' });
     my @dbfiles = glob "$blastdb*";
     unlink @dbfiles;
@@ -341,6 +350,44 @@ sub split_refs {
     close $_ for keys %ofhs;
 
     return \@outfiles;
+}
+
+sub _make_temp_repeatdb {
+    my $self = shift;
+    my $rdb = $self->repeatdb->absolute->resolve;
+
+    my $rdb_is_compressed = 0;
+    if ($rdb =~/\.gz$|\.bz2$/) {
+        my $fh = $self->get_fh($rdb);
+
+        #$fasta =~ s/\.gz$|\.bz2$//;
+        $rdb =~ s/\.gz$|\.bz2$//;
+        my ($dbname, $dbpath, $dbsuffix) = fileparse($rdb, qr/\.[^.]*/);
+        #my ($faname, $fapath, $fasuffix) = fileparse($fasta, qr/\.[^.]*/);
+        #$outfile = File::Spec->catfile($fapath, $faname.'_'.$dbname.'.bln');
+        
+        my $tmpiname = $dbname.'_XXXX';
+        my ($tmp_fh, $tmp_rdb) = tempfile( TEMPLATE => $tmpiname, DIR => $dbpath, SUFFIX => '', UNLINK => 0 );
+
+        while (my $line = <$fh>) {
+            chomp $line;
+            say $tmp_fh $line;
+        }
+        close $fh;
+        close $tmp_fh;
+
+        $rdb = $tmp_rdb;
+        #$blastdb = $self->make_blastdb($tmp_rdb);
+	$rdb_is_compressed = 1;
+    }
+    #else {
+        #my ($dbname, $dbpath, $dbsuffix) = fileparse($rdb, qr/\.[^.]*/);
+        #my ($faname, $fapath, $fasuffix) = fileparse($fasta, qr/\.[^.]*/);
+
+        #$outfile = File::Spec->catfile($fapath, $faname.'_'.$dbname.'.bln');
+    #}
+
+    return ($rdb, $rdb_is_compressed);
 }
 
 sub _format_hits {
