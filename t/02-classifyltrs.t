@@ -30,7 +30,7 @@ my $copdom   = File::Spec->catfile($testdir, 'ref_tephra_ltrs_combined_filtered_
 my $gypdom   = File::Spec->catfile($testdir, 'ref_tephra_ltrs_combined_filtered_gypsy_domain_org.tsv');
 my $uncdom   = File::Spec->catfile($testdir, 'ref_tephra_ltrs_combined_filtered_unclassified_domain_org.tsv');
 my $famdom   = File::Spec->catfile($testdir, 'ref_tephra_ltrs_combined_filtered_classified_family-level_domain_org.tsv');
-my $repeatdb = File::Spec->catfile($testdir, 'repdb.fas');
+my $repeatdb = File::Spec->catfile($testdir, 'repdb.fas.gz');
 
 {
     my @help_args = ($cmd, 'classifyltrs', '-h');
