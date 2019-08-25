@@ -107,6 +107,8 @@ sub _refine_ltr_predictions {
     else {
 	say STDERR "\n[WARNING]: No LTR retrotransposons were found with the given parameters.\n";
     }
+
+    return;
 }
     
 sub _run_ltr_search {
@@ -126,6 +128,7 @@ sub _run_ltr_search {
     my $config_obj    = Tephra::Config::Reader->new( config => $opt->{config} );
     my $search_config = $config_obj->get_configuration;
     my $global_opts   = $config_obj->get_all_opts($search_config);
+    #dd $global_opts;
 
     my ($name, $path, $suffix) = fileparse($global_opts->{genome}, qr/\.[^.]*/);
 
@@ -170,6 +173,19 @@ sub _run_ltr_search {
 	else {
 	    $relaxed_filtered_stats->{$key} = $strict_filtered_stats->{$key};
 	}
+    }
+
+    if ($global_opts->{genome_is_compressed}) {
+        unlink $global_opts->{genome};
+        #$log->info("Clean up - Removing temporary file - $global_opts->{genome}");
+    }
+    if ($global_opts->{repeatdb_is_compressed}) {
+        unlink $global_opts->{repeatdb};
+        #$log->info("Clean up - Removing temporary file - $global_opts->{repeatdb}");
+    }
+    if ($global_opts->{genefile_is_compressed}) {
+        unlink $global_opts->{genefile};
+        #$log->info("Clean up - Removing temporary file - $global_opts->{genefile}");
     }
 
     return ($global_opts, $search_config, $relaxed_gff, $strict_gff, $relaxed_filtered_stats);
