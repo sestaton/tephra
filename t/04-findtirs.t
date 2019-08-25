@@ -23,7 +23,7 @@ my $testdir  = File::Spec->catdir('t', 'test_data');
 my $genome   = File::Spec->catfile($testdir, 'ref.fas');
 my $gff      = File::Spec->catfile($testdir, 'ref_tirs.gff3');
 my $fas      = File::Spec->catfile($testdir, 'ref_tirs.fasta');
-my $genefile = File::Spec->catfile($testdir, 'devtest_gene_seqs.fas');
+my $genefile = File::Spec->catfile($testdir, 'devtest_gene_seqs.fas.gz');
 
 {
     my @help_args = ($cmd, 'findtirs', '-h');
