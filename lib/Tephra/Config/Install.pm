@@ -259,10 +259,11 @@ sub fetch_blast {
 
     chdir $root or die $!;
     my $host = 'ftp.ncbi.nlm.nih.gov';
-    my $ftp = Net::FTP->new($host, Passive => 1, Debug => 1)
+    my $ftp = Net::FTP->new($host, Passive => 1, Debug => 1, Timeout => 300)
 	or die "Cannot connect to $host: $@";
 
-    $ftp->login or die "Cannot login ", $ftp->message;
+    $ftp->login('anonymous', '-anonymous@') 
+	or die "Cannot login ", $ftp->message;
 
     my $dir = '/blast/executables/blast+/LATEST';
     $ftp->cwd($dir)
@@ -284,6 +285,7 @@ sub fetch_blast {
     my $lsize = -s $file;
     die "Failed to fetch complete file: $file (local size: $lsize, remote size: $rsize)"
 	unless $rsize == $lsize;
+    $ftp->quit();
 
     my $ldir = $file =~ s/-x64-linux.tar.gz//r;
     my $bdir = 'ncbi-blast+';
