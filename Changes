@@ -1,7 +1,7 @@
 Revision history for Tephra
 
 Version	Date	Location
-0.12.5	08/21/2019	Vancouver, BC
+0.12.5	08/26/2019	Vancouver, BC
 
 New features:
  - Add method for filtering LTR/TIR/TRIM elements against a user-provided gene set to
@@ -16,6 +16,9 @@ Bug fixes:
  - Correct the number of elements discovered under different relaxed and strict conditions.
    What was being reported was the filtered numbers (correct for the total, but not the correct
    number initially identified).
+ - Remove use of FTP protocol for configuring dependencies (and drop Net::FTP requirement). This
+   protocol is not supported in all build environments, such as Travis, so it is better to use
+   wget as a permanent replacement than to keep debugging FTP connection issues.
 
 0.12.4	05/27/2019	Vancouver, BC
 
