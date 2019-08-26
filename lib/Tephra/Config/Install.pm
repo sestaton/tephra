@@ -17,7 +17,7 @@ use HTML::TreeBuilder;
 use Net::FTP;
 use Tephra::Config::Exe;
 use namespace::autoclean;
-#use Data::Dump::Color;
+use Data::Dump::Color;
 
 =head1 NAME
 
@@ -270,11 +270,14 @@ sub fetch_blast {
 
     my $file;
     my @listing = $ftp->ls();
+    dd \@listing;
 
     for my $f (@listing) {
+	say STDERR "listing: $f";
 	$file = $f if $f =~ /-x64-linux.tar.gz\z/;
     }
 
+    say STDERR "FILE: $file";
     $ftp->binary();
     my $rsize = $ftp->size($file) or die "Could not get size ", $ftp->message;
     $ftp->get($file) or die "get failed ", $ftp->message;

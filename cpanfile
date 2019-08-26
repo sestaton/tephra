@@ -24,4 +24,4 @@ requires 'DateTime';
 requires 'Bio::GFF3::LowLevel';
 requires 'XML::SAX::Expat'; # for 'blastxml' format parsing in Bio::SearchIO
 requires 'Bio::SearchIO::blastxml';
-#requires 'Data::Dump::Color';
+requires 'Data::Dump::Color';
