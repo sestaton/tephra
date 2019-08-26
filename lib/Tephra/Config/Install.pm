@@ -14,7 +14,7 @@ use File::Path    qw(make_path remove_tree);
 use Capture::Tiny qw(capture);
 use HTTP::Tiny;
 use HTML::TreeBuilder;
-use Net::FTP;
+#use Net::FTP;
 use Tephra::Config::Exe;
 use namespace::autoclean;
 #use Data::Dump::Color;
@@ -255,47 +255,23 @@ sub fetch_hscan {
 sub fetch_blast {
     my $self = shift;
     my $root = $self->basedir->absolute->resolve;
-    my $wd   = $self->workingdir->absolute->resolve;
 
     chdir $root or die $!;
-    my $host = 'ftp.ncbi.nlm.nih.gov';
-    my $ftp = Net::FTP->new($host, Passive => 1, Debug => 0)
-	or die "Cannot connect to $host: $@";
+    my $host = 'https://ftp.ncbi.nlm.nih.gov';
+    my $dir  = 'blast/executables/blast+/2.9.0';
+    my $file = 'ncbi-blast-2.9.0+-x64-linux.tar.gz';
+    my $url  = join "/", $host, $dir, $file; 
 
-    $ftp->login('anonymous', '-anonymous@') 
-	or die "Cannot login ", $ftp->message;
-
-    my $dir = '/blast/executables/blast+/LATEST';
-    $ftp->cwd($dir)
-	or die "Cannot change working directory ", $ftp->message;
-
-    my $file;
-    my @listing = $ftp->ls();
-    #dd \@listing;
-
-    for my $f (@listing) {
-	say STDERR "listing: $f";
-	$file = $f if $f =~ /-x64-linux.tar.gz\z/;
-    }
-
-    #say STDERR "FILE: $file";
-    $ftp->binary();
-    my $rsize = $ftp->size($file) or die "Could not get size ", $ftp->message;
-    $ftp->get($file) or die "get failed ", $ftp->message;
-    my $lsize = -s $file;
-    die "Failed to fetch complete file: $file (local size: $lsize, remote size: $rsize)"
-	unless $rsize == $lsize;
-    $ftp->quit();
-
-    my $ldir = $file =~ s/-x64-linux.tar.gz//r;
-    my $bdir = 'ncbi-blast+';
+    system("wget -q $url") == 0 or die $!;
     system("tar xzf $file 2>&1 > /dev/null") == 0 or die $!;
+    my $bdir = 'ncbi-blast+';
+    my $ldir = $file;
+    $ldir =~ s/\-x64-linux.tar.gz//;
+
     unlink $file if -e $file;
     move $ldir, $bdir or die "\n[ERROR]: move failed: $!\n";
-    chdir $bdir or die $!;
-
-    my $cwd = getcwd();
-    my $blastpath = File::Spec->catfile($cwd, 'bin');
+ 
+    my $blastpath = File::Spec->catfile($root, $bdir, 'bin');
 
     return $blastpath;
 }
