@@ -17,7 +17,7 @@ use HTML::TreeBuilder;
 use Net::FTP;
 use Tephra::Config::Exe;
 use namespace::autoclean;
-use Data::Dump::Color;
+#use Data::Dump::Color;
 
 =head1 NAME
 
@@ -259,7 +259,7 @@ sub fetch_blast {
 
     chdir $root or die $!;
     my $host = 'ftp.ncbi.nlm.nih.gov';
-    my $ftp = Net::FTP->new($host, Passive => 1, Debug => 1, Timeout => 300)
+    my $ftp = Net::FTP->new($host, Passive => 1, Debug => 0)
 	or die "Cannot connect to $host: $@";
 
     $ftp->login('anonymous', '-anonymous@') 
@@ -271,14 +271,14 @@ sub fetch_blast {
 
     my $file;
     my @listing = $ftp->ls();
-    dd \@listing;
+    #dd \@listing;
 
     for my $f (@listing) {
 	say STDERR "listing: $f";
 	$file = $f if $f =~ /-x64-linux.tar.gz\z/;
     }
 
-    say STDERR "FILE: $file";
+    #say STDERR "FILE: $file";
     $ftp->binary();
     my $rsize = $ftp->size($file) or die "Could not get size ", $ftp->message;
     $ftp->get($file) or die "get failed ", $ftp->message;
