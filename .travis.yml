@@ -1,8 +1,3 @@
-addons:
-  apt:
-    packages:
-    - openvpn
-
 language: perl
 perl:
   - "5.24"
@@ -13,7 +8,6 @@ perl:
 #  - "5.14"
 
 before_install: 
-#  - sudo openvpn path/to/conf.ovpn &>>openvpn-client.log &
   - sudo apt-get update -qq
   - sudo apt-get install -qq build-essential ncbi-blast+ emboss libgd-dev zlib1g-dev libncurses5 libncurses5-dev libdb-dev git cpanminus libexpat1 libexpat1-dev openjdk-8-jre-headless
   - cpanm Data::Stag DB_File
