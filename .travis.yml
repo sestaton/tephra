@@ -13,7 +13,6 @@ before_install:
   - cpanm Data::Stag DB_File
   - cpanm -n Bio::Root::Version Bio::SearchIO::blastxml Bio::SearchIO::hmmer
   - cpanm -n Devel::Cover::Report::Coveralls
-  - sudo openvpn path/to/conf.ovpn &>>openvpn-client.log &
 
 #install:
 #  - cpanm --quiet --installdeps --notest --force .
