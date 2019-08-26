@@ -19,6 +19,8 @@ Bug fixes:
  - Remove use of FTP protocol for configuring dependencies (and drop Net::FTP requirement). This
    protocol is not supported in all build environments, such as Travis, so it is better to use
    wget as a permanent replacement than to keep debugging FTP connection issues.
+ - Configure install of EMBOSS during testing instead using package manager. Also, remove package
+   installs of BLAST+ and EMBOSS to speed things up since we configure them locally.
 
 0.12.4	05/27/2019	Vancouver, BC
 
