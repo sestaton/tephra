@@ -259,7 +259,7 @@ sub fetch_blast {
 
     chdir $root or die $!;
     my $host = 'ftp.ncbi.nlm.nih.gov';
-    my $ftp = Net::FTP->new($host, Passive => 1, Debug => 0)
+    my $ftp = Net::FTP->new($host, Passive => 1, Debug => 1)
 	or die "Cannot connect to $host: $@";
 
     $ftp->login or die "Cannot login ", $ftp->message;
