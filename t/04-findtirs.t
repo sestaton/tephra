@@ -68,6 +68,6 @@ else {
 }
 
 ## clean up
-#unlink $fas;
+unlink $fas;
     
 done_testing();
