@@ -395,13 +395,13 @@ sub fetch_emboss {
     my $wd   = $self->workingdir->absolute->resolve;
 
     # this is to avoid building each time
-    my @path = split /:|;/, $ENV{PATH};    
-    for my $p (@path) {
-	my $transeq  = File::Spec->catfile($p, 'transeq');
-	if (-e $transeq && -x $transeq) {
-	    return $transeq;
-	}
-    }
+    #my @path = split /:|;/, $ENV{PATH};    
+    #for my $p (@path) {
+	#my $transeq  = File::Spec->catfile($p, 'transeq');
+	#if (-e $transeq && -x $transeq) {
+	#    return $transeq;
+	#}
+    #}
 
     my $urlbase = 'ftp://emboss.open-bio.org';
     my $dir     = 'pub';
