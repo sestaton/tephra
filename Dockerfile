@@ -1,9 +1,9 @@
-FROM ubuntu:18.04
+FROM ubuntu:latest
 
 LABEL maintainer "S. Evan Staton"
 LABEL image_type "Tephra: A tool for discovering transposable elements and describing patterns of genome evolution"
 
-ARG LC_ALL="C"
+ENV LC_ALL="C"
 
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
