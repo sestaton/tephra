@@ -12,7 +12,7 @@ Tephra is a command line application to annotate [transposable elements](http://
 With [Singularity](https://sylabs.io/docs/), you will want to pull the latest container version and then run the container:
 
     singularity pull library://sestaton/default/tephra
-    LC_ALL=C singularity run --bind $PWD/db:/db tephra_latest.sif
+    singularity shell -C --bind $PWD/db:/db tephra_latest.sif
 
 That assumes you have your data files for analysis (genome, config file, etc.) in a directory called `db` in the current working directory. After that, change to the `/db` directory and run your analysis.
 
