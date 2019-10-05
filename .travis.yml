@@ -19,7 +19,9 @@ before_install:
 
 script: ./build/ci/run_tests.sh
 
-after_failure: cat /home/travis/.cpanm/build.log
+after_failure: ls -l ~/.tephra
+
+#cat /home/travis/.cpanm/build.log
 
 branches:
   only:
