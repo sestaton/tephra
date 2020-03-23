@@ -5,7 +5,7 @@ use Moose::Role;
 use File::Basename qw(fileparse);
 use File::Temp     qw(tempfile);
 use Scalar::Util   qw(looks_like_number);
-#use Bio::DB::HTS::Kseq;
+use Bio::DB::HTS::Kseq;
 use Bio::DB::HTS::Faidx;
 use Carp 'croak';
 use namespace::autoclean;
@@ -69,6 +69,22 @@ sub write_element_parts {
     say $out join "\n", ">".$id, $seq;
 
     return;
+}
+
+sub store_seq {
+    my $self = shift;
+    my ($file) = @_;
+
+    my %hash;
+    my $kseq = Bio::DB::HTS::Kseq->new($file);
+    my $iter = $kseq->iterator();
+    while (my $seqobj = $iter->next_seq) {
+        my $id = $seqobj->name;
+        my $seq = $seqobj->seq;
+        $hash{$id} = $seq;
+    }
+
+    return \%hash;
 }
 
 #sub _adjust_identifiers {
