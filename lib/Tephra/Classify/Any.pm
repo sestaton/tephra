@@ -162,9 +162,9 @@ sub write_families {
     my ($tefas, $matches, $sf_elem_map, $sf) = @_;
 
     my ($name, $path, $suffix) = fileparse($tefas, qr/\.[^.]*/);
-    my $dir  = basename($path);
+    my $dir = basename($path);
 
-    my $seqstore = $self->_store_seq($tefas); #TODO: import this as a role
+    my $seqstore = $self->store_seq($tefas);
     #dd $seqstore;
     my $elemct = (keys %$seqstore);
 	
@@ -180,7 +180,7 @@ sub write_families {
 	    my ($famid) = ($str =~ /(helitron\d+|non_LTR_retrotransposon\d+)/);
 
 	    unless (defined $famid) {
-		say STDERR "\n[ERROR]: could not get element ID for '$str'\n";
+		say STDERR "\n[ERROR]: Could not get element ID for '$str'\n";
 		$famid = $sf;
 	    }
 
@@ -312,21 +312,21 @@ sub annotate_gff {
     return;
 }
 
-sub _store_seq {
-    my $self = shift;
-    my ($file) = @_;
+#sub _store_seq {
+#    my $self = shift;
+#    my ($file) = @_;
 
-    my %hash;
-    my $kseq = Bio::DB::HTS::Kseq->new($file);
-    my $iter = $kseq->iterator();
-    while (my $seqobj = $iter->next_seq) {
-	my $id = $seqobj->name;
-	my $seq = $seqobj->seq;
-	$hash{$id} = $seq;
-    }
+#    my %hash;
+#    my $kseq = Bio::DB::HTS::Kseq->new($file);
+#    my $iter = $kseq->iterator();
+#    while (my $seqobj = $iter->next_seq) {
+#	my $id = $seqobj->name;
+#	my $seq = $seqobj->seq;
+#	$hash{$id} = $seq;
+#    }
 
-    return \%hash;
-}
+#    return \%hash;
+#}
 
 =head1 AUTHOR
 
