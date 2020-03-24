@@ -100,12 +100,12 @@ This file is for logging feature requests and bugs during development. Hopefully
 
 ## Command `tephra findnonltrs`
  - [ ] break chromosomes to reduce memory usage in hmmsearch (only applies to HMMERv3)
- - [x] check HMMERv22 var and program version
+ - [x] check HMMERv2 var and program version
  - [x] remove backticks and shell exec of hmmer
  - [x] remove nasty regex parsing in favor or bioperl reading of report
  - [x] use list form of system to not fork
  - [x] run domain searches in parallel
- - [ ] use multiple CPUs (make option) for domain searches
+ - [x] use multiple CPUs (make option) for domain searches
  - [x] write GFF of results
  - [x] add verbose option so as to not print progress when there are 5k scaffolds
  - [x] write combined file of all elements
@@ -116,8 +116,9 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] investigate issues related to why most elements reported on negative strand and contain
        many gaps
  - [ ] output protein domain sequences for phylogenetic analyses
- - [ ] refactor methods to use shared indexing and domain mapping methods
+ - [x] refactor methods to use shared indexing and domain mapping methods
  - [ ] switch to using HMMERv3 models/programs from HMMERv2
+ - [ ] write GO terms to GFF3 for domains
 
 ## Command `tephra ltrage`
  - [x] Calculate age for each LTR-RT
@@ -206,6 +207,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] add method to install MUSCLE along with other deps (added in v0.12.1)
  - [ ] check to see if we are calculating examplars for all TE types
  - [x] in DEV test mode, use A. thaliana for all tests
+ - [ ] in DEV test mode, change ENV var to 'dev' instead of 'development'
 
 ## Docker image
  - [ ] reduce EMBOSS install to only required programs
