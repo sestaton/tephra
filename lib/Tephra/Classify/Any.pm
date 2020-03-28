@@ -12,11 +12,12 @@ use Bio::DB::HTS::Faidx;
 use List::Util      qw(min max);
 use List::MoreUtils qw(uniq);
 use File::Path      qw(make_path);
+use File::Temp      qw(tempfile);
 use Cwd             qw(abs_path);         
 use Carp 'croak';
 use Tephra::Annotation::MakeExemplars;
 use Tephra::Annotation::Util;
-#use Data::Dump::Color;
+use Data::Dump::Color;
 use namespace::autoclean;
 
 with 'Tephra::Role::Util',
@@ -37,19 +38,19 @@ Version 0.12.5
 our $VERSION = '0.12.5';
 $VERSION = eval $VERSION;
 
-has fasta => (
-    is       => 'ro',
-    isa      => 'Path::Class::File',
-    required => 1,
-    coerce   => 1,
-);
+#has fasta => (
+#    is       => 'ro',
+#    isa      => 'Path::Class::File',
+#    required => 1,
+#    coerce   => 1,
+#);
 
-has outdir => (
-    is       => 'ro',
-    isa      => 'Path::Class::Dir',
-    required => 1,
-    coerce   => 1,
-);
+#has outdir => (
+#    is       => 'ro',
+#    isa      => 'Path::Class::Dir',
+#    required => 1,
+#    coerce   => 1,
+#);
 
 has threads => (
     is        => 'ro',
@@ -78,16 +79,17 @@ has gff => (
 #
 sub process_blast_args {
     my $self = shift;
-    my ($obj) = @_;
-
+    my ($famfile) = @_;
     my $threads = $self->threads;
-    my ($query, $db) = ($self->fasta, $self->fasta);
+    #my $fasta   = $self->fasta;
+    #my $seqstore = $self->store_seq($fasta);
+
+    my ($query, $db) = ($famfile, $famfile);
     unless (-s $query) {
 	say STDERR "\n[WARNING]: Input FASTA is empty so the BLAST analysis will be skipped.\n";
 	#unlink $query;
 	return undef;
     }
-
     my (@fams, %exemplars);
 
     my $thr;
@@ -142,12 +144,14 @@ sub parse_blast {
 	my $hlen = $hend - $hstart + 1;
 	my $minlen = min($qlen, $hlen); # we want to measure the coverage of the smaller element
 	#DHH_helitron1_singleton_family0_Contig57_HLAC-254L24_106214_107555
-	my ($elem) = ($hitid =~ /(non_LTR_retrotransposon\d+|helitron\d+)_/);
+	#my ($elem) = ($hitid =~ /(non_LTR_retrotransposon\d+|helitron\d+)_/);
 	#my ($family, $elem) = ($hitid =~ /^(\w{3})_(non_LTR_retrotransposon\d+|helitron\d+)_/);
 	if ($hitlen >= $blast_hlen && $hitlen >= ($minlen * $perc_cov) && $pid >= $blast_hpid) {
-	    unless (exists $seen{$queryid}) {
-		push @{$matches{$elem}}, $queryid;
+	    unless (exists $seen{$queryid} || exists $seen{$hitid}) {
+		#push @{$matches{$elem}}, $queryid;
+		push @{$matches{$hitid}}, $queryid;
 		$seen{$queryid} = 1;
+		$seen{$hitid} = 1;
 	    }
 	}
     }
@@ -159,127 +163,196 @@ sub parse_blast {
 
 sub write_families {
     my $self = shift;
-    my ($tefas, $matches, $sf_elem_map, $sf) = @_;
+    my ($tefas, $matches, $sf_elem_map, $tetype, $famct, $singct, $famtot) = @_;
 
+    #say "MATCHES ===>";
+    #dd $matches;
+    #say "SF_ELEM_MAP ===>";
+    #dd $sf_elem_map;
     my ($name, $path, $suffix) = fileparse($tefas, qr/\.[^.]*/);
     my $dir = basename($path);
 
     my $seqstore = $self->store_seq($tefas);
+    #my $ct0 = keys %$seqstore;
+    #say "SEQSTORE ===> $ct0";
     #dd $seqstore;
+    #say join "\n", keys %$seqstore;
     my $elemct = (keys %$seqstore);
 	
-    my ($idx, $famtot, $tomerge) = (0, 0, 0);
+    #my ($fidx, $sidx, $famtot, $tomerge) = (0, 0, 0, 0);
+    my $fidx = $famct;
+    my $sidx = $singct;
+    my $tomerge = 0;
     my (%fastas, %annot_ids, %sfmap);
     my @seen;
 
-     my $util = Tephra::Annotation::Util->new;
+    my $util = Tephra::Annotation::Util->new;
 
     #non_LTR_retrotransposon0  => ["non_LTR_retrotransposon51_2RHet_3818_6387"],  
-    for my $str (reverse sort { @{$matches->{$a}} <=> @{$matches->{$b}} } keys %$matches) {
-	if (uniq(@{$matches->{$str}}) > 1) { # families have n>1 elements
+    if (%$matches) {
+	for my $str (reverse sort { @{$matches->{$a}} <=> @{$matches->{$b}} } keys %$matches) {
+	    #if (uniq(@{$matches->{$str}}) > 1) { # families have n>1 elements
 	    my ($famid) = ($str =~ /(helitron\d+|non_LTR_retrotransposon\d+)/);
-
+	    
 	    unless (defined $famid) {
 		say STDERR "\n[ERROR]: Could not get element ID for '$str'\n";
-		$famid = $sf;
+		$famid = $tetype;
 	    }
-
+	    
 	    # sf_elem_map: non_LTR_retrotransposon99  => "RIJ",
-	    my $sfcode = $sf_elem_map->{$famid};
-
-	    my $famfile = $sfcode."_family$idx".".fasta";
+	    #my $sfcode = $sf_elem_map->{$famid};
+	    my $sfcode = $sf_elem_map->{$str};
+	    
+	    my $famfile = $sfcode."_family$fidx".".fasta";
 	    my $outfile = File::Spec->catfile( abs_path($path), $famfile );
 	    open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
-
-	    for my $elem (uniq(@{$matches->{$str}})) {
+	    
+	    #$famtot++;
+	    $annot_ids{$str} = $sfcode."_family$fidx";
+	    $self->write_element_to_family($str, $seqstore, $out, 0, $fidx, $sfcode);
+	    $famtot++;
+	    push @seen, $str;
+	    
+	    for my $elem (@{$matches->{$str}}) {
 		if (exists $seqstore->{$elem}) {
 		    $famtot++;
-		    $seqstore->{$elem} =~ s/.{60}\K/\n/g;
-		    $annot_ids{$elem} = "family$idx";
-		    my ($id) = ($elem =~ /(helitron\d+|non_LTR_retrotransposon\d+)_/);
-		    my ($start, $stop) = ($elem =~ /(\d+)_(\d+)$/);
-		    my $chr = $elem;
-		    $chr =~ s/${id}_//;
-		    $chr =~ s/_$start.*//;
-		    say $out join "\n", ">$sfcode"."_family$idx"."_$id"."_$chr"."_$start"."_$stop", $seqstore->{$elem};
+		    $annot_ids{$elem} = $sfcode."_family$fidx";
+		    $self->write_element_to_family($elem, $seqstore, $out, 0, $fidx, $sfcode);
 		    push @seen, $elem;
 		}
 		else {
 		    croak "\n[ERROR]: $elem not found in store. Exiting.";
 		}
+		    
+		#if (exists $seqstore->{$elem}) {
+		    #$famtot++;
+		    #$seqstore->{$elem} =~ s/.{60}\K/\n/g;
+		    #$annot_ids{$elem} = "family$idx";
+		    #my ($id) = ($elem =~ /(helitron\d+|non_LTR_retrotransposon\d+)_/);
+		    #my ($start, $stop) = ($elem =~ /(\d+)_(\d+)$/);
+		    #my $chr = $elem;
+		    #$chr =~ s/${id}_//;
+		    #$chr =~ s/_$start.*//;
+		    #say $out join "\n", ">$sfcode"."_family$idx"."_$id"."_$chr"."_$start"."_$stop", $seqstore->{$elem};
+		    #push @seen, $elem;
+		#}
+		#else {
+		    #croak "\n[ERROR]: $elem not found in store. Exiting.";
+		#}
 	    }
 	    close $out;
 	    $fastas{$outfile} = 1;
-	    $idx++;
-
+	    $fidx++;
 	}
     }
-    my $famct = $idx;
-    $idx = 0;
-    delete $seqstore->{$_} for @seen;
+    #my $famct = $fidx; # need to modify how we iterate
+    #$idx = 0;
+    if (@seen) { 
+	@seen = uniq(@seen);
+	#say "SEEN ===> ".scalar(@seen);
+	delete $seqstore->{$_} for @seen;
+    }
+    #my $ct1 = keys %$seqstore;
+    #say "SEQSTORE2 ===> $ct1";
+    #dd $seqstore;
+    #say join "\n", keys %$seqstore;
 
     if (%$seqstore) {
-	my $famxfile = $sf.'_singleton_families.fasta';
-	my $xoutfile = File::Spec->catfile( abs_path($path), $famxfile );
-	open my $outx, '>', $xoutfile or die "\n[ERROR]: Could not open file: $xoutfile\n";
+	my $famxfile = $tetype.'_singleton_families_XXXX';
+	my ($outx, $xoutfile) = tempfile( TEMPLATE => $famxfile, DIR => $path, UNLINK => 0, SUFFIX => '.fasta' );
+	#my $xoutfile = File::Spec->catfile( abs_path($path), $famxfile );
+	#open my $outx, '>', $xoutfile or die "\n[ERROR]: Could not open file: $xoutfile\n";
 
-	for my $k (nsort keys %$seqstore) {
-	    $seqstore->{$k} =~ s/.{60}\K/\n/g;
-	    my $chr = $k;
-	    my ($id) = ($k =~ /(helitron\d+|non_LTR_retrotransposon\d+)_/); 
-	    my ($start, $stop) = ($k =~ /(\d+)_(\d+)$/);
-	    $chr =~ s/${id}_//;
-	    $chr =~ s/_$start.*//;
-	    my $sfcode = $sf_elem_map->{$id};
-	    say $outx join "\n", ">$sfcode"."_singleton_family$idx"."_$id"."_$chr"."_$start"."_$stop", $seqstore->{$k};
-	    $annot_ids{$k} = "singleton_family$idx";
-	    $idx++;
+	for my $selem (nsort keys %$seqstore) {
+	    my $sfcode = $sf_elem_map->{$selem};
+
+	    $self->write_element_to_family($selem, $seqstore, $outx, 1, $sidx, $sfcode);
+	    #$seqstore->{$k} =~ s/.{60}\K/\n/g;
+	    #my $chr = $k;
+	    #my ($id) = ($k =~ /(helitron\d+|non_LTR_retrotransposon\d+)_/); 
+	    #my ($start, $stop) = ($k =~ /(\d+)_(\d+)$/);
+	    #$chr =~ s/${id}_//;
+	    #$chr =~ s/_$start.*//;
+	    #my $sfcode = $sf_elem_map->{$id};
+	    #say $outx join "\n", ">$sfcode"."_singleton_family$idx"."_$id"."_$chr"."_$start"."_$stop", $seqstore->{$k};
+	    $annot_ids{$selem} = $sfcode."_singleton_family$sidx";
+	    $sidx++;
 	}
 	close $outx;
 	$fastas{$xoutfile} = 1;
 
     }
-    my $singct = $idx;
+    #my $singct = $idx;
     
-    return (\%fastas, \%annot_ids, \%sfmap,
+    #say "ANNOT_IDS ===>";    
+    #dd \%annot_ids;
+
+    return (\%fastas, \%annot_ids,
 	    { total_elements    => $elemct,
-	      families          => $famct,
+	      families          => $fidx,
 	      total_in_families => $famtot,
-	      singletons        => $singct });
+	      singletons        => $sidx });
+}
+
+sub write_element_to_family {
+    my $self = shift;
+    my ($elem, $seqstore, $outfh, $is_singleton, $idx, $sfcode) = @_;
+
+    $seqstore->{$elem} =~ s/.{60}\K/\n/g;
+    #$annot_ids{$elem} = $sfcode."_family$idx";
+    my ($id) = ($elem =~ /(helitron\d+|non_LTR_retrotransposon\d+)_/);
+    my ($start, $stop) = ($elem =~ /(\d+)_(\d+)$/);
+    my $chr = $elem;
+    $chr =~ s/${id}_//;
+    $chr =~ s/_$start.*//;
+    my $fasid = $is_singleton ? join "_", $sfcode, "singleton_family$idx", $id, $chr, $start, $stop 
+	: join "_", $sfcode, "family$idx", $id, $chr, $start, $stop;
+
+    say $outfh join "\n", ">$fasid", $seqstore->{$elem};
+
+    return;
 }
 
 sub combine_families {
     my ($self) = shift;
-    my ($outfiles, $outfile) = @_;
+    #my ($outfiles, $outfile) = @_;
+    my ($family_map, $outfile) = @_;
     
     open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
-
+    
     my $ct = 0;
-    for my $file (nsort keys %$outfiles) {
-	unlink $file && next unless -s $file;
-	my $kseq = Bio::DB::HTS::Kseq->new($file);
-	my $iter = $kseq->iterator();
-	while (my $seqobj = $iter->next_seq) {
-	    my $id  = $seqobj->name;
-	    my $seq = $seqobj->seq;
-	    $seq =~ s/.{60}\K/\n/g;
-	    say $out join "\n", ">$id", $seq;
-	    $ct++;
+    for my $fam (nsort keys %$family_map) {
+	for my $file (nsort keys %{$family_map->{$fam}{FAMS}}) {
+	    unlink $file && next unless -s $file;
+	    my $kseq = Bio::DB::HTS::Kseq->new($file);
+	    my $iter = $kseq->iterator();
+	    while (my $seqobj = $iter->next_seq) {
+		my $id  = $seqobj->name;
+		my $seq = $seqobj->seq;
+		$seq =~ s/.{60}\K/\n/g;
+		say $out join "\n", ">$id", $seq;
+		$ct++;
+	    }
 	}
     }
     close $out;
-
+    
     return $ct;
 }
 
 sub annotate_gff {
     my $self = shift;
-    my ($annot_ids, $ingff, $sf_elem_map) = @_;
+    my ($family_map, $ingff, $sf_elem_map) = @_;
     my $outgff = $self->gff;
+
+    #say "===> FAMILY_MAP";
+    #dd $family_map;
+    #say "===> SF_ELEM_MAP";
+    #dd $sf_elem_map;
 
     open my $in, '<', $ingff or die "\n[ERROR]: Could not open file: $ingff\n";
     open my $out, '>', $outgff or die "\n[ERROR]: Could not open file: $outgff\n";
-
+    
     while (my $line = <$in>) {
 	chomp $line;
 	if ($line =~ /^#/) {
@@ -288,16 +361,24 @@ sub annotate_gff {
 	else {
 	    my @f = split /\t/, $line;
 	    if ($f[2] =~ /helitron|non_LTR_retrotransposon/) {
-		my ($id) = ($f[8] =~ /ID=((?:\w{3}_)?helitron\d+|(?:\w{3}_)?non_LTR_retrotransposon\d+);/);
+		#my ($fam, $id) = ($f[8] =~ /ID=((\w{3}_)?helitron\d+|(?:\w{3}_)?non_LTR_retrotransposon\d+);/);
+		#my ($fam) = ($f[8] =~ /ID=(\w{3})?_helitron\d+|(\w{3})?_non_LTR_retrotransposon\d+/);
+		my $id = $f[8];
+		$id =~ s/ID=//;
+		$id =~ s/\;.*//;
 		my $key  = join "_", $id, $f[0], $f[3], $f[4];
-		if (exists $annot_ids->{$key}) {
-		    my $family = $annot_ids->{$key};
-		    my $sfamily = $sf_elem_map->{$id};
-		    my $fid = $sfamily."_$family";
-		    $f[8] =~ s/ID=$id\;/ID=$id;family=$fid;/;
+		#if (exists $annot_ids->{$fam}{IDS}{$key}) {
+		    #my $family = $annot_ids->{$fam}{IDS}{$key};
+		#my $sfamily = $sf_elem_map->{$key};
+		if (exists $family_map->{$sfamily}{IDS}{$key}) {
+		    my $family = $family_map->{$sfamily}{IDS}{$key};
+		    #my $sfamily = $sf_elem_map->{$key};
+		    #my $fid = $sfamily."_$family";
+		    $f[8] =~ s/ID=$id\;/ID=$id;family=$family;/;
 		    say $out join "\t", @f;
 		}
 		else {
+		    say STDERR "\n[WARNING]: '$id' not found in Tephra::Classify::Any::annotate_gff. This is a bug. Please report it.\n";
 		    say $out join "\t", @f;
 		}
 	    }
@@ -308,7 +389,7 @@ sub annotate_gff {
     }
     close $in;
     close $out;
-
+    
     return;
 }
 
