@@ -38,20 +38,6 @@ Version 0.12.5
 our $VERSION = '0.12.5';
 $VERSION = eval $VERSION;
 
-#has fasta => (
-#    is       => 'ro',
-#    isa      => 'Path::Class::File',
-#    required => 1,
-#    coerce   => 1,
-#);
-
-#has outdir => (
-#    is       => 'ro',
-#    isa      => 'Path::Class::Dir',
-#    required => 1,
-#    coerce   => 1,
-#);
-
 has threads => (
     is        => 'ro',
     isa       => 'Int',
@@ -223,22 +209,6 @@ sub write_families {
 		else {
 		    croak "\n[ERROR]: $elem not found in store. Exiting.";
 		}
-		    
-		#if (exists $seqstore->{$elem}) {
-		    #$famtot++;
-		    #$seqstore->{$elem} =~ s/.{60}\K/\n/g;
-		    #$annot_ids{$elem} = "family$idx";
-		    #my ($id) = ($elem =~ /(helitron\d+|non_LTR_retrotransposon\d+)_/);
-		    #my ($start, $stop) = ($elem =~ /(\d+)_(\d+)$/);
-		    #my $chr = $elem;
-		    #$chr =~ s/${id}_//;
-		    #$chr =~ s/_$start.*//;
-		    #say $out join "\n", ">$sfcode"."_family$idx"."_$id"."_$chr"."_$start"."_$stop", $seqstore->{$elem};
-		    #push @seen, $elem;
-		#}
-		#else {
-		    #croak "\n[ERROR]: $elem not found in store. Exiting.";
-		#}
 	    }
 	    close $out;
 	    $fastas{$outfile} = 1;
@@ -267,14 +237,6 @@ sub write_families {
 	    my $sfcode = $sf_elem_map->{$selem};
 
 	    $self->write_element_to_family($selem, $seqstore, $outx, 1, $sidx, $sfcode);
-	    #$seqstore->{$k} =~ s/.{60}\K/\n/g;
-	    #my $chr = $k;
-	    #my ($id) = ($k =~ /(helitron\d+|non_LTR_retrotransposon\d+)_/); 
-	    #my ($start, $stop) = ($k =~ /(\d+)_(\d+)$/);
-	    #$chr =~ s/${id}_//;
-	    #$chr =~ s/_$start.*//;
-	    #my $sfcode = $sf_elem_map->{$id};
-	    #say $outx join "\n", ">$sfcode"."_singleton_family$idx"."_$id"."_$chr"."_$start"."_$stop", $seqstore->{$k};
 	    $annot_ids{$selem} = $sfcode."_singleton_family$sidx";
 	    $sidx++;
 	}
@@ -369,7 +331,7 @@ sub annotate_gff {
 		my $key  = join "_", $id, $f[0], $f[3], $f[4];
 		#if (exists $annot_ids->{$fam}{IDS}{$key}) {
 		    #my $family = $annot_ids->{$fam}{IDS}{$key};
-		#my $sfamily = $sf_elem_map->{$key};
+		my $sfamily = $sf_elem_map->{$key};
 		if (exists $family_map->{$sfamily}{IDS}{$key}) {
 		    my $family = $family_map->{$sfamily}{IDS}{$key};
 		    #my $sfamily = $sf_elem_map->{$key};
