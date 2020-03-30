@@ -53,12 +53,12 @@ has gff => (
       coerce   => 1,
 );
 
-#has type => (
-#      is       => 'ro',
-#      isa      => 'Str',
-#      required => 1,
-#      default  => 'LTR',
-#);
+has type => (
+      is       => 'ro',
+      isa      => 'Str',
+      required => 1,
+      default  => 'non-LTR',
+);
 
 #
 # methods
@@ -67,8 +67,6 @@ sub process_blast_args {
     my $self = shift;
     my ($famfile) = @_;
     my $threads = $self->threads;
-    #my $fasta   = $self->fasta;
-    #my $seqstore = $self->store_seq($fasta);
 
     my ($query, $db) = ($famfile, $famfile);
     unless (-s $query) {
@@ -130,14 +128,12 @@ sub parse_blast {
 	my $hlen = $hend - $hstart + 1;
 	my $minlen = min($qlen, $hlen); # we want to measure the coverage of the smaller element
 	#DHH_helitron1_singleton_family0_Contig57_HLAC-254L24_106214_107555
-	#my ($elem) = ($hitid =~ /(non_LTR_retrotransposon\d+|helitron\d+)_/);
-	#my ($family, $elem) = ($hitid =~ /^(\w{3})_(non_LTR_retrotransposon\d+|helitron\d+)_/);
 	if ($hitlen >= $blast_hlen && $hitlen >= ($minlen * $perc_cov) && $pid >= $blast_hpid) {
 	    unless (exists $seen{$queryid} || exists $seen{$hitid}) {
 		#push @{$matches{$elem}}, $queryid;
 		push @{$matches{$hitid}}, $queryid;
 		$seen{$queryid} = 1;
-		$seen{$hitid} = 1;
+		#$seen{$hitid} = 1;
 	    }
 	}
     }
@@ -149,8 +145,10 @@ sub parse_blast {
 
 sub write_families {
     my $self = shift;
-    my ($tefas, $matches, $sf_elem_map, $tetype, $famct, $singct, $famtot) = @_;
+    my ($tefas, $matches, $sf_elem_map, $famct, $singct, $famtot) = @_;
+    my $tetype = $self->type;
 
+    ($famct, $singct, $famtot) = (0, 0, 0);
     #say "MATCHES ===>";
     #dd $matches;
     #say "SF_ELEM_MAP ===>";
@@ -177,7 +175,6 @@ sub write_families {
     #non_LTR_retrotransposon0  => ["non_LTR_retrotransposon51_2RHet_3818_6387"],  
     if (%$matches) {
 	for my $str (reverse sort { @{$matches->{$a}} <=> @{$matches->{$b}} } keys %$matches) {
-	    #if (uniq(@{$matches->{$str}}) > 1) { # families have n>1 elements
 	    my ($famid) = ($str =~ /(helitron\d+|non_LTR_retrotransposon\d+)/);
 	    
 	    unless (defined $famid) {
@@ -186,7 +183,6 @@ sub write_families {
 	    }
 	    
 	    # sf_elem_map: non_LTR_retrotransposon99  => "RIJ",
-	    #my $sfcode = $sf_elem_map->{$famid};
 	    my $sfcode = $sf_elem_map->{$str};
 	    
 	    my $famfile = $sfcode."_family$fidx".".fasta";
@@ -230,8 +226,6 @@ sub write_families {
     if (%$seqstore) {
 	my $famxfile = $tetype.'_singleton_families_XXXX';
 	my ($outx, $xoutfile) = tempfile( TEMPLATE => $famxfile, DIR => $path, UNLINK => 0, SUFFIX => '.fasta' );
-	#my $xoutfile = File::Spec->catfile( abs_path($path), $famxfile );
-	#open my $outx, '>', $xoutfile or die "\n[ERROR]: Could not open file: $xoutfile\n";
 
 	for my $selem (nsort keys %$seqstore) {
 	    my $sfcode = $sf_elem_map->{$selem};
@@ -261,7 +255,6 @@ sub write_element_to_family {
     my ($elem, $seqstore, $outfh, $is_singleton, $idx, $sfcode) = @_;
 
     $seqstore->{$elem} =~ s/.{60}\K/\n/g;
-    #$annot_ids{$elem} = $sfcode."_family$idx";
     my ($id) = ($elem =~ /(helitron\d+|non_LTR_retrotransposon\d+)_/);
     my ($start, $stop) = ($elem =~ /(\d+)_(\d+)$/);
     my $chr = $elem;
@@ -277,7 +270,6 @@ sub write_element_to_family {
 
 sub combine_families {
     my ($self) = shift;
-    #my ($outfiles, $outfile) = @_;
     my ($family_map, $outfile) = @_;
     
     open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
@@ -329,13 +321,9 @@ sub annotate_gff {
 		$id =~ s/ID=//;
 		$id =~ s/\;.*//;
 		my $key  = join "_", $id, $f[0], $f[3], $f[4];
-		#if (exists $annot_ids->{$fam}{IDS}{$key}) {
-		    #my $family = $annot_ids->{$fam}{IDS}{$key};
 		my $sfamily = $sf_elem_map->{$key};
 		if (exists $family_map->{$sfamily}{IDS}{$key}) {
 		    my $family = $family_map->{$sfamily}{IDS}{$key};
-		    #my $sfamily = $sf_elem_map->{$key};
-		    #my $fid = $sfamily."_$family";
 		    $f[8] =~ s/ID=$id\;/ID=$id;family=$family;/;
 		    say $out join "\t", @f;
 		}
@@ -354,22 +342,6 @@ sub annotate_gff {
     
     return;
 }
-
-#sub _store_seq {
-#    my $self = shift;
-#    my ($file) = @_;
-
-#    my %hash;
-#    my $kseq = Bio::DB::HTS::Kseq->new($file);
-#    my $iter = $kseq->iterator();
-#    while (my $seqobj = $iter->next_seq) {
-#	my $id = $seqobj->name;
-#	my $seq = $seqobj->seq;
-#	$hash{$id} = $seq;
-#    }
-
-#    return \%hash;
-#}
 
 =head1 AUTHOR
 
