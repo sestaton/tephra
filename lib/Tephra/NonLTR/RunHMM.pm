@@ -32,13 +32,13 @@ our $VERSION = '0.12.5';
 $VERSION = eval $VERSION;
 
 has fasta    => ( is => 'ro', isa => 'Path::Class::File', required => 1, coerce => 1 );
-has fastadir => ( is => 'ro', isa => 'Path::Class::File', required => 1, coerce  => 1 );
+has fastadir => ( is => 'ro', isa => 'Path::Class::File', required => 1, coerce => 1 );
 has outdir   => ( is => 'ro', isa => 'Path::Class::Dir',  required => 1, coerce => 1 );
 has phmmdir  => ( is => 'ro', isa => 'Path::Class::Dir',  required => 1, coerce => 1 );
 has pdir     => ( is => 'ro', isa => 'Path::Class::Dir',  required => 1, coerce => 1 );
-
-has verbose  => ( is => 'ro', isa => 'Bool', predicate  => 'has_verbose', lazy => 1, default => 0 );
-has strand   => ( is => 'ro', isa => 'Str',  required => 1, default  => 'plus' );
+has threads  => ( is => 'ro', isa => 'Int',  predicate => 'has_threads', lazy => 1, default => 1 );
+has verbose  => ( is => 'ro', isa => 'Bool', predicate => 'has_verbose', lazy => 1, default => 0 );
+has strand   => ( is => 'ro', isa => 'Str',  required  => 1, default  => 'plus' );
 
 sub run_mgescan {
     my $self = shift;
@@ -122,6 +122,7 @@ sub run_mgescan {
 sub get_signal_domain {
     my $self = shift;
     my ($pep_file, $phmm_file, $domain_rt_pos_file) = @_;
+    my $threads = $self->threads;
 
     # debugging
     my ($pname, $ppath, $psuffix) = fileparse($phmm_file, qr/\.[^.]*/);
@@ -137,7 +138,7 @@ sub get_signal_domain {
 
     # run hmmsearch to find the domain and save it in the temprary file
     my $hmmsearch   = $self->find_hmmsearch;
-    my @hmm_results = capture([0..5], $hmmsearch, '-E', '0.00001', $phmm_file, $pep_file);
+    my @hmm_results = capture([0..5], $hmmsearch, '--cpu', $threads, '-E', '0.00001', $phmm_file, $pep_file);
     $self->_parse_hmmsearch(\@hmm_results, $signal_out, $temp_file);
 
     if (-s $temp_file) {	
