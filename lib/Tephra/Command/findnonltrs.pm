@@ -135,7 +135,6 @@ sub _find_nonltr_families {
     for my $elem (keys %$sf_elem_map) {
         push @{$families{ $sf_elem_map->{$elem} }}, $elem;
     }
-
     #say "===> FAMILIES";
     #dd \%families;
 
@@ -155,7 +154,6 @@ sub _find_nonltr_families {
         }
 	close $out;
     }
-
     #say "===> FAMILY_FILES";
     #dd \%family_files;
 
@@ -186,8 +184,6 @@ sub _find_nonltr_families {
 	# add files to objects
 	$family_map{$family} = { IDS => $ids, FAMS => $fams };
 
-	
-	#}
 	#else {
 	    #say STDERR "\n[WARNING]: No BLAST hits were found so no non-LTR families could be determined.\n";
             #move $obj->{fasta}, $fasta or die "\n[ERROR]: move failed: $!\n";
