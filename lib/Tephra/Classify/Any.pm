@@ -161,7 +161,6 @@ sub write_families {
     #say join "\n", keys %$seqstore;
     my $elemct = (keys %$seqstore);
 	
-    #my ($fidx, $sidx, $famtot, $tomerge) = (0, 0, 0, 0);
     my $fidx = $famct;
     my $sidx = $singct;
     my $tomerge = 0;
@@ -209,8 +208,7 @@ sub write_families {
 	    $fidx++;
 	}
     }
-    #my $famct = $fidx; # need to modify how we iterate
-    #$idx = 0;
+
     if (@seen) { 
 	@seen = uniq(@seen);
 	#say "SEEN ===> ".scalar(@seen);
@@ -236,8 +234,6 @@ sub write_families {
 	$fastas{$xoutfile} = 1;
 
     }
-    #my $singct = $idx;
-    
     #say "ANNOT_IDS ===>";    
     #dd \%annot_ids;
 
