@@ -17,7 +17,7 @@ use Cwd             qw(abs_path);
 use Carp 'croak';
 use Tephra::Annotation::MakeExemplars;
 use Tephra::Annotation::Util;
-use Data::Dump::Color;
+#use Data::Dump::Color;
 use namespace::autoclean;
 
 with 'Tephra::Role::Util',
@@ -130,10 +130,8 @@ sub parse_blast {
 	#DHH_helitron1_singleton_family0_Contig57_HLAC-254L24_106214_107555
 	if ($hitlen >= $blast_hlen && $hitlen >= ($minlen * $perc_cov) && $pid >= $blast_hpid) {
 	    unless (exists $seen{$queryid} || exists $seen{$hitid}) {
-		#push @{$matches{$elem}}, $queryid;
 		push @{$matches{$hitid}}, $queryid;
 		$seen{$queryid} = 1;
-		#$seen{$hitid} = 1;
 	    }
 	}
     }
