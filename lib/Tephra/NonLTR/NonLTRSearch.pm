@@ -31,7 +31,8 @@ $VERSION = eval $VERSION;
 has genome  => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
 has outdir  => ( is => 'ro', isa => 'Maybe[Str]', required => 0 );
 has pdir    => ( is => 'ro', isa => 'Maybe[Str]', required => 0 );
-has verbose => ( is => 'ro', isa => 'Bool', predicate  => 'has_debug', lazy => 1, default => 0 );
+has threads => ( is => 'ro', isa => 'Int',  predicate => 'has_threads', lazy => 1, default => 1 );
+has verbose => ( is => 'ro', isa => 'Bool', predicate => 'has_debug',   lazy => 1, default => 0 );
 
 sub find_nonltrs {
     my $self = shift;
@@ -75,6 +76,7 @@ sub find_nonltrs {
 	    phmmdir  => $phmm_dir, 
 	    pdir     => $program_dir,
 	    strand   => 'plus',
+	    threads  => $self->threads,
 	    verbose  => $self->verbose );
 	$run_hmm->run_mgescan;
     }
@@ -105,6 +107,7 @@ sub find_nonltrs {
 	    phmmdir  => $phmm_dir, 
 	    pdir     => $program_dir,
 	    strand   => 'minus',
+	    threads  => $self->threads,
 	    verbose  => $self->verbose );
 	$run_rev_hmm->run_mgescan;
     }
@@ -131,7 +134,8 @@ sub find_nonltrs {
 	my $pp2 = Tephra::NonLTR::QValidation->new( 
 	    outdir  => $main_data_dir, 
 	    phmmdir => $phmm_dir, 
-	    fasta   => $genome_dir );
+	    fasta   => $genome_dir,
+	    threads => $self->threads );
 	$pp2->validate_q_score;
 	
 	return ($genome_dir, $main_data_dir);
