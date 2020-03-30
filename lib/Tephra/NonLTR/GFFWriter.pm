@@ -75,6 +75,7 @@ sub _fasta_to_gff {
     my $outdir = $self->outdir;
     my $genome = $self->genome;
     my $outgff = $self->gff;
+    my $n_thresh = $self->n_threshold;
 
     my $util = Tephra::Annotation::Util->new;
     my $index = $self->index_ref($genome);
@@ -164,27 +165,32 @@ sub _fasta_to_gff {
                         $feature eq 'rt' ? 'RVT_1' : '';
 
 		    #TODO: output RVT sequences also
-		    my ($filtered_seq, $adj_start, $adj_end);
+		    my ($filtered_id, $filtered_seq, $adj_start, $adj_end);
 		    if ($feature eq 'full') { 
 			my ($seq, $length) = $self->get_full_seq($index, $seqname, $feature_start, $feature_end);
 			
 			($filtered_seq, $adj_start, $adj_end) = $self->_filterNpercent($seq, $feature_start, $feature_end);
 			if (defined $filtered_seq) {
-			    my $id = join "_", $elem, $seqname, $adj_start, $adj_end;
-			    say $outf join "\n", ">".$id, $filtered_seq;
+			    $filtered_id = join "_", $elem, $seqname, $adj_start, $adj_end;
 			}
 		    }
 
-		    unless (defined $adj_start && defined $adj_end) {
-			($adj_start, $adj_end) = ($feature_start, $feature_end);
+		    if (defined $filtered_seq && defined $adj_start && defined $adj_end) { 
+			my $attr = $feature eq 'full' ? "ID=$featureid;Ontology_term=$so_term" : 
+			    "Parent=$elem;name=$featureid;Ontology_term=$so_term";
+		    
+			say $outg join "\t", $name, 'Tephra', $type, $adj_start, $adj_end, '.', $strand, '.', $attr;
+			my $sfcode = $util->map_superfamily_name_to_code($clade) // $clade;
+			$sf_elem_map{$elem."_".$name."_".$adj_start."_".$adj_end} = $sfcode;
+			say $outf join "\n", ">".$filtered_id, $filtered_seq;
 		    }
-		    
-		    my $attr = $feature eq 'full' ? "ID=$featureid;Ontology_term=$so_term" : 
-			"Parent=$elem;name=$featureid;Ontology_term=$so_term";
-		    
-		    say $outg join "\t", $name, 'Tephra', $type, $adj_start, $adj_end, '.', $strand, '.', $attr;
-		    my $sfcode = $util->map_superfamily_name_to_code($clade) // $clade;
-		    $sf_elem_map{$elem} = $sfcode;
+		    else {
+			if ($feature eq 'full') {
+			    say STDERR "\n[WARNING]: '$elem' was above the N% threshold of ".sprintf("%.0f%%",$n_thresh*100).
+				" and will be removed.\n".
+				"           If you would like to keep all non-LTR elements, adjust this threshold.\n";
+			}
+		    }
 		}
 	    }
 	} 
@@ -265,26 +271,26 @@ sub _filterNpercent {
     }
 }
 
-sub _build_clade_map {
-    my $self = shift;
+#sub _build_clade_map {
+#    my $self = shift;
     
-    my %clade_map = (
-	'CR1'    => 'RIC', # CR1 clade
-	'I'      => 'RII', 
-	'Jockey' => 'RIJ', 
-	'L1'     => 'RIL', 
-	'L2'     => 'RIL', 
-	'R1'     => 'RIR', 
-	'RandI'  => 'RIX', 
-	'Rex'    => 'RIC', # CR1 clade, http://link.springer.com/article/10.1186/1471-2148-13-152/fulltext.html?view=classic 
-	'RTE'    => 'RIT',
-	'Tad1'   => 'RIX', 
-	'R2'     => 'RIR', 
-	'CRE'    => 'RIR', # http://www.ncbi.nlm.nih.gov/pubmed/15939396
-	);
+#    my %clade_map = (
+#	'CR1'    => 'RIC', # CR1 clade
+#	'I'      => 'RII', 
+#	'Jockey' => 'RIJ', 
+#	'L1'     => 'RIL', 
+#	'L2'     => 'RIL', 
+#	'R1'     => 'RIR', 
+#	'RandI'  => 'RIX', 
+#	'Rex'    => 'RIC', # CR1 clade, http://link.springer.com/article/10.1186/1471-2148-13-152/fulltext.html?view=classic 
+#	'RTE'    => 'RIT',
+#	'Tad1'   => 'RIX', 
+#	'R2'     => 'RIR', 
+#	'CRE'    => 'RIR', # http://www.ncbi.nlm.nih.gov/pubmed/15939396
+#	);
 
-    return \%clade_map;
-}
+#    return \%clade_map;
+#}
 
 =head1 AUTHOR
 
