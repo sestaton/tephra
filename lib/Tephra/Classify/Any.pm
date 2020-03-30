@@ -306,8 +306,6 @@ sub annotate_gff {
 	else {
 	    my @f = split /\t/, $line;
 	    if ($f[2] =~ /helitron|non_LTR_retrotransposon/) {
-		#my ($fam, $id) = ($f[8] =~ /ID=((\w{3}_)?helitron\d+|(?:\w{3}_)?non_LTR_retrotransposon\d+);/);
-		#my ($fam) = ($f[8] =~ /ID=(\w{3})?_helitron\d+|(\w{3})?_non_LTR_retrotransposon\d+/);
 		my $id = $f[8];
 		$id =~ s/ID=//;
 		$id =~ s/\;.*//;
