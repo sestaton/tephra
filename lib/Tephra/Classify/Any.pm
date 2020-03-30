@@ -179,14 +179,11 @@ sub write_families {
 		$famid = $tetype;
 	    }
 	    
-	    # sf_elem_map: non_LTR_retrotransposon99  => "RIJ",
-	    my $sfcode = $sf_elem_map->{$str};
-	    
+	    my $sfcode = $sf_elem_map->{$str};	    
 	    my $famfile = $sfcode."_family$fidx".".fasta";
 	    my $outfile = File::Spec->catfile( abs_path($path), $famfile );
 	    open my $out, '>>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 	    
-	    #$famtot++;
 	    $annot_ids{$str} = $sfcode."_family$fidx";
 	    $self->write_element_to_family($str, $seqstore, $out, 0, $fidx, $sfcode);
 	    $famtot++;
