@@ -35,6 +35,7 @@ $VERSION = eval $VERSION;
 has fasta   => ( is => 'ro', isa => 'Path::Class::File', required => 1, coerce => 1 );
 has outdir  => ( is => 'ro', isa => 'Path::Class::Dir',  required => 1, coerce => 1 );
 has phmmdir => ( is => 'ro', isa => 'Path::Class::Dir',  required => 1, coerce => 1 );
+has threads => ( is => 'ro', isa => 'Int',  predicate => 'has_threads', lazy => 1, default => 1 );
 
 sub validate_q_score {
     my $self = shift;
@@ -94,7 +95,6 @@ sub validate_q_score {
 					     genome     => $genome });
 	unless (defined $dom->{domain}) {
 	    say STDERR "\n[MAYDAY]: domain => $domain, $dir, $hmm_dir, $validation_dir, $genome";
-
 	}
 
 	$pm->finish(0, $dom);
@@ -201,7 +201,6 @@ sub get_full_frag {
     return;
 }
 
-
 sub get_domain_pep_seq {
     my $self = shift;
     my ($pep_file, $phmm_file, $result_pep_file) = @_;
@@ -286,8 +285,9 @@ sub get_domain_dna_seq {
     my $self = shift;
     my ($pep_file, $phmm_file, $result_dna_file, $dna_file, $flag) = @_;
 
+    my $threads = $self->threads;
     my $hmmsearch = $self->find_hmmsearch;
-    my @hmm_results = capture([0..5], $hmmsearch, $phmm_file, $pep_file);
+    my @hmm_results = capture([0..5], $hmmsearch, '--cpu', $threads, $phmm_file, $pep_file);
     my (%domain_start, %domain_end, %result_start, %result_end, %uniq_head);
 
     #say "debug2 hmmermatch qvalidation: $1";
