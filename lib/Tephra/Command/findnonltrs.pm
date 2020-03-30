@@ -174,7 +174,7 @@ sub _find_nonltr_families {
 
 	#say join q{ }, "DEBUG:", "FAMILY", "TOTAL_ELEMENTS", "FAMILIES", "TOTAL_IN_FAMILIES", "SINGLETONS";
 	#say join q{ }, "         $family", $family_stats->{total_elements}, $family_stats->{families}, 
-	$family_stats->{total_in_families}, $family_stats->{singletons};
+	#$family_stats->{total_in_families}, $family_stats->{singletons};
 
 	$elemct += $family_stats->{total_elements};
 	$famct  += $family_stats->{families};
