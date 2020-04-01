@@ -131,7 +131,6 @@ sub make_hscan_outfiles {
 	my $strand = $strand{$str};
 	#my $id = "DHH_helitron$helct";
 	my $id = "helitron$helct";
-	$sfmap{$id} = 'DHH';
 
 	# seqid source type start end score strand phase attribs
 	my $gff_str;
@@ -148,6 +147,7 @@ sub make_hscan_outfiles {
 	    say $outf join "\n", ">".$id, $seq;
 	}
 	push @{$hel{$ref}}, $gff_str;
+	$sfmap{$id} = 'DHH';
     }
     close $hin;
     close $outf;
