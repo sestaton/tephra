@@ -37,11 +37,7 @@ sub postprocess {
     my $rev     = $self->reverse;
 
     # identify full and frag
-    my $outf_dir = File::Spec->catdir($out_dir, 'out1');
-    my $outr_dir = File::Spec->catdir($out_dir, 'out2');
-    my $outr_full_file = File::Spec->catfile($out_dir, 'out2', 'full');   # full-length
-    my $outr_frag_file = File::Spec->catfile($out_dir, 'out2', 'frag');   # fragmented
-    ($outr_full_file, $outr_frag_file) = $self->merge_thmm($outf_dir, $outr_dir, $outr_full_file, $outr_frag_file, $dna_dir);
+     my ($outr_full_file, $outr_frag_file) = $self->merge_thmm($out_dir, $dna_dir);
     
     if (-s $outr_full_file && -s $outr_frag_file) {
 	# convert minus coordinates to plus coordinates
@@ -94,8 +90,14 @@ sub convert_minus_to_plus {
 
 sub merge_thmm {
     my $self = shift;
-    my ($outf_dir, $outr_dir, $outr_full_file, $outr_frag_file, $dna_dir) = @_;
+    my ($out_dir, $dna_dir) = @_;
     my $n_thresh = $self->n_threshold;
+
+    my $outf_dir = File::Spec->catdir($out_dir, 'out1');
+    my $outr_dir = File::Spec->catdir($out_dir, 'out2');
+    my $outr_full_file = File::Spec->catfile($out_dir, 'out2', 'full');   # full-length 
+    my $outr_frag_file = File::Spec->catfile($out_dir, 'out2', 'frag');   # fragmented 
+    #say "===> DEBUG: full: $outr_full_file frag: $outr_frag_file";
 
     my @fasfiles;
     find( sub { push @fasfiles, $File::Find::name if -f and /\.fa.*$/ }, $dna_dir );
@@ -119,7 +121,6 @@ sub merge_thmm {
 
     my @resfiles;
     find( sub { push @resfiles, $File::Find::name if -f }, $outf_dir );
-    #dd \@resfiles;
 
     for my $file (sort @resfiles) {
 	my $filename = basename($file);
