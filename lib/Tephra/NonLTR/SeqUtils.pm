@@ -92,13 +92,13 @@ sub translate {
         exit(1);
     }
 
+    ##TODO: Add a check here if the output is defined/exists, and return result appropriately
     my $kseq = Bio::DB::HTS::Kseq->new($tmp_file);
     my $iter = $kseq->iterator;
 
     say STDERR "=====> Writing translated output: $out" if $self->verbose;
     open my $outfh, '>', $out or die "\n[ERROR]: Could not open file: $out\n";
     my $filename = basename($in);
-    my $genfh;
 
     while (my $seqio = $iter->next_seq) {
 	my $id = $seqio->name;
