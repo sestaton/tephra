@@ -7,7 +7,7 @@ use strict;
 use warnings;
 use Bio::SearchIO;
 use File::Spec;
-use File::Basename;
+use File::Basename      qw(dirname fileparse basename);
 use File::Temp          qw(tempfile);
 use List::Util          qw(min);
 use File::Copy          qw(copy);
@@ -46,6 +46,11 @@ close $seqfh;
 my $config = Tephra::Config::Exe->new->get_config_paths;
 my ($hmmbin, $transeq) = @{$config}{qw(hmmer2bin transeq)};
 my $hmmsearch = File::Spec->catfile($hmmbin, 'hmmsearch');
+
+# Get the strand to search from the directory name
+my ($name, $path, $suffix) = fileparse($seq_file, qr/\.[^.]*/);
+my $dirname = dirname($seq_file);
+#my $frame = $dirname =~ /_b$/ ? 'R' : 'F';
 
 try {
     system($transeq, '-frame', 'F', $seq_file, '-outseq', $pep_file, '-trim', 'yes', '-auto');
