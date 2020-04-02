@@ -89,7 +89,7 @@ sub run_mgescan {
 	    print $out "";
 	    close $out;
 	}
-	elsif (! -e $domain_ape_pos_file){
+	elsif (! -e $domain_ape_pos_file) {
 	    open my $out, '>', $domain_ape_pos_file or die "\n[ERROR]: Could not open file: $domain_ape_pos_file\n";
 	    print $out "";
 	    close $out;
