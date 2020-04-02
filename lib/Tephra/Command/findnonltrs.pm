@@ -135,9 +135,7 @@ sub _find_nonltr_families {
     for my $elem (keys %$sf_elem_map) {
         push @{$families{ $sf_elem_map->{$elem} }}, $elem;
     }
-    #say "===> FAMILIES";
-    #dd \%families;
-
+ 
     for my $fam (keys %families) { 
         my $famfile = File::Spec->catfile( abs_path($path), $fam.'_elements.fasta' );
         $family_files{$fam} = $famfile;
@@ -155,7 +153,7 @@ sub _find_nonltr_families {
 	close $out;
     }
     #say "===> FAMILY_FILES";
-    #dd \%family_files;
+    #dd \%family_files;#
 
     my ($elemct, $famct, $singct, $famtot) = (0, 0, 0, 0);
     for my $family (sort keys %family_files) {
