@@ -8,12 +8,14 @@ use File::Basename;
 use File::Path qw(make_path remove_tree);
 use Cwd        qw(abs_path);
 use Bio::DB::HTS::Kseq;
+use Parallel::ForkManager;
 use Tephra::NonLTR::RunHMM;
 use Tephra::NonLTR::Postprocess;
 use Tephra::NonLTR::QValidation;
 use Tephra::NonLTR::SeqUtils;
 use Tephra::Config::Exe;
 use namespace::autoclean;
+#use Data::Dump::Color;
 
 =head1 NAME
 
@@ -37,7 +39,7 @@ has verbose => ( is => 'ro', isa => 'Bool', predicate => 'has_debug',   lazy => 
 sub find_nonltrs {
     my $self = shift;
     my $main_data_dir = $self->outdir;
-    my $program_dir   = $self->pdir;
+    #my $program_dir   = $self->pdir;
     my $genome = $self->genome;
     my $config = Tephra::Config::Exe->new->get_config_paths;
     my ($phmm_dir) = @{$config}{qw(modeldir)};
@@ -62,74 +64,62 @@ sub find_nonltrs {
 	make_path( $minus_dna_dir, {verbose => 0, mode => 0771,} );
     }
 
-    # Forward strand
+    # set up parallel processing of both strands
+    my $pm = Parallel::ForkManager->new(2);
+    local $SIG{INT} = sub {
+        warn("Caught SIGINT; Waiting for child processes to finish.");
+        $pm->wait_all_children;
+        exit 1;
+    };
+
+    # create data directories for forward strand
     my $fasfiles = $self->_split_genome($genome, $genome_dir);
     die "\n[ERROR]: No FASTA files found in genome directory. Sequences must be over 50kb and less than 50% gaps. Exiting.\n" 
 	if @$fasfiles == 0;
 
-    say STDERR "Running forward..." if $self->verbose;
-    for my $file (sort @$fasfiles) {    
-	my $run_hmm = Tephra::NonLTR::RunHMM->new( 
-	    fasta    => $file, 
-	    fastadir => $genome_dir,
-	    outdir   => $plus_out_dir, 
-	    phmmdir  => $phmm_dir, 
-	    pdir     => $program_dir,
-	    strand   => 'plus',
-	    threads  => $self->threads,
-	    verbose  => $self->verbose );
-	$run_hmm->run_mgescan;
-    }
-
-    my $pp = Tephra::NonLTR::Postprocess->new( 
-	fastadir => $genome_dir, 
-	outdir   => $plus_out_dir, 
-	reverse  => 0 );
-    my $fpp_result = $pp->postprocess;
-
-    unless ($fpp_result) {
-	say STDERR "\n[WARNING]: No non-LTR elements were found on the forward strand. Will search reverse strand.\n";
-    }
-
-    # Backward strand
-    say STDERR "Running backward..." if $self->verbose;
-
+     # create data directories for reverse strand
     my $sequtils = Tephra::NonLTR::SeqUtils->new;
     my $revfasfiles = $sequtils->invert_seq($genome_dir, $minus_dna_dir);
     die "\n[ERROR]: No FASTA files found in genome directory. Sequences must be over 50kb and less than 50% gaps. Exiting.\n"
         if @$revfasfiles == 0;
-    
-    for my $file (sort @$revfasfiles) {
-	my $run_rev_hmm = Tephra::NonLTR::RunHMM->new( 
-	    fasta    => $file, 
-	    fastadir => $minus_dna_dir,
-	    outdir   => $minus_out_dir, 
-	    phmmdir  => $phmm_dir, 
-	    pdir     => $program_dir,
-	    strand   => 'minus',
-	    threads  => $self->threads,
-	    verbose  => $self->verbose );
-	$run_rev_hmm->run_mgescan;
+
+    my %data_dirs = ( plus  => { files => $fasfiles,    outdir => $plus_out_dir  }, 
+		      minus => { files => $revfasfiles, outdir => $minus_out_dir } );
+
+    #dd \%data_dirs and exit;
+    my ($is_pos_success, $is_rev_success) = (0, 0);
+    $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
+			      
+			      for my $key (%$data_ref) {
+				  $is_pos_success = $data_ref->{$key} if $key eq 'plus';
+				  $is_rev_success = $data_ref->{$key} if $key eq 'minus';
+			      }
+			      #say STDERR "Finished running HMM search on $$data_ref..." if $self->verbose; 
+			      #my $t1 = gettimeofday();
+			      #my $elapsed = $t1 - $t0;
+			      #my $time = sprintf("%.2f",$elapsed/60);
+			      #say $fmlog "$ident just finished with PID $pid and exit code: $exit_code in $time minutes";
+			} );
+
+    my %results;
+    for my $strand (keys %data_dirs) {
+	$pm->start($strand) and next;
+	$SIG{INT} = sub { $pm->finish };
+	
+	my $pp_result = $self->run_model_search_and_postprocess( $strand, 
+								 $data_dirs{$strand}{files}, 
+								 $genome_dir, 
+								 $data_dirs{$strand}{outdir}, 
+								 $phmm_dir );
+	$results{$strand} = $pp_result;
+
+	$pm->finish(0, \%results); #\$strand);
     }
 
-    my $pp_rev = Tephra::NonLTR::Postprocess->new( 
-	fastadir => $minus_dna_dir, 
-	outdir   => $minus_out_dir, 
-	reverse  => 1 );
-    my $bpp_result = $pp_rev->postprocess;
+    $pm->wait_all_children;
 
-    unless ($bpp_result) {
-        say STDERR "\n[WARNING]: No non-LTR elements were found on the reverse strand.\n";
-    }
- 
-    if (!$fpp_result && !$bpp_result) { 
-	remove_tree( $main_data_dir, { safe => 1} );
-	remove_tree( $genome_dir, { safe => 1} );
-	remove_tree( $minus_dna_dir, { safe => 1} );
-
-	return (undef, undef);
-    }
-    else {
+    ##say STDERR "Running forward..." if $self->verbose;
+    if ($is_pos_success && $is_rev_success) {
 	# Validation for Q value
 	my $pp2 = Tephra::NonLTR::QValidation->new( 
 	    outdir  => $main_data_dir, 
@@ -140,6 +130,59 @@ sub find_nonltrs {
 	
 	return ($genome_dir, $main_data_dir);
     }
+    else {
+	remove_tree( $main_data_dir, { safe => 1} );                                                         
+        remove_tree( $genome_dir, { safe => 1} );                                                                                            
+        remove_tree( $minus_out_dir, { safe => 1} );                                                                                         
+
+        return (undef, undef);                                                                                                                
+    }
+}
+
+sub run_model_search_and_postprocess {
+    my $self = shift;
+    my ($strand, $fasfiles, $genome_dir, $out_dir, $phmm_dir) = @_;
+    my $threads = $self->threads;
+    my $program_dir = $self->pdir;
+
+    # adjust requested threads since we are running analysis on both strands
+    my $thr;
+    if ($threads % 2 == 0) {
+	$thr = sprintf("%.0f",$threads/2);
+    }
+    elsif (+($threads-1) % 2 == 0) {
+	$thr = sprintf("%.0f",$threads-1/2);
+    }
+    else {
+	$thr = 1;
+    }
+
+    my $reverse = defined $strand && $strand eq 'plus' ? 0 : 1;
+
+    #say "\nDEBUG: fasfiles\n";
+    #dd $fasfiles;
+    # run HMM model search
+    for my $file (sort @$fasfiles) {
+        my $run_hmm = Tephra::NonLTR::RunHMM->new(
+            fasta    => $file,
+            fastadir => $genome_dir,
+            outdir   => $out_dir,
+            phmmdir  => $phmm_dir,
+            pdir     => $program_dir,
+            strand   => $strand,
+            threads  => $threads,
+            verbose  => $self->verbose );
+        $run_hmm->run_mgescan;
+    }
+
+    # run postprocessing
+    my $pp = Tephra::NonLTR::Postprocess->new(
+        fastadir => $genome_dir,
+        outdir   => $out_dir,
+        reverse  => $reverse );
+    my $pp_result = $pp->postprocess;
+
+    return $pp_result;
 }
 
 sub _split_genome {
