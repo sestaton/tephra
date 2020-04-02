@@ -93,9 +93,10 @@ sub validate_q_score {
 					     clade_dirs => \@cladedirs,
 					     valid_dir  => $validation_dir,
 					     genome     => $genome });
-	unless (defined $dom->{domain}) {
-	    say STDERR "\n[MAYDAY]: domain => $domain, $dir, $hmm_dir, $validation_dir, $genome";
-	}
+
+	#unless (defined $dom->{domain}) {
+	    #say STDERR "\n[MAYDAY]: domain => $domain, $dir, $hmm_dir, $validation_dir, $genome";
+	#}
 
 	$pm->finish(0, $dom);
     }
