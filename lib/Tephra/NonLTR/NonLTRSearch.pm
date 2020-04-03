@@ -134,6 +134,7 @@ sub find_nonltrs {
 	remove_tree( $main_data_dir, { safe => 1} );                                                         
         remove_tree( $genome_dir, { safe => 1} );                                                                                            
         remove_tree( $minus_out_dir, { safe => 1} );                                                                                         
+	remove_tree( $minus_dna_dir, { safe => 1} );
 
         return (undef, undef);                                                                                                                
     }
