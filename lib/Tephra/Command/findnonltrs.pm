@@ -198,6 +198,7 @@ sub _find_nonltr_families {
     $log->info("Results - Number of non-LTR elements (for debugging):         $elemct");
     $log->info("Results - Number of non-LTR elements written (for debugging): $totct");
     
+    # clean up intermediate files
     unlink $_ for values %family_files;
     unlink @{$obj}{qw(fasta gff)};
     for my $fam (keys %family_map) {
@@ -209,6 +210,8 @@ sub _find_nonltr_families {
     # clean up analysis directories after searching for families
     for my $dir (@{$obj->{fasta_dirs}}) {
 	remove_tree( $dir, { safe => 1 } );
+	remove_tree( $dir.'_b', { safe => 1 } )
+	    if -e $dir.'_b';
     }
 
     return;
