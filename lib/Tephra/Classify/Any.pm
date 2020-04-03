@@ -132,6 +132,7 @@ sub parse_blast {
 	    unless (exists $seen{$queryid} || exists $seen{$hitid}) {
 		push @{$matches{$hitid}}, $queryid;
 		$seen{$queryid} = 1;
+		$seen{$hitid} = 1;
 	    }
 	}
     }
