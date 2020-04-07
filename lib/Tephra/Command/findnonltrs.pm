@@ -108,6 +108,8 @@ sub _run_nonltr_search {
 sub _find_nonltr_families {
     my ($opt, $obj, $sf_elem_map) = @_;
 
+    #dd $obj;
+    #dd $sf_elem_map and exit;
     my ($name, $path, $suffix) = fileparse($opt->{gff}, qr/\.[^.]*/);
     my $fasta = $opt->{fasta} // File::Spec->catfile($path, $name.'.fasta');
     my $threads = $opt->{threads} // 1;
