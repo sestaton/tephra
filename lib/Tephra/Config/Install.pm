@@ -48,98 +48,107 @@ has workingdir => (
     coerce   => 1 
 );
 
+has debug => (
+    is         => 'ro',
+    isa        => 'Bool',
+    predicate  => 'has_debug',
+    lazy       => 1,
+    default    => 0,
+);
+
 sub configure_root {
     my $self = shift;
     my $basedir = $self->basedir; #->absolute->resolve;
-
+    my $debug = $self->debug;
+= 
     my $config = Tephra::Config::Exe->new( basedir => $basedir )->get_config_paths;
 
     unless (-e $config->{gt} && -x $config->{gt}) {
-	say STDERR "getting gt";
+	say STDERR "getting GenomeTools" if $debug;
 	$config->{gt} = $self->fetch_gt_exes;
 	print STDERR ".";
     }
 
     unless (-e $config->{vmatchbin} && -x $config->{vmatchbin}) {
-	say STDERR "getting vmatch";
+	say STDERR "getting Vmatch" if $debug;
 	$config->{vmatchbin} = $self->fetch_vmatch_exes;
 	print STDERR ".";
     }
     
     unless (-e $config->{hscanjar}) {
-	say STDERR "getting hscan";
+	say STDERR "getting HSCAN" if $debug;
 	$config->{hscanjar} = $self->fetch_hscan;
 	print STDERR ".";
     }
     
     unless (-e $config->{hmmer2bin}) {
-	say STDERR "getting hmmer2";
+	say STDERR "getting HMMER2" if $debug;
 	$config->{hmmer2bin} = $self->fetch_hmmer2;
 	print STDERR ".";
     }
     
     unless (-e $config->{hmmer3bin}) {
-	say STDERR "getting hmmer3";
+	say STDERR "getting HMMER3" if $debug;
         $config->{hmmer3bin} = $self->fetch_hmmer3;
         print STDERR ".";
     }
     
     unless (-e $config->{trnadb}) {
-	say STDERR "getting trnadb";
+	say STDERR "getting tRNAdb" if $debug;
 	$config->{trnadb} = $self->fetch_trnadb;
 	print STDERR ".";
     }
 
     unless (-e $config->{hmmdb}) {
-	say STDERR "getting hmmdb";
+	say STDERR "getting HMMDB" if $debug;
 	$config->{hmmdb} = $self->fetch_hmmdb;
 	print STDERR ".";
     }
 
     unless (-e $config->{modeldir}) {
-	say STDERR "getting modeldb";
+	say STDERR "getting ModelDB" if $debug;
 	$config->{modeldir} = $self->fetch_hmm_models;
 	print STDERR ".";
     }
     
     unless (-e $config->{hmmdir}) {
-	say STDERR "getting hmmdir";
+	say STDERR "getting HMMdir" if $debug;
 	$config->{hmmdir} = $self->make_chrom_dir;
 	print STDERR ".";
     }
     
     unless (-e $config->{mgescan} && -e $config->{transcmd}) {
-	say STDERR "getting mgescan and trans";
+	say STDERR "getting MGEScan and translate-cmd" if $debug;
 	($config->{mgescan}, $config->{transcmd}) = $self->build_mgescan;
 	print STDERR ".";
     }
     
     unless (-e $config->{pamlbin}) {
-	say STDERR "getting paml";
+	say STDERR "getting PAML" if $debug;
 	$config->{pamlbin} = $self->fetch_paml;
 	print STDERR ".";
     }
     
     unless (-e $config->{transeq}) {
-	say STDERR "getting emboss";
+	say STDERR "getting EMBOSS" if $debug;
 	$config->{transeq} = $self->fetch_emboss;
 	print STDERR ".";
     }
 
     unless (-e $config->{blastpath}) {
-	say STDERR "getting blast";
+	say STDERR "getting BLAST" if $debug;
         $config->{blastpath} = $self->fetch_blast;
 	print STDERR ".";
     }
 
     unless (-e $config->{htslibdir}) {
-	say STDERR "getting htslib";
+	say STDERR "getting HTSlib" if $debug;
         $config->{htslibdir} = $self->fetch_htslib;
 	print STDERR ".";
     }
 
     unless (-e $config->{muscle}) {
-        say STDERR "getting htslib"; 
+        say STDERR "getting MUSCLE" if $debug; 
         $config->{muscle} = $self->fetch_muscle;
         print STDERR ".";
     }
@@ -197,37 +206,66 @@ sub fetch_vmatch_exes {
     ##TODO: fetch from github  
     my $host = 'http://vmatch.de';
     my $dir  = 'distributions';
-    my $page = 'download.html';
-    my $file = 'vmatch_distlisting.html';
-    $self->fetch_file($file, $host."/".$page);
+    #my $page = 'download.html';
+    #my $file = 'vmatch_distlisting.html';
+    my $file = 'vmatch-2.3.0-Linux_x86_64-64bit.tar.gz';
+    #$self->fetch_file($file, $host."/".$page);
     
-    my $tree = HTML::TreeBuilder->new;
-    $tree->parse_file($file);
+    #my $tree = HTML::TreeBuilder->new;
+    #$tree->parse_file($file);
     
-    my ($dist, $ldist, $ldir);
-    for my $tag ($tree->look_down(_tag => 'a')) {
-	if ($tag->attr('href')) {
-	    if ($tag->as_text =~ /Linux_x86_64-64bit.tar.gz\z/) {
-		$dist = $tag->as_text;
-		my $archive = join "/", $host, $dir, $dist;
-		$self->fetch_file($dist, $archive);
-		
-		$ldist = $dist;
-		$ldist =~ s/\.tar.gz\z//;
-		$ldir = File::Spec->catdir($root, 'vmatch');
-		
-		system("tar xzf $dist") == 0 or die $!;
-		
-		move $ldist, $ldir or die "\n[ERROR]: move failed: $!\n";
-		unlink $dist;
-	    }
-	}
-    }
-    unlink $file;
-    
-    my $vmatchbin = File::Spec->catfile($ldir);
+    #my ($dist, $ldist, $ldir);
+    #for my $tag ($tree->look_down(_tag => 'a')) {
+	#if ($tag->attr('href')) {
+	#    if ($tag->as_text =~ /Linux_x86_64-64bit.tar.gz\z/) {
+	#	$dist = $tag->as_text;
+	#	my $archive = join "/", $host, $dir, $dist;
+	#	$self->fetch_file($dist, $archive);
+	#	
+	#	$ldist = $dist;
+	#	$ldist =~ s/\.tar.gz\z//;
+	#	$ldir = File::Spec->catdir($root, 'vmatch');
+	#	
+	#	system("tar xzf $dist") == 0 or die $!;
+	#	
+	#	move $ldist, $ldir or die "\n[ERROR]: move failed: $!\n";
+	#	unlink $dist;
+	 #   }
+	#}
+    #}
+    #unlink $file;
+    #my $urlbase = 'https://github.com';
+    #my $dir     = 'genometools';
+    #my $tool    = 'vstree';
+    #my $release = 'archive';
+    #my $version = '2.3.1';
+    #my $file    = 'v2.3.1.tar.gz';
+    my $url     = join "/", $host, $dir, $file;
+    my $outfile = File::Spec->catfile($root, $file);
 
-    return $vmatchbin;
+    system("wget -q -O $outfile $url 2>&1 > /dev/null") == 0
+        or die $!;
+    chdir $root;
+    my $dist = 'vmatch-2.3.0-Linux_x86_64-64bit';
+    my $ldir = File::Spec->catdir($root, $dist);
+    my $vbin = File::Spec->catdir($root, 'vmatch');
+    system("tar xzf $file") == 0 or die "tar failed: $!";
+    #chdir $dist;
+    #my $cwd = getcwd();
+    #system("./configure --prefix=$cwd 2>&1 > /dev/null") == 0
+    #    or die "configure failed: $!";
+    #system("make -j4 2>&1 > /dev/null") == 0 
+    #    or die "make failed: $!";
+    #system("make install 2>&1 > /dev/null") == 0
+    #    or die "make failed: $!";
+    
+    #my $distfile = File::Spec->catfile($root, $file);
+    #unlink $distfile;
+    move $ldir, $bdir or die "\n[ERROR]: move failed: $!\n";
+
+    #my $vmatchbin = File::Spec->catdir($bdir, );
+
+    return $vbin;
 }
 
 sub fetch_hscan {
