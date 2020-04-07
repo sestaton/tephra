@@ -10,15 +10,8 @@ set -euo pipefail
 #tar xjf tephra-deps-ubuntu-precise.tar.bz2
 #cd $dir
 
-#wget http://eddylab.org/software/hmmer3/3.1b2/hmmer-3.1b2-linux-intel-x86_64.tar.gz
-#tar xzf hmmer-3.1b2-linux-intel-x86_64.tar.gz
-#sudo cp hmmer-3.1b2-linux-intel-x86_64/binaries/* /usr/local/bin/
-##
-
-perl Makefile.PL
+perl Makefile.PL --debug
 make 
-#perl -Mblib blib/bin/tephra findltrs
-#cover -test -blib -ignore "blib/lib/Tephra/Command.pm" -report coveralls
 #prove -bv t/04-findtirs.t
 #prove -bv t/0[45]*t
 make test
