@@ -12,6 +12,7 @@ use File::Spec;
 use File::Find;
 use Bio::SearchIO;
 use Try::Tiny;
+#use Parallel::ForkManager;
 use Tephra::NonLTR::SeqUtils;
 use Tephra::Config::Exe;
 use namespace::autoclean;
@@ -71,6 +72,14 @@ sub run_mgescan {
 	return;
     }
 
+    # set up parallel processing of both RT and APE domains
+    #my $pm = Parallel::ForkManager->new(2);
+    #local $SIG{INT} = sub {
+        #warn("Caught SIGINT; Waiting for child processes to finish.");
+        #$pm->wait_all_children;
+        #exit 1;
+    #};
+
     say STDERR "    RT signal..." if $self->verbose;
     my $phmm_file = File::Spec->catfile($phmm_dir, 'ebi_ds36752_seq.hmm');
     my $domain_rt_pos_file = File::Spec->catfile($pos_dir, $dna_name.$dna_suffix.'.rt.pos');
@@ -80,7 +89,19 @@ sub run_mgescan {
     $phmm_file = File::Spec->catfile($phmm_dir, 'ebi_ds36736_seq.hmm');
     my $domain_ape_pos_file = File::Spec->catfile($pos_dir, $dna_name.$dna_suffix.'.ape.pos');
     $self->get_signal_domain($pep_file, $phmm_file, $domain_ape_pos_file);
-    
+    #$self->get_signal_domain($pep_file, $phmm_file, $domain_rt_pos_file);
+    #for my $file ($domain_ape_pos_file, $domain_rt_pos_file) {
+	#say STDERR "====> SEARCHING $file";
+        #$pm->start($file) and next;
+        #$SIG{INT} = sub { $pm->finish };
+        
+	#$self->get_signal_domain($pep_file, $phmm_file, $file); 
+
+        #$pm->finish(0);
+    #}
+
+    #$pm->wait_all_children;
+
     # generate corresponsing empty domains files if either of them does not exist 
     if (-e $domain_rt_pos_file || -e $domain_ape_pos_file ) {
 	#print $dna_name."\n" if $self->verbose;	
@@ -121,7 +142,7 @@ sub run_mgescan {
 
 sub get_signal_domain {
     my $self = shift;
-    my ($pep_file, $phmm_file, $domain_rt_pos_file) = @_;
+    my ($pep_file, $phmm_file, $domain_pos_file) = @_;
     my $threads = $self->threads;
 
     # debugging
@@ -132,9 +153,9 @@ sub get_signal_domain {
     my %domain_end;
     my %domain_pos;
     my $evalue;
-    my $temp_file   = $domain_rt_pos_file.'temp';
-    my $stemp_file  = $domain_rt_pos_file.'temp_sorted';
-    my $output_file = $domain_rt_pos_file;
+    my $temp_file   = $domain_pos_file.'temp';
+    my $stemp_file  = $domain_pos_file.'temp_sorted';
+    my $output_file = $domain_pos_file;
 
     # run hmmsearch to find the domain and save it in the temprary file
     my $hmmsearch   = $self->find_hmmsearch;
