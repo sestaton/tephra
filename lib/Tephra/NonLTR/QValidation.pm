@@ -112,19 +112,23 @@ sub get_domain_coords {
 
     my $clade = $obj->{domain} eq 'en' ? $obj->{en_clade} : $obj->{all_clade};
 
-    $self->get_domain_for_full_frag($obj->{genome}, $obj->{domain}, $clade,  $obj->{dir}, $obj->{hmm_dir});
-    $self->get_QVal($obj->{domain}, $obj->{clade_dirs}, $obj->{valid_dir}, $obj->{hmm_dir}, $clade);
+    $self->get_domain_for_full_frag($obj, $clade);
+    $self->get_QVal($obj, $clade);
 
     return { domain => $obj->{domain} };
 }
 
 sub get_QVal {
     my $self = shift;
-    my ($domain, $cladedirs, $validation_dir, $hmm_dir, $dom_clade) = @_;
+    my ($obj, $dom_clade) = @_;
+
+    my ($domain, $clade_dirs, $validation_dir, $hmm_dir) =
+        @{$obj}{qw(domain clade_dirs valid_dir hmm_dir)};
+
     my $validation_file = File::Spec->catfile($validation_dir, $domain);
     my $evalue_file     = File::Spec->catfile($validation_dir, $domain.'_evalue');
 
-    for my $clade (@$cladedirs) {
+    for my $clade (@$clade_dirs) {
         my $name = basename($clade);
         my $seq  = File::Spec->catfile($clade, $name.'.'.$domain.'.pep');
         if (-e $seq) {
@@ -137,7 +141,10 @@ sub get_QVal {
 
 sub get_domain_for_full_frag {
     my $self = shift;
-    my ($genome, $domain, $clade_dir, $dir, $hmm_dir) = @_;
+    my ($obj, $clade_dir) = @_;
+
+    my ($genome, $domain, $dir, $hmm_dir) =
+	@{$obj}{qw(genome domain dir hmm_dir)};
 
     for my $clade (@$clade_dir) {
 	my $resdir   = File::Spec->catdir($dir, 'info', 'full', $clade);
