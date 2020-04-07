@@ -55,91 +55,91 @@ sub configure_root {
     my $config = Tephra::Config::Exe->new( basedir => $basedir )->get_config_paths;
 
     unless (-e $config->{gt} && -x $config->{gt}) {
-	#say STDERR "getting gt";
+	say STDERR "getting gt";
 	$config->{gt} = $self->fetch_gt_exes;
 	print STDERR ".";
     }
 
     unless (-e $config->{vmatchbin} && -x $config->{vmatchbin}) {
-	#say STDERR "getting vmatch";
+	say STDERR "getting vmatch";
 	$config->{vmatchbin} = $self->fetch_vmatch_exes;
 	print STDERR ".";
     }
     
     unless (-e $config->{hscanjar}) {
-	#say STDERR "getting hscan";
+	say STDERR "getting hscan";
 	$config->{hscanjar} = $self->fetch_hscan;
 	print STDERR ".";
     }
     
     unless (-e $config->{hmmer2bin}) {
-	#say STDERR "getting hmmer2";
+	say STDERR "getting hmmer2";
 	$config->{hmmer2bin} = $self->fetch_hmmer2;
 	print STDERR ".";
     }
     
     unless (-e $config->{hmmer3bin}) {
-	#say STDERR "getting hmmer3";
+	say STDERR "getting hmmer3";
         $config->{hmmer3bin} = $self->fetch_hmmer3;
         print STDERR ".";
     }
     
     unless (-e $config->{trnadb}) {
-	#say STDERR "getting trnadb";
+	say STDERR "getting trnadb";
 	$config->{trnadb} = $self->fetch_trnadb;
 	print STDERR ".";
     }
 
     unless (-e $config->{hmmdb}) {
-	#say STDERR "getting hmmdb";
+	say STDERR "getting hmmdb";
 	$config->{hmmdb} = $self->fetch_hmmdb;
 	print STDERR ".";
     }
 
     unless (-e $config->{modeldir}) {
-	#say STDERR "getting modeldb";
+	say STDERR "getting modeldb";
 	$config->{modeldir} = $self->fetch_hmm_models;
 	print STDERR ".";
     }
     
     unless (-e $config->{hmmdir}) {
-	#say STDERR "getting hmmdir";
+	say STDERR "getting hmmdir";
 	$config->{hmmdir} = $self->make_chrom_dir;
 	print STDERR ".";
     }
     
     unless (-e $config->{mgescan} && -e $config->{transcmd}) {
-	#say STDERR "getting mgescan and trans";
+	say STDERR "getting mgescan and trans";
 	($config->{mgescan}, $config->{transcmd}) = $self->build_mgescan;
 	print STDERR ".";
     }
     
     unless (-e $config->{pamlbin}) {
-	#say STDERR "getting paml";
+	say STDERR "getting paml";
 	$config->{pamlbin} = $self->fetch_paml;
 	print STDERR ".";
     }
     
     unless (-e $config->{transeq}) {
-	#say STDERR "getting emboss";
+	say STDERR "getting emboss";
 	$config->{transeq} = $self->fetch_emboss;
 	print STDERR ".";
     }
 
     unless (-e $config->{blastpath}) {
-	#say STDERR "getting blast";
+	say STDERR "getting blast";
         $config->{blastpath} = $self->fetch_blast;
 	print STDERR ".";
     }
 
     unless (-e $config->{htslibdir}) {
-	#say STDERR "getting htslib";
+	say STDERR "getting htslib";
         $config->{htslibdir} = $self->fetch_htslib;
 	print STDERR ".";
     }
 
     unless (-e $config->{muscle}) {
-        #say STDERR "getting htslib"; 
+        say STDERR "getting htslib"; 
         $config->{muscle} = $self->fetch_muscle;
         print STDERR ".";
     }
@@ -154,6 +154,7 @@ sub fetch_gt_exes {
     my $root = $self->basedir->absolute->resolve;
     my $wd   = $self->workingdir->absolute->resolve;
     
+    ##TODO: fetch from github  
     my $host = 'http://genometools.org';
     my $dir  = 'pub/binary_distributions';
     my $file = 'gt_distlisting.html';
@@ -193,6 +194,7 @@ sub fetch_vmatch_exes {
     my $root = $self->basedir->absolute->resolve;
     my $wd   = $self->workingdir->absolute->resolve;
     
+    ##TODO: fetch from github  
     my $host = 'http://vmatch.de';
     my $dir  = 'distributions';
     my $page = 'download.html';
@@ -280,7 +282,8 @@ sub fetch_hmmer2 {
     my $self = shift;
     my $root = $self->basedir->absolute->resolve;
     my $wd   = $self->workingdir->absolute->resolve;
-    
+
+    ##TODO: fetch from github
     my $urlbase = 'http://eddylab.org'; 
     my $dir     = 'software';
     my $tool    = 'hmmer';
@@ -314,6 +317,7 @@ sub fetch_hmmer3 {
     my $root = $self->basedir->absolute->resolve;
     my $wd   = $self->workingdir->absolute->resolve;
     
+    ##TODO: fetch from github  
     my $urlbase = 'http://eddylab.org'; 
     my $dir     = 'software';
     my $tool    = 'hmmer3';
