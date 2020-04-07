@@ -1,6 +1,31 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.12.6	04/07/2020	Vancouver, BC
+
+New features:
+ - Add parallel search of both strands for non-LTR retrotransposons, which reduces
+   user runtime by about 50% if multiple CPUs are available.
+ - Use multiple CPUs (if requested) for HMM model searches for non-LTR elements.
+ - Greatly simplify call to class methods for finding non-LTRs based on the use of 
+   new class attributes (req. fewer method arguments).
+ - Add resusable for writing/annotating elements (both for families and singleton
+   elements) in Tephra::Classify::Any.
+ - Warn now when filtering Helitron/non-LTR elements based on N%.
+
+Bug fixes:
+ - Adjust non-LTR element N% filtering logic to keep FASTA and GFF3 IDs properly in sync.
+ - Improve logic for classifying Helitron and non-LTR retrotransposon families by storing
+   full sequence IDs so no regex or transformations are needed.
+ - Adjust method for writing elements in Tephra::Classify::Any to include all elements in
+   a cluster (query and hits) above the threshold.
+ - As with other family-level classification methods in Tephra, search for families only within
+   a superfamily for Helitrons and non-LTR elements.
+
+Misc:
+- Add role method (*store_seq()) for hashing sequences+IDs that can be used in other classes.
+
+
 0.12.5	08/26/2019	Vancouver, BC
 
 New features:
