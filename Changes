@@ -12,6 +12,7 @@ New features:
  - Add resusable for writing/annotating elements (both for families and singleton
    elements) in Tephra::Classify::Any.
  - Warn now when filtering Helitron/non-LTR elements based on N%.
+ - Add --debug option for monitoring config/install process.
 
 Bug fixes:
  - Adjust non-LTR element N% filtering logic to keep FASTA and GFF3 IDs properly in sync.
@@ -24,7 +25,6 @@ Bug fixes:
 
 Misc:
 - Add role method (*store_seq()) for hashing sequences+IDs that can be used in other classes.
-
 
 0.12.5	08/26/2019	Vancouver, BC
 
