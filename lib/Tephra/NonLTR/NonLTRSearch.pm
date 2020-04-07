@@ -77,7 +77,7 @@ sub find_nonltrs {
     die "\n[ERROR]: No FASTA files found in genome directory. Sequences must be over 50kb and less than 50% gaps. Exiting.\n" 
 	if @$fasfiles == 0;
 
-     # create data directories for reverse strand
+    # create data directories for reverse strand
     my $sequtils = Tephra::NonLTR::SeqUtils->new;
     my $revfasfiles = $sequtils->invert_seq($genome_dir, $minus_dna_dir);
     die "\n[ERROR]: No FASTA files found in genome directory. Sequences must be over 50kb and less than 50% gaps. Exiting.\n"
@@ -119,7 +119,7 @@ sub find_nonltrs {
     $pm->wait_all_children;
 
     ##say STDERR "Running forward..." if $self->verbose;
-    if ($is_pos_success && $is_rev_success) {
+    if ($is_pos_success || $is_rev_success) {
 	# Validation for Q value
 	my $pp2 = Tephra::NonLTR::QValidation->new( 
 	    outdir  => $main_data_dir, 
@@ -160,10 +160,21 @@ sub run_model_search_and_postprocess {
 
     my $reverse = defined $strand && $strand eq 'plus' ? 0 : 1;
 
+    # set up parallel processing of each chromosome 
+    #my $pm = Parallel::ForkManager->new(2);
+    #local $SIG{INT} = sub {
+        #warn("Caught SIGINT; Waiting for child processes to finish.");
+        #$pm->wait_all_children;
+        #exit 1;
+    #};
+
     #say "\nDEBUG: fasfiles\n";
     #dd $fasfiles;
     # run HMM model search
     for my $file (sort @$fasfiles) {
+	#$pm->start($file) and next;
+        #$SIG{INT} = sub { $pm->finish };
+
         my $run_hmm = Tephra::NonLTR::RunHMM->new(
             fasta    => $file,
             fastadir => $genome_dir,
@@ -171,10 +182,12 @@ sub run_model_search_and_postprocess {
             phmmdir  => $phmm_dir,
             pdir     => $program_dir,
             strand   => $strand,
-            threads  => $threads,
+            threads  => $thr,
             verbose  => $self->verbose );
         $run_hmm->run_mgescan;
     }
+
+    #$pm->wait_all_children;
 
     # run postprocessing
     my $pp = Tephra::NonLTR::Postprocess->new(
