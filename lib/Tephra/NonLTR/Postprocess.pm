@@ -39,7 +39,8 @@ sub postprocess {
     # identify full and frag
      my ($outr_full_file, $outr_frag_file) = $self->merge_thmm($out_dir, $dna_dir);
     
-    if (-s $outr_full_file && -s $outr_frag_file) {
+    #if (-s $outr_full_file && -s $outr_frag_file) {
+    if (-s $outr_full_file || -s $outr_frag_file) {
 	# convert minus coordinates to plus coordinates
 	if ($rev == 1) {
 	    my $full_result = $outr_full_file.'_converted';
@@ -301,16 +302,16 @@ sub get_sequence_id {
     return ($genome, $head);
 }
 
-sub _filterNpercent {
-    my $self = shift;
-    my ($sequence) = @_;
+#sub _filterNpercent {
+#    my $self = shift;
+#    my ($sequence) = @_;
 
-    my $length  = length($sequence);
-    my $n_count = ($sequence =~ tr/Nn//);
-    my $n_perc  = sprintf("%.2f",$n_count/$length);
+#    my $length  = length($sequence);
+#    my $n_count = ($sequence =~ tr/Nn//);
+#    my $n_perc  = sprintf("%.2f",$n_count/$length);
 
-    return $n_perc;
-}
+#    return $n_perc;
+#}
 
 =head1 AUTHOR
 
