@@ -60,7 +60,7 @@ sub configure_root {
     my $self = shift;
     my $basedir = $self->basedir; #->absolute->resolve;
     my $debug = $self->debug;
-= 
+
     my $config = Tephra::Config::Exe->new( basedir => $basedir )->get_config_paths;
 
     unless (-e $config->{gt} && -x $config->{gt}) {
@@ -261,7 +261,7 @@ sub fetch_vmatch_exes {
     
     #my $distfile = File::Spec->catfile($root, $file);
     #unlink $distfile;
-    move $ldir, $bdir or die "\n[ERROR]: move failed: $!\n";
+    move $ldir, $vbin or die "\n[ERROR]: move failed: $!\n";
 
     #my $vmatchbin = File::Spec->catdir($bdir, );
 
@@ -461,7 +461,7 @@ sub fetch_emboss {
     system("tar xzf $file") == 0 or die "tar failed: $!";
     chdir $dist;
     my $cwd = getcwd();
-    system("./configure --without-x --prefix=$cwd 2>&1 > /dev/null") == 0
+    system("./configure --without-x --without-mysql --prefix=$cwd 2>&1 > /dev/null") == 0
 	or die "configure failed: $!";
     system("make -j4 2>&1 > /dev/null") == 0 
 	or die "make failed: $!";
