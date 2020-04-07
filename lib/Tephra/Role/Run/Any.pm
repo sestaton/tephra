@@ -13,11 +13,11 @@ Tephra::Role::Run::Any - Helper role for running shell commands
 
 =head1 VERSION
 
-Version 0.12.5
+Version 0.12.6
 
 =cut
 
-our $VERSION = '0.12.5';
+our $VERSION = '0.12.6';
 $VERSION = eval $VERSION;
 
 sub run_cmd {
