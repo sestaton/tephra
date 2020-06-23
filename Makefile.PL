@@ -18,7 +18,7 @@ if (eval ($ExtUtils::MakeMaker::VERSION) <= 6.55) {
 
 WriteMakefile(
     NAME             => 'Tephra',
-    AUTHOR           => q{S. Evan Staton <statonse@gmail.com>},
+    AUTHOR           => q{S. Evan Staton <evan@evanstaton.com>},
     VERSION_FROM     => 'bin/tephra',
     LICENSE          => 'MIT',
     PL_FILES         => {},
