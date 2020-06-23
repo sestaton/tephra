@@ -149,7 +149,7 @@ sub _filter_tir_gff {
     }
     
     @rt_domains = uniq(@rt_domains);
-     for my $rep_region (@rt_domains) {
+    for my $rep_region (@rt_domains) {
 	my ($chr, $rregion) = split /\~\~/, $rep_region;
 	delete $features->{$chr}{$rregion};
     }
