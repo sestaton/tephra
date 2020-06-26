@@ -302,17 +302,6 @@ sub get_sequence_id {
     return ($genome, $head);
 }
 
-#sub _filterNpercent {
-#    my $self = shift;
-#    my ($sequence) = @_;
-
-#    my $length  = length($sequence);
-#    my $n_count = ($sequence =~ tr/Nn//);
-#    my $n_perc  = sprintf("%.2f",$n_count/$length);
-
-#    return $n_perc;
-#}
-
 =head1 AUTHOR
 
 S. Evan Staton, C<< <evan at evanstaton.com> >>
