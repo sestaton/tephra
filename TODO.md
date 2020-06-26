@@ -33,7 +33,7 @@ This file is for logging feature requests and bugs during development. Hopefully
        number of DTX elements. Add this to the configuration file for the 'all' command the same as for LTRs.
  - [x] Mark short elements with no coding potential as MITEs
  - [x] Output FASTA along with GFF3 like other commands
-
+ - [ ] Split input genome by chromosome to parallelize this (the most time-consuming) part of the analysis
 ## Command `tephra sololtr`
  - [x] Create HMM of LTRs for each LTR-RT
  - [x] Search masked ref with LTR HMM
@@ -208,6 +208,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] check to see if we are calculating examplars for all TE types
  - [x] in DEV test mode, use A. thaliana for all tests
  - [ ] in DEV test mode, change ENV var to 'dev' instead of 'development'
+ - [ ] adjust alignment of stats in log to right-justified
 
 ## Docker image
  - [ ] reduce EMBOSS install to only required programs
