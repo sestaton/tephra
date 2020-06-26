@@ -50,6 +50,11 @@ sub run_mgescan {
     my $pdir     = $self->pdir->absolute->resolve;
     my $strand   = $self->strand;
 
+    # set PATHs for mgescan
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my ($tephrabin, $mgescan, $chrhmm) = @{$config}{qw(tephrabin mgescan chrhmm)};
+    $ENV{PATH} = join ':', $ENV{PATH}, $tephrabin;
+
     my $sequtils = Tephra::NonLTR::SeqUtils->new( verbose => $self->verbose );
     my ($dna_name, $dna_path, $dna_suffix) = fileparse($dna_file, qr/\.[^.]*/);
     my $outf_dir = File::Spec->catdir($out_dir, 'out1');
@@ -118,18 +123,12 @@ sub run_mgescan {
 
 	# run hmm
 	say STDERR "Running HMM..." if $self->verbose;
-
-	my $mgescan  = File::Spec->catfile($pdir, 'hmm', 'tephra-MGEScan');
 	my $out_file = File::Spec->catfile($outf_dir, $dna_name.$dna_suffix);
-	my $chrhmm   = File::Spec->catfile($pdir, 'hmm', 'chr.hmm');
 	my $ldir = $pdir.'/';
 	$outf_dir .= '/';
-	my $tephra_dir = $ENV{TEPHRA_DIR} // File::Spec->catfile($ENV{HOME}, '.tephra');
-	$ENV{PATH} = join ':', $ENV{PATH}, File::Spec->catfile($tephra_dir, 'EMBOSS-6.5.7', 'bin');
 	my $cmd = "$mgescan -m $chrhmm -s $dna_file -r $domain_rt_pos_file -a $domain_ape_pos_file -o $out_file -p $ldir -d $outf_dir";
 	say STDERR "CMD: $cmd" if $self->verbose;
 	system($cmd);
-	#exit;
     }
 
     # not implemented
