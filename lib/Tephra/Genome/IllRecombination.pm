@@ -373,9 +373,8 @@ sub bl2seq_compare {
     my ($rtmp_fh, $rtmp_filename) = tempfile( TEMPLATE => $tmpiname, DIR => $fpath, SUFFIX => '.fasta', UNLINK => 0 );
     my ($tmp_outfh, $tmp_outfile) = tempfile( TEMPLATE => $tmpiname, DIR => $fpath, SUFFIX => '.blo',   UNLINK => 0 );
 
-    my $config  = Tephra::Config::Exe->new->get_config_paths;
-    my ($blastbin) = @{$config}{qw(blastpath)};
-    my $blastn  = File::Spec->catfile($blastbin, 'blastn');
+    my $config = Tephra::Config::Exe->new->get_config_paths;
+    my $blastn = $config->{blastn};
 
     say $qtmp_fh join "\n", ">".$upstr_id, $upstr_seq;
     say $rtmp_fh join "\n", ">".$downstr_id, $downstr_seq;
@@ -384,8 +383,8 @@ sub bl2seq_compare {
 
     my $blcmd = "$blastn -query $qtmp_filename -subject $rtmp_filename -word_size 4 -outfmt 5 -out $tmp_outfile 2>&1 | ";
     $blcmd .= "egrep -v \"CFastaReader|Error\" | ";
-    $blcmd .= "sed \'/^ *\$/d\'"; ## This is a hack for these warnings. I'm throwing away the errors which is why it's a hack but
-                                  ## they are not informative. Need to find a workaround for this.
+    $blcmd .= "sed \'/^ *\$/d\'"; ## These warnings are not informative (relating to short sequences) so it is safe to get rid of them.
+
     $self->run_cmd($blcmd);
     unlink $qtmp_filename, $rtmp_filename;
 
