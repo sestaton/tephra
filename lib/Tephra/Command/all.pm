@@ -52,7 +52,7 @@ sub validate_args {
 sub execute {
     my ($self, $opt, $args) = @_;
 
-    my $gff = _run_all_commands($opt);
+    my $success = _run_all_commands($opt);
 }
 
 sub _run_all_commands {
@@ -359,11 +359,9 @@ sub _run_all_commands {
 
     ## clean up
     my $exe_conf = Tephra::Config::Exe->new->get_config_paths;
-    my $gt = $exe_conf->{gt};
-    my $vmatchbin = $exe_conf->{vmatchbin};
-    my $clean_vmidx = File::Spec->catfile($vmatchbin, 'cleanpp.sh');
+    my ($gt, $cleanpp) = @{$exe_conf}{qw(gt cleanpp)};
 
-    $tephra_obj->capture_cmd($clean_vmidx);
+    $tephra_obj->capture_cmd($cleanpp);
     $tephra_obj->capture_cmd($gt, 'clean');
     my @fais = glob "*.fai";
     unlink @fais;
@@ -390,6 +388,8 @@ sub _run_all_commands {
 
     # Log summary of results
     $tephra_obj->log_interval( $tzero, $log );
+
+    return 1;
 }
 
 #
