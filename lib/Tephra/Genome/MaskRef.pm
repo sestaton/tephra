@@ -237,9 +237,7 @@ sub run_masking {
     };
 
     my $config = Tephra::Config::Exe->new->get_config_paths;
-    my ($vmatchbin) = @{$config}{qw(vmatchbin)};
-    my $vmatch  = File::Spec->catfile($vmatchbin, 'vmatch');
-    my $mkvtree = File::Spec->catfile($vmatchbin, 'mkvtree');
+    my ($vmatch, $mkvtree) = @{$config}{qw(vmatch mkvtree)};
 
     my $mkvtreec = "$mkvtree -db $wchr -indexname $index -dna -allout -v -pl 2>&1 > $mkvtree_log";
     my $vmatchm  = "$vmatch -p -d -q $repeatdb -qspeedup 2 -l $length -best 10000 -identity $pid -dbmaskmatch N $index 1> $outpart 2> $vmatch_mlog";
