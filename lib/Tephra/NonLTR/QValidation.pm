@@ -96,6 +96,7 @@ sub validate_q_score {
 
 	#unless (defined $dom->{domain}) {
 	    #say STDERR "\n[MAYDAY]: domain => $domain, $dir, $hmm_dir, $validation_dir, $genome";
+	    #dd $dom;
 	#}
 
 	$pm->finish(0, $dom);
