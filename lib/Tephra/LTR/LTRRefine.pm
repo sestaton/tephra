@@ -568,7 +568,7 @@ sub reduce_features {
 	next if $s eq 'total_num';
 	my $l = 40 - length($s);
 	my $pad = ' ' x $l;
-	$log->info("Results - Number of elements filtered by '$s':$pad",$best_stats{$s});
+	$log->info("Results - Number of elements filtered by '$s':$pad ",$best_stats{$s});
     }
 
     $log->info("Results - Number of elements found with 'relaxed' constraints:                       $rel_tot");
@@ -697,7 +697,7 @@ sub sort_features {
 	#"Number of 'combined' non-overlapping elements:                              439"
 	#say STDERR "\nTotal elements written: $elem_tot";
 	my $pad = ' ' x 51;	       
-	$log->info("Results - Total elements written:$pad",$elem_tot);
+	$log->info("Results - Total elements written:$pad ",$elem_tot);
     }
     else {
 	open my $in, '<', $gff, or die "\n[ERROR]: Could not open file: $gff\n";
@@ -727,7 +727,7 @@ sub sort_features {
 	#say STDERR "\nTotal elements written: $elem_tot";
 	#$log->info("Results - Total elements written: $elem_tot");
 	my $pad = ' ' x 51;
-        $log->info("Results - Total elements written:$pad",$elem_tot);
+        $log->info("Results - Total elements written:$pad ",$elem_tot);
     }
     close $ofas;
 
