@@ -4,7 +4,7 @@ use 5.014;
 use Moose;
 use MooseX::Types::Path::Class;
 use File::Spec;
-use File::Path qw(make_path remove_tree);
+use File::Path qw(make_path);
 use Log::Any   qw($log);
 use File::Basename;
 use namespace::autoclean;
@@ -35,58 +35,60 @@ sub get_config_paths {
     my $self = shift;
     my $root = $self->basedir; #->absolute->resolve;
 
-    unless (-e $root) {
-        make_path($root, {verbose => 0, mode => 0711,});
+    my $bindir = File::Spec->catdir($root, 'bin');
+    unless (-e $bindir) {
+        make_path($bindir, {verbose => 0, mode => 0711,});
     }
 
-    # we don't want to reconfigure every time the tests run 
-    my $gt      = File::Spec->catfile($root,   'gt', 'bin', 'gt');
-    my $vmbin   = File::Spec->catfile($root,   'vmatch');
-    my $hscan   = File::Spec->catfile($root,   'helitronscanner', 'HelitronScanner', 'HelitronScanner.jar');
-    my $hmm2bin = File::Spec->catdir($root,    'hmmer-2.3.2', 'bin');
-    my $hmm3bin = File::Spec->catdir($root,    'hmmer-3.1b2-linux-intel-x86_64', 'binaries');
-    my $trnadb  = File::Spec->catfile($root,   'TephraDB', 'eukaryotic-tRNAs.fa');
-    my $hmmdb   = File::Spec->catfile($root,   'TephraDB', 'transposable+element.hmm');
-    my $moddir  = File::Spec->catdir($root,    'pHMM');
-    my $chrdir  = File::Spec->catdir($root,    'hmm');
-    my $mgescan = File::Spec->catfile($chrdir, 'tephra-MGEScan');
-    my $transla = File::Spec->catfile($chrdir, 'tephra-translate');
-    my $pamlbin = File::Spec->catdir($root,    'paml4.8', 'bin');
-    my $transeq = File::Spec->catdir($root,    'EMBOSS-6.5.7', 'bin', 'transeq');
-    my $blastph = File::Spec->catdir($root,    'ncbi-blast+', 'bin');
-    my $htsdir  = File::Spec->catdir($root,    'htslib-1.3.1', 'htslib');
-    my $musbin  = File::Spec->catdir($root,    'muscle', 'muscle');
+    ## Binaries that are part of, or used by, Tephra
+    my $baseml   = File::Spec->catfile($bindir, 'baseml');
+    my $vmatch   = File::Spec->catfile($bindir, 'vmatch');
+    my $mkvtree  = File::Spec->catfile($bindir, 'mkvtree');
+    my $cleanpp  = File::Spec->catfile($bindir, 'cleanpp.sh');
+    my $gt       = File::Spec->catfile($bindir, 'gt');
+    my $musbin   = File::Spec->catfile($bindir, 'muscle');
+    my $transeq  = File::Spec->catfile($bindir, 'transeq');
+    my $blastn   = File::Spec->catfile($bindir, 'blastn');
+    my $mblastdb = File::Spec->catfile($bindir, 'makeblastdb');
+    my $mgescan  = File::Spec->catfile($bindir, 'tephra-MGEScan');
+    my $transla  = File::Spec->catfile($bindir, 'tephra-translate');
 
-    # this is to avoid building each time
-    #my @path = split /:|;/, $ENV{PATH};    
-    #for my $p (@path) {
-	#my $texe = File::Spec->catfile($p, 'transeq');
-	#my $bexe = File::Spec->catfile($p, 'blastn');
-	#if (-e $texe && -x $texe) {
-	#    $transeq = $texe;
-	#}
-	#if (-e $bexe && -x $bexe) {
-	#    $blastph = $p;
-	#}
-    #}
+    ## Required libraries and deps that cannot be easily dropped into the same bin directory
+    my $htsdir  = File::Spec->catdir($root,  'htslib-1.3.1', 'htslib');
+    my $hscan   = File::Spec->catfile($root, 'helitronscanner', 'HelitronScanner', 'HelitronScanner.jar');
+    my $hmm2bin = File::Spec->catdir($root,  'hmmer-2.3.2', 'bin');
+    my $hmm3bin = File::Spec->catdir($root,  'hmmer-3.1b2', 'binaries');
+
+    ## Databases and models used by Tephra 
+    my $tephradb = File::Spec->catfile($root,     'TephraDB');
+    my $trnadb   = File::Spec->catfile($tephradb, 'eukaryotic-tRNAs.fa');
+    my $hmmdb    = File::Spec->catfile($tephradb, 'transposable+element.hmm');
+    my $chrhmm   = File::Spec->catfile($tephradb, 'mgescan-chr.hmm');
+    my $moddir   = File::Spec->catdir($root,      'pHMM');
 
     return ({
-        gt         => $gt,
-	vmatchbin  => $vmbin,
-        hscanjar   => $hscan,
-        hmmer2bin  => $hmm2bin,
-	hmmer3bin  => $hmm3bin,
-        modeldir   => $moddir,
-	trnadb     => $trnadb,
-	hmmdb      => $hmmdb,
-        hmmdir     => $chrdir,
-        mgescan    => $mgescan,
-        transcmd   => $transla,
-        pamlbin    => $pamlbin,
-        transeq    => $transeq,
-        blastpath  => $blastph,
-	htslibdir  => $htsdir,
-	muscle     => $musbin });
+	tephrabin   => $bindir,
+	tephradb    => $tephradb,
+        gt          => $gt,
+	vmatch      => $vmatch,
+	mkvtree     => $mkvtree,
+	cleanpp     => $cleanpp,
+        hscanjar    => $hscan,
+        hmmer2bin   => $hmm2bin,
+	hmmer3bin   => $hmm3bin,
+        modeldir    => $moddir,
+	trnadb      => $trnadb,
+	hmmdb       => $hmmdb,
+        hmmdir      => $tephradb,
+	chrhmm      => $chrhmm,
+        mgescan     => $mgescan,
+        transcmd    => $transla,
+        baseml      => $baseml,
+        transeq     => $transeq,
+        blastn      => $blastn,
+	makeblastdb => $mblastdb,
+	htslibdir   => $htsdir,
+	muscle      => $musbin });
 }
 
 =head1 AUTHOR
