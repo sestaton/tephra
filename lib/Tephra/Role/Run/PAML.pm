@@ -189,8 +189,7 @@ sub _build_baseml_exec {
     }
     elsif (! defined $blexe) {
 	my $config = Tephra::Config::Exe->new->get_config_paths;
-	my ($pamlbin) = @{$config}{qw(pamlbin)};
-	$blexe = File::Spec->catfile($pamlbin, 'baseml');
+	$blexe = $config->{baseml};
 	if (-e $blexe && -x $blexe) {
 	    $self->set_baseml_exec($blexe);
 	    return $blexe;
