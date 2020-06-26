@@ -161,11 +161,9 @@ sub find_transposon_fragments {
 
     ## clean up
     my $exe_conf = Tephra::Config::Exe->new->get_config_paths;
-    my $vmatchbin = $exe_conf->{vmatchbin};
-    my $gt = $exe_conf->{gt};
-    my $clean_vmidx = File::Spec->catfile($vmatchbin, 'cleanpp.sh');
+    my ($gt, $cleanpp) = @{$exe_conf}{qw(gt cleanpp)};
 
-    $self->capture_cmd($clean_vmidx);
+    $self->capture_cmd($cleanpp);
     $self->capture_cmd($gt, 'clean');
     unlink $genome.'.fai';
     unlink $_ for @$genome_parts;
