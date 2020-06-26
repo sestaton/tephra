@@ -554,9 +554,7 @@ sub process_cluster_args {
     my $log   = File::Spec->catfile( abs_path($path), $name.'_vmatch-out.log' );
 
     my $config = Tephra::Config::Exe->new->get_config_paths;
-    my ($vmatchbin) = @{$config}{qw(vmatchbin)};
-    my $vmatch  = File::Spec->catfile($vmatchbin, 'vmatch');
-    my $mkvtree = File::Spec->catfile($vmatchbin, 'mkvtree');
+    my ($vmatch, $mkvtree) = @{$config}{qw(vmatch mkvtree)};
 
     my $mkvtreecmd = "$mkvtree -db $db -dna -indexname $index -allout -v -pl ";
     if (defined $args->{$type}{prefixlen}) {
