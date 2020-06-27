@@ -63,7 +63,14 @@ sub configure_root {
 
     my $config = Tephra::Config::Exe->new( basedir => $basedir )->get_config_paths;
 
-    unless (-e $config->{gt} && -x $config->{gt}) {
+    unless (-e $config->{transeq}) {
+	say STDERR "getting EMBOSS" if $debug;
+	$config->{transeq} = $self->fetch_emboss($config->{tephrabin});
+	print STDERR ".";
+    }
+
+    unless (-e $config->{gt} && -x $config->{gt} &&
+	    -e $config->{gtdata} && -d $config->{gtdata}) {
 	say STDERR "getting GenomeTools" if $debug;
 	$config->{gt} = $self->fetch_gt_exes($config->{tephrabin});
 	print STDERR ".";
@@ -114,7 +121,7 @@ sub configure_root {
     }
     
     unless (-e $config->{chrhmm}) {
-	say STDERR "writing chromosome HMM file" if $debug;
+	say STDERR "writing Chromosome HMM file" if $debug;
 	$config->{chrhmm} = $self->make_chrom_dir($config->{chrhmm});
 	print STDERR ".";
     }
@@ -131,12 +138,6 @@ sub configure_root {
 	print STDERR ".";
     }
     
-    unless (-e $config->{transeq}) {
-	say STDERR "getting EMBOSS" if $debug;
-	$config->{transeq} = $self->fetch_emboss($config->{tephrabin});
-	print STDERR ".";
-    }
-
     unless (-e $config->{blastn} && -x $config->{blastn} &&
 	    -e $config->{makeblastdb} && -x $config->{makeblastdb}) {
 	say STDERR "getting BLAST" if $debug;
@@ -191,7 +192,7 @@ sub fetch_gt_exes {
 		
 		system("tar xzf $dist") == 0 or die $!;
 		
-		move $ldist, $ldir or die "\n[ERROR]: move failed: l192 $!\n";
+		move $ldist, $ldir or die "\n[ERROR]: move failed: $ldist -> $ldir: $!\n";
 		unlink $dist;
 	    }
 	}
@@ -200,12 +201,12 @@ sub fetch_gt_exes {
     
     my $lgt = File::Spec->catfile($ldir, 'bin', 'gt');
     my $tgt = File::Spec->catfile($bindir, 'gt');
-    copy $lgt, $tgt or die "\n[ERROR]: copy failed: l201 $!\n";
+    copy $lgt, $tgt or die "\n[ERROR]: copy failed: $lgt -> $tgt: $!\n";
     chmod 0755, $tgt;
 
     my $gtdata  = File::Spec->catdir($ldir, 'gtdata');
     my $tgtdata = File::Spec->catdir($root, 'gtdata');
-    move $gtdata, $tgtdata or die "\n[ERROR]: move failed: l201 $!\n";
+    move $gtdata, $tgtdata or die "\n[ERROR]: move failed: $gtdata -> $tgtdata: $!\n";
 
     remove_tree( $ldir, { safe => 1 } );
 
@@ -412,12 +413,14 @@ sub fetch_paml {
 
     my @exelist = ('yn00', 'baseml', 'basemlg', 'mcmctree', 'pamp', 'evolver', 'infinitesites', 'codeml');
 
-    for my $file (@exelist) {
+    for my $file (grep { /baseml\z/ } @exelist) {
 	my $binfile = File::Spec->catfile($bindir, $file);
 	copy $file, $binfile or die "Copy failed: $file -> l446 $!";
 	chmod 0755, $binfile;
     }
 
+    chdir $root;
+    remove_tree( $dist, { safe => 1 } );
     my $baseml = File::Spec->catfile($bindir, 'baseml');
 
     return $baseml;
@@ -437,6 +440,8 @@ sub fetch_emboss {
     my $version = '6.5.0';
     my $file    = 'EMBOSS-6.5.7.tar.gz';
     my $url     = join "/", $urlbase, $dir, $tool, $release, $version, $file;
+    #my $file = 'emboss-latest.tar.gz';
+    #my $url = join "/", $urlbase, $dir, $tool, $file;
     my $outfile = File::Spec->catfile($root, $file);
 
     system("wget -q -O $outfile $url 2>&1 > /dev/null") == 0
@@ -446,25 +451,59 @@ sub fetch_emboss {
     system("tar xzf $file") == 0 or die "tar failed: $!";
     chdir $dist;
     my $cwd = getcwd();
-    system("./configure --without-x --without-mysql --disable-shared --prefix=$cwd 2>&1 > /dev/null") == 0
+    system("./configure --without-x --without-mysql --disable-shared --prefix=$root 2>&1 > /dev/null") == 0
 	or die "configure failed: $!";
     system("make -j4 2>&1 > /dev/null") == 0 
 	or die "make failed: $!";
     system("make install 2>&1 > /dev/null") == 0
 	or die "make failed: $!";
-    
-    my $transeq  = File::Spec->catdir($cwd, 'bin', 'transeq');
-    my $ttranseq = File::Spec->catdir($bindir, 'transeq');
-    copy $transeq, $ttranseq or die "Copy failed: l501 $!";
-    chmod 0755, $ttranseq;
+
+    ## clean up
+    chdir $root or die $!;
 
     my $distfile = File::Spec->catfile($root, $file);
     unlink $distfile;
+    ##################################
+    my $share = File::Spec->catdir($root, 'share');
+    my $inc   = File::Spec->catdir($root, 'include');
+    my $lib   = File::Spec->catdir($root, 'lib');
+    my $bin   = File::Spec->catdir($root, 'bin');
+    my $data  = File::Spec->catdir($root, 'data');
 
-    chdir $wd;
     remove_tree( $dist, { safe => 1 } );
+    remove_tree( $lib,  { safe => 1 } );
+    remove_tree( $inc,  { safe => 1 } );
 
-    return $ttranseq;
+    my (@sharedirs, @sharefiles, @binfiles, @datafiles);
+    find(sub { push @sharedirs, $File::Find::name if -d and 
+		   /doc|index|jemboss|test|AAINDEX|CODONS|JASPAR|OBO|PRINTS|PROSITE|REBASE|TAXONOMY/ }, $share);
+    for my $dir (@sharedirs) { 
+	remove_tree( $dir, { safe => 1 } );
+    }
+
+    #find(sub { push @datafiles, $File::Find::name if -f }, $share);
+    #for my $file (@sharefiles) {
+	#my ($name, $path, $suffix) = fileparse($file, qr/\.[^.]*/);
+	#unlink $file unless $file =~ /EGC\.0$/;
+    #}
+
+    find(sub { push @sharefiles, $File::Find::name if -f }, $share);
+    #dd \@sharefiles;
+    for my $file (@sharefiles) {
+	my ($name, $path, $suffix) = fileparse($file, qr/\.[^.]*/);
+	next if $file =~ /EGC.0\z/;
+	unlink $file unless $name =~ /^transeq|knowntypes|codes/;
+    }
+
+    find(sub { push @binfiles, $File::Find::name }, $bin);
+    for my $file (@binfiles) {
+	my ($name, $path, $suffix) = fileparse($file, qr/\.[^.]*/);
+	unlink $file unless $name =~ /^transeq|gt|tephra|baseml|blast|vmatch|mkvtree|muscle|cleanpp/;
+    }
+    ##################################
+    my $transeq  = File::Spec->catdir($root, 'bin', 'transeq');
+
+    return $transeq;
 }
 
 sub fetch_htslib {
