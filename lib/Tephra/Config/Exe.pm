@@ -54,10 +54,11 @@ sub get_config_paths {
     my $transla  = File::Spec->catfile($bindir, 'tephra-translate');
 
     ## Required libraries and deps that cannot be easily dropped into the same bin directory
+    my $gtdata  = File::Spec->catdir($root,  'gtdata');
     my $htsdir  = File::Spec->catdir($root,  'htslib-1.3.1', 'htslib');
-    my $hscan   = File::Spec->catfile($root, 'helitronscanner', 'HelitronScanner', 'HelitronScanner.jar');
     my $hmm2bin = File::Spec->catdir($root,  'hmmer-2.3.2', 'bin');
     my $hmm3bin = File::Spec->catdir($root,  'hmmer-3.1b2', 'binaries');
+    my $hscan   = File::Spec->catfile($root, 'helitronscanner', 'HelitronScanner', 'HelitronScanner.jar');
 
     ## Databases and models used by Tephra 
     my $tephradb = File::Spec->catfile($root,     'TephraDB');
@@ -70,6 +71,7 @@ sub get_config_paths {
 	tephrabin   => $bindir,
 	tephradb    => $tephradb,
         gt          => $gt,
+	gtdata      => $gtdata,
 	vmatch      => $vmatch,
 	mkvtree     => $mkvtree,
 	cleanpp     => $cleanpp,
