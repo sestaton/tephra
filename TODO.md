@@ -168,7 +168,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Remove duplicate header in family-level domain organization file
  - [x] Fix Parent IDs getting mixed up when combining LTRs and TRIMs
  - [ ] Add final statistic showing full-length:solo-LTR:truncated ratios
- - [ ] Investigate vertical alignment of stats in log. This appears in Docker image in v0.12.1
+ - [x] Investigate vertical alignment of stats in log. This appears in Docker image in v0.12.1
 
 ## Command `tephra reannotate`
 
@@ -208,9 +208,9 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [ ] check to see if we are calculating examplars for all TE types
  - [x] in DEV test mode, use A. thaliana for all tests
  - [ ] in DEV test mode, change ENV var to 'dev' instead of 'development'
- - [ ] adjust alignment of stats in log to right-justified
+ - [ ] adjust alignment of stats in log to be right-justified
 
 ## Docker image
- - [ ] reduce EMBOSS install to only required programs
+ - [x] reduce EMBOSS install to only required programs
  - [ ] do not install BerkeleyDB and DB_FILE (Perl) since they are only recommended now, not required, by BioPerl since
        v1.7x
