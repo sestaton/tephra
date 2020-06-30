@@ -41,7 +41,7 @@ SKIP: {
     }
 
     my $frag_cmd = "$cmd findfragments -g $masked -d $repeatdb -o $outfile > $log";
-    #say STDERR $frag_cmd;    
+    say STDERR $frag_cmd;    
     my @ret = capture { system([0..5], $frag_cmd) };
 
     ok( -e $outfile, 'Can run findfragments and generate GFF3 output' );
@@ -57,7 +57,7 @@ SKIP: {
 	$fragct++;
     }
     close $in;
-    #say STDERR "FRAGCT: $fragct";
+    say STDERR "FRAGCT: $fragct";
     ok( $fragct == 5, 'Expected number of fragments discovered in GFF3' );
 
     open my $fh, '<', $fafile;

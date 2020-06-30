@@ -17,6 +17,11 @@ use Test::More tests => 9;
 
 $| = 1;
 
+my $devtests = 0;
+if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
+    $devtests = 1;
+}
+
 my $cmd      = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir  = File::Spec->catdir('t', 'test_data');
 my $outdir   = File::Spec->catfile($testdir, 'ltr_family_domains');
@@ -35,12 +40,12 @@ my $repeatdb = File::Spec->catfile($testdir, 'repdb.fas.gz');
 {
     my @help_args = ($cmd, 'classifyltrs', '-h');
     my ($stdout, $stderr, $exit) = capture { system(@help_args) };
-    #say STDERR "stderr: $stderr";
+    #say STDERR "stderr: $stderr" if $devtests;
     ok($stderr, 'Can execute classifyltrs subcommand');
 }
 
 my @find_cmd = ($cmd, 'classifyltrs', '-g', $genome, '-d', $repeatdb, '-i', $ingff, '-o', $outgff, '-r', $outdir);
-#say STDERR join q{ }, @find_cmd;
+say STDERR join q{ }, @find_cmd if $devtests;
 
 my @ret = capture { system([0..5], @find_cmd) };
 
@@ -49,7 +54,7 @@ find( sub {
     push @dirs, $File::Find::name if -d && /(?:gypsy|copia|unclassified)$/ }, 
       $outdir );
 ok( @dirs == 3, 'Correctly generated subdirectories for family level classification' );
-#say scalar(@dirs)," number of subdirectories";
+say scalar(@dirs)," number of subdirectories" if $devtests;
 
 
 open my $in, '<', $outfas;
@@ -62,7 +67,7 @@ my $fct = 0;
 while (<$din>) { next if /^Family_name/; $fct++ if /\S+/; }
 close $din;
 
-#say STDERR "ct: $ct";
+say STDERR "ct: $ct" if $devtests;
 ok( $ct == 6, 'Correct number of classified elements in combined family file' );
 ok( -e $log, 'Generated log for classifyltrs command' );
 ok( -e $copdom, 'Generated domain organization file for Copia elements' );

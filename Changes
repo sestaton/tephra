@@ -1,6 +1,14 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.13.0	06/30/2020	Vancouver, BC
+
+New features:
+ - Refactor build system to not used shared libraries and only included required dependency files.
+
+Misc:
+ - Correct alignment of reporting in log for LTR elements. 
+
 0.12.6	04/07/2020	Vancouver, BC
 
 New features:

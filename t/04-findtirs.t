@@ -39,7 +39,7 @@ if ($devtests) {
 }
 
 my @find_cmd = "$cmd findtirs -g $genome -o $gff -r $genefile --clean";
-#say STDERR join q{ }, @find_cmd;
+say STDERR join q{ }, @find_cmd if $devtests;
 my @ret = capture { system([0..5], @find_cmd) };
 
 my @files;
@@ -55,8 +55,8 @@ open my $gffin, '<', $gff;
 while (<$gffin>) { chomp; next if /^#/; my @f = split /\t/; $gffct++ if $f[2] eq 'terminal_inverted_repeat_element'; }
 close $gffin;
 
-#say STDERR "TIR FASCT: $fasct";
-#say STDERR "TIR GFFCT: $gffct";
+say STDERR "TIR FASCT: $fasct" if $devtests;
+say STDERR "TIR GFFCT: $gffct" if $devtests;
 
 if ($devtests) {
     ok( $fasct == 181,    'Found the correct number of TIRs in FASTA' );

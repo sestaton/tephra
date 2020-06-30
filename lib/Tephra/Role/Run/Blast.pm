@@ -17,11 +17,11 @@ Tephra::Role::Run::Blast - Helper role for running NCBI BLAST
 
 =head1 VERSION
 
-Version 0.12.6
+Version 0.13.0
 
 =cut
 
-our $VERSION = '0.12.6';
+our $VERSION = '0.13.0';
 $VERSION = eval $VERSION;
 
 has infile => (
@@ -112,8 +112,7 @@ sub make_blastdb {
     #say STDERR "DB: $db_path";
 
     my $config = Tephra::Config::Exe->new->get_config_paths;
-    my ($blastbin) = @{$config}{qw(blastpath)};
-    my $makeblastdb = File::Spec->catfile($blastbin, 'makeblastdb');
+    my $makeblastdb = $config->{makeblastdb};
 
     try {
 	my @makedbout = capture([0..5], "$makeblastdb -in $db_fas -dbtype nucl -title $db -out $db_path 2>&1 > /dev/null");
@@ -133,9 +132,6 @@ sub run_blast {
     my ($args) = @_;
     my ($query, $db, $threads, $sort, $outfile, $evalue) = @{$args}{qw(query db threads sort outfile evalue)};
     $evalue //= 10;
-    #my ($dbname, $dbpath, $dbsuffix) = fileparse($db, qr/\.[^.]*/);
-    #my ($qname, $qpath, $qsuffix) = fileparse($query, qr/\.[^.]*/);
-    #my $blast_report = File::Spec->catfile( abs_path($qpath), $qname."_$dbname".'.bln' );
 
     # make sure sort can be found under different shells
     my @path = split /:|;/, $ENV{PATH};
@@ -144,9 +140,8 @@ sub run_blast {
     }
 
     my $config = Tephra::Config::Exe->new->get_config_paths;
-    my ($blastbin) = @{$config}{qw(blastpath)};
-    my $blastn = File::Spec->catfile($blastbin, 'blastn');
-    
+    my $blastn = $config->{blastn};
+
     my $cmd = "$blastn -query $query -db $db -evalue $evalue -outfmt 6 -num_threads $threads";
     if (defined $sort) {
 	if ($sort eq 'bitscore') {
@@ -164,7 +159,7 @@ sub run_blast {
 	my @runout = capture([0..5], $cmd);
     }
     catch {
-	say STDERR "Unable to run blast. Here is the exception: $_.";
+	say STDERR "[ERROR]: Unable to run blast. Here is the exception: $_.";
 	exit(1);
     };
 

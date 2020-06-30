@@ -25,11 +25,11 @@ Tephra::NonLTR::QValidation - Valididate non-LTR search results against all mode
 
 =head1 VERSION
 
-Version 0.12.6
+Version 0.13.0
 
 =cut
 
-our $VERSION = '0.12.6';
+our $VERSION = '0.13.0';
 $VERSION = eval $VERSION;
 
 has fasta   => ( is => 'ro', isa => 'Path::Class::File', required => 1, coerce => 1 );
@@ -96,6 +96,7 @@ sub validate_q_score {
 
 	#unless (defined $dom->{domain}) {
 	    #say STDERR "\n[MAYDAY]: domain => $domain, $dir, $hmm_dir, $validation_dir, $genome";
+	    #dd $dom;
 	#}
 
 	$pm->finish(0, $dom);

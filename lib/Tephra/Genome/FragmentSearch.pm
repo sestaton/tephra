@@ -26,11 +26,11 @@ Tephra::Genome::FragmentSearch - Find fragmented transposons in a refence genome
 
 =head1 VERSION
 
-Version 0.12.6
+Version 0.13.0
 
 =cut
 
-our $VERSION = '0.12.6';
+our $VERSION = '0.13.0';
 $VERSION = eval $VERSION;
 
 has genome => (
@@ -161,11 +161,9 @@ sub find_transposon_fragments {
 
     ## clean up
     my $exe_conf = Tephra::Config::Exe->new->get_config_paths;
-    my $vmatchbin = $exe_conf->{vmatchbin};
-    my $gt = $exe_conf->{gt};
-    my $clean_vmidx = File::Spec->catfile($vmatchbin, 'cleanpp.sh');
+    my ($gt, $cleanpp) = @{$exe_conf}{qw(gt cleanpp)};
 
-    $self->capture_cmd($clean_vmidx);
+    $self->capture_cmd($cleanpp);
     $self->capture_cmd($gt, 'clean');
     unlink $genome.'.fai';
     unlink $_ for @$genome_parts;

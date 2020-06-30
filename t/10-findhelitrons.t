@@ -15,6 +15,11 @@ use Test::More tests => 7;
 
 $| = 1;
 
+my $devtests = 0;
+if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
+    $devtests = 1;
+}
+
 my $cmd     = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir = File::Spec->catdir('t', 'test_data');
 my $outdir  = File::Spec->catdir($testdir, 't_family_domains');
@@ -35,7 +40,7 @@ my $hslog   = File::Spec->catfile($testdir, 'ref_tephra_findhelitrons.log');
 }
 
 my @find_cmd = ($cmd, 'findhelitrons', '-g', $genome, '-o', $hsgff);
-#say STDERR join q{ }, @find_cmd;
+say STDERR join q{ }, @find_cmd if $devtests;
 my @ret = capture { system([0..5], @find_cmd) };
 #system([0..5], @find_cmd);
 

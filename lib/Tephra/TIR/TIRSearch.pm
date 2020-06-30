@@ -58,11 +58,11 @@ Tephra::TIR::TIRSearch - Find TIR transposons in a reference genome
 
 =head1 VERSION
 
-Version 0.12.6
+Version 0.13.0
 
 =cut
 
-our $VERSION = '0.12.6';
+our $VERSION = '0.13.0';
 $VERSION = eval $VERSION;
 
 sub tir_search {
@@ -149,7 +149,7 @@ sub _filter_tir_gff {
     }
     
     @rt_domains = uniq(@rt_domains);
-     for my $rep_region (@rt_domains) {
+    for my $rep_region (@rt_domains) {
 	my ($chr, $rregion) = split /\~\~/, $rep_region;
 	delete $features->{$chr}{$rregion};
     }

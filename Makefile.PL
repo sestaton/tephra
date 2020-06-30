@@ -18,7 +18,7 @@ if (eval ($ExtUtils::MakeMaker::VERSION) <= 6.55) {
 
 WriteMakefile(
     NAME             => 'Tephra',
-    AUTHOR           => q{S. Evan Staton <statonse@gmail.com>},
+    AUTHOR           => q{S. Evan Staton <evan@evanstaton.com>},
     VERSION_FROM     => 'bin/tephra',
     LICENSE          => 'MIT',
     PL_FILES         => {},
@@ -52,7 +52,7 @@ WriteMakefile(
     EXE_FILES   => [ 'bin/tephra', 'bin/tephra-getphmm' ],
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     test  => { TESTS => 't/*.t' },
-    clean => { FILES => [ 't/test_data/*.fai', 'src/*.o', 'src/tephra-*' ] },
+    clean => { FILES => [ 't/test_data/*.fai', 'src/*.o', 'src/tephra-*', 't/test_data/TAIR*' ] },
 );
 
 {

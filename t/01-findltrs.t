@@ -15,6 +15,11 @@ use Test::More tests => 19;
 
 $| = 1;
 
+my $devtests = 0;
+if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
+    $devtests = 1;
+}
+
 my $cmd     = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir = File::Spec->catdir('t', 'test_data');
 my $genome  = File::Spec->catfile($testdir, 'ref.fas');
@@ -32,12 +37,12 @@ ok( -e $config, 'Can create config file for testing' );
 {
     my @help_args = ($cmd, 'findltrs', '-h');
     my ($stdout, $stderr, $exit) = capture { system(@help_args) };
-    #say STDERR "stderr: $stderr";
+    #say STDERR "stderr: $stderr" if $devtests;
     ok($stderr, 'Can execute findltrs subcommand');
 }
 
 my @find_args = ($cmd, 'findltrs', '-c', $config); # == 0 or die $!;
-#say STDERR join q{ }, @find_args;
+say STDERR join q{ }, @find_args if $devtests;
 
 my ($stdout, $stderr, $exit) = capture { system(@find_args) }; 
 ok( -e $outgff, 'Can find some LTRs' );
@@ -57,42 +62,42 @@ for my $line (split /^/, $stderr) {
     }
     elsif ($line =~ /length_filtered/) {
 	my ($l_filt) = $line =~ /(\d+)$/;
-	#say STDERR "l_filt: $l_filt";
+	say STDERR "l_filt: $l_filt" if $devtests;
 	ok( $l_filt == 0, 'Correct number of elements filtered by length' );
     }
     elsif ($line =~ /compound_gyp_cop_filtered/) {
 	my ($gc_filt) = $line =~ /(\d+)$/;
-	#say STDERR "gc_filt: $gc_filt";
+	say STDERR "gc_filt: $gc_filt" if $devtests;
 	ok( $gc_filt == 0, 'Correct number of elements filtered compound gypsy/copia' );
     }
     elsif ($line =~ /n_perc_filtered/) {
 	my ($n_filt) = $line =~ /(\d+)$/;
-	#say STDERR "n_filt: $n_filt";
+	say STDERR "n_filt: $n_filt" if $devtests;
 	ok( $n_filt == 0, 'Correct number of elements filtered by N-percentage' );
     }
     elsif ($line =~ /\'relaxed\' constraints/) {
 	my ($r_ct) = $line =~ /(\d+)$/;
-	#say STDERR "r_ct: $r_ct";
+	say STDERR "r_ct: $r_ct" if $devtests;
 	ok( $r_ct == 5, 'Correct number of combined elements found by relaxed constraints' );
     }
     elsif ($line =~ /\'strict\' constraints/) {
 	my ($s_ct) = $line =~ /(\d+)$/;
-	#say STDERR "s_ct: $s_ct";
+	say STDERR "s_ct: $s_ct" if $devtests;
 	ok( $s_ct == 2, 'Correct number of total elements found by strict constraints' );
     }
     elsif ($line =~ /\'best\'/) {
 	my ($b_ct) = $line =~ /(\d+)$/;
-	#say STDERR "b_ct: $b_ct";
+	say STDERR "b_ct: $b_ct" if $devtests;
 	ok( $b_ct == 1, 'Correct number of best elements found' );
     }
     elsif ($line =~ /\'combined\'/) {
 	my ($c_ct) = $line =~ /(\d+)$/;
-	#say STDERR "c_ct: $c_ct";
+	say STDERR "c_ct: $c_ct" if $devtests;
 	ok( $c_ct == 6, 'Correct number of combined elements found' );
     }
     elsif ($line =~ /Total elements written/) {
 	my ($t_ct) = $line =~ /(\d+)$/;
-	#say STDERR "t_ct: $t_ct";
+	say STDERR "t_ct: $t_ct" if $devtests;
 	ok( $t_ct == 6, 'Correct number of total elements found' );
     }
 }

@@ -15,6 +15,11 @@ use Test::More tests => 4;
 
 $| = 1;
 
+my $devtests = 0;
+if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
+    $devtests = 1;
+}
+
 my $cmd      = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir  = File::Spec->catdir('t', 'test_data');
 my $genome   = File::Spec->catfile($testdir, 'ref.fas');
@@ -31,11 +36,11 @@ my $log      = File::Spec->catfile($testdir, 'ref_masked.fas.log');
 }
 
 my @mask_cmd = ($cmd, 'maskref', '-g', $genome, '-d', $repeatdb, '-o', $masked, $log);
-#say STDERR $mask_cmd;
+say STDERR join q{ }, @mask_cmd if $devtests;
 my ($stdout, $stderr, $exit) = capture { system([0..5], @mask_cmd) };
 
 ok( -e $masked, 'Can mask reference' );
-ok( -e $log, 'Can mask reference' );
+ok( -e $log,    'Can mask reference' );
 
 for my $line (split /^/, $stdout) { 
     if ($line =~ /Total masked bases:  (\d+.\d+)%/) {

@@ -23,11 +23,11 @@ Tephra::Role::Run::PAML - Helper role for running PAML
 
 =head1 VERSION
 
-Version 0.12.6
+Version 0.13.0
 
 =cut
 
-our $VERSION = '0.12.6';
+our $VERSION = '0.13.0';
 $VERSION = eval $VERSION;
 
 has baseml_exec => (
@@ -189,8 +189,7 @@ sub _build_baseml_exec {
     }
     elsif (! defined $blexe) {
 	my $config = Tephra::Config::Exe->new->get_config_paths;
-	my ($pamlbin) = @{$config}{qw(pamlbin)};
-	$blexe = File::Spec->catfile($pamlbin, 'baseml');
+	$blexe = $config->{baseml};
 	if (-e $blexe && -x $blexe) {
 	    $self->set_baseml_exec($blexe);
 	    return $blexe;

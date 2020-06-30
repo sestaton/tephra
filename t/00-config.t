@@ -32,30 +32,32 @@ ok( -x $cmd, 'Can execute tephra' );
 }
 
 my $config = Tephra::Config::Exe->new->get_config_paths;
-my ($gt, $vmbin, $hscan, $hmm2bin, $hmm3bin, $moddir, $chrdir, $mgescan, $trans, $pamlbin, $transeq, $htslibdir, $blast, $muscle)
-    = @{$config}{qw(gt vmatchbin hscanjar hmmer2bin hmmer3bin modeldir hmmdir mgescan transcmd pamlbin transeq htslibdir blastpath muscle)};
+my ($tephrabin, $gt, $vmatch, $mkvtree, $hscan, $hmm2bin, $hmm3bin, $moddir, $chrhmm, $mgescan, $trans, $baseml, $transeq, $htslibdir, $blastn, $makeblastdb, $muscle)
+    = @{$config}{qw(tephrabin gt vmatch mkvtree hscanjar hmmer2bin hmmer3bin modeldir chrhmm mgescan transcmd baseml transeq htslibdir blastn makeblastdb muscle)};
 
 my $hmm2search = File::Spec->catfile($hmm2bin, 'hmmsearch');
 my $hmm3search = File::Spec->catfile($hmm3bin, 'hmmsearch');
-my $blastn     = File::Spec->catfile($blast,   'blastn');
-my $vmatch     = File::Spec->catfile($vmbin,   'vmatch');
-my $mkvtree    = File::Spec->catfile($vmbin,   'mkvtree');
+#my $blastn     = File::Spec->catfile($blastpath,   'blastn');
+#my $vmatch     = File::Spec->catfile($tephrabin,   'vmatch');
+#my $mkvtree    = File::Spec->catfile($tephrabin,   'mkvtree');
 
 ok( -x $gt,         'Can execute gt for testing' );
 ok( -x $vmatch,     'Can execute vmatch for testing' );
 ok( -x $mkvtree,    'Can execute mkvtree for testing' );
-ok( -e $hscan,      'Can execute HelitronScanner for testing' );
+ok( -x $muscle,     'Can build muscle for multi-sequence alignments' );
+ok( -x $mgescan,    'Can build custom MGEScan for non-LTR search' );
+ok( -x $trans,      'Can build translate command for non-LTR search' );
+ok( -x $baseml,    'Can build PAML for analyzing LTR demography' );
+ok( -x $transeq,    'Can build transeq for identifying coding domains' );
+ok( -x $blastn,     'Can build blastn for sequence searches' );
+ok( -x $makeblastdb,     'Can build blastn for sequence searches' );
 ok( -x $hmm2search, 'Can execute HMMERv2 hmmsearch' );
 ok( -x $hmm3search, 'Can execute HMMERv3 hmmsearch' );
+
+ok( -e $hscan,      'Can execute HelitronScanner for testing' );
 ok( -e $moddir,     'Configured pHMM dir for non-LTR search' );
-ok( -e $chrdir,     'Configured HMM dir for non-LTR search' );
-ok( -e $mgescan,    'Can build custom MGEScan for non-LTR search' );
-ok( -e $trans,      'Can build translate command for non-LTR search' );
-ok( -e $pamlbin,    'Can build PAML for analyzing LTR demography' );
-ok( -e $transeq,    'Can build transeq for identifying coding domains' );
-ok( -e $blastn,     'Can build blastn for sequence searches' );
+ok( -e $chrhmm,     'Configured HMM dir for non-LTR search' );
 ok( -e $htslibdir,  'Can build HTSlib for indexing and parsing sequence files' );
-ok( -e $muscle,     'Can build muscle for multi-sequence alignments' );
 
 if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
     my $wd = getcwd();

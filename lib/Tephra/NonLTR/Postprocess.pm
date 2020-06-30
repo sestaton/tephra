@@ -18,11 +18,11 @@ Tephra::NonLTR::Postprocess - Postprocess initial scan for non-LTR coding domain
 
 =head1 VERSION
 
-Version 0.12.6
+Version 0.13.0
 
 =cut
 
-our $VERSION = '0.12.6';
+our $VERSION = '0.13.0';
 $VERSION = eval $VERSION;
 
 has fastadir    => ( is => 'ro', isa => 'Path::Class::File', required => 1, coerce  => 1 );
@@ -301,17 +301,6 @@ sub get_sequence_id {
 
     return ($genome, $head);
 }
-
-#sub _filterNpercent {
-#    my $self = shift;
-#    my ($sequence) = @_;
-
-#    my $length  = length($sequence);
-#    my $n_count = ($sequence =~ tr/Nn//);
-#    my $n_perc  = sprintf("%.2f",$n_count/$length);
-
-#    return $n_perc;
-#}
 
 =head1 AUTHOR
 

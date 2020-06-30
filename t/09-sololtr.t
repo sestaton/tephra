@@ -73,7 +73,7 @@ SKIP: {
     }
     close $gff;
     
-    #say STDERR "SOLOCT: $soloct";
+    say STDERR "SOLOCT: $soloct";
     ok( $soloct == 1, 'Correct number of solo-LTRs found' );
     ok( $seqct == $soloct, 'Same number of sequences and elements written to GFF/FASTA' );
 
