@@ -33,7 +33,7 @@ has basedir => (
 
 sub get_config_paths {
     my $self = shift;
-    my $root = $self->basedir; #->absolute->resolve;
+    my $root = $self->basedir->absolute->resolve;
 
     my $bindir = File::Spec->catdir($root, 'bin');
     unless (-e $bindir) {
