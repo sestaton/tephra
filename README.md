@@ -26,7 +26,7 @@ That will create a container called `tephra-con` and start an interactive shell.
 
     tephra all -c tephra_config.yml
 
-I recommend using `nohup` and then logging out, which will allow you to leave the container running in the background (I will expand this part of the install by v0.13.0).
+I recommend using `nohup` and then logging out, which will allow you to leave the container running in the background.
 
 If you cannot use Singularity or Docker, please see the [INSTALL](https://github.com/sestaton/tephra/blob/master/INSTALL.md) file included with this distribution to install Tephra on various operating systems.
 
