@@ -1,6 +1,14 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.13.1	07/03/2020	Vancouver, BC
+
+Bug fixes:
+ - Fix issue with PATHs to Tephra configured programs (vmatch and mkvtree) not being set in *Annotation::MakeExemplars class.
+
+Misc:
+ - Updated TODO for this issue because it is hard to test (more details there).
+ 
 0.13.0	06/30/2020	Vancouver, BC
 
 New features:
