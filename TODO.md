@@ -24,6 +24,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] LARD annotation method not working for GFF3 as of v0.11.0
  - [x] Family number in FASTA/GFF3 not aligned with that in domain organization file
  - [x] Domain order is incorrect in family-level domain classication file as of v0.11.0
+ - [ ] Add tests for Tephra::Annotation::MakeExemplars class. Currently it is not evaluated (requires larger families to test).
 
 ## Command `tephra findtirs`
  - [x] Find all non-overlapping TIR elements passing thresholds
@@ -34,6 +35,7 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Mark short elements with no coding potential as MITEs
  - [x] Output FASTA along with GFF3 like other commands
  - [ ] Split input genome by chromosome to parallelize this (the most time-consuming) part of the analysis
+
 ## Command `tephra sololtr`
  - [x] Create HMM of LTRs for each LTR-RT
  - [x] Search masked ref with LTR HMM
