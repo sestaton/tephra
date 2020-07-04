@@ -217,9 +217,7 @@ sub calculate_exemplars {
     my ($db) = @_;
 
     my $config = Tephra::Config::Exe->new->get_config_paths;
-    my ($vmatchbin) = @{$config}{qw(vmatchbin)};
-    my $vmatch  = File::Spec->catfile($vmatchbin, 'vmatch');
-    my $mkvtree = File::Spec->catfile($vmatchbin, 'mkvtree');
+    my ($vmatch, $mkvtree) = @{$config}{qw(vmatch mkvtree)};
 
     my ($name, $path, $suffix) = fileparse($db, qr/\.[^.]*/);
     my $index = File::Spec->catfile($path, $name.'_mkvtree.index');
@@ -261,24 +259,6 @@ sub parse_vmatch {
     my $tophit = (reverse sort { $matches{$a} <=> $matches{$b} } keys %matches)[0];
     return $tophit;
 }
-
-#sub write_element_parts {
-#    my $self = shift;
-#    my ($index, $loc, $elem, $start, $end, $out, $orient, $family) = @_;
-
-    #my $location = "$loc:$start-$end";
-    #my ($seq, $length) = $index->get_sequence($location);
-#    my ($seq, $length) = $self->get_full_seq($index, $loc, $start, $end);
-#    croak "\n[ERROR]: Something went wrong, this is a bug. Please report it.\n"
-#	unless $length;
-
-#    my $id;
-#    $id = join "_", $family, $elem, $loc, $start, $end if !$orient;
-#    $id = join "_", $orient, $family, $elem, $loc, $start, $end if $orient; # for unique IDs with clustalw
-
-#    $seq =~ s/.{60}\K/\n/g;
-#    say $out join "\n", ">$id", $seq;
-#}
 
 =head1 AUTHOR
 
