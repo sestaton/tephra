@@ -14,11 +14,11 @@ Tephra::Role::File - File handling methods for Tephra.
 
 =head1 VERSION
 
-Version 0.13.0
+Version 0.13.1
 
 =cut
 
-our $VERSION = '0.13.0';
+our $VERSION = '0.13.1';
 $VERSION = eval $VERSION;
 
 =head1 SYNOPSIS
