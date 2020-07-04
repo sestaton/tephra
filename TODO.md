@@ -25,6 +25,8 @@ This file is for logging feature requests and bugs during development. Hopefully
  - [x] Family number in FASTA/GFF3 not aligned with that in domain organization file
  - [x] Domain order is incorrect in family-level domain classication file as of v0.11.0
  - [ ] Add tests for Tephra::Annotation::MakeExemplars class. Currently it is not evaluated (requires larger families to test).
+       This will mean tests will take much longer, but the only want to test this feature is to use the Dev test data for all tests,
+       including the 'findltrs' and 'classifyltrs' commands.
 
 ## Command `tephra findtirs`
  - [x] Find all non-overlapping TIR elements passing thresholds
