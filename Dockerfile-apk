@@ -1,0 +1,26 @@
+#FROM ubuntu:latest
+FROM alpine:3.8
+
+LABEL maintainer "S. Evan Staton"
+LABEL image_type "Tephra: A tool for discovering transposable elements and describing patterns of genome evolution"
+
+ENV LC_ALL="C"
+
+#RUN apt-get update \
+#    && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+RUN rm -rf /var/cache/apk/* \
+    && rm -rf /tmp/* \
+    && apk update \
+    apk add wget gcc make default-jre zlib-dev gd-dev unzip ncurses-dev db-dev git openjdk7-jre \
+    perl perl-app-cpanminus expat-dev perl-doc \
+    && echo "n" | cpanm -q -n Data::Stag DB_File Bio::Root::Version Bio::SearchIO::blastxml Bio::SearchIO::hmmer \
+    && git clone https://github.com/sestaton/tephra.git \
+    && cd tephra \
+    && cpanm -q --installdeps . \
+    && perl Makefile.PL \
+    && make install \
+    && cpanm --uninstall HTTP::Daemon HTTP::Cookies HTML::Tree HTTP::Negotiate WWW::RobotRules LWP \
+    && rm -rf /var/cache/apk/* \
+    && cd .. && rm -rf tephra
+
+#&& apt-get remove -y git cpanminus unzip \

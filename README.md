@@ -26,7 +26,7 @@ That will create a container called `tephra-con` and start an interactive shell.
 
     tephra all -c tephra_config.yml
 
-I recommend using `nohup` and then logging out, which will allow you to leave the container running in the background (I will expand this part of the install by v0.13.0).
+I recommend using `nohup` and then logging out, which will allow you to leave the container running in the background.
 
 If you cannot use Singularity or Docker, please see the [INSTALL](https://github.com/sestaton/tephra/blob/master/INSTALL.md) file included with this distribution to install Tephra on various operating systems.
 
@@ -36,7 +36,7 @@ Tephra is a command-line program only for now. The command `tephra` itself contr
 
     $ tephra 
 
-    Tephra version 0.12.5
+    Tephra version 0.13.0
     
     Copyright (C) 2015-2019 S. Evan Staton
     LICENSE -- MIT
@@ -168,7 +168,7 @@ Part of this project uses code from [MGEScan-nonLTR](http://darwin.informatics.i
 
 The license for Tephra is below:
 
-Copyright (C) 2015-2019 S. Evan Staton
+Copyright (C) 2015-2020 S. Evan Staton
 
 This program is distributed under the MIT (X11) License, which should be distributed with the package.
 If not, it can be found here: http://www.opensource.org/licenses/mit-license.php
