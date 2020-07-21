@@ -18,4 +18,5 @@ RUN apt-get update \
     && cpanm --uninstall HTTP::Daemon HTTP::Cookies HTML::Tree HTTP::Negotiate WWW::RobotRules LWP \
     && apt-get remove -y git cpanminus unzip \
     && rm -rf /var/lib/apt/lists/* \
+    && rm -rf ~/.cpanm \
     && cd .. && rm -rf tephra
