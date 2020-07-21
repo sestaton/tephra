@@ -99,7 +99,7 @@ sub extract_ltr_sequences {
     for my $seq_id (keys %$features) {
 	for my $rep_region (keys %{$features->{$seq_id}}) {
 	    for my $ltr_feature (@{$features->{$seq_id}{$rep_region}}) {
-		if ($ltr_feature->{type} =~ /(?:LTR|TRIM|LARD)_retrotransposon/) {
+		if ($ltr_feature->{type} =~ /LTR_retrotransposon|LARD|TRIM/) {
 		    my $elem_id = @{$ltr_feature->{attributes}{ID}}[0];
 		    $family  = @{$ltr_feature->{attributes}{family}}[0];
 		    my ($start, $end) = @{$ltr_feature}{qw(start end)};
