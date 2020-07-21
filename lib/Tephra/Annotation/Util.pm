@@ -355,9 +355,14 @@ sub get_SO_terms {
     my $self = shift;
 
     my %table = (
+	# retroelement types
         'LTR_retrotransposon'     => 'SO:0000186',
+	# LARD/TRIM were added to the SO in 2020: https://github.com/The-Sequence-Ontology/SO-Ontologies/issues/429
+	'LARD'                    => 'SO:0002260',
+	'TRIM'                    => 'SO:0002261',
         'non_LTR_retrotransposon' => 'SO:0000189',
         
+	# element features
         'U_box'                => 'SO:0001788',
         'RR_tract'             => 'SO:0000435',
         'long_terminal_repeat' => 'SO:0000286',
@@ -365,11 +370,15 @@ sub get_SO_terms {
         'primer_binding_site'  => 'SO:0005850',
         'protein_match'        => 'SO:0000349',
         
+	# DNA transposons
         'terminal_inverted_repeat_element' => 'SO:0000208',
         'terminal_inverted_repeat'         => 'SO:0000481',
-        'helitron'                         => 'SO:0000544',
         'MITE'                             => 'SO:0000338',
-        'DNA_transposon'                   => 'SO:0000182' );
+        'DNA_transposon'                   => 'SO:0000182',
+
+	# Helitrons
+	'helitron'                         => 'SO:0000544',
+    );
 
     return \%table;
 }
