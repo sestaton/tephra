@@ -100,8 +100,6 @@ sub collect_features {
     my ($gff_thresh_ref) = @_;
     my ($gff, $pid_thresh) = @{$gff_thresh_ref}{qw(gff pid_threshold)};
 
-
-
     my (%features, %intervals, %coord_map);
     my ($source, $seq_id, $start, $end, $length, $region);
 
@@ -666,8 +664,8 @@ sub sort_features {
 			$elem =~ s/\d+.*/$count/;
 
 			my $id = join "_", $elem, $chromosome, $start, $end;
-			#$id =~ s/LTR_/RLT_TRIM_/g
-			$id =~ s/LTR_/TRIM_/g
+			#$id =~ s/LTR_/RLT_TRIM/g
+			$id =~ s/LTR_retrotransposon/TRIM/g
 			    if $self->is_trim;
 
 			$self->_get_ltr_range($index, $id, $chromosome, $start, $end, $ofas);
@@ -684,7 +682,7 @@ sub sort_features {
 		    my $gff3_str = gff3_format_feature($entry);
 		    $gff_feats .= $gff3_str;
 		}
-		$gff_feats =~ s/LTR_/TRIM_/g 
+		$gff_feats =~ s/LTR_retrotransposon/TRIM/g
 		    if $self->is_trim;
 
 		print $ogff $gff_feats;
@@ -694,7 +692,7 @@ sub sort_features {
 	}
 	close $ogff;
 
-	#"Number of 'combined' non-overlapping elements:                              439"
+	#"Number of 'combined' non-overlapping elements: 439"
 	#say STDERR "\nTotal elements written: $elem_tot";
 	my $pad = ' ' x 51;	       
 	$log->info("Results - Total elements written:$pad ",$elem_tot);
@@ -714,7 +712,7 @@ sub sort_features {
 		$elem =~ s/\d+.*//;
 		$elem .= $count;
 		#$elem =~ s/LTR_/RLT_TRIM_/g 
-		$elem =~ s/LTR_/TRIM_/g
+		$elem =~ s/LTR_retrotransposon/TRIM/g
 		    if $self->is_trim;
 
 		my $id = join "_", $elem, $chromosome, $start, $end;
