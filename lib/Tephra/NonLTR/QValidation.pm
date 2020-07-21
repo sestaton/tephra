@@ -25,11 +25,11 @@ Tephra::NonLTR::QValidation - Valididate non-LTR search results against all mode
 
 =head1 VERSION
 
-Version 0.13.1
+Version 0.13.2
 
 =cut
 
-our $VERSION = '0.13.1';
+our $VERSION = '0.13.2';
 $VERSION = eval $VERSION;
 
 has fasta   => ( is => 'ro', isa => 'Path::Class::File', required => 1, coerce => 1 );
