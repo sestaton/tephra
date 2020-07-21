@@ -1,6 +1,14 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.13.2	07/20/2020	Vancouver, BC
+
+New features:
+ - Add correct Sequence Ontology terms for TRIM and LARD elements in GFF3 output. I requested these terms previously
+   and the changes in this version bring the GFF3 output of Tephra to be in agreement with the latest specifications.
+
+- Misc:
+ - Update singularity usage method to build locally and avoid permissions issues when pulling pre-build images.
 0.13.1	07/03/2020	Vancouver, BC
 
 Bug fixes:
