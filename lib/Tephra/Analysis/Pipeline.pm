@@ -572,7 +572,7 @@ sub combine_age_files {
     my $t0 = gettimeofday();
     my $st = strftime('%d-%m-%Y %H:%M:%S', localtime);
 
-    my $re = qr/helitron\d+|(?:non_)?(?:LTR|LARD|TRIM)_retrotransposon\d+|terminal_inverted_repeat_element\d+|MITE\d+/;
+    my $re = qr/helitron\d+|(?:non_)?LTR_retrotransposon\d+|terminal_inverted_repeat_element\d+|LARD\d+|TRIM\d+|MITE\d+/;
 
     my $util = Tephra::Annotation::Util->new;
     my $repeat_map = $util->build_repeat_map;

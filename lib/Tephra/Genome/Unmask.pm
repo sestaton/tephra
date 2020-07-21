@@ -70,7 +70,7 @@ sub unmask_repeatdb {
 
     my $tmpfname = $name.'_unmasked_XXXX';
     my ($outfh, $tmp_outfile) = tempfile( TEMPLATE => $tmpfname, DIR => $path, UNLINK => 0, SUFFIX => '.fasta' );
-    my $re = qr/helitron\d+|(?:non_)?(?:LTR|LARD|TRIM)_retrotransposon\d+|terminal_inverted_repeat_element\d+|MITE\d+/;
+    my $re = qr/helitron\d+|(?:non_)?LTR_retrotransposon\d+|terminal_inverted_repeat_element\d+|LARD\d+|TRIM\d+|MITE\d+/;
 
     for my $id (keys %$store) {
 	my $seq = $store->{$id}{seq};
@@ -93,7 +93,7 @@ sub store_seq_coords {
     my %hash;
     my $kseq = Bio::DB::HTS::Kseq->new($file);
     my $iter = $kseq->iterator();
-    my $re = qr/helitron\d+|(?:non_)?(?:LTR|LARD|TRIM)_retrotransposon\d+|terminal_inverted_repeat_element\d+|MITE\d+/;
+    my $re = qr/helitron\d+|(?:non_)?LTR_retrotransposon\d+|terminal_inverted_repeat_element\d+|LARD\d+|TRIM\d+|MITE\d+/;
 
     while (my $seqobj = $iter->next_seq) {
         my $id = $seqobj->name;
