@@ -114,7 +114,7 @@ SKIP: {
 	chomp;
 	next if /^#/;
 	my @f = split /\t/;
-	$gct++ if $f[2] eq 'TRIM_retrotransposon';
+	$gct++ if $f[2] eq 'TRIM';
     }
     close $gin;
     
