@@ -50,7 +50,7 @@ sub get_exemplar_ltrs_for_age {
 	my $kseq = Bio::DB::HTS::Kseq->new($ltrfile);
 	my $iter = $kseq->iterator();
 	
-	my $re = qr/(?:LTR|LARD|TRIM)_retrotransposon\d+/;
+	my $re = qr/LTR_retrotransposon\d+|LARD\d+|TRIM\d+/;
 	while ( my $seq = $iter->next_seq() ) {
 	    my $id  = $seq->name;
 	    my $seq = $seq->seq;
@@ -83,7 +83,7 @@ sub get_exemplar_ltrs_for_sololtrs {
     my ($dir, $allfams) = @{$solo_obj}{qw(input_dir full_analysis)};
     my ($input, $ltrfile, @ltr_files, @ltrseqs, %ltrfams);
     my $search = qr/[35]prime-ltrs.fasta/;
-    my $re = qr/(?:LTR|LARD|TRIM)_retrotransposon\d+/;
+    my $re = qr/LTR_retrotransposon\d+|LARD\d+|TRIM\d+/;
 
     if ($allfams) { 
 	find( sub { push @ltr_files, $File::Find::name if -f and /$search$/ }, $dir);
