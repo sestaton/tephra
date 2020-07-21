@@ -467,7 +467,7 @@ sub write_families {
     #dd $fam_id_map and exit;
 
     my (%fastas, %annot_ids, %seen);
-    my $re = qr/helitron\d+|(?:non_)?(?:LTR|LARD|TRIM)_retrotransposon\d+|terminal_inverted_repeat_element\d+|MITE\d+/;
+    my $re = qr/helitron\d+|(?:non_)?LTR_retrotransposon\d+|terminal_inverted_repeat_element\d+|LARD\d+|TRIM\d+|MITE\d+/;
 
     for my $str (reverse sort { uniq(@{$fam_id_map->{$a}}) <=> uniq(@{$fam_id_map->{$b}}) } keys %$fam_id_map) {
 	my $famfile = $sf."_family$idx".".fasta";
@@ -572,7 +572,7 @@ sub combine_families {
     my $anno_ct = (keys %$annot_ids);
     open my $out, '>', $outfile or die "\n[ERROR]: Could not open file: $outfile\n";
 
-    my $re = qr/helitron\d+|(?:non_)?(?:LTR|LARD|TRIM)_retrotransposon\d+|terminal_inverted_repeat_element\d+|MITE\d+/;
+    my $re = qr/helitron\d+|(?:non_)?LTR_retrotransposon\d+|terminal_inverted_repeat_element\d+|LARD\d+|TRIM\d+|MITE\d+/;
 
     for my $file (nsort keys %$outfiles) {
 	unlink $file && next unless -s $file;
@@ -613,7 +613,7 @@ sub annotate_gff {
 	$new_type = 'MITE';
     }
     elsif ($type eq 'LTR') { 
-	$new_type = 'LARD_retrotransposon';
+	$new_type = 'LARD';
     }
     else {
 	say "\n[ERROR]: Could not determine LTR/TIR type to annotate GFF3. This is a bug, please report it. Exiting.\n";
@@ -631,7 +631,7 @@ sub annotate_gff {
 	for my $rep_region (nsort_by { m/repeat_region\d+\.?\d+?\|\|(\d+)\|\|\d+/ and $1 } keys %{$features->{$chr_id}}) {
 	    my ($rreg_id, $s, $e) = split /\|\|/, $rep_region;
 	    for my $feature (@{$features->{$chr_id}{$rep_region}}) {
-		if ($feature->{type} =~ /(?:LTR|TRIM|LARD)_retrotransposon|terminal_inverted_repeat_element|MITE/) {
+		if ($feature->{type} =~ /LTR_retrotransposon|terminal_inverted_repeat_element|LARD|TRIM|MITE/) {
 		    $is_lard_mite = 1;
 		    
 		    my $id = $feature->{attributes}{ID}[0];
