@@ -9,15 +9,6 @@ Tephra is a command line application to annotate [transposable elements](http://
 
 **RECOMMENDED USAGE**
 
-With [Singularity](https://sylabs.io/docs/), you will want to pull the latest container version and then run the container:
-
-    singularity pull library://sestaton/default/tephra
-    singularity run --bind $PWD/db:/db tephra_latest.sif
-
-That assumes you have your data files for analysis (genome, config file, etc.) in a directory called `db` in the current working directory. After that, change to the `/db` directory and run your analysis.
-
----
-
 With [Docker](https://www.docker.com/), you can create a container to run Tephra with the following command:
 
     docker run -it --name tephra-con -v $(pwd)/db:/db:Z sestaton/tephra
@@ -28,7 +19,7 @@ That will create a container called `tephra-con` and start an interactive shell.
 
 I recommend using `nohup` and then logging out, which will allow you to leave the container running in the background.
 
-If you cannot use Singularity or Docker, please see the [INSTALL](https://github.com/sestaton/tephra/blob/master/INSTALL.md) file included with this distribution to install Tephra on various operating systems.
+If you cannot use Docker, please see the [INSTALL](https://github.com/sestaton/tephra/blob/master/INSTALL.md) file included with this distribution to install Tephra on various operating systems.
 
 **BASIC USAGE**
 
@@ -36,12 +27,12 @@ Tephra is a command-line program only for now. The command `tephra` itself contr
 
     $ tephra 
 
-    Tephra version 0.13.0
+    Tephra version 0.13.1
     
-    Copyright (C) 2015-2019 S. Evan Staton
+    Copyright (C) 2015-2020 S. Evan Staton
     LICENSE -- MIT
 
-    Citation: Staton, SE. 2019. https://github.com/sestaton/tephra
+    Citation: Staton, SE. 20120. https://github.com/sestaton/tephra
 
     Name:
          Tephra - A tool for discovering transposable elements and describing
