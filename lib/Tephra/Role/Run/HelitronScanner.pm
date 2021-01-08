@@ -81,11 +81,11 @@ sub run_hscan_headtail {
 
     my ($stdout, $stderr, $exit);
     try {
-	my @out = capture { system([0..5], $cmd) };
-	#($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
+	#my @out = capture { system([0..5], $cmd) };
+	($stdout, $stderr, $exit) = capture { system([0..5], $cmd) };
     }
     catch {
-	$log->error("HelitronScanner failed. Error: $stderr. Here is the exception: $_\nExiting.");
+	$log->error("HelitronScanner failed. ERROR: $stderr. Here is the exception: $_\nExiting.");
 	exit(1);
     };
 
