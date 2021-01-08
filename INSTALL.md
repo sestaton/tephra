@@ -2,7 +2,7 @@
 
 The following commands will install the core dependencies for Debian-based systems (e.g., Ubuntu):
 
-    sudo apt-get install -y -qq build-essential zlib1g-dev libgd-dev unzip libncurses5 libncurses5-dev libdb-dev git cpanminus libexpat1 libexpat1-dev
+    sudo apt-get install -y -qq build-essential zlib1g-dev libgd-dev unzip libncurses5 libncurses5-dev libdb-dev git cpanminus libexpat1 libexpat1-dev openjdk-8-jre-headless
 
 For RHEL-based systems (e.g., CentOS/Fedora):
 
