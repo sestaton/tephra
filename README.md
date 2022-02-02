@@ -29,10 +29,10 @@ Tephra is a command-line program only for now. The command `tephra` itself contr
 
     Tephra version 0.13.1
     
-    Copyright (C) 2015-2020 S. Evan Staton
+    Copyright (C) 2015-2022 S. Evan Staton
     LICENSE -- MIT
 
-    Citation: Staton, SE. 20120. https://github.com/sestaton/tephra
+    Citation: Staton, SE. 2022. https://github.com/sestaton/tephra
 
     Name:
          Tephra - A tool for discovering transposable elements and describing
@@ -159,7 +159,7 @@ Part of this project uses code from [MGEScan-nonLTR](http://darwin.informatics.i
 
 The license for Tephra is below:
 
-Copyright (C) 2015-2020 S. Evan Staton
+Copyright (C) 2015-2022 S. Evan Staton
 
 This program is distributed under the MIT (X11) License, which should be distributed with the package.
 If not, it can be found here: http://www.opensource.org/licenses/mit-license.php
