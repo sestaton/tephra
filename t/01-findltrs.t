@@ -37,7 +37,7 @@ ok( -e $config, 'Can create config file for testing' );
 {
     my @help_args = ($cmd, 'findltrs', '-h');
     my ($stdout, $stderr, $exit) = capture { system(@help_args) };
-    #say STDERR "stderr: $stderr" if $devtests;
+    say STDERR "DEBUG: 'tephra findltrs -h' stderr: $stderr";# if $devtests;
     ok($stderr, 'Can execute findltrs subcommand');
 }
 
