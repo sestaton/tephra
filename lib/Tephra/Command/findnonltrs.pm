@@ -23,7 +23,7 @@ sub opt_spec {
     return (    
 	[ "genome|g=s",    "The genome sequences in FASTA format to search for non-LTR-RTs " ],
 	[ "reference|r=s", "The non-masked reference genome for base correction "            ], 
-	[ "pdir|d=s",      "The directory to search for HMMs (configured automatically) "    ],
+	[ "pdir|p=s",      "The directory to search for HMMs (configured automatically) "    ],
 	[ "outdir|d=s",    "The location to place the results "                              ],
 	[ "gff|o=s",       "The GFF3 outfile to place the non-LTRs found in <genome> "       ],
 	[ "threads|t=i",   "The number of threads to use for BLAST searches (Default: 1)  "  ],
@@ -291,11 +291,11 @@ The genome sequences in FASTA format to search for non-LTR-RTs.
  The non-masked reference genome for base correction. If a masked genome was used to search for non-LTRs,
  it is desirable to correct the bases using the original non-masked reference sequence.
 
-=item -o, --outdir
+=item -d, --outdir
 
  The directory name to place the resulting GFF file (and run the analysis).
 
-=item -d, --pdir
+=item -p, --pdir
 
  The directory to search for HMMs. This should be configured automatically during installation and this option should only have to be used by developers.
 

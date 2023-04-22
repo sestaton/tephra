@@ -27,8 +27,6 @@ sub opt_spec {
         [ "outdir|r=s",     "The output directory for placing categorized elements "                                 ],
         [ "threads|t=i",    "The number of threads to use for clustering coding domains (Default: 1)  "              ],
         [ "percentcov|c=i", "The percent coverage cutoff for the shorter element in pairwise matches (Default: 50) " ],
-        [ "percentid|p=i",  "The percent identity cutoff for classification of pairwise matches (Default: 80) "      ],
-        [ "hitlen|l=i",     "The minimum length for classifying pairwise BLAST hits (Default: 80) "                  ],
         [ "debug",          "Show external command for debugging (Default: no) "                                     ],
     );
 }
@@ -232,8 +230,8 @@ Required:
 Options:
     -t|threads    :   The number of threads to use for clustering coding domains (Default: 1).    
     -c|percentcov :   The percent coverage cutoff for the shorter element in pairwise matches (Default: 50).
-    -p|percentid  :   The percent identity cutoff for classification of pairwise matches (Default: 80).
-    -l|hitlen     :   The minimum length for classifying pairwise BLAST hits (Default: 80).
+    -p|percentid  :   The percent identity cutoff for BLAST hits to the repeat database (Default: 80).
+    -l|hitlength  :   The alignment length cutoff for BLAST hits to the repeat database (Default: 80).
     --debug       :   Show external commands for debugging (Default: no).
 
 END
@@ -301,15 +299,11 @@ S. Evan Staton, C<< <evan at evanstaton.com> >>
 
 =item -l, --hitlength
 
- The alignment length cutoff for pairwise BLAST hits (Default: 80). This option is used for family-level                  
- classifications. It is recommended to not alter this value, as it has little impact. If necessary, it is best to alter this 
- while holding the percent coverage and percent identity unchanged.
+ The minimum length for classifying pairwise BLAST hits (Default: 80).
 
 =item -p, --percentid
 
- The percent identity cutoff for classification of pairwise matches (Default: 80). This option is used for family-level
- classifications. Increase for stringency and smaller families, decrease for reduced stringency               
- and larger families. It is recommended to leave this value unchanged and only change the percent coverage cutoff.
+ The percent identity cutoff for BLAST hits to the repeat database (Default: 80)
 
 =item --debug
 
