@@ -25,6 +25,7 @@ Misc:
  - Pin muscle to v3.8.31 and compile from source because the available binaries have issues in my tests.
  - Remove use of Travis-CI and switch to Github Actions for CI workflow.
  - Add coverage report from Codecov.
+ - Add test file for new 'info' subcommand to evaluate results that are returned.
  
 0.13.2	07/20/2020	Vancouver, BC
 
