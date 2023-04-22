@@ -1,6 +1,31 @@
 Revision history for Tephra
 
 Version	Date	Location
+0.14.0	04/22/2023	Saskatoon, SK
+
+New features:
+ - Add 'info' subcommand to print a table of configuration info (Perl and Tephra versions, and versions of all installed
+   external programs.
+   
+Bug fixes:
+ - Adjust regex for getting divergence from PAML. This is something that unfortunately needs to be adjusted with
+   updates to PAML.
+ - Fixed the console messages when configuring and installing required packages so the output is much cleaner.
+ 
+Misc:
+ - Update Perl deps when building on v5.30+ (Pod::Find).
+ - Add required modules for fetching muscle (and other packages) over https (Net::SSLeay and IO::Socket::SSL)
+   during the initial configuration.
+ - Change how the tephra command is being called when testing the full pipeline. Now it can be tested in place rather
+   than expecting to be installed, which is much more desirable (avoids version conflicts and having to install the package
+   to test the command).
+ - Pin genometools version to v1.6 to ensure we are working with a stable version.
+ - Update PAML from v4.8 to v4.10.6.
+ - Capture the noisy output from EMBOSS compile process. Same with HTSlib and Tephra translate program.
+ - Pin muscle to v3.8.31 and compile from source because the available binaries have issues in my tests.
+ - Remove use of Travis-CI and switch to Github Actions for CI workflow.
+ - Add coverage report from Codecov.
+ 
 0.13.2	07/20/2020	Vancouver, BC
 
 New features:
