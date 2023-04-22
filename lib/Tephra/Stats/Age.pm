@@ -312,6 +312,8 @@ sub process_align_args {
 
     my $muscmd = "$muscle -clwstrict -in $fas -out $aln 2>$alog";
     my $trecmd = "$muscle -maketree -in $fas -out $tre -cluster neighborjoining 2>$tlog";
+    #say STDERR "DEBUG: $muscmd";
+    #say STDERR "DEBUG: $trecmd";
     my $status = $self->capture_cmd($muscmd);
     unlink $db && return if $status =~ /failed/i;
     $status = $self->capture_cmd($trecmd);
