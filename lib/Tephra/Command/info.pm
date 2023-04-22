@@ -12,7 +12,6 @@ use File::Spec;
 use File::Basename;
 use Tephra::Config::Exe;
 use Tephra -command;
-use Data::Dump::Color;
 
 our $VERSION = '0.14.0';
 
