@@ -23,10 +23,10 @@ jobs:
       run: perl -V
 
     - name: Install Perl deps for Codecov
-      run: cpanm --quiet --notest Module::Build Devel::Cover Devel::Cover::Report::Codecov
+      run: cpanm --quiet --notest App::cpm Module::Build Devel::Cover Devel::Cover::Report::Codecov
 
     - name: Install Tephra deps
-      run: cpanm --installdeps .
+      run: cpm install -g
 
     - name: Build and test Tephra
       env:
