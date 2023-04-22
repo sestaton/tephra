@@ -31,5 +31,5 @@ jobs:
     - name: Build and test Tephra
       env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      run: perl Makefile.PL && make && prove -bv t/0[01]*t
+      run: perl Makefile.PL && make && perl -Mblib blib/bin/tephra findltrs && prove -bv t/01*t
  
