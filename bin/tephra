@@ -36,10 +36,10 @@ sub usage {
 "
 Tephra version $VERSION
 
-Copyright (C) 2015-2020 S. Evan Staton
+Copyright (C) 2015-2023 S. Evan Staton
 LICENSE -- MIT
 
-Citation: Staton, SE. 2020. https://github.com/sestaton/tephra
+Citation: Staton, SE. 2023. https://github.com/sestaton/tephra
 
 $desc
 -------------------------------------------------------------------------------------------
@@ -61,6 +61,7 @@ Available commands:
         maskref: Mask a reference genome with transposons.
      reannotate: Transfer annotations from a reference set of repeats to Tephra annotations.
         sololtr: Find solo-LTRs in a genome assembly.
+           info: Show version information for all external programs configured and used by Tephra.
 
 Most common usage:
 
@@ -80,7 +81,6 @@ To see information about a subcommand, run:
 To get more detailed information, run:
 
     tephra <command> --man\n";
-
 
     return $menu;
 }
@@ -102,7 +102,7 @@ Tephra - A tool for discovering transposable elements and describing patterns of
 The MIT License should included with the project. 
 If not, it can be found at: L<http://opensource.org/licenses/mit-license.php>
 
-Copyright (C) 2015-2020 S. Evan Staton
+Copyright (C) 2015-2023 S. Evan Staton
  
 =head1 TESTED WITH:
 
@@ -140,6 +140,7 @@ S. Evan Staton, C<< <evan at evanstaton.com> >>
         maskref: Mask a reference genome with transposons.
      reannotate: Transfer annotations from a reference set of repeats to Tephra annotations.
         sololtr: Find solo-LTRs in a genome assembly.
+           info: Show version information for all external programs configured and used by Tephra.
 
 =back
 
