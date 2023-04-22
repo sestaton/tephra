@@ -562,6 +562,8 @@ sub fetch_muscle {
     system("tar xzf $file") == 0 or die "tar failed: $!";
     my $src = File::Spec->catdir($dist, 'src');
     my $musclebin = File::Spec->catfile($root, $dist, 'src', 'muscle');
+    unlink $file;
+    
     chdir $src;
     my $outfile = 'mk.tmp';
     open my $out, '>', $outfile;
@@ -577,7 +579,6 @@ sub fetch_muscle {
     chmod 0755, $muscle;
 
     remove_tree( $dist, { safe => 1 } );
-    unlink $file;
     
     return $muscle;
 }

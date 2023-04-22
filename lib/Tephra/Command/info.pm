@@ -60,7 +60,7 @@ sub _get_command_info {
 	'Vmatch                  ' => "                              |  v$vmatch_ver   |",
 	'GenomeTools (LTRharvest, LTRdigest, TIRvish, Tallymer)' => "|  v$gt_ver   |",
 	'Muscle                  ' => '                              |  v3.8.31  |',
-	'PAML (basemel)          ' => '                              |  v4.10.6  |',
+	'PAML (baseml)           ' => '                              |  v4.10.6  |',
 	'BLAST+ (blastn)         ' => "                              |  v$blast_ver   |",
 	'HTSlib                  ' => '                              |  v1.3.1   |',
 	'EMBOSS (transeq)        ' => "                              |  v$emboss_ver |",
