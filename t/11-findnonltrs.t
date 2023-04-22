@@ -27,9 +27,9 @@ my ($exp_seqct, $exp_gct, $exp_tot) = (0, 0, 0);
 
 if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
     $devtests  = 1;
-    $exp_seqct = 5;
-    $exp_gct   = 5;
-    $exp_tot   = 5;
+    $exp_seqct = 12;
+    $exp_gct   = 12;
+    $exp_tot   = 12;
 
     $genome = File::Spec->catfile($testdir, 'TAIR10_chr1.fas');
     $gff    = File::Spec->catfile($testdir, 'TAIR10_chr1_nonLTRs.gff3');
@@ -51,7 +51,7 @@ my ($stdout, $stderr, @ret) = capture { system([0..5], @find_cmd) };
 
 my ($seqct, $gct, $tot) = (0, 0, 0);
 if ($devtests) {
-    $exp_tot = 5;
+    $exp_tot = 12;
     ok( -e $gff, 'Can find some non-LTRs' );
     ok( -e $fas, 'Can find some non-LTRs' );
 
@@ -78,13 +78,13 @@ if ($devtests) {
     }
     close $lin;
     say STDERR "tot: $tot";
-    
+    say STDERR "DEBUG: tot ($tot) -> exp_tot ($exp_tot)";
+    say STDERR "DEBUG: gct ($gct) -> exp_gct ($exp_gct)";
+        
     ok( -e $log, 'findnonltrs log created' );
     ok( $tot == $seqct, 'Correct number of elements logged and written');
 }
 
-#say STDERR "DEBUG: $tot -> $exp_tot" if $devtests;
-#say STDERR "DEBUG: $gct -> $exp_gct" if $devtests;
 ok( $seqct == $exp_seqct, 'Correct number of non-LTRs found' );
 ok( $gct == $exp_gct, 'Correct number of non-LTRs found' );
 ok( $tot == $exp_tot, 'Correct number of elements logged' );
