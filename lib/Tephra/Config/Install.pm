@@ -181,7 +181,7 @@ sub fetch_gt_exes {
     my ($dist, $ldist, $ldir);
     for my $tag ($tree->look_down(_tag => 'a')) {
 	if ($tag->attr('href')) {
-	    if ($tag->as_text =~ /Linux_x86_64-64bit-barebone.tar.gz\z/) {
+	    if ($tag->as_text =~ /1.6.\d+\-Linux_x86_64-64bit-barebone.tar.gz\z/) {
 		$dist = $tag->as_text;
 		my $archive = join "/", $host, $dir, $dist;
 		$self->fetch_file($dist, $archive);
@@ -189,15 +189,13 @@ sub fetch_gt_exes {
 		$ldist = $dist;
 		$ldist =~ s/\.tar.gz\z//;
 		$ldir = File::Spec->catdir($root, 'gt');
-		
-		system("tar xzf $dist") == 0 or die $!;
-		
-		move $ldist, $ldir or die "\n[ERROR]: move failed: $ldist -> $ldir: $!\n";
-		unlink $dist;
 	    }
 	}
     }
     unlink $file;
+
+    system("tar xzf $dist") == 0 or die $!;
+    move $ldist, $ldir or die "\n[ERROR]: move failed: $ldist -> $ldir: $!\n";
     
     my $lgt = File::Spec->catfile($ldir, 'bin', 'gt');
     my $tgt = File::Spec->catfile($bindir, 'gt');
@@ -209,7 +207,9 @@ sub fetch_gt_exes {
     move $gtdata, $tgtdata or die "\n[ERROR]: move failed: $gtdata -> $tgtdata: $!\n";
 
     remove_tree( $ldir, { safe => 1 } );
-
+    my $pwd = Cwd::getcwd();
+    unlink $dist;
+    
     return $tgt;
 }
 
@@ -301,8 +301,8 @@ sub fetch_blast {
     my $tblastn   = File::Spec->catfile($bindir, 'blastn');
     my $tmblastdb = File::Spec->catfile($bindir, 'makeblastdb');
 
-    copy $blastn, $tblastn or die "\n[ERROR]: copy failed: l328 $!\n"; # $tblastn means tephra copy, not to be confused with tblastn
-    copy $mblastdb, $tmblastdb or die "\n[ERROR]: copy failed: l329 $!\n";
+    copy $blastn, $tblastn or die "\n[ERROR]: copy failed: $blastn -> $tblastn $!\n"; # $tblastn means tephra copy, not to be confused with tblastn
+    copy $mblastdb, $tmblastdb or die "\n[ERROR]: copy failed: $mblastdb -> $tmblastdb $!\n";
     chmod 0755, $tblastn, $tmblastdb;
     remove_tree( $ldir, { safe => 1 } );
 
@@ -381,26 +381,21 @@ sub fetch_paml {
     my $root = $self->basedir->absolute->resolve;
     my $wd   = $self->workingdir->absolute->resolve;
 
-    my $urlbase = 'http://abacus.gene.ucl.ac.uk';
-    my $dir     = 'software';
-    my $file    = 'pamlX1.3.1+paml4.8a-win32.tgz';
+    my $urlbase = 'https://github.com';
+    my $dir     = 'abacus-gene/paml/archive/refs/tags';
+    my $file    = 'v4.10.6.tar.gz';
     my $url     = join "/", $urlbase, $dir, $file;
     my $outfile = File::Spec->catfile($root, $file);
     $self->fetch_file($outfile, $url);
 
     chdir $root;
-    my $dist  = 'paml4.8';
-    my $xdist = 'pamlX';
+    my $dist  = 'paml-4.10.6';
     system("tar xzf $file") == 0 or die "tar failed: $!";
-    remove_tree( $xdist, { safe => 1 } );
     unlink $file;
 
     chdir $dist;
     my $cwd = getcwd();
     my $bin = File::Spec->catdir($cwd, 'bin');
-    my @exes;
-    find( sub { push @exes, $File::Find::name if -f and /\.exe$/ }, $bin );
-    unlink @exes;
     chdir 'src';
 
     my @results = capture { system('make', '-j4') };
@@ -415,7 +410,7 @@ sub fetch_paml {
 
     for my $file (grep { /baseml\z/ } @exelist) {
 	my $binfile = File::Spec->catfile($bindir, $file);
-	copy $file, $binfile or die "Copy failed: $file -> l446 $!";
+	copy $file, $binfile or die "Copy failed: $file -> $binfile $!";
 	chmod 0755, $binfile;
     }
 
@@ -440,8 +435,6 @@ sub fetch_emboss {
     my $version = '6.5.0';
     my $file    = 'EMBOSS-6.5.7.tar.gz';
     my $url     = join "/", $urlbase, $dir, $tool, $release, $version, $file;
-    #my $file = 'emboss-latest.tar.gz';
-    #my $url = join "/", $urlbase, $dir, $tool, $file;
     my $outfile = File::Spec->catfile($root, $file);
 
     system("wget -q -O $outfile $url 2>&1 > /dev/null") == 0
@@ -453,10 +446,12 @@ sub fetch_emboss {
     my $cwd = getcwd();
     system("./configure --without-x --without-mysql --disable-shared --prefix=$root 2>&1 > /dev/null") == 0
 	or die "configure failed: $!";
-    system("make -j4 2>&1 > /dev/null") == 0 
-	or die "make failed: $!";
-    system("make install 2>&1 > /dev/null") == 0
-	or die "make failed: $!";
+    #system("make -j4 2>&1 > /dev/null") == 0 
+	#or die "make failed: $!";
+    my @results = capture { system('make', '-j4') };
+    my @iresults = capture { system('make install') };
+    #system("make install 2>&1 > /dev/null") == 0
+	#or die "make failed: $!";
 
     ## clean up
     chdir $root or die $!;
@@ -530,11 +525,12 @@ sub fetch_htslib {
     my $cwd = getcwd();
     system("./configure --prefix=$cwd 2>&1 > /dev/null") == 0
 	or die "configure failed: $!";
-    system("make -j4 2>&1 > /dev/null") == 0 
-	or die "make failed: $!";
+    #system("make -j4 2>&1 > /dev/null") == 0 
+	#or die "make failed: $!";
+    my @results = capture { system('make', '-j4') };
     system("make install 2>&1 > /dev/null") == 0
 	or die "make failed: $!";
-    
+
     my $distfile = File::Spec->catfile($root, $file);
     unlink $distfile;
     chdir $wd;
@@ -542,10 +538,7 @@ sub fetch_htslib {
     $ENV{HTSLIB_DIR} = $libdir;
     #system("cpanm -q Bio::DB::HTS") == 0
 	#or die "Installing Bio::DB::HTS failed. Here is the HTSLIB_DIR: $libdir. [ERROR]: $!\n";
-    #system('cpanm', '-q', '-n', 'Bio::Root::Version') == 0
-        #or die "BioPerl install failed: $!";
-    #my @results = capture { system('cpanm', '-q', '-n', 'Bio::Root::Version') };
-    my @results = capture { system('cpanm', '-q', 'Bio::DB::HTS') };
+    my @iresults = capture { system('cpanm', '-q', 'Bio::DB::HTS') };
 
     return $libdir;
 }
@@ -556,47 +549,36 @@ sub fetch_muscle {
 
     my $root = $self->basedir->absolute->resolve;
     my $wd   = $self->workingdir->absolute->resolve;
-    
-    my $host = 'http://www.drive5.com';
+
+    chdir $root;
+    my $host = 'https://www.drive5.com';
     my $dir  = 'muscle';
-    my $page = 'downloads.htm';
-    my $file = 'muscle_distlisting.html';
-    my $endpoint = join "/", $host, $dir, $page;
+    my $ddir = 'downloads3.8.31';
+    my $file = 'muscle3.8.31_src.tar.gz';
+    my $dist = $file =~ s/_.*//r;
+    my $endpoint = join "/", $host, $dir, $ddir, $file;
     $self->fetch_file($file, $endpoint);
-    
-    my $tree = HTML::TreeBuilder->new;
-    $tree->parse_file($file);
-    
-    my ($dist, $ldist, $ldir, $musbin);
-    for my $tag ($tree->look_down(_tag => 'a')) {
-        if ($tag->attr('href')) {
-            if ($tag->as_text =~ /muscle(\d+\.\d+\.\d+)_i86linux64.tar.gz\z/) {
-		my $ver = $1;
-		my $vdir = "downloads$ver";
-                $dist = $tag->as_text;
-                my $archive = join "/", $host, $dir, $vdir, $dist;
-                $self->fetch_file($dist, $archive);
-                
-                $ldist = $dist;
-                $ldist =~ s/\.tar.gz\z//;
-                $ldir = File::Spec->catdir($root, 'muscle'); #$ldist);
-		make_path( $ldir, {verbose => 0, mode => 0771,} );
-                $musbin = File::Spec->catfile($ldir, 'muscle');
-                system("tar xzf $dist") == 0 or die $!;
-                
-                move $ldist, $musbin or die "\n[ERROR]: move failed: l590 $!\n";
-                unlink $dist;
-            }
-        }
-    }
-    unlink $file;
-    
+
+    system("tar xzf $file") == 0 or die "tar failed: $!";
+    my $src = File::Spec->catdir($dist, 'src');
+    my $musclebin = File::Spec->catfile($root, $dist, 'src', 'muscle');
+    chdir $src;
+    my $outfile = 'mk.tmp';
+    open my $out, '>', $outfile;
+    open my $in, '<', 'mk';
+    while (<$in>) { chomp; if (/echo/) { s/echo/#echo/g; } say $out $_; }
+    close $in;
+    close $out;
+    move $outfile, 'mk' or die "Move failed: $outfile -> mk $!";
+    my @results = capture { system('make', '-j4') };
+
     my $muscle = File::Spec->catfile($bindir, 'muscle');
-    copy $musbin, $muscle or die "Copy failed: l598 $!";
+    copy $musclebin, $muscle or die "Copy failed: $musclebin -> $muscle $!";
     chmod 0755, $muscle;
 
-    remove_tree( $ldir, { safe => 1 } );
-
+    remove_tree( $dist, { safe => 1 } );
+    unlink $file;
+    
     return $muscle;
 }
 
@@ -779,12 +761,14 @@ sub build_mgescan {
     chdir $src_dir;
     system("make clean -f mgescan-makefile 2>&1 >/dev/null") == 0 
 	or die "make failed: $!";
-    system("make -f mgescan-makefile 2>&1 >/dev/null") == 0 
-	or die "make failed: $!";
+    #system("make -f mgescan-makefile 2>&1 >/dev/null") == 0 
+	#or die "make failed: $!";
+    my @mgescanres = capture { system('make -f mgescan-makefile') };
     system("make clean -f translate-makefile 2>&1 >/dev/null") == 0
         or die "make failed: $!";
-    system("make all -f translate-makefile 2>&1 >/dev/null") == 0
-        or die "make failed: $!";
+    #system("make all -f translate-makefile 2>&1 >/dev/null") == 0
+        #or die "make failed: $!";
+    my @translres = capture { system('make all -f translate-makefile') };
     
     copy $mgexe, $bindir or die "Copy failed: $!";
     copy $trexe, $bindir or die "Copy failed: $!";
