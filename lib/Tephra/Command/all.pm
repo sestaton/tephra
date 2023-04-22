@@ -10,7 +10,6 @@ use Cwd           qw(abs_path);
 use Capture::Tiny qw(capture_merged);
 use File::Spec;
 use File::Basename;
-use Capture::Tiny;
 use Tephra -command;
 use Tephra::Config::Reader;
 use Tephra::Config::Exe;
