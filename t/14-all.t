@@ -3,6 +3,7 @@
 use 5.010;
 use strict;
 use warnings FATAL => 'all';
+use Cwd                 qw(getcwd);
 use autodie             qw(open);
 use IPC::System::Simple qw(system);
 use Capture::Tiny       qw(capture);
@@ -20,6 +21,8 @@ if (defined $ENV{TEPHRA_ENV} && $ENV{TEPHRA_ENV} eq 'development') {
     $devtests = 1;
 }
 
+my $cwd = getcwd();
+$ENV{PATH}   = join ":", File::Spec->catdir($cwd, 'blib', 'bin'), $ENV{PATH};
 my $cmd      = File::Spec->catfile('blib', 'bin', 'tephra');
 my $testdir  = File::Spec->catdir('t', 'test_data');
 my $genome   = File::Spec->catfile($testdir, 'ref.fas');
