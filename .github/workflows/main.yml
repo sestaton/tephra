@@ -1,0 +1,35 @@
+name: CI
+on: push
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ['ubuntu-latest']
+        perl: [ '5.30' ]
+    name: Perl ${{ matrix.perl }} on ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up GitHub Action
+      uses: shogo82148/actions-setup-perl@v1
+      with:
+        perl-version: ${{ matrix.perl }}
+
+    - name: Install core dependencies
+      run: sudo apt install -y build-essential zlib1g-dev libgd-dev unzip libncurses5 libncurses5-dev libdb-dev git cpanminus libexpat1 libexpat1-dev openjdk-8-jre-headless gcc-multilib
+
+    - name: Get Perl version
+      run: perl -V
+
+    - name: Install Perl deps for Codecov
+      run: cpanm --quiet --notest Module::Build Devel::Cover Devel::Cover::Report::Codecov
+
+    - name: Install Tephra deps
+      run: cpanm --installdeps .
+
+    - name: Build and test Tephra
+      env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      run: perl Makefile.PL && make && cover -test -report codecov
+ 
