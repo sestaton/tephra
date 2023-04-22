@@ -89,7 +89,7 @@ sub create_index {
 
     my $gt = $self->get_gt_exec;
     unshift @$args, 'suffixerator';
-    unshift @$args, "$gt -j $threads";
+    unshift @$args, "$gt -j 1"; # Have to hard code this because in GT v1.6.2+ we cannot create lcp table with >1 thread
 
     my $err = $self->_make_gt_errorlog('suffixerator', $index);
     my $cmd = join qq{ }, @$args;
