@@ -1,7 +1,9 @@
 # Tephra
 A tool for discovering transposable elements and describing patterns of genome evolution
 
-[![Build Status](https://travis-ci.org/sestaton/tephra.svg?branch=master)](https://travis-ci.org/sestaton/tephra) [![Coverage Status](https://coveralls.io/repos/github/sestaton/tephra/badge.svg?branch=master)](https://coveralls.io/github/sestaton/tephra?branch=master) [![GitHub version](https://badge.fury.io/gh/sestaton%2Ftephra.svg)](https://badge.fury.io/gh/sestaton%2Ftephra)
+Build|Coverage|Github Version|Docker Image Size|Docker Pulls
+---|---|---|---|---
+[![CI](https://github.com/sestaton/tephra/actions/workflows/main.yml/badge.svg)](https://github.com/sestaton/tephra/actions/workflows/main.yml) | [![codecov](https://codecov.io/gh/sestaton/tephra/branch/master/graph/badge.svg?token=MH622EAL1G)](https://codecov.io/gh/sestaton/tephra) | [![GitHub version](https://badge.fury.io/gh/sestaton%2Ftephra.svg)](https://badge.fury.io/gh/sestaton%2Ftephra) | ![Docker Image Size](https://badgen.net/docker/size/sestaton/tephra?icon=docker&label=image%20size) | ![Pulls](https://img.shields.io/docker/pulls/sestaton/tephra.svg)
 
 ### What is Tephra?
 
@@ -27,12 +29,12 @@ Tephra is a command-line program only for now. The command `tephra` itself contr
 
     $ tephra 
 
-    Tephra version 0.13.1
+    Tephra version 0.14.0
     
-    Copyright (C) 2015-2022 S. Evan Staton
+    Copyright (C) 2015-2023 S. Evan Staton
     LICENSE -- MIT
 
-    Citation: Staton, SE. 2022. https://github.com/sestaton/tephra
+    Citation: Staton, SE. 2023. https://github.com/sestaton/tephra
 
     Name:
          Tephra - A tool for discovering transposable elements and describing
@@ -62,7 +64,8 @@ Tephra is a command-line program only for now. The command `tephra` itself contr
             maskref: Mask a reference genome with transposons.
          reannotate: Transfer annotations from a reference set of repeats to Tephra annotations.
             sololtr: Find solo-LTRs in a genome assembly.
-    
+               info: Show version information for all external programs configured and used by Tephra.
+	       
     Most common usage:
     
         tephra all -c tephra_config.yml
@@ -159,7 +162,7 @@ Part of this project uses code from [MGEScan-nonLTR](http://darwin.informatics.i
 
 The license for Tephra is below:
 
-Copyright (C) 2015-2022 S. Evan Staton
+Copyright (C) 2015-2023 S. Evan Staton
 
 This program is distributed under the MIT (X11) License, which should be distributed with the package.
 If not, it can be found here: http://www.opensource.org/licenses/mit-license.php
