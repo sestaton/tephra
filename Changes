@@ -26,6 +26,7 @@ Misc:
  - Remove use of Travis-CI and switch to Github Actions for CI workflow.
  - Add coverage report from Codecov.
  - Add test file for new 'info' subcommand to evaluate results that are returned.
+ - Update Docker and Github Actions to use cpm, which is much faster than to build than cpanm.
  
 0.13.2	07/20/2020	Vancouver, BC
 
